@@ -714,12 +714,29 @@ function hashPass(s){var hsh=5381;for(var i=0;i<s.length;i++){hsh=((hsh<<5)+hsh)
 function userKey(email){return "bpna_data_"+email.toLowerCase();}
 function dataDefault(){return {sessions:[],events:{},loans:[],goalMin:240,fav:null,geoCheck:false,sharePresence:false,occ:{},acadEvents:[]};}
 
+/* ===================== BRAIN: capa única de guardado local =====================
+   Todo lo que la app recuerda pasa por aquí. Nada sale a internet: son solo
+   claves de localStorage en este navegador, leídas/escritas via loadJSON/saveJSON. */
+const Brain={
+  getUsers:function(){return loadJSON(DB_USERS,{});},
+  saveUsers:function(users){saveJSON(DB_USERS,users);},
+  getSession:function(){return loadJSON(SESSION_KEY,null);},
+  setSession:function(email){saveJSON(SESSION_KEY,email);},
+  clearSession:function(){localStorage.removeItem(SESSION_KEY);},
+  getUserData:function(email){return loadJSON(userKey(email),dataDefault());},
+  saveUserData:function(email,data){saveJSON(userKey(email),data);},
+  getOccupancy:function(){return loadJSON(DB_OCC,{});},
+  saveOccupancy:function(all){saveJSON(DB_OCC,all);},
+  getNotifDay:function(email){return loadJSON("bpna_notifday_"+email,null);},
+  setNotifDay:function(email,dayKey){saveJSON("bpna_notifday_"+email,dayKey);}
+};
+
 let CURRENT=null;   // email
 let DATA=null;      // datos del usuario actual
-function loadUserData(){DATA=loadJSON(userKey(CURRENT),dataDefault());
+function loadUserData(){DATA=Brain.getUserData(CURRENT);
   if(!DATA.events)DATA.events={}; if(!DATA.sessions)DATA.sessions=[]; if(!DATA.loans)DATA.loans=[];
   if(!DATA.goalMin)DATA.goalMin=240; if(typeof DATA.geoCheck!=="boolean")DATA.geoCheck=false; if(typeof DATA.sharePresence!=="boolean")DATA.sharePresence=false; if(!DATA.occ)DATA.occ={}; if(!DATA.acadEvents)DATA.acadEvents=[];}
-function saveUserData(){saveJSON(userKey(CURRENT),DATA);}
+function saveUserData(){Brain.saveUserData(CURRENT,DATA);}
 
 
 
@@ -754,7 +771,7 @@ async function socialInitAfterLogin(){
     var sess=await sb.auth.getSession();
     var user=sess.data.session&&sess.data.session.user;
     if(!user){socialRenderPanel();return;}
-    var users=loadJSON(DB_USERS,{}), name=(users[CURRENT]&&users[CURRENT].name)||(user.user_metadata&&user.user_metadata.name)||user.email.split("@")[0];
+    var users=Brain.getUsers(), name=(users[CURRENT]&&users[CURRENT].name)||(user.user_metadata&&user.user_metadata.name)||user.email.split("@")[0];
     await socialEnsureProfile(user,name,user.email);
     await socialRefreshAll();
     if(SOCIAL.timer)clearInterval(SOCIAL.timer);
@@ -931,7 +948,7 @@ async function doAuth(){
   var pass=$("inPass").value;
   if(!email||!/.+@.+\..+/.test(email)){showAuthErr("Introduce un correo válido.");return;}
   if(pass.length<4){showAuthErr("La contraseña debe tener al menos 4 caracteres.");return;}
-  var users=loadJSON(DB_USERS,{});
+  var users=Brain.getUsers();
   var sb=socialClient();
   if(sb){
     try{
@@ -943,7 +960,7 @@ async function doAuth(){
         if(res.error){showAuthErr(res.error.message);return;}
         if(!res.data.session){showAuthErr("Cuenta creada. Confirma el correo o desactiva la confirmación de email en Supabase para pruebas.");return;}
         CURRENT=res.data.user.email;
-        users[CURRENT]={name:name,pass:hashPass(pass)};saveJSON(DB_USERS,users);saveJSON(SESSION_KEY,CURRENT);
+        users[CURRENT]={name:name,pass:hashPass(pass)};Brain.saveUsers(users);Brain.setSession(CURRENT);
         await socialEnsureProfile(res.data.user,name,CURRENT);
         await enterApp();
       }else{
@@ -951,7 +968,7 @@ async function doAuth(){
         if(res2.error){showAuthErr(res2.error.message);return;}
         CURRENT=res2.data.user.email;
         var display=(res2.data.user.user_metadata&&res2.data.user.user_metadata.name)||CURRENT.split("@")[0];
-        users[CURRENT]={name:display,pass:hashPass(pass)};saveJSON(DB_USERS,users);saveJSON(SESSION_KEY,CURRENT);
+        users[CURRENT]={name:display,pass:hashPass(pass)};Brain.saveUsers(users);Brain.setSession(CURRENT);
         await socialEnsureProfile(res2.data.user,display,CURRENT);
         await enterApp();
       }
@@ -964,19 +981,19 @@ async function doAuth(){
     if(!name){showAuthErr("Pon tu nombre.");return;}
     if(users[email]){showAuthErr("Ya existe una cuenta con ese correo.");return;}
     users[email]={name:name,pass:hashPass(pass)};
-    saveJSON(DB_USERS,users);
-    saveJSON(userKey(email),dataDefault());
+    Brain.saveUsers(users);
+    Brain.saveUserData(email,dataDefault());
   }else{
     if(!users[email]){showAuthErr("No hay ninguna cuenta con ese correo.");return;}
     if(users[email].pass!==hashPass(pass)){showAuthErr("Contraseña incorrecta.");return;}
   }
   CURRENT=email;
-  saveJSON(SESSION_KEY,email);
+  Brain.setSession(email);
   enterApp();
 }
 
 async function enterApp(){
-  var users=loadJSON(DB_USERS,{});
+  var users=Brain.getUsers();
   var u=users[CURRENT]||{name:CURRENT};
   loadUserData();
   $("authView").classList.add("hidden");
@@ -1000,7 +1017,7 @@ function logout(){
   if(studyTimer.running) stopStudy(false);
   if(socialClient())socialClient().auth.signOut();
   if(SOCIAL.timer)clearInterval(SOCIAL.timer);
-  localStorage.removeItem(SESSION_KEY);
+  Brain.clearSession();
   CURRENT=null;DATA=null;
   $("app").classList.add("hidden");
   $("authView").classList.remove("hidden");
@@ -1028,7 +1045,7 @@ const OCC_LEVELS={
   llena:{score:3,label:"Llena",emoji:"🔴",className:"od-llena"}
 };
 function occKey(i){return "bib_"+i;}
-function occAll(){return loadJSON(DB_OCC,{});}
+function occAll(){return Brain.getOccupancy();}
 function occPrune(all){
   var cutoff=Date.now()-OCC_TTL_MIN*60000, changed=false;
   for(var k in all){
@@ -1037,7 +1054,7 @@ function occPrune(all){
     if(all[k].length!==oldLen)changed=true;
     if(!all[k].length){delete all[k];changed=true;}
   }
-  if(changed)saveJSON(DB_OCC,all);
+  if(changed)Brain.saveOccupancy(all);
   return all;
 }
 function occSummary(i){
@@ -1074,7 +1091,7 @@ function addOccReport(i,level,silent){
   if(!all[k])all[k]=[];
   all[k].push({level:level,ts:Date.now(),user:CURRENT||"anon"});
   all[k]=all[k].slice(-50);
-  saveJSON(DB_OCC,all);
+  Brain.saveOccupancy(all);
   refreshOccUI(i);
   if(!silent)showToast("Afluencia actualizada: "+OCC_LEVELS[level].label.toLowerCase());
 }
@@ -1683,19 +1700,19 @@ function pedirPermisoNotif(){
 function lanzarNotifsDelDia(){
   if(!("Notification" in window)||Notification.permission!=="granted")return;
   var hoyKey=new Date().toISOString().slice(0,10);
-  if(loadJSON("bpna_notifday_"+CURRENT,null)===hoyKey)return; // una vez al día
+  if(Brain.getNotifDay(CURRENT)===hoyKey)return; // una vez al día
   var avisos=calcularAvisos().filter(function(a){return a.dias<=1;});
   if(avisos.length){
     try{ new Notification("Bibliotecas de Pamplona",{body:avisos.length===1?avisos[0].title+" · "+avisos[0].sub:"Tienes "+avisos.length+" avisos para hoy y mañana"}); }catch(e){}
   }
-  saveJSON("bpna_notifday_"+CURRENT,hoyKey);
+  Brain.setNotifDay(CURRENT,hoyKey);
 }
 
 /* ===================== COMPARTIR ESTADO ===================== */
 function compartirEstado(){
   if(!studyTimer.running){showToast("Empieza una sesión para compartir dónde estudias");return;}
   var b=BIBLIOTECAS[studyTimer.bibIndex];
-  var users=loadJSON(DB_USERS,{}); var nombre=(users[CURRENT]&&users[CURRENT].name)||"Alguien";
+  var users=Brain.getUsers(); var nombre=(users[CURRENT]&&users[CURRENT].name)||"Alguien";
   var cierre=minutosHastaCierre(b);
   var hasta=""; if(cierre>0){var fin=new Date(Date.now()+cierre*60000);hasta=String(fin.getHours()).padStart(2,"0")+":"+String(fin.getMinutes()).padStart(2,"0");}
   var payload={n:nombre,b:studyTimer.bibIndex,t:Date.now(),h:hasta};
@@ -1808,14 +1825,14 @@ window.addEventListener("DOMContentLoaded",function(){
         var res=await sb.auth.getSession();
         if(res.data.session&&res.data.session.user){
           var u=res.data.session.user;CURRENT=u.email;
-          var users=loadJSON(DB_USERS,{});if(!users[CURRENT])users[CURRENT]={name:(u.user_metadata&&u.user_metadata.name)||CURRENT.split("@")[0],pass:""};saveJSON(DB_USERS,users);
+          var users=Brain.getUsers();if(!users[CURRENT])users[CURRENT]={name:(u.user_metadata&&u.user_metadata.name)||CURRENT.split("@")[0],pass:""};Brain.saveUsers(users);
           await socialEnsureProfile(u,users[CURRENT].name,CURRENT);
           await enterApp();return;
         }
       }catch(e){console.warn(e);}
     }
-    var sess=loadJSON(SESSION_KEY,null);
-    if(sess&&loadJSON(DB_USERS,{})[sess]){CURRENT=sess;enterApp();}
+    var sess=Brain.getSession();
+    if(sess&&Brain.getUsers()[sess]){CURRENT=sess;enterApp();}
   })();
 });
 
