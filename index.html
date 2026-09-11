@@ -102,6 +102,12 @@
   .chincheta .cuerpo{position:absolute;top:0;left:0;width:34px;height:34px;border-radius:50%;
     background:linear-gradient(140deg,var(--acento),#8b7bef);border:3px solid #fff;display:flex;align-items:center;justify-content:center}
   .chincheta.closed .cuerpo{background:linear-gradient(140deg,#94a3b8,#64748b)}
+  .chincheta.occ-libre .cuerpo{background:linear-gradient(140deg,#22c55e,#16a34a)}
+  .chincheta.occ-media .cuerpo{background:linear-gradient(140deg,#f59e0b,#d97706)}
+  .chincheta.occ-llena .cuerpo{background:linear-gradient(140deg,#ef4444,#dc2626)}
+  .chincheta.occ-libre .punta::after{border-top-color:#16a34a}
+  .chincheta.occ-media .punta::after{border-top-color:#d97706}
+  .chincheta.occ-llena .punta::after{border-top-color:#dc2626}
   .chincheta.sel .cuerpo{background:linear-gradient(140deg,var(--acento2),#1ec5c6)}
   .chincheta .cuerpo span{color:#fff;font-weight:800;font-size:14px}
   .chincheta .punta{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:0;height:0;
@@ -206,19 +212,26 @@
   .cal-top h2{font-size:20px;font-weight:800;text-transform:capitalize}
   .cal-nav{display:flex;gap:8px}
   .cal-nav button{width:38px;height:38px;border-radius:12px;border:1px solid var(--borde);background:var(--glass);cursor:pointer;font-size:18px;font-weight:700;color:var(--acento)}
-  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:7px}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:minmax(58px,auto);gap:7px}
   .cal-dow{text-align:center;font-size:11px;font-weight:700;color:var(--suave);text-transform:uppercase;padding-bottom:4px}
-  .cal-cell{aspect-ratio:1;border-radius:13px;border:1px solid rgba(148,163,184,.25);background:rgba(255,255,255,.45);
+  .cal-cell{border-radius:13px;border:1px solid rgba(148,163,184,.25);background:rgba(255,255,255,.45);
     padding:6px;cursor:pointer;position:relative;transition:background .12s,border-color .12s;overflow:hidden}
   .cal-cell:hover{background:rgba(255,255,255,.8);border-color:var(--acento)}
   .cal-cell.empty{background:transparent;border:none;cursor:default}
   .cal-cell.today{border-color:var(--acento);border-width:2px}
   .cal-cell .dnum{font-size:13px;font-weight:700}
   .cal-cell.today .dnum{color:var(--acento)}
-  .cal-cell .evdot{display:flex;gap:3px;margin-top:3px;flex-wrap:wrap}
-  .cal-cell .evdot i{width:6px;height:6px;border-radius:50%;display:block}
+  .cal-cell .evlist{display:flex;flex-direction:column;gap:2px;margin-top:4px}
+  .cal-cell .evtxt{font-size:9.5px;line-height:1.25;padding:2px 5px;border-radius:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff;font-weight:700}
   .ev-examen{background:#ef4444}.ev-tarea{background:#3b82f6}.ev-otro{background:#f59e0b}
+  .evtxt.ev-examen-txt{background:rgba(239,68,68,.85)}
+  .evtxt.ev-tarea-txt{background:rgba(59,130,246,.85)}
+  .evtxt.ev-otro-txt{background:rgba(245,158,11,.85)}
   .cal-cell .more{font-size:9px;color:var(--suave);position:absolute;bottom:4px;right:6px}
+  .pray-row{display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:13px;background:rgba(255,255,255,.55);margin-bottom:8px}
+  .pray-row .pi{flex:1;min-width:0}.pray-row .pi b{font-size:13.5px;display:block}.pray-row .pi small{font-size:11.5px;color:var(--suave)}
+  .pray-row button{border:none;border-radius:10px;padding:8px 12px;font-weight:800;font-size:12.5px;cursor:pointer;background:rgba(108,92,231,.14);color:var(--acento);white-space:nowrap}
+  .pray-row button:disabled{opacity:.55;cursor:default}
   .legend{display:flex;gap:16px;margin-top:14px;font-size:12px;color:var(--suave);flex-wrap:wrap}
   .legend span{display:flex;align-items:center;gap:6px}
   .legend i{width:9px;height:9px;border-radius:50%}
@@ -278,7 +291,7 @@
   .source-row .arrow{color:var(--acento);flex-shrink:0}
   .evt-row{display:flex;align-items:flex-start;gap:11px;padding:12px 13px;border-radius:13px;background:rgba(255,255,255,.55);margin-bottom:8px}
   .evt-row .etag{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-top:5px}
-  .evt-charla{background:#6c5ce7}.evt-ponencia{background:#00b894}.evt-debate{background:#e17055}.evt-jornada{background:#0984e3}.evt-otro{background:#f59e0b}
+  .evt-charla{background:#6c5ce7}.evt-ponencia{background:#00b894}.evt-debate{background:#e17055}.evt-jornada{background:#0984e3}.evt-otro{background:#f59e0b}.evt-examen{background:#ef4444}.evt-tarea{background:#3b82f6}
   .evt-row .ei{flex:1;min-width:0}
   .evt-row .ei b{font-size:13.5px;display:block}
   .evt-row .ei small{font-size:11.5px;color:var(--suave);text-transform:capitalize}
@@ -512,8 +525,14 @@
   <div id="viewStudy" class="scrollview hidden">
     <div class="container">
       <div class="page-title">Modo estudio</div>
-      <div class="page-sub">Cronómetro de sesiones y meta diaria de horas.</div>
-      <div class="glasscard studyhero">
+      <div class="page-sub">Cronómetro de sesiones y meta de horas.</div>
+      <div class="seg" id="studyTab" style="margin-bottom:16px"><button data-t="crono" class="on">Cronómetro</button><button data-t="ofrecer">Ofrecer estudio</button></div>
+      <div id="studyOfferPanel" class="hidden glasscard" style="margin-bottom:18px">
+        <div class="page-sub" style="margin-bottom:12px">Dedica este tiempo de estudio a alguien o algo. Se guardará junto a tu próxima sesión.</div>
+        <div class="field"><label>¿Por quién o qué ofreces tu estudio?</label><textarea id="offerText" rows="4" placeholder="Ej: Por mi abuela, que se recupere pronto…" style="width:100%;padding:11px 13px;border-radius:12px;border:1px solid rgba(148,163,184,.4);background:rgba(255,255,255,.7);font-size:14px;font-family:inherit;color:var(--texto);resize:vertical"></textarea></div>
+        <button class="btn sm" id="btnSaveOffer">Guardar</button>
+      </div>
+      <div class="glasscard studyhero" id="studyCronoPanel">
         <div class="ring-wrap">
           <svg width="180" height="180" viewBox="0 0 180 180">
             <circle cx="90" cy="90" r="80" fill="none" stroke="rgba(148,163,184,.25)" stroke-width="14"/>
@@ -529,10 +548,10 @@
         <div class="study-controls">
           <button class="btn sm" id="btnStart">▶ Empezar</button>
           <button class="btn sm danger hidden" id="btnStop">■ Terminar sesión</button>
-          <button class="btn sm ghost" id="btnGoal">Meta diaria</button>
+          <button class="btn sm ghost" id="btnGoal">Meta de estudio</button>
         </div>
       </div>
-      <div class="stat-grid">
+      <div class="stat-grid" id="studyStats">
         <div class="stat"><div class="num" id="stToday">0h 0m</div><div class="lab">Hoy</div></div>
         <div class="stat"><div class="num" id="stWeek">0h 0m</div><div class="lab">Esta semana</div></div>
         <div class="stat"><div class="num" id="stSessions">0</div><div class="lab">Sesiones totales</div></div>
@@ -557,6 +576,12 @@
           <span><i class="ev-tarea"></i> Tarea</span>
           <span><i class="ev-otro"></i> Otro</span>
         </div>
+      </div>
+
+      <div class="section-title hidden" id="prayTitle">🙏 Exámenes de tus amigos</div>
+      <div class="glasscard hidden" id="prayCard">
+        <div class="page-sub" style="margin-bottom:12px">Reza por el examen de un amigo. Se registra y le avisamos.</div>
+        <div id="prayList"></div>
       </div>
     </div>
   </div>
@@ -588,6 +613,21 @@
         <div class="page-sub" style="margin-bottom:14px">Fuentes verdaderas y actualizadas. Ábrelas para descubrir charlas y ponencias, y añade las que te interesen a tu agenda.</div>
         <div id="sourceList"></div>
       </div>
+    </div>
+  </div>
+
+  <!-- VISTA BLOG -->
+  <div id="viewBlog" class="scrollview hidden">
+    <div class="container">
+      <div class="page-title">Blog de lecturas</div>
+      <div class="page-sub">Comenta los libros que has leído. Lo verán los demás usuarios de la app.</div>
+      <div class="social-note hidden" id="blogNote"></div>
+      <div class="glasscard" style="margin-bottom:18px">
+        <div class="field"><label>Libro</label><input type="text" id="blogBook" placeholder="Ej: Cien años de soledad"></div>
+        <div class="field"><label>Tu comentario</label><textarea id="blogComment" rows="3" placeholder="¿Qué te ha parecido?" style="width:100%;padding:11px 13px;border-radius:12px;border:1px solid rgba(148,163,184,.4);background:rgba(255,255,255,.7);font-size:14px;font-family:inherit;color:var(--texto);resize:vertical"></textarea></div>
+        <button class="btn sm" id="btnPostBlog">Publicar</button>
+      </div>
+      <div id="blogList"></div>
     </div>
   </div>
 
@@ -657,6 +697,7 @@
     <button data-view="study"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg><span class="dlbl">Estudio</span></button>
     <button data-view="cal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="dlbl">Calendario</span></button>
     <button data-view="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><span class="dlbl">Eventos</span></button>
+    <button data-view="blog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span class="dlbl">Blog</span></button>
     <button data-view="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="dlbl">Perfil</span></button>
   </div>
 
@@ -696,6 +737,29 @@ const BIBLIOTECAS=[
   {nombre:"Biblioteca Universidad de Navarra",lat:42.8015014,lon:-1.6571458,dir:"Edificio Biblioteca Central, Campus Universitario, 31009",tel:"+34 948 42 56 26",web:"https://www.unav.edu/web/biblioteca",rating:4.8,reviews:161,horas:semana([[h(8,0),h(21,0)]],[[h(8,0),h(21,0)]],[[h(8,0),h(21,0)]],[[h(8,0),h(21,0)]],[[h(8,0),h(21,0)]],[[h(8,0),h(21,0)]],[[h(10,0),h(14,0)]])},
   {nombre:"Biblioteca UPNA · Campus de Arrosadía",lat:42.7995447,lon:-1.6357744,dir:"C. Cataluña, s/n, 31006",tel:"+34 948 16 90 60",web:"https://www.unavarra.es/biblioteca",rating:3.7,reviews:96,horas:semana([[h(8,0),h(21,0)]],[[h(8,0),h(21,0)]],[[h(8,0),h(21,0)]],[[h(8,0),h(21,0)]],[[h(8,0),h(21,0)]],[],[])}
 ];
+// Acceso y accesibilidad: datos investigados en fuentes oficiales (navarra.es, unav.edu, unavarra.es) y
+// directorios de accesibilidad de terceros (Aseci, Equalitas Vitae). Donde no se encontró fuente fiable, se
+// marca explícitamente "Sin confirmar" en vez de inventar el dato.
+var ACCESO_INFO={
+  "Biblioteca de Navarra":{acceso:{tipo:"libre",detalle:"Acceso libre y gratuito a sala, consulta y wifi. El carné (gratuito) solo hace falta para préstamo u ordenadores."},accesibilidad:{sillaRuedas:true,turistas:true,gratisDias:null,notas:"20 puestos de consulta y wifi gratis, salas de trabajo en grupo. Acceso y aparcamiento adaptados para silla de ruedas."}},
+  "Biblioteca Pública San Francisco":{acceso:{tipo:"libre",detalle:"Acceso libre y gratuito, como el resto de la red pública de Navarra."},accesibilidad:{sillaRuedas:true,turistas:true,gratisDias:null,notas:"Bucle magnético en el mostrador de atención."}},
+  "Biblioteca Pública Yamaguchi":{acceso:{tipo:"libre",detalle:"Acceso libre y gratuito, como el resto de la red pública de Navarra."},accesibilidad:{sillaRuedas:true,turistas:true,gratisDias:null,notas:"Sala de lectura y sala infantil. Aparcamiento adaptado."}},
+  "Biblioteca Civican":{acceso:{tipo:"libre",detalle:"Acceso libre a la sala de lectura. Para préstamo puede pedirse la tarjeta CIVICÁN (sin confirmar si tiene coste)."},accesibilidad:{sillaRuedas:true,turistas:true,gratisDias:null,notas:"Entrada accesible, ascensor a la planta de adultos, aseos adaptados y ordenador adaptado para discapacidad visual. Es una fundación privada dentro de la red pública."}},
+  "Biblioteca Pública de la Milagrosa":{acceso:{tipo:"libre",detalle:"Acceso libre y gratuito, como el resto de la red pública de Navarra."},accesibilidad:{sillaRuedas:true,turistas:true,gratisDias:null,notas:"Entrada accesible, en calle peatonal."}},
+  "Biblioteca Pública de Iturrama":{acceso:{tipo:"libre",detalle:"Acceso libre y gratuito, como el resto de la red pública de Navarra."},accesibilidad:{sillaRuedas:null,turistas:true,gratisDias:null,notas:"Sin confirmar accesibilidad física (no se encontró fuente oficial ni de terceros)."}},
+  "Biblioteca Pública de la Txantrea":{acceso:{tipo:"libre",detalle:"Acceso libre y gratuito, como el resto de la red pública de Navarra."},accesibilidad:{sillaRuedas:true,turistas:true,gratisDias:null,notas:"Acceso y aparcamiento adaptados."}},
+  "Biblioteca Pública de Mendillorri":{acceso:{tipo:"libre",detalle:"Acceso libre y gratuito, como el resto de la red pública de Navarra."},accesibilidad:{sillaRuedas:true,turistas:true,gratisDias:null,notas:"Acceso y aparcamiento adaptados."}},
+  "Biblioteca Pública de San Pedro":{acceso:{tipo:"libre",detalle:"Acceso libre y gratuito, como el resto de la red pública de Navarra."},accesibilidad:{sillaRuedas:true,turistas:true,gratisDias:null,notas:"Acceso, aparcamiento y aseo adaptados."}},
+  "Biblioteca Pública de San Jorge":{acceso:{tipo:"libre",detalle:"Acceso libre y gratuito, como el resto de la red pública de Navarra."},accesibilidad:{sillaRuedas:null,turistas:true,gratisDias:null,notas:"Sin confirmar accesibilidad física (no se encontró fuente oficial ni de terceros)."}},
+  "Biblioteca Pública de Etxabakoitz":{acceso:{tipo:"libre",detalle:"Acceso libre y gratuito, como el resto de la red pública de Navarra."},accesibilidad:{sillaRuedas:null,turistas:true,gratisDias:null,notas:"Sin confirmar accesibilidad física (no se encontró fuente oficial ni de terceros)."}},
+  "Biblioteca Universidad de Navarra":{acceso:{tipo:"restringido",detalle:"Reservada a comunidad universitaria (UNAV, CIMA, CUN), antiguos alumnos con carné y usuarios con convenio. Un visitante externo debe ser invitado por un departamento y tramitar tarjeta: no es de acceso libre para público general."},accesibilidad:{sillaRuedas:true,turistas:false,gratisDias:null,notas:"Servicio de \"biblioteca accesible\" con atención personalizada y señalización Navilens para movilidad reducida o déficit visual/auditivo."}},
+  "Biblioteca UPNA · Campus de Arrosadía":{acceso:{tipo:"libre",detalle:"Sala de lectura abierta al público general, EXCEPTO en época de exámenes (solo comunidad universitaria). El préstamo es solo para comunidad universitaria o convenios."},accesibilidad:{sillaRuedas:true,turistas:true,gratisDias:null,notas:"Entrada y aparcamiento accesibles. En época de exámenes se restringen los puestos de estudio a la comunidad universitaria."}}
+};
+BIBLIOTECAS.forEach(function(b){
+  var info=ACCESO_INFO[b.nombre];
+  b.acceso=info?info.acceso:{tipo:"desconocido",detalle:"Sin confirmar"};
+  b.accesibilidad=info?info.accesibilidad:{sillaRuedas:null,turistas:null,gratisDias:null,notas:"Sin confirmar"};
+});
 function fmtHoras(min){const hh=Math.floor(min/60),mm=min%60;return hh+":"+String(mm).padStart(2,"0");}
 function estadoBib(b){const now=new Date(),d=now.getDay(),m=now.getHours()*60+now.getMinutes();
   const tr=horarioVigente(b)[d]||[];for(var k=0;k<tr.length;k++){if(m>=tr[k][0]&&m<tr[k][1])return true;}return false;}
@@ -716,14 +780,15 @@ const OCC_TTL_MIN=60;
 const SUPABASE_URL="PEGA_AQUI_TU_PROJECT_URL";
 const SUPABASE_ANON_KEY="PEGA_AQUI_TU_ANON_KEY";
 let SB=null;
-let SOCIAL={user:null,profile:null,friends:[],requests:[],sent:[],events:[],presence:[],friendMarkers:[],timer:null};
+let SOCIAL={user:null,profile:null,friends:[],requests:[],sent:[],events:[],presence:[],friendMarkers:[],timer:null,prayerCounts:{},prayedByMe:{}};
 function socialConfigured(){return SUPABASE_URL.indexOf("https://")===0 && SUPABASE_ANON_KEY && SUPABASE_ANON_KEY.indexOf("PEGA_AQUI")===-1 && typeof window.supabase!=="undefined";}
 function socialClient(){if(!socialConfigured())return null;if(!SB)SB=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);return SB;}
 function loadJSON(k,def){try{var v=localStorage.getItem(k);return v?JSON.parse(v):def;}catch(e){return def;}}
 function saveJSON(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
 function hashPass(s){var hsh=5381;for(var i=0;i<s.length;i++){hsh=((hsh<<5)+hsh)+s.charCodeAt(i);hsh=hsh&hsh;}return String(hsh);}
 function userKey(email){return "bpna_data_"+email.toLowerCase();}
-function dataDefault(){return {sessions:[],events:{},loans:[],goalMin:240,fav:null,geoCheck:false,sharePresence:false,occ:{},acadEvents:[]};}
+function dataDefault(){return {sessions:[],events:{},loans:[],goalMin:240,goalPeriod:"day",fav:null,geoCheck:false,sharePresence:false,occ:{},acadEvents:[],offeringText:""};}
+function genId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
 
 /* ===================== BRAIN: capa única de guardado local =====================
    Todo lo que la app recuerda pasa por aquí. Nada sale a internet: son solo
@@ -739,14 +804,17 @@ const Brain={
   getOccupancy:function(){return loadJSON(DB_OCC,{});},
   saveOccupancy:function(all){saveJSON(DB_OCC,all);},
   getNotifDay:function(email){return loadJSON("bpna_notifday_"+email,null);},
-  setNotifDay:function(email,dayKey){saveJSON("bpna_notifday_"+email,dayKey);}
+  setNotifDay:function(email,dayKey){saveJSON("bpna_notifday_"+email,dayKey);},
+  getLastPrayerCheck:function(email){return loadJSON("bpna_prayercheck_"+email,null);},
+  setLastPrayerCheck:function(email,iso){saveJSON("bpna_prayercheck_"+email,iso);}
 };
 
 let CURRENT=null;   // email
 let DATA=null;      // datos del usuario actual
 function loadUserData(){DATA=Brain.getUserData(CURRENT);
   if(!DATA.events)DATA.events={}; if(!DATA.sessions)DATA.sessions=[]; if(!DATA.loans)DATA.loans=[];
-  if(!DATA.goalMin)DATA.goalMin=240; if(typeof DATA.geoCheck!=="boolean")DATA.geoCheck=false; if(typeof DATA.sharePresence!=="boolean")DATA.sharePresence=false; if(!DATA.occ)DATA.occ={}; if(!DATA.acadEvents)DATA.acadEvents=[];}
+  if(!DATA.goalMin)DATA.goalMin=240; if(typeof DATA.geoCheck!=="boolean")DATA.geoCheck=false; if(typeof DATA.sharePresence!=="boolean")DATA.sharePresence=false; if(!DATA.occ)DATA.occ={}; if(!DATA.acadEvents)DATA.acadEvents=[];
+  if(DATA.goalPeriod!=="day"&&DATA.goalPeriod!=="week")DATA.goalPeriod="day"; if(typeof DATA.offeringText!=="string")DATA.offeringText="";}
 function saveUserData(){Brain.saveUserData(CURRENT,DATA);}
 
 
@@ -785,8 +853,9 @@ async function socialInitAfterLogin(){
     var users=Brain.getUsers(), name=(users[CURRENT]&&users[CURRENT].name)||(user.user_metadata&&user.user_metadata.name)||user.email.split("@")[0];
     await socialEnsureProfile(user,name,user.email);
     await socialRefreshAll();
+    await socialCheckNewPrayers();
     if(SOCIAL.timer)clearInterval(SOCIAL.timer);
-    SOCIAL.timer=setInterval(function(){socialHeartbeat();socialRefreshAll();},45000);
+    SOCIAL.timer=setInterval(function(){socialHeartbeat();socialRefreshAll();socialCheckNewPrayers();},45000);
   }catch(e){console.warn(e);socialRenderPanel("No he podido cargar Supabase: "+(e.message||e));}
 }
 async function socialRefreshAll(){
@@ -794,9 +863,101 @@ async function socialRefreshAll(){
   await socialLoadFriends();
   await socialLoadPresence();
   await socialLoadFriendEvents();
+  await socialLoadPrayerCounts();
   socialRenderPanel();
   socialRenderFriendEvents();
   socialRenderFriendMarkers();
+  renderCalFriendExams();
+}
+/* ===== REZAR POR UN EXAMEN ===== */
+async function socialLoadPrayerCounts(){
+  var sb=socialClient(); if(!sb||!SOCIAL.user){SOCIAL.prayerCounts={};SOCIAL.prayedByMe={};return;}
+  var examIds=SOCIAL.events.filter(function(e){return e.type==="examen";}).map(function(e){return e.local_id;});
+  if(!examIds.length){SOCIAL.prayerCounts={};SOCIAL.prayedByMe={};return;}
+  var res=await sb.from("prayers").select("event_local_id,prayed_by_id").in("event_local_id",examIds);
+  var counts={},mine={};
+  if(!res.error&&res.data)res.data.forEach(function(r){
+    counts[r.event_local_id]=(counts[r.event_local_id]||0)+1;
+    if(r.prayed_by_id===SOCIAL.user.id)mine[r.event_local_id]=true;
+  });
+  SOCIAL.prayerCounts=counts;SOCIAL.prayedByMe=mine;
+}
+async function prayForExam(localId,ownerId,title){
+  var sb=socialClient(); if(!sb||!SOCIAL.user){showToast("Necesitas amigos y Supabase configurado");return;}
+  var name=(SOCIAL.profile&&SOCIAL.profile.name)||"Alguien";
+  var ins=await sb.from("prayers").insert({event_owner_id:ownerId,event_local_id:localId,event_title:title,prayed_by_id:SOCIAL.user.id,prayed_by_name:name});
+  if(ins.error){
+    if(ins.error.code==="23505"){showToast("Ya habías rezado por este examen 🙏");}
+    else{showToast("No se pudo registrar: "+ins.error.message);}
+    return;
+  }
+  showToast("🙏 Has rezado por el examen de "+title);
+  await socialLoadPrayerCounts();
+  renderCalFriendExams();socialRenderFriendEvents();
+}
+async function socialCheckNewPrayers(){
+  var sb=socialClient(); if(!sb||!SOCIAL.user||!CURRENT)return;
+  var since=Brain.getLastPrayerCheck(CURRENT)||new Date(Date.now()-86400000).toISOString();
+  var res=await sb.from("prayers").select("*").eq("event_owner_id",SOCIAL.user.id).gt("created_at",since).order("created_at",{ascending:true});
+  if(res.error||!res.data||!res.data.length)return;
+  res.data.forEach(function(p){
+    showToast("🙏 "+(p.prayed_by_name||"Alguien")+" ha rezado por tu examen de "+p.event_title);
+    try{ if("Notification" in window && Notification.permission==="granted") new Notification("Bibliotecas de Pamplona",{body:(p.prayed_by_name||"Alguien")+" ha rezado por tu examen de "+p.event_title}); }catch(e){}
+  });
+  Brain.setLastPrayerCheck(CURRENT,res.data[res.data.length-1].created_at);
+}
+function renderCalFriendExams(){
+  var title=$("prayTitle"),card=$("prayCard"),list=$("prayList"); if(!title||!card||!list)return;
+  var exams=SOCIAL.events.filter(function(e){return e.type==="examen";});
+  if(!exams.length){title.classList.add("hidden");card.classList.add("hidden");return;}
+  title.classList.remove("hidden");card.classList.remove("hidden");
+  list.innerHTML=exams.map(function(ev){
+    var d=new Date(ev.date+"T00:00:00"), dd=String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0");
+    var who=socialNameById(ev.owner_id), n=SOCIAL.prayerCounts[ev.local_id]||0, ya=!!SOCIAL.prayedByMe[ev.local_id];
+    return '<div class="pray-row"><div class="pi"><b>'+escapeHTML(ev.title)+'</b><small>De '+escapeHTML(who)+' · '+dd+(n?' · 🙏 '+n:'')+'</small></div>'+
+      '<button '+(ya?"disabled":"")+' onclick="prayForExam(\''+escapeHTML(ev.local_id)+'\',\''+escapeHTML(ev.owner_id)+'\',\''+escapeHTML(ev.title).replace(/'/g,"\\'")+'\')">'+(ya?"🙏 Ya recé":"🙏 Rezar")+'</button></div>';
+  }).join("");
+}
+/* ===== BLOG DE LECTURAS (público entre usuarios de la app) ===== */
+function timeAgo(iso){
+  var s=Math.max(1,Math.round((Date.now()-new Date(iso).getTime())/1000));
+  if(s<60)return "hace un momento";
+  var m=Math.round(s/60);if(m<60)return "hace "+m+" min";
+  var h=Math.round(m/60);if(h<24)return "hace "+h+" h";
+  var d=Math.round(h/24);return "hace "+d+" d";
+}
+async function renderBlog(){
+  var note=$("blogNote"),list=$("blogList"); if(!note||!list)return;
+  var sb=socialClient();
+  if(!sb){
+    note.classList.remove("hidden");
+    note.innerHTML='Modo local: pega tus claves de <b>Supabase</b> en <code>SUPABASE_URL</code> y <code>SUPABASE_ANON_KEY</code> para que tu blog sea público y lo lean otros usuarios.';
+    list.innerHTML='<div class="empty-note">Configura Supabase para ver y publicar en el blog</div>';
+    return;
+  }
+  note.classList.add("hidden");
+  list.innerHTML='<div class="empty-note">Cargando…</div>';
+  var res=await sb.from("book_posts").select("*").order("created_at",{ascending:false}).limit(50);
+  if(res.error){list.innerHTML='<div class="empty-note">No se pudo cargar el blog</div>';return;}
+  var posts=res.data||[];
+  if(!posts.length){list.innerHTML='<div class="empty-note">Nadie ha publicado todavía. ¡Sé el primero!</div>';return;}
+  list.innerHTML=posts.map(function(p){
+    return '<div class="glasscard" style="margin-bottom:12px"><div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'+
+      '<div class="avatar" style="width:34px;height:34px;font-size:14px">'+socialInitial(p.author_name)+'</div>'+
+      '<div style="flex:1;min-width:0"><b style="font-size:13.5px;display:block">'+escapeHTML(p.author_name||"Alguien")+'</b><small style="font-size:11px;color:var(--suave)">'+timeAgo(p.created_at)+'</small></div></div>'+
+      '<b style="font-size:14.5px;display:block;margin-bottom:4px">📖 '+escapeHTML(p.book_title)+'</b>'+
+      '<div style="font-size:13px;color:var(--suave);line-height:1.5">'+escapeHTML(p.comment)+'</div></div>';
+  }).join("");
+}
+async function postBlog(){
+  var sb=socialClient(); if(!sb||!SOCIAL.user){showToast("Configura Supabase e inicia sesión para publicar");return;}
+  var book=$("blogBook").value.trim(), comment=$("blogComment").value.trim();
+  if(!book||!comment){showToast("Pon el libro y tu comentario");return;}
+  var name=(SOCIAL.profile&&SOCIAL.profile.name)||CURRENT.split("@")[0];
+  var ins=await sb.from("book_posts").insert({user_id:SOCIAL.user.id,author_name:name,book_title:book,comment:comment});
+  if(ins.error){showToast("No se pudo publicar: "+ins.error.message);return;}
+  $("blogBook").value="";$("blogComment").value="";
+  showToast("Publicado");renderBlog();
 }
 async function socialLoadFriends(){
   var sb=socialClient(), me=SOCIAL.user.id; if(!sb)return;
@@ -922,7 +1083,12 @@ function socialRenderFriendEvents(){
   list.innerHTML=SOCIAL.events.map(function(ev){
     var d=new Date(ev.date+"T00:00:00"), dd=String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0");
     var who=socialNameById(ev.owner_id);
-    return '<div class="friend-event"><span class="etag evt-'+escapeHTML(ev.type||"otro")+'"></span><div style="flex:1"><div class="who">'+escapeHTML(who)+'</div><b>'+escapeHTML(ev.title)+'</b><small>'+dd+(ev.time?' · '+escapeHTML(ev.time):'')+(ev.place?' · '+escapeHTML(ev.place):'')+'</small>'+(ev.url?'<br><a href="'+escapeHTML(ev.url)+'" target="_blank" rel="noopener" style="font-size:11.5px;color:var(--acento);font-weight:700;text-decoration:none">Ver más ↗</a>':'')+'</div></div>';
+    var prayBtn="";
+    if(ev.type==="examen"){
+      var np=SOCIAL.prayerCounts[ev.local_id]||0, yap=!!SOCIAL.prayedByMe[ev.local_id];
+      prayBtn='<button '+(yap?"disabled":"")+' style="margin-top:6px;border:none;border-radius:10px;padding:6px 10px;font-weight:800;font-size:11.5px;cursor:pointer;background:rgba(108,92,231,.14);color:var(--acento)" onclick="prayForExam(\''+escapeHTML(ev.local_id)+'\',\''+escapeHTML(ev.owner_id)+'\',\''+escapeHTML(ev.title).replace(/'/g,"\\'")+'\')">'+(yap?"🙏 Ya recé":"🙏 Rezar")+(np?" · "+np:"")+'</button>';
+    }
+    return '<div class="friend-event"><span class="etag evt-'+escapeHTML(ev.type||"otro")+'"></span><div style="flex:1"><div class="who">'+escapeHTML(who)+'</div><b>'+escapeHTML(ev.title)+'</b><small>'+dd+(ev.time?' · '+escapeHTML(ev.time):'')+(ev.place?' · '+escapeHTML(ev.place):'')+'</small>'+(ev.url?'<br><a href="'+escapeHTML(ev.url)+'" target="_blank" rel="noopener" style="font-size:11.5px;color:var(--acento);font-weight:700;text-decoration:none">Ver más ↗</a>':'')+prayBtn+'</div></div>';
   }).join("");
 }
 function socialRenderFriendMarkers(){
@@ -1036,7 +1202,7 @@ function logout(){
 }
 
 /* ===================== NAVEGACIÓN ===================== */
-const VIEWS={map:"viewMap",study:"viewStudy",cal:"viewCal",events:"viewEvents",profile:"viewProfile"};
+const VIEWS={map:"viewMap",study:"viewStudy",cal:"viewCal",events:"viewEvents",blog:"viewBlog",profile:"viewProfile"};
 function goView(v){
   for(var k in VIEWS){ $(VIEWS[k]).classList.toggle("hidden",k!==v); }
   $("mapActions").style.visibility = (v==="map")?"visible":"hidden";
@@ -1045,6 +1211,7 @@ function goView(v){
   if(v==="study")renderStudy();
   if(v==="cal")renderCal();
   if(v==="events")renderEvents();
+  if(v==="blog")renderBlog();
   if(v==="profile")renderProfile();
 }
 
@@ -1112,9 +1279,10 @@ function refreshOccUI(i){
   if(markers&&markers.length){
     if(typeof i==="number"&&markers[i]){
       markers[i].setPopupContent(popupHTML(BIBLIOTECAS[i],i));
+      if(markers[i].setIcon)markers[i].setIcon(chinchetaIcon(i));
       if(window.__map&&window.__map.hasLayer(markers[i]))markers[i].openPopup();
     }else{
-      markers.forEach(function(mk,j){mk.setPopupContent(popupHTML(BIBLIOTECAS[j],j));});
+      markers.forEach(function(mk,j){mk.setPopupContent(popupHTML(BIBLIOTECAS[j],j));if(mk.setIcon)mk.setIcon(chinchetaIcon(j));});
     }
   }
   if(!$('nowPanel').classList.contains('hidden'))abrirComparador();
@@ -1135,8 +1303,25 @@ function popupHTML(b,i){
     var txt=tr.length?tr.map(function(t){return fmtHoras(t[0])+"–"+fmtHoras(t[1]);}).join(", "):'<span class="closed-day">Cerrado</span>';
     s+='<tr class="'+(di===hoy?"today":"")+'"><td>'+DIAS[di]+'</td><td>'+txt+'</td></tr>';}
   s+='</table></div>';
+  s+=accesoAccesibilidadHTML(b);
   s+=occControlsHTML(i);
   s+='<button class="btnstudy" onclick="startStudyAt('+i+')">▶ Estudiar aquí</button>';
+  s+='</div>';
+  return s;
+}
+function accesoAccesibilidadHTML(b){
+  var ac=b.acceso||{tipo:"desconocido"}, ax=b.accesibilidad||{};
+  var tipoTxt = ac.tipo==="libre" ? "🔓 Entrada libre y gratuita"
+    : ac.tipo==="restringido" ? "🔒 Acceso restringido / requiere carnet"
+    : "❔ Tipo de acceso: sin confirmar";
+  var s='<div class="hours"><h4>Acceso</h4><div style="font-size:12.5px;color:var(--suave)">'+escapeHTML(tipoTxt)+(ac.detalle?' · '+escapeHTML(ac.detalle):'')+'</div>';
+  var badges=[];
+  if(ax.sillaRuedas===true)badges.push("♿ Accesible en silla de ruedas");
+  if(ax.sillaRuedas===false)badges.push("♿ No adaptada");
+  if(ax.turistas===true)badges.push("🧳 Admite visitantes ocasionales");
+  if(ax.gratisDias)badges.push("🎟️ "+escapeHTML(ax.gratisDias));
+  if(badges.length)s+='<div style="font-size:12.5px;color:var(--suave);margin-top:5px">'+badges.join(" · ")+'</div>';
+  if(ax.notas&&ax.notas!=="Sin confirmar")s+='<div style="font-size:11.5px;color:var(--suave);margin-top:5px">'+escapeHTML(ax.notas)+'</div>';
   s+='</div>';
   return s;
 }
@@ -1171,6 +1356,13 @@ function buildList(){
   });
   $("panelCount").textContent=BIBLIOTECAS.length+" bibliotecas en Pamplona";
 }
+// Color de la chincheta según la afluencia reportada (sin números): verde/ámbar/rojo, gris si está cerrada, morado si no hay datos.
+function chinchetaIcon(i){
+  var b=BIBLIOTECAS[i], abierto=estadoBib(b);
+  var occClass="";
+  if(abierto){var o=occSummary(i); if(o)occClass=" occ-"+o.level;}
+  return L.divIcon({className:"",html:'<div class="chincheta'+(abierto?"":" closed")+occClass+'"><div class="cuerpo"></div><div class="punta"></div></div>',iconSize:[34,44],iconAnchor:[17,44],popupAnchor:[0,-44]});
+}
 // El mapa con chinchetas se monta cuando Leaflet está disponible
 function initMap(){
   if(typeof L==="undefined"){if((initMap._n=(initMap._n||0)+1)<40)setTimeout(initMap,250);return;}
@@ -1182,9 +1374,7 @@ function initMap(){
     {attribution:'&copy; OpenStreetMap &copy; CARTO',maxZoom:19}).addTo(map);
   markers=[];
   BIBLIOTECAS.forEach(function(b,i){
-    var abierto=estadoBib(b);
-    var icon=L.divIcon({className:"",html:'<div class="chincheta '+(abierto?"":"closed")+'"><div class="cuerpo"><span>'+(i+1)+'</span></div><div class="punta"></div></div>',iconSize:[34,44],iconAnchor:[17,44],popupAnchor:[0,-44]});
-    var mk=L.marker([b.lat,b.lon],{icon:icon}).addTo(map).bindPopup(popupHTML(b,i),{maxWidth:280,offset:[0,4]});
+    var mk=L.marker([b.lat,b.lon],{icon:chinchetaIcon(i)}).addTo(map).bindPopup(popupHTML(b,i),{maxWidth:280,offset:[0,4]});
     mk.on("click",function(){window.__selBib(i);});
     markers.push(mk);
   });
@@ -1254,13 +1444,14 @@ function todayMinutes(){
   return sum;
 }
 function updateGoalRing(){
+  var period=DATA?(DATA.goalPeriod||"day"):"day";
   var goal=DATA?DATA.goalMin:240;
-  var done=DATA?todayMinutes():0;
+  var done=DATA?(period==="week"?weekMinutes():todayMinutes()):0;
   var pct=Math.min(100,Math.round(done/goal*100));
   var ring=$("ringFill");
   if(ring){var c=502.6;ring.style.strokeDashoffset=String(c-(c*pct/100));}
   var gp=$("goalPct");if(gp)gp.textContent=pct+"%";
-  var gl=$("goalLbl");if(gl)gl.textContent="de "+(goal/60).toFixed(goal%60?1:0)+"h";
+  var gl=$("goalLbl");if(gl)gl.textContent="de "+(goal/60).toFixed(goal%60?1:0)+"h/"+(period==="week"?"sem":"día");
 }
 function stopStudy(silent){
   if(!studyTimer.running)return;
@@ -1270,7 +1461,7 @@ function stopStudy(silent){
   if(studyTimer.tick)clearInterval(studyTimer.tick);
   var saved=null;
   if(sec>=20){
-    saved={date:new Date(ts).toISOString().slice(0,10),min:Math.max(1,min),sec:sec,bib:BIBLIOTECAS[bibIdx].nombre,ts:ts,verif:verif,prod:null,note:""};
+    saved={date:new Date(ts).toISOString().slice(0,10),min:Math.max(1,min),sec:sec,bib:BIBLIOTECAS[bibIdx].nombre,ts:ts,verif:verif,prod:null,note:"",offering:DATA.offeringText||""};
     DATA.sessions.push(saved);
     saveUserData();
   }
@@ -1311,7 +1502,7 @@ function renderStudy(){
   var sec=elapsedSec();
   $("studyTimer").textContent=fmtClock(sec);
   if(studyTimer.running){
-    $("studyPlace").textContent="En "+BIBLIOTECAS[studyTimer.bibIndex].nombre;
+    $("studyPlace").textContent="En "+BIBLIOTECAS[studyTimer.bibIndex].nombre+(DATA.offeringText?" · 🙏 ofrecido por "+DATA.offeringText:"");
     $("btnStart").classList.add("hidden");$("btnStop").classList.remove("hidden");
     if(!studyTimer.tick)startTick();
   }else{
@@ -1344,13 +1535,20 @@ function streakDays(){
   return streak;
 }
 function openGoalModal(){
-  var cur=DATA.goalMin;
-  openModal('<h3>Meta diaria</h3><div class="sub">¿Cuántas horas quieres estudiar al día?</div>'+
-    '<div class="field"><label>Horas</label><input type="number" id="goalH" min="0" max="16" step="0.5" value="'+(cur/60)+'"></div>'+
+  var cur=DATA.goalMin, period=DATA.goalPeriod||"day";
+  openModal('<h3>Meta de estudio</h3><div class="sub">¿Cuántas horas quieres estudiar?</div>'+
+    '<div class="seg" id="goalPeriodSeg"><button data-p="day" class="'+(period==="day"?"on":"")+'">Al día</button><button data-p="week" class="'+(period==="week"?"on":"")+'">A la semana</button></div>'+
+    '<div class="field"><label>Horas</label><input type="number" id="goalH" min="0" max="80" step="0.5" value="'+(cur/60)+'"></div>'+
     '<button class="btn" id="goalSave">Guardar meta</button>',
-    function(){ $("goalSave").addEventListener("click",function(){
-      var v=parseFloat($("goalH").value)||0;DATA.goalMin=Math.max(30,Math.round(v*60));saveUserData();closeModal();renderStudy();
-    });});
+    function(){
+      var selPeriod=period;
+      document.querySelectorAll("#goalPeriodSeg button").forEach(function(b){b.addEventListener("click",function(){
+        document.querySelectorAll("#goalPeriodSeg button").forEach(function(x){x.classList.remove("on");});
+        b.classList.add("on");selPeriod=b.dataset.p;});});
+      $("goalSave").addEventListener("click",function(){
+        var v=parseFloat($("goalH").value)||0;DATA.goalMin=Math.max(30,Math.round(v*60));DATA.goalPeriod=selPeriod;saveUserData();closeModal();renderStudy();
+      });
+    });
 }
 
 /* ===================== CALENDARIO ===================== */
@@ -1371,13 +1569,14 @@ function renderCal(){
     var key=y+"-"+String(m+1).padStart(2,"0")+"-"+String(dn).padStart(2,"0");
     var cell=document.createElement("div");cell.className="cal-cell"+(key===todayStr?" today":"");
     var evs=DATA.events[key]||[];
-    var dots="";var shown=evs.slice(0,4);
-    shown.forEach(function(ev){dots+='<i class="ev-'+ev.type+'"></i>';});
-    cell.innerHTML='<div class="dnum">'+dn+'</div><div class="evdot">'+dots+'</div>'+(evs.length>4?'<span class="more">+'+(evs.length-4)+'</span>':'');
+    var shown=evs.slice(0,2);
+    var txts=shown.map(function(ev){return '<div class="evtxt ev-'+ev.type+'-txt" title="'+escapeHTML(ev.title)+'">'+escapeHTML(ev.title)+'</div>';}).join("");
+    cell.innerHTML='<div class="dnum">'+dn+'</div><div class="evlist">'+txts+'</div>'+(evs.length>2?'<span class="more">+'+(evs.length-2)+'</span>':'');
     (function(k){cell.addEventListener("click",function(){openDayModal(k);});})(key);
     grid.appendChild(cell);
   }
   if(typeof actualizarBadge==="function")actualizarBadge();
+  renderCalFriendExams();
 }
 function openDayModal(key){
   var parts=key.split("-");
@@ -1385,28 +1584,36 @@ function openDayModal(key){
   var evs=DATA.events[key]||[];
   var listHTML="";
   if(evs.length){evs.forEach(function(ev,idx){
-    listHTML+='<div class="ev-item"><span class="tag ev-'+ev.type+'"></span><div class="et"><b>'+escapeHTML(ev.title)+'</b><small>'+ev.type+'</small></div><button class="del" data-i="'+idx+'">×</button></div>';
+    listHTML+='<div class="ev-item"><span class="tag ev-'+ev.type+'"></span><div class="et"><b>'+escapeHTML(ev.title)+'</b><small>'+ev.type+(ev.shared?' · 🙏 compartido con amigos':'')+'</small></div><button class="del" data-i="'+idx+'">×</button></div>';
   });}else{listHTML='<div class="empty-note">Sin eventos este día</div>';}
   openModal('<h3>'+titulo+'</h3><div class="sub">Exámenes, tareas y otros eventos</div>'+
     '<div id="dayEvs">'+listHTML+'</div>'+
     '<div style="border-top:1px solid rgba(148,163,184,.3);margin:16px 0 14px"></div>'+
     '<div class="seg" id="evType"><button data-t="examen" class="on">Examen</button><button data-t="tarea">Tarea</button><button data-t="otro">Otro</button></div>'+
     '<div class="field"><input type="text" id="evTitle" placeholder="Ej: Examen de Cálculo II"></div>'+
+    '<label id="evShareWrap" style="display:flex;align-items:center;gap:9px;margin:-2px 0 14px;font-size:13px;color:var(--suave);font-weight:700"><input type="checkbox" id="evShareExam" checked> Compartir con mis amigos (podrán rezar por él)</label>'+
     '<button class="btn" id="evAdd">Añadir</button>',
     function(){
       var selType="examen";
+      $("evShareWrap").style.display=selType==="examen"?"flex":"none";
       document.querySelectorAll("#evType button").forEach(function(b){b.addEventListener("click",function(){
         document.querySelectorAll("#evType button").forEach(function(x){x.classList.remove("on");});
-        b.classList.add("on");selType=b.dataset.t;});});
+        b.classList.add("on");selType=b.dataset.t;
+        $("evShareWrap").style.display=selType==="examen"?"flex":"none";});});
       $("evAdd").addEventListener("click",function(){
         var t=$("evTitle").value.trim();if(!t)return;
         if(!DATA.events[key])DATA.events[key]=[];
-        DATA.events[key].push({title:t,type:selType});saveUserData();closeModal();renderCal();
+        var compartir=selType==="examen"&&$("evShareExam").checked;
+        var evObj={id:genId(),title:t,type:selType,shared:compartir};
+        DATA.events[key].push(evObj);saveUserData();closeModal();renderCal();
+        if(compartir)socialShareEvent({id:evObj.id,title:evObj.title,type:"examen",date:key});
       });
       document.querySelectorAll("#dayEvs .del").forEach(function(btn){btn.addEventListener("click",function(){
-        var idx=parseInt(btn.dataset.i);DATA.events[key].splice(idx,1);
+        var idx=parseInt(btn.dataset.i);var removed=DATA.events[key][idx];
+        DATA.events[key].splice(idx,1);
         if(!DATA.events[key].length)delete DATA.events[key];
         saveUserData();closeModal();renderCal();openDayModal(key);
+        if(removed&&removed.shared)socialDeleteSharedEvent({id:removed.id});
       });});
     });
 }
@@ -1809,11 +2016,24 @@ window.addEventListener("DOMContentLoaded",function(){
   $("btnStop").addEventListener("click",function(){stopStudy(false);});
   $("btnGoal").addEventListener("click",openGoalModal);
   $("miniStop").addEventListener("click",function(){stopStudy(false);});
+  document.querySelectorAll("#studyTab button").forEach(function(b){b.addEventListener("click",function(){
+    document.querySelectorAll("#studyTab button").forEach(function(x){x.classList.remove("on");});
+    b.classList.add("on");
+    var ofrecer=b.dataset.t==="ofrecer";
+    $("studyOfferPanel").classList.toggle("hidden",!ofrecer);
+    $("studyCronoPanel").classList.toggle("hidden",ofrecer);
+    $("studyStats").classList.toggle("hidden",ofrecer);
+    if(ofrecer)$("offerText").value=DATA.offeringText||"";
+  });});
+  $("btnSaveOffer").addEventListener("click",function(){
+    DATA.offeringText=$("offerText").value.trim();saveUserData();renderStudy();showToast("Guardado");
+  });
   $("calPrev").addEventListener("click",function(){calRef.setMonth(calRef.getMonth()-1);renderCal();});
   $("calNext").addEventListener("click",function(){calRef.setMonth(calRef.getMonth()+1);renderCal();});
   $("calToday").addEventListener("click",function(){calRef=new Date();renderCal();});
   $("btnAddLoan").addEventListener("click",openLoanModal);
   $("btnAddEvent").addEventListener("click",openEventModal);
+  $("btnPostBlog").addEventListener("click",postBlog);
   $("btnLogout").addEventListener("click",logout);
 
   // nuevas funciones
