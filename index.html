@@ -702,8 +702,8 @@ const OCC_TTL_MIN=60;
 // 2) Ejecuta el archivo supabase_social.sql que te paso junto a este index.
 // 3) Pega aquí tu Project URL y tu anon/publishable key.
 // Con estos valores de ejemplo, la app seguirá funcionando, pero la parte social no sincronizará entre dispositivos.
-const SUPABASE_URL="https://nvcrtcccxbhpsgpkyqba.supabase.co";
-const SUPABASE_ANON_KEY="sb_publishable_F3HZQBnzUQ6tDjY9Bki_XQ_P7BL2wNT";
+const SUPABASE_URL="PEGA_AQUI_TU_PROJECT_URL";
+const SUPABASE_ANON_KEY="PEGA_AQUI_TU_ANON_KEY";
 let SB=null;
 let SOCIAL={user:null,profile:null,friends:[],requests:[],sent:[],events:[],presence:[],friendMarkers:[],timer:null};
 function socialConfigured(){return SUPABASE_URL.indexOf("https://")===0 && SUPABASE_ANON_KEY && SUPABASE_ANON_KEY.indexOf("PEGA_AQUI")===-1 && typeof window.supabase!=="undefined";}
