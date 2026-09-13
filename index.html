@@ -306,7 +306,7 @@
   .seg{display:flex;gap:6px;margin-bottom:14px}
   .seg button{flex:1;padding:9px;border-radius:11px;border:1px solid rgba(148,163,184,.4);background:rgba(255,255,255,.5);
     font-weight:700;font-size:12.5px;cursor:pointer;color:var(--suave)}
-  .seg button.on{color:#fff;border-color:transparent}
+  .seg button.on{background:linear-gradient(135deg,var(--acento),#8b7bef);color:#fff;border-color:transparent}
   .seg button.on[data-t=examen]{background:#ef4444}
   .seg button.on[data-t=tarea]{background:#3b82f6}
   .seg button.on[data-t=otro]{background:#f59e0b}
@@ -491,7 +491,7 @@
     </div>
     <div class="glasscard">
       <div class="seg" style="margin-bottom:18px">
-        <button id="tabLogin" class="on" style="background:linear-gradient(135deg,var(--acento),#8b7bef);color:#fff;border-color:transparent">Iniciar sesión</button>
+        <button id="tabLogin" class="on">Iniciar sesión</button>
         <button id="tabReg">Crear cuenta</button>
       </div>
       <div class="field" id="fName">
@@ -1419,10 +1419,6 @@ function setAuthMode(m){
   authMode=m;
   $("tabLogin").classList.toggle("on",m==="login");
   $("tabReg").classList.toggle("on",m==="reg");
-  [$("tabLogin"),$("tabReg")].forEach(function(b){
-    if(b.classList.contains("on")){b.style.background="linear-gradient(135deg,var(--acento),#8b7bef)";b.style.color="#fff";b.style.borderColor="transparent";}
-    else{b.style.background="rgba(255,255,255,.5)";b.style.color="var(--suave)";b.style.borderColor="rgba(148,163,184,.4)";}
-  });
   $("fName").classList.toggle("hidden",m!=="reg");
   $("authBtn").textContent = m==="login"?"Entrar":"Crear cuenta";
   $("authErr").classList.add("hidden");
