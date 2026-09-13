@@ -1562,8 +1562,8 @@ function initMap(){
   var map=L.map("map",{zoomControl:false,scrollWheelZoom:true}).setView([42.812,-1.652],13.5);
   window.__map=map;
   L.control.zoom({position:"bottomright"}).addTo(map);
-  L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
-    {attribution:'&copy; OpenStreetMap &copy; CARTO',maxZoom:19}).addTo(map);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    {attribution:'&copy; OpenStreetMap contributors',maxZoom:19}).addTo(map);
   markers=[];
   BIBLIOTECAS.forEach(function(b,i){
     var mk=L.marker([b.lat,b.lon],{icon:chinchetaIcon(i)}).addTo(map).bindPopup(popupHTML(b,i),{maxWidth:280,offset:[0,4]});
