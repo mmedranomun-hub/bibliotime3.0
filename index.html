@@ -107,7 +107,8 @@
   .chincheta.sel{transform:scale(1.22) translateY(-3px)}
   .chincheta .cuerpo{position:absolute;top:0;left:0;width:34px;height:34px;border-radius:50%;
     background:linear-gradient(140deg,var(--acento),#8b7bef);border:3px solid #fff;display:flex;align-items:center;justify-content:center}
-  .chincheta.closed .cuerpo{background:linear-gradient(140deg,#94a3b8,#64748b)}
+  .chincheta.closed .cuerpo{background:linear-gradient(140deg,#4f7ed6,#2f5bb8)}
+  .chincheta .cuerpo svg{width:17px;height:17px;color:#fff;stroke-width:2.1}
   .chincheta.occ-libre .cuerpo{background:linear-gradient(140deg,#22c55e,#16a34a)}
   .chincheta.occ-media .cuerpo{background:linear-gradient(140deg,#f59e0b,#d97706)}
   .chincheta.occ-llena .cuerpo{background:linear-gradient(140deg,#ef4444,#dc2626)}
@@ -1681,7 +1682,8 @@ function chinchetaIcon(i){
   var b=BIBLIOTECAS[i], abierto=estadoBib(b);
   var occClass="";
   if(abierto){var o=occSummary(i); if(o)occClass=" occ-"+o.level;}
-  return L.divIcon({className:"",html:'<div class="chincheta'+(abierto?"":" closed")+occClass+'"><div class="cuerpo"></div><div class="punta"></div></div>',iconSize:[34,44],iconAnchor:[17,44],popupAnchor:[0,-44]});
+  var libroSvg='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5c2-1.5 5-2 7-1v14c-2-1-5-.5-7 1V5z"/><path d="M22 5c-2-1.5-5-2-7-1v14c2-1 5-.5 7 1V5z"/></svg>';
+  return L.divIcon({className:"",html:'<div class="chincheta'+(abierto?"":" closed")+occClass+'"><div class="cuerpo">'+libroSvg+'</div><div class="punta"></div></div>',iconSize:[34,44],iconAnchor:[17,44],popupAnchor:[0,-44]});
 }
 // El mapa con chinchetas se monta cuando Leaflet está disponible
 function initMap(){
