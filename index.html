@@ -416,7 +416,9 @@
     .selected .name{max-width:50vw}
     .act{padding:9px 11px;font-size:12px}.act .txt{display:none}
     .panel{position:fixed;top:auto;bottom:160px;left:10px;right:10px;width:auto;max-height:28vh;border-radius:18px}
-    .dock button{padding:8px 11px}.dock button .dlbl{font-size:9.5px}
+    .dock{left:8px;right:8px;transform:none;width:auto;justify-content:space-between;padding:6px;gap:2px}
+    .dock button{padding:8px 4px;flex:1;min-width:0}.dock button .dlbl{font-size:8.7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+    .dock button svg{width:19px;height:19px}
     .scrollview{top:64px;bottom:84px;padding:16px}
     .ministudy{bottom:220px}
     .fab{bottom:90px;left:10px;padding:11px 15px;font-size:13px}
@@ -943,7 +945,7 @@ async function renderBlog(){
   if(!posts.length){list.innerHTML='<div class="empty-note">Nadie ha publicado todavía. ¡Sé el primero!</div>';return;}
   list.innerHTML=posts.map(function(p){
     return '<div class="glasscard" style="margin-bottom:12px"><div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'+
-      '<div class="avatar" style="width:34px;height:34px;font-size:14px">'+socialInitial(p.author_name)+'</div>'+
+      '<div class="avatar" style="width:34px;height:34px;font-size:14px;flex-shrink:0">'+socialInitial(p.author_name)+'</div>'+
       '<div style="flex:1;min-width:0"><b style="font-size:13.5px;display:block">'+escapeHTML(p.author_name||"Alguien")+'</b><small style="font-size:11px;color:var(--suave)">'+timeAgo(p.created_at)+'</small></div></div>'+
       '<b style="font-size:14.5px;display:block;margin-bottom:4px">📖 '+escapeHTML(p.book_title)+'</b>'+
       '<div style="font-size:13px;color:var(--suave);line-height:1.5">'+escapeHTML(p.comment)+'</div></div>';
