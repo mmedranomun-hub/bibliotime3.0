@@ -220,6 +220,10 @@
   .feed-item .fnote{margin-top:10px;font-size:13px;color:var(--texto);border-top:1px solid rgba(148,163,184,.25);padding-top:8px}
   .feed-item .foffer{margin-top:6px;font-size:12px;color:var(--acento);font-weight:700}
   .fverif{color:var(--abierto)}
+  .kudos-btn{margin-top:12px;border:1px solid rgba(148,163,184,.4);background:rgba(255,255,255,.5);border-radius:99px;
+    padding:7px 14px;font-weight:800;font-size:12.5px;cursor:pointer;color:var(--suave)}
+  .kudos-btn:hover{border-color:#f59e0b;color:#b45309}
+  .kudos-btn.on{background:linear-gradient(135deg,#f59e0b,#f7b955);border-color:transparent;color:#fff;cursor:default}
 
   /* ===== CALENDARIO ===== */
   .cal-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
@@ -574,7 +578,8 @@
         <div class="stat"><div class="num" id="stStreak">0</div><div class="lab">Días seguidos</div></div>
       </div>
       <div class="glasscard" id="roomCard" style="margin-top:18px"></div>
-      <div class="section-title">📈 Historial de sesiones</div>
+      <div class="section-title">📈 Actividad</div>
+      <div class="seg" id="feedTabSeg" style="margin-bottom:14px"><button data-t="mia" class="on">Tú</button><button data-t="amigos">Amigos</button></div>
       <div id="sessionFeed"></div>
     </div>
   </div>
@@ -668,6 +673,12 @@
       <div class="section-title">📊 Estudio esta semana</div>
       <div class="glasscard"><div class="week-bars" id="weekBars"></div></div>
 
+      <div class="section-title">🏆 Ranking semanal con amigos</div>
+      <div class="glasscard"><div id="leaderboardList"></div></div>
+
+      <div class="section-title">🏅 Tus récords</div>
+      <div class="stat-grid" id="recordsGrid"></div>
+
       <div class="section-title">💡 Sugerencia para ti</div>
       <div class="glasscard" id="suggestCard">
         <div class="empty-note">Estudia algunas sesiones y aquí verás recomendaciones basadas en tu propio historial.</div>
@@ -680,7 +691,7 @@
         <div class="field"><label>Añadir amigo por código</label><input type="text" id="friendCodeInput" placeholder="Ej: A1B2C3D4" style="text-transform:uppercase"></div>
         <button class="btn sm" id="btnAddFriend" style="margin-bottom:14px">+ Enviar solicitud</button>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;padding:11px 12px;border-radius:13px;background:rgba(255,255,255,.55)">
-          <div><b style="font-size:14px">Compartir dónde estudio</b><div style="font-size:12px;color:var(--suave)">Tus amigos solo verán la biblioteca actual, nunca tus coordenadas GPS exactas.</div></div>
+          <div><b style="font-size:14px">Compartir tu actividad</b><div style="font-size:12px;color:var(--suave)">Tus amigos verán la biblioteca donde estudias y tus sesiones terminadas (duración, nota, valoración). Nunca tus coordenadas GPS exactas.</div></div>
           <label class="switch"><input type="checkbox" id="chkSharePresence"><span class="slider"></span></label>
         </div>
         <div class="section-title" style="margin-top:10px">Solicitudes</div>
@@ -799,7 +810,8 @@ const OCC_TTL_MIN=60;
 const SUPABASE_URL="https://jmqqfugqoeqihjgjcbhu.supabase.co";
 const SUPABASE_ANON_KEY="sb_publishable_1iosUmxRfDEWl-KjHm4F1Q_aceAX01t";
 let SB=null;
-let SOCIAL={user:null,profile:null,friends:[],requests:[],sent:[],events:[],presence:[],friendMarkers:[],timer:null,prayerCounts:{},prayedByMe:{},room:null,roomMembers:[]};
+let SOCIAL={user:null,profile:null,friends:[],requests:[],sent:[],events:[],presence:[],friendMarkers:[],timer:null,prayerCounts:{},prayedByMe:{},room:null,roomMembers:[],friendSessions:[],kudosCounts:{},kudosByMe:{},leaderboard:[]};
+var feedTab="mia";
 function socialConfigured(){return SUPABASE_URL.indexOf("https://")===0 && SUPABASE_ANON_KEY && SUPABASE_ANON_KEY.indexOf("PEGA_AQUI")===-1 && typeof window.supabase!=="undefined";}
 function socialClient(){if(!socialConfigured())return null;if(!SB)SB=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);return SB;}
 function loadJSON(k,def){try{var v=localStorage.getItem(k);return v?JSON.parse(v):def;}catch(e){return def;}}
@@ -874,7 +886,11 @@ async function socialInitAfterLogin(){
     await socialRefreshAll();
     await socialCheckNewPrayers();
     if(SOCIAL.timer)clearInterval(SOCIAL.timer);
-    SOCIAL.timer=setInterval(function(){socialHeartbeat();socialRefreshAll();socialCheckNewPrayers();if(SOCIAL.room){loadRoomMembers().then(renderStudyRoom);}},45000);
+    SOCIAL.timer=setInterval(function(){
+      socialHeartbeat();socialRefreshAll();socialCheckNewPrayers();
+      if(SOCIAL.room){loadRoomMembers().then(renderStudyRoom);}
+      if(feedTab==="amigos"){socialLoadFriendSessions().then(socialLoadKudos).then(renderSessionFeed);}
+    },45000);
   }catch(e){console.warn(e);socialRenderPanel("No he podido cargar Supabase: "+(e.message||e));}
 }
 async function socialRefreshAll(){
@@ -1116,6 +1132,57 @@ function renderStudyRoom(){
     '<button class="btn sm danger" id="btnLeaveRoom" style="margin-top:10px">Salir de la sala</button>';
   $("btnCopyRoomCode").addEventListener("click",function(){navigator.clipboard.writeText(SOCIAL.room.code);showToast("Código copiado");});
   $("btnLeaveRoom").addEventListener("click",leaveStudyRoom);
+}
+/* ===== SESIONES COMPARTIDAS + KUDOS (feed de amigos, estilo Strava) ===== */
+async function socialShareSession(saved){
+  var sb=socialClient(); if(!sb||!SOCIAL.user||!DATA||!DATA.sharePresence)return;
+  var payload={owner_id:SOCIAL.user.id,local_id:saved.id,bib_name:saved.bib,minutes:saved.min,date:saved.date,note:saved.note||null,offering:saved.offering||null,verif:!!saved.verif,prod:saved.prod||null};
+  await sb.from("shared_sessions").upsert(payload,{onConflict:"owner_id,local_id"});
+}
+async function socialLoadFriendSessions(){
+  var sb=socialClient(); if(!sb||!SOCIAL.user)return;
+  var ids=SOCIAL.friends.map(function(f){return f.profile.id;});
+  if(!ids.length){SOCIAL.friendSessions=[];return;}
+  var res=await sb.from("shared_sessions").select("*").in("owner_id",ids).order("created_at",{ascending:false}).limit(30);
+  if(res.error){SOCIAL.friendSessions=[];return;}
+  SOCIAL.friendSessions=res.data||[];
+}
+async function socialLoadKudos(){
+  var sb=socialClient(); if(!sb)return;
+  var ids=SOCIAL.friendSessions.map(function(s){return s.local_id;});
+  if(!ids.length){SOCIAL.kudosCounts={};SOCIAL.kudosByMe={};return;}
+  var res=await sb.from("kudos").select("session_local_id,giver_id").in("session_local_id",ids);
+  var counts={},mine={};
+  if(!res.error&&res.data)res.data.forEach(function(r){counts[r.session_local_id]=(counts[r.session_local_id]||0)+1;if(SOCIAL.user&&r.giver_id===SOCIAL.user.id)mine[r.session_local_id]=true;});
+  SOCIAL.kudosCounts=counts;SOCIAL.kudosByMe=mine;
+}
+async function giveKudos(localId,ownerId){
+  var sb=socialClient(); if(!sb||!SOCIAL.user){showToast("Necesitas Supabase configurado e iniciar sesión");return;}
+  var name=(SOCIAL.profile&&SOCIAL.profile.name)||"Alguien";
+  var ins=await sb.from("kudos").insert({session_local_id:localId,session_owner_id:ownerId,giver_id:SOCIAL.user.id,giver_name:name});
+  if(ins.error&&ins.error.code!=="23505"){showToast("No se pudo dar kudos");return;}
+  await socialLoadKudos();
+  renderSessionFeed();
+}
+async function socialLoadLeaderboard(){
+  var sb=socialClient(); if(!sb||!SOCIAL.user)return;
+  var ids=SOCIAL.friends.map(function(f){return f.profile.id;}); ids.push(SOCIAL.user.id);
+  var now=new Date(),day=(now.getDay()+6)%7,monday=new Date(now);monday.setDate(now.getDate()-day);monday.setHours(0,0,0,0);
+  var res=await sb.from("shared_sessions").select("owner_id,minutes,date").in("owner_id",ids).gte("date",monday.toISOString().slice(0,10));
+  if(res.error){SOCIAL.leaderboard=[];return;}
+  var totals={};
+  (res.data||[]).forEach(function(r){totals[r.owner_id]=(totals[r.owner_id]||0)+r.minutes;});
+  var arr=Object.keys(totals).map(function(id){return {id:id,min:totals[id],name:id===SOCIAL.user.id?"Tú":socialNameById(id)};});
+  arr.sort(function(a,b){return b.min-a.min;});
+  SOCIAL.leaderboard=arr;
+}
+function renderLeaderboard(){
+  var el=$("leaderboardList"); if(!el)return;
+  if(!socialClient()){el.innerHTML='<div class="empty-note">Configura Supabase para ver el ranking con amigos</div>';return;}
+  if(!SOCIAL.leaderboard.length){el.innerHTML='<div class="empty-note">Sin datos de esta semana todavía (necesitas amigos y sesiones compartidas)</div>';return;}
+  el.innerHTML=SOCIAL.leaderboard.map(function(p,i){
+    return '<div class="nowrow" style="cursor:default"><div class="rank">'+(i+1)+'</div><div class="ni"><b>'+escapeHTML(p.name)+'</b><small>'+hMin(p.min)+' esta semana</small></div></div>';
+  }).join("");
 }
 async function socialShareEvent(ev){
   var sb=socialClient(); if(!sb||!SOCIAL.user)return;
@@ -1559,9 +1626,10 @@ function stopStudy(silent){
   if(studyTimer.tick)clearInterval(studyTimer.tick);
   var saved=null;
   if(sec>=20){
-    saved={date:new Date(ts).toISOString().slice(0,10),min:Math.max(1,min),sec:sec,bib:BIBLIOTECAS[bibIdx].nombre,ts:ts,verif:verif,prod:null,note:"",offering:DATA.offeringText||""};
+    saved={id:genId(),date:new Date(ts).toISOString().slice(0,10),min:Math.max(1,min),sec:sec,bib:BIBLIOTECAS[bibIdx].nombre,ts:ts,verif:verif,prod:null,note:"",offering:DATA.offeringText||""};
     DATA.sessions.push(saved);
     saveUserData();
+    socialShareSession(saved);
   }
   studyTimer.running=false;studyTimer.bibIndex=null;studyTimer.verificada=false;
   $("miniStudy").classList.add("hidden");
@@ -1590,7 +1658,7 @@ function pedirValoracion(sesion){
       });
       $("sessSave").addEventListener("click",function(){
         sesion.prod=sel.v||null; sesion.note=$("sessNote").value.trim();
-        saveUserData();closeModal();renderProfile();showToast("Sesión guardada");
+        saveUserData();socialShareSession(sesion);closeModal();renderProfile();renderStudy();showToast("Sesión guardada");
       });
       $("sessSkip").addEventListener("click",function(){closeModal();});
     });
@@ -1624,6 +1692,24 @@ function fmtFeedDate(dateStr){
 }
 function renderSessionFeed(){
   var el=$("sessionFeed"); if(!el||!DATA)return;
+  if(feedTab==="amigos"){
+    if(!socialClient()){el.innerHTML='<div class="empty-note">Configura Supabase para ver la actividad de tus amigos</div>';return;}
+    if(!SOCIAL.friendSessions.length){el.innerHTML='<div class="empty-note">Tus amigos no tienen sesiones compartidas todavía</div>';return;}
+    el.innerHTML=SOCIAL.friendSessions.map(function(s){
+      var lugar=(s.bib_name||"").replace("Biblioteca ","").replace("Pública ","");
+      var who=socialNameById(s.owner_id);
+      var stars=s.prod?'<span class="fstars">'+"★".repeat(s.prod)+"☆".repeat(5-s.prod)+'</span>':'';
+      var n=SOCIAL.kudosCounts[s.local_id]||0, ya=!!SOCIAL.kudosByMe[s.local_id];
+      return '<div class="feed-item"><div class="fhead"><div class="fplace">'+escapeHTML(who)+' · '+escapeHTML(lugar)+(s.verif?' <span class="fverif" title="Check-in verificado">✓</span>':'')+'</div><div class="fdate">'+fmtFeedDate(s.date)+'</div></div>'+
+        '<div class="fdur">'+hMin(s.minutes)+'</div>'+
+        '<div class="fmeta">'+stars+'</div>'+
+        (s.note?'<div class="fnote">"'+escapeHTML(s.note)+'"</div>':'')+
+        (s.offering?'<div class="foffer">🙏 Ofrecido por '+escapeHTML(s.offering)+'</div>':'')+
+        '<button class="kudos-btn'+(ya?" on":"")+'" '+(ya?"disabled":"")+' onclick="giveKudos(\''+escapeHTML(s.local_id)+'\',\''+escapeHTML(s.owner_id)+'\')">👏 '+(n?n:"Dar kudos")+'</button>'+
+        '</div>';
+    }).join("");
+    return;
+  }
   if(!DATA.sessions.length){el.innerHTML='<div class="empty-note">Todavía no tienes sesiones registradas. Empieza a estudiar arriba ↑</div>';return;}
   var lista=DATA.sessions.slice().reverse().slice(0,20);
   el.innerHTML=lista.map(function(s){
@@ -1754,6 +1840,8 @@ function renderProfile(){
   $("pFav").style.fontSize=fav==="—"?"28px":"15px";
   // semana
   renderWeekBars();
+  renderRecords();
+  if(socialClient()&&SOCIAL.user){socialLoadLeaderboard().then(renderLeaderboard);}else{renderLeaderboard();}
   renderLoans();
   renderSugerencia();
   var chk=$("chkGeo"); if(chk)chk.checked=!!DATA.geoCheck;
@@ -1777,6 +1865,28 @@ function renderWeekBars(){
     div.innerHTML='<div class="bar" style="height:'+pct+'%" title="'+hMin(mins[i])+'"></div><div class="d">'+labels[i]+'</div>';
     wb.appendChild(div);
   }
+}
+function computeBestStreak(){
+  if(!DATA.sessions.length)return 0;
+  var days={};DATA.sessions.forEach(function(s){days[s.date]=true;});
+  var dates=Object.keys(days).sort();
+  var best=1,cur=1;
+  for(var i=1;i<dates.length;i++){
+    var diff=Math.round((new Date(dates[i])-new Date(dates[i-1]))/86400000);
+    cur=diff===1?cur+1:1;
+    if(cur>best)best=cur;
+  }
+  return best;
+}
+function renderRecords(){
+  var el=$("recordsGrid"); if(!el)return;
+  if(!DATA.sessions.length){el.innerHTML='<div class="empty-note" style="grid-column:1/-1">Termina tu primera sesión para empezar a ganar récords</div>';return;}
+  var maxMin=0,bestBib="—",totalMin=0;
+  DATA.sessions.forEach(function(s){totalMin+=s.min;if(s.min>maxMin){maxMin=s.min;bestBib=s.bib.replace("Biblioteca ","").replace("Pública ","");}});
+  el.innerHTML=
+    '<div class="stat"><div class="num">'+hMin(maxMin)+'</div><div class="lab">Sesión más larga · '+escapeHTML(bestBib)+'</div></div>'+
+    '<div class="stat"><div class="num">'+computeBestStreak()+'</div><div class="lab">Mejor racha (días)</div></div>'+
+    '<div class="stat"><div class="num">'+Math.floor(totalMin/60)+'h</div><div class="lab">Total histórico</div></div>';
 }
 function renderLoans(){
   var el=$("loanList");el.innerHTML="";
@@ -2149,6 +2259,13 @@ window.addEventListener("DOMContentLoaded",function(){
   $("btnSaveOffer").addEventListener("click",function(){
     DATA.offeringText=$("offerText").value.trim();saveUserData();renderStudy();showToast("Guardado");
   });
+  document.querySelectorAll("#feedTabSeg button").forEach(function(b){b.addEventListener("click",function(){
+    document.querySelectorAll("#feedTabSeg button").forEach(function(x){x.classList.remove("on");});
+    b.classList.add("on");
+    feedTab=b.dataset.t;
+    if(feedTab==="amigos"){socialLoadFriendSessions().then(socialLoadKudos).then(renderSessionFeed);}
+    else renderSessionFeed();
+  });});
   $("calPrev").addEventListener("click",function(){calRef.setMonth(calRef.getMonth()-1);renderCal();});
   $("calNext").addEventListener("click",function(){calRef.setMonth(calRef.getMonth()+1);renderCal();});
   $("calToday").addEventListener("click",function(){calRef=new Date();renderCal();});

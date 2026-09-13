@@ -131,3 +131,44 @@ drop policy if exists "book_posts insert own" on book_posts;
 create policy "book_posts insert own" on book_posts for insert with check (auth.uid() = user_id);
 drop policy if exists "book_posts delete own" on book_posts;
 create policy "book_posts delete own" on book_posts for delete using (auth.uid() = user_id);
+
+-- ===== SESIONES DE ESTUDIO COMPARTIDAS + KUDOS (estilo feed de actividad) =====
+create table if not exists shared_sessions (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid references profiles(id) on delete cascade,
+  local_id text not null,
+  bib_name text,
+  minutes int,
+  date date,
+  note text,
+  offering text,
+  verif boolean default false,
+  prod int,
+  created_at timestamptz default now(),
+  unique(owner_id, local_id)
+);
+alter table shared_sessions add column if not exists prod int;
+alter table shared_sessions enable row level security;
+drop policy if exists "shared_sessions select all" on shared_sessions;
+create policy "shared_sessions select all" on shared_sessions for select using (true);
+drop policy if exists "shared_sessions insert own" on shared_sessions;
+create policy "shared_sessions insert own" on shared_sessions for insert with check (auth.uid() = owner_id);
+drop policy if exists "shared_sessions update own" on shared_sessions;
+create policy "shared_sessions update own" on shared_sessions for update using (auth.uid() = owner_id);
+drop policy if exists "shared_sessions delete own" on shared_sessions;
+create policy "shared_sessions delete own" on shared_sessions for delete using (auth.uid() = owner_id);
+
+create table if not exists kudos (
+  id uuid primary key default gen_random_uuid(),
+  session_local_id text not null,
+  session_owner_id uuid references profiles(id) on delete cascade,
+  giver_id uuid references profiles(id) on delete cascade,
+  giver_name text,
+  created_at timestamptz default now(),
+  unique(session_local_id, giver_id)
+);
+alter table kudos enable row level security;
+drop policy if exists "kudos select all" on kudos;
+create policy "kudos select all" on kudos for select using (true);
+drop policy if exists "kudos insert own" on kudos;
+create policy "kudos insert own" on kudos for insert with check (auth.uid() = giver_id);
