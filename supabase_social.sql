@@ -97,6 +97,24 @@ create policy "prayers select involved" on prayers for select using (auth.uid() 
 drop policy if exists "prayers insert own" on prayers;
 create policy "prayers insert own" on prayers for insert with check (auth.uid() = prayed_by_id);
 
+-- ===== SESIONES DE ESTUDIO EN GRUPO =====
+alter table presence add column if not exists room_code text;
+
+create table if not exists study_rooms (
+  id uuid primary key default gen_random_uuid(),
+  code text unique not null default upper(substr(replace(gen_random_uuid()::text,'-',''),1,6)),
+  name text,
+  owner_id uuid references profiles(id) on delete cascade,
+  created_at timestamptz default now()
+);
+alter table study_rooms enable row level security;
+drop policy if exists "study_rooms select all" on study_rooms;
+create policy "study_rooms select all" on study_rooms for select using (true);
+drop policy if exists "study_rooms insert own" on study_rooms;
+create policy "study_rooms insert own" on study_rooms for insert with check (auth.uid() = owner_id);
+drop policy if exists "study_rooms delete own" on study_rooms;
+create policy "study_rooms delete own" on study_rooms for delete using (auth.uid() = owner_id);
+
 -- ===== BLOG DE LECTURAS (público para todos los usuarios de la app) =====
 create table if not exists book_posts (
   id uuid primary key default gen_random_uuid(),
