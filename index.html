@@ -1014,11 +1014,13 @@ async function socialInitAfterLogin(){
     await socialEnsureProfile(user,name,user.email);
     await socialRefreshAll();
     await socialCheckNewPrayers();
+    await loadOccupancyCloud();refreshOccUI();
     if(SOCIAL.timer)clearInterval(SOCIAL.timer);
     SOCIAL.timer=setInterval(function(){
       socialHeartbeat();socialRefreshAll();socialCheckNewPrayers();
       if(SOCIAL.room){loadRoomMembers().then(renderStudyRoom);}
       if(feedTab==="amigos"){socialLoadFriendSessions().then(socialLoadKudos).then(renderSessionFeed);}
+      loadOccupancyCloud().then(function(){refreshOccUI();});
     },45000);
   }catch(e){console.warn(e);socialRenderPanel("No he podido cargar Supabase: "+(e.message||e));}
 }
@@ -1517,8 +1519,23 @@ const OCC_LEVELS={
   llena:{score:3,label:"Llena",emoji:"🔴",className:"od-llena"}
 };
 function occKey(i){return "bib_"+i;}
-function occAll(){return Brain.getOccupancy();}
+let OCC_CACHE={}; // afluencia compartida vía Supabase, refrescada periódicamente
+async function loadOccupancyCloud(){
+  var sb=socialClient(); if(!sb)return;
+  var cutoff=new Date(Date.now()-OCC_TTL_MIN*60000).toISOString();
+  var res=await sb.from("occupancy_reports").select("bib_index,level,created_at").gte("created_at",cutoff);
+  if(res.error){console.warn(res.error);return;}
+  var grouped={};
+  (res.data||[]).forEach(function(r){
+    var k=occKey(r.bib_index);
+    if(!grouped[k])grouped[k]=[];
+    grouped[k].push({level:r.level,ts:new Date(r.created_at).getTime()});
+  });
+  OCC_CACHE=grouped;
+}
+function occAll(){return socialClient()?OCC_CACHE:Brain.getOccupancy();}
 function occPrune(all){
+  if(socialClient())return all; // los reportes de Supabase ya llegan filtrados por antigüedad
   var cutoff=Date.now()-OCC_TTL_MIN*60000, changed=false;
   for(var k in all){
     var oldLen=(all[k]||[]).length;
@@ -1557,8 +1574,17 @@ function occControlsHTML(i){
     '<button data-o="llena" onclick="reportOcc('+i+',\'llena\')">🔴 Llena</button>'+
     '</div>';
 }
-function addOccReport(i,level,silent){
+async function addOccReport(i,level,silent){
   if(!OCC_LEVELS[level])return;
+  var sb=socialClient();
+  if(sb&&SOCIAL.user){
+    var ins=await sb.from("occupancy_reports").insert({bib_index:i,level:level,user_id:SOCIAL.user.id});
+    if(ins.error){showToast("No se pudo enviar el reporte");return;}
+    await loadOccupancyCloud();
+    refreshOccUI(i);
+    if(!silent)showToast("Afluencia actualizada: "+OCC_LEVELS[level].label.toLowerCase());
+    return;
+  }
   var all=occPrune(occAll()), k=occKey(i);
   if(!all[k])all[k]=[];
   all[k].push({level:level,ts:Date.now(),user:CURRENT||"anon"});

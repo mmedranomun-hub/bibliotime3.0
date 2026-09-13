@@ -170,5 +170,19 @@ create table if not exists kudos (
 alter table kudos enable row level security;
 drop policy if exists "kudos select all" on kudos;
 create policy "kudos select all" on kudos for select using (true);
+
+-- ===== AFLUENCIA DE BIBLIOTECAS (compartida entre todos los usuarios) =====
+create table if not exists occupancy_reports (
+  id uuid primary key default gen_random_uuid(),
+  bib_index int not null,
+  level text not null,
+  user_id uuid references profiles(id) on delete cascade,
+  created_at timestamptz default now()
+);
+alter table occupancy_reports enable row level security;
+drop policy if exists "occupancy_reports select all" on occupancy_reports;
+create policy "occupancy_reports select all" on occupancy_reports for select using (true);
+drop policy if exists "occupancy_reports insert own" on occupancy_reports;
+create policy "occupancy_reports insert own" on occupancy_reports for insert with check (auth.uid() = user_id);
 drop policy if exists "kudos insert own" on kudos;
 create policy "kudos insert own" on kudos for insert with check (auth.uid() = giver_id);
