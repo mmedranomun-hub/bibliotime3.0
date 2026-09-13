@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bibliotecas de Pamplona</title>
-<meta name="description" content="Mapa de todas las bibliotecas públicas y universitarias de Pamplona: horarios en tiempo real, cómo llegar, afluencia, modo estudio con cronómetro, calendario de exámenes y agenda de eventos académicos.">
+<title>Bibliotecas de Navarra</title>
+<meta name="description" content="Mapa de las bibliotecas públicas y universitarias de Navarra: horarios en tiempo real, cómo llegar, afluencia compartida, modo estudio con cronómetro, sesiones en grupo, calendario de exámenes y agenda de eventos académicos.">
 <link rel="canonical" href="https://mmedranomun-hub.github.io/bibliotime3.0/">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Bibliotecas de Pamplona">
-<meta property="og:title" content="Bibliotecas de Pamplona">
-<meta property="og:description" content="Mapa de todas las bibliotecas públicas y universitarias de Pamplona: horarios en tiempo real, cómo llegar, afluencia, modo estudio y calendario académico.">
+<meta property="og:site_name" content="Bibliotecas de Navarra">
+<meta property="og:title" content="Bibliotecas de Navarra">
+<meta property="og:description" content="Mapa de las bibliotecas públicas y universitarias de Navarra: horarios en tiempo real, cómo llegar, afluencia compartida, modo estudio y sesiones en grupo.">
 <meta property="og:url" content="https://mmedranomun-hub.github.io/bibliotime3.0/">
 <meta property="og:locale" content="es_ES">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Bibliotecas de Pamplona">
-<meta name="twitter:description" content="Mapa de bibliotecas de Pamplona con horarios, afluencia y modo estudio.">
+<meta name="twitter:title" content="Bibliotecas de Navarra">
+<meta name="twitter:description" content="Mapa de bibliotecas de Navarra con horarios, afluencia compartida y modo estudio.">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
       onerror="this.onerror=null;this.href='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css';" />
 <style>
@@ -245,6 +245,17 @@
   .pr-banner .pr-badge{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#fff;font-size:10px;font-weight:900;
     padding:3px 7px;border-radius:6px;letter-spacing:.03em;flex-shrink:0}
   .pr-banner .pr-delta{background:rgba(34,197,94,.16);color:#15803d;font-size:11px;font-weight:800;padding:2px 8px;border-radius:99px;margin-left:auto;white-space:nowrap}
+  .book-post{background:var(--glass-fuerte);border:1px solid var(--borde);border-radius:16px;padding:16px 18px;margin-bottom:10px;box-shadow:var(--sombra);transition:transform .12s,box-shadow .12s}
+  .book-post:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(2,6,23,.14)}
+  .book-post .bp-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .book-post .bp-who{flex:1;min-width:0}
+  .book-post .bp-who b{font-size:13.5px;display:block}
+  .book-post .bp-who small{font-size:11px;color:var(--suave)}
+  .book-post .bp-title{font-size:14.5px;font-weight:700;display:flex;align-items:center;gap:8px;margin-bottom:7px}
+  .book-post .bp-icon{width:20px;height:20px;border-radius:7px;background:linear-gradient(140deg,var(--acento),#8b7bef);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .book-post .bp-icon svg{width:12px;height:12px;color:#fff}
+  .book-post .bp-comment{font-size:13px;color:var(--suave);line-height:1.55}
   .kudos-btn{margin-top:12px;border:1px solid rgba(148,163,184,.4);background:rgba(255,255,255,.5);border-radius:99px;
     padding:7px 14px;font-weight:800;font-size:12.5px;cursor:pointer;color:var(--suave)}
   .kudos-btn:hover{border-color:#f59e0b;color:#b45309}
@@ -476,7 +487,7 @@
   <div class="authbox">
     <div class="logo">
       <div class="kicker">Iruña · Navarra</div>
-      <h1>Bibliotecas de <span>Pamplona</span></h1>
+      <h1>Bibliotecas de <span>Navarra</span></h1>
     </div>
     <div class="glasscard">
       <div class="seg" style="margin-bottom:18px">
@@ -497,7 +508,7 @@
       </div>
       <div class="err hidden" id="authErr"></div>
       <button class="btn" id="authBtn">Entrar</button>
-      <p style="font-size:11.5px;color:var(--suave);margin-top:14px;text-align:center;line-height:1.5">
+      <p style="font-size:11.5px;color:var(--suave);margin-top:14px;text-align:center;line-height:1.5" id="authPrivacyNote">
         Tu cuenta y tus datos se guardan en este dispositivo. No se envía nada a internet.</p>
     </div>
   </div>
@@ -509,7 +520,7 @@
   <div class="topbar">
     <div class="brand">
       <div class="kicker">Iruña · Navarra</div>
-      <h1>Bibliotecas de <span>Pamplona</span></h1>
+      <h1>Bibliotecas de <span>Navarra</span></h1>
     </div>
     <div class="actionwrap" id="mapActions">
       <div class="selected">
@@ -1069,7 +1080,7 @@ async function socialCheckNewPrayers(){
   if(res.error||!res.data||!res.data.length)return;
   res.data.forEach(function(p){
     showToast("🙏 "+(p.prayed_by_name||"Alguien")+" ha rezado por tu examen de "+p.event_title);
-    try{ if("Notification" in window && Notification.permission==="granted") new Notification("Bibliotecas de Pamplona",{body:(p.prayed_by_name||"Alguien")+" ha rezado por tu examen de "+p.event_title}); }catch(e){}
+    try{ if("Notification" in window && Notification.permission==="granted") new Notification("Bibliotecas de Navarra",{body:(p.prayed_by_name||"Alguien")+" ha rezado por tu examen de "+p.event_title}); }catch(e){}
   });
   Brain.setLastPrayerCheck(CURRENT,res.data[res.data.length-1].created_at);
 }
@@ -1108,12 +1119,13 @@ async function renderBlog(){
   if(res.error){list.innerHTML='<div class="empty-note">No se pudo cargar el blog</div>';return;}
   var posts=res.data||[];
   if(!posts.length){list.innerHTML='<div class="empty-note">Nadie ha publicado todavía. ¡Sé el primero!</div>';return;}
+  var bookSvg='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5c2-1.5 5-2 7-1v14c-2-1-5-.5-7 1V5z"/><path d="M22 5c-2-1.5-5-2-7-1v14c2-1 5-.5 7 1V5z"/></svg>';
   list.innerHTML=posts.map(function(p){
-    return '<div class="glasscard" style="margin-bottom:12px"><div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'+
-      '<div class="avatar" style="width:34px;height:34px;font-size:14px;flex-shrink:0">'+socialInitial(p.author_name)+'</div>'+
-      '<div style="flex:1;min-width:0"><b style="font-size:13.5px;display:block">'+escapeHTML(p.author_name||"Alguien")+'</b><small style="font-size:11px;color:var(--suave)">'+timeAgo(p.created_at)+'</small></div></div>'+
-      '<b style="font-size:14.5px;display:block;margin-bottom:4px">📖 '+escapeHTML(p.book_title)+'</b>'+
-      '<div style="font-size:13px;color:var(--suave);line-height:1.5">'+escapeHTML(p.comment)+'</div></div>';
+    return '<div class="book-post">'+
+      '<div class="bp-head"><div class="avatar" style="width:34px;height:34px;font-size:14px;flex-shrink:0">'+socialInitial(p.author_name)+'</div>'+
+      '<div class="bp-who"><b>'+escapeHTML(p.author_name||"Alguien")+'</b><small>'+timeAgo(p.created_at)+'</small></div></div>'+
+      '<div class="bp-title"><span class="bp-icon">'+bookSvg+'</span>'+escapeHTML(p.book_title)+'</div>'+
+      '<div class="bp-comment">'+escapeHTML(p.comment)+'</div></div>';
   }).join("");
 }
 async function postBlog(){
@@ -1675,7 +1687,7 @@ function buildList(){
     card.addEventListener("click",function(){window.__selBib(i);});
     list.appendChild(card);
   });
-  $("panelCount").textContent=BIBLIOTECAS.length+" bibliotecas en Pamplona";
+  $("panelCount").textContent=BIBLIOTECAS.length+" bibliotecas en Navarra";
 }
 // Color de la chincheta según la afluencia reportada (sin números): verde/ámbar/rojo, gris si está cerrada, morado si no hay datos.
 function chinchetaIcon(i){
@@ -2316,7 +2328,7 @@ function lanzarNotifsDelDia(){
   if(Brain.getNotifDay(CURRENT)===hoyKey)return; // una vez al día
   var avisos=calcularAvisos().filter(function(a){return a.dias<=1;});
   if(avisos.length){
-    try{ new Notification("Bibliotecas de Pamplona",{body:avisos.length===1?avisos[0].title+" · "+avisos[0].sub:"Tienes "+avisos.length+" avisos para hoy y mañana"}); }catch(e){}
+    try{ new Notification("Bibliotecas de Navarra",{body:avisos.length===1?avisos[0].title+" · "+avisos[0].sub:"Tienes "+avisos.length+" avisos para hoy y mañana"}); }catch(e){}
   }
   Brain.setNotifDay(CURRENT,hoyKey);
 }
@@ -2401,6 +2413,9 @@ function renderSugerencia(){
 
 window.addEventListener("DOMContentLoaded",function(){
   setAuthMode("login");
+  $("authPrivacyNote").textContent=socialConfigured()
+    ?"Tu cuenta se guarda de forma segura en la nube (Supabase), para que puedas entrar desde cualquier dispositivo."
+    :"Tu cuenta y tus datos se guardan en este dispositivo. No se envía nada a internet.";
   $("tabLogin").addEventListener("click",function(){setAuthMode("login");});
   $("tabReg").addEventListener("click",function(){setAuthMode("reg");});
   $("authBtn").addEventListener("click",doAuth);
