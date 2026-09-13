@@ -323,6 +323,8 @@
   .prof-head .pi h2{font-size:22px;font-weight:800}
   .prof-head .pi p{font-size:13px;color:var(--suave)}
   .section-title{font-size:15px;font-weight:800;margin:24px 0 12px;display:flex;align-items:center;gap:8px}
+  .loan-row,.evt-row,.friend-row,.friend-event,.notif-item,.ev-item{transition:background .14s}
+  .loan-row:hover,.evt-row:hover,.friend-row:hover,.friend-event:hover,.notif-item:hover,.ev-item:hover{background:rgba(255,255,255,.85)}
   .loan-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.55);margin-bottom:8px}
   .loan-row .li{flex:1;min-width:0}
   .loan-row .li b{font-size:14px;display:block}
@@ -337,7 +339,7 @@
   .week-bars .wb{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:flex-end}
   .week-bars .wb .bar{width:100%;border-radius:8px 8px 0 0;background:linear-gradient(180deg,var(--acento),#8b7bef);min-height:3px}
   .week-bars .wb .d{font-size:10px;color:var(--suave);font-weight:700}
-  .empty-note{font-size:13px;color:var(--suave);text-align:center;padding:18px;font-style:italic}
+  .empty-note{font-size:13px;color:var(--suave);text-align:center;padding:24px 18px;line-height:1.5}
 
   .source-row{display:flex;align-items:center;gap:13px;padding:13px 14px;border-radius:14px;background:rgba(255,255,255,.55);
     margin-bottom:9px;text-decoration:none;color:var(--texto);transition:transform .12s,box-shadow .12s,background .12s}
@@ -454,6 +456,7 @@
   .notif-item.tarea .nicon{background:rgba(59,130,246,.15)}
   .notif-item.loan .nicon{background:rgba(245,158,11,.15)}
   .notif-item.close .nicon{background:rgba(108,92,231,.15)}
+  .notif-item.friend .nicon{background:rgba(139,92,246,.15)}
   .notif-item .ntxt b{font-size:13.5px;display:block}
   .notif-item .ntxt small{font-size:11.5px;color:var(--suave)}
 
@@ -2288,6 +2291,12 @@ function calcularAvisos(){
         sub:(dias<0?"Vencido hace "+(-dias)+" d":(dias===0?"Vence hoy":"Vence en "+dias+" d"))+" · "+l.bib.replace("Biblioteca ","")+(abierta?" (abierta)":" (cerrada)"),dias:dias});
     }
   });
+  // solicitudes de amistad pendientes
+  if(SOCIAL.requests&&SOCIAL.requests.length){
+    SOCIAL.requests.forEach(function(r){
+      avisos.push({type:"friend",icon:"👥",title:"Solicitud de amistad de "+(r.profile.name||"alguien"),sub:"Pendiente de aceptar",dias:-1});
+    });
+  }
   // bibliotecas que cierran pronto (solo si tienes sesión activa)
   if(studyTimer.running){
     var cierre=minutosHastaCierre(BIBLIOTECAS[studyTimer.bibIndex]);
@@ -2307,14 +2316,19 @@ function abrirAvisos(){
   var avisos=calcularAvisos();
   var inner="";
   if(!avisos.length){inner='<div class="empty-note">No tienes avisos pendientes. ¡Todo al día!</div>';}
-  else{avisos.forEach(function(a){
-    inner+='<div class="notif-item '+a.type+'"><div class="nicon">'+a.icon+'</div><div class="ntxt"><b>'+escapeHTML(a.title)+'</b><small>'+escapeHTML(a.sub)+'</small></div></div>';
+  else{avisos.forEach(function(a,idx){
+    inner+='<div class="notif-item '+a.type+'"'+(a.type==="friend"?' style="cursor:pointer" data-friend="1"':'')+'><div class="nicon">'+a.icon+'</div><div class="ntxt"><b>'+escapeHTML(a.title)+'</b><small>'+escapeHTML(a.sub)+'</small></div></div>';
   });}
   var permTxt = ("Notification" in window && Notification.permission==="granted")?
     '<div style="font-size:11.5px;color:var(--suave);text-align:center;margin-top:6px">Las notificaciones del navegador están activas ✓</div>':
     '<button class="btn sm ghost" id="avisoPerm" style="margin-top:10px">Activar notificaciones del navegador</button>';
-  openModal('<h3>Avisos</h3><div class="sub">Exámenes, tareas, préstamos y cierres próximos</div>'+inner+permTxt,
-    function(){ var p=$("avisoPerm"); if(p)p.addEventListener("click",pedirPermisoNotif); });
+  openModal('<h3>Avisos</h3><div class="sub">Exámenes, tareas, préstamos, solicitudes de amistad y cierres próximos</div>'+inner+permTxt,
+    function(){
+      var p=$("avisoPerm"); if(p)p.addEventListener("click",pedirPermisoNotif);
+      document.querySelectorAll('[data-friend="1"]').forEach(function(el){
+        el.addEventListener("click",function(){closeModal();goView("profile");});
+      });
+    });
 }
 function pedirPermisoNotif(){
   if(!("Notification" in window)){showToast("Tu navegador no admite notificaciones");return;}
