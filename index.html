@@ -15,6 +15,13 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Bibliotecas de Navarra">
 <meta name="twitter:description" content="Mapa de bibliotecas de Navarra con horarios, afluencia compartida y modo estudio.">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#6c5ce7">
+<link rel="icon" href="icons/favicon-32.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Bibliotime">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
       onerror="this.onerror=null;this.href='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css';" />
 <style>
@@ -2691,6 +2698,13 @@ window.addEventListener("DOMContentLoaded",function(){
     if(sess&&Brain.getUsers()[sess]){CURRENT=sess;enterApp();}
   })();
 });
+
+// Registro del service worker: hace que la app se pueda instalar y funcione algo offline.
+if("serviceWorker" in navigator){
+  window.addEventListener("load",function(){
+    navigator.serviceWorker.register("sw.js").catch(function(e){console.warn("No se pudo registrar el service worker:",e);});
+  });
+}
 
 </script>
 </body>
