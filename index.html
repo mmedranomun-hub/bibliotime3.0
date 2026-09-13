@@ -261,6 +261,25 @@
     display:flex;align-items:center;justify-content:center;flex-shrink:0}
   .book-post .bp-icon svg{width:12px;height:12px;color:#fff}
   .book-post .bp-comment{font-size:13px;color:var(--suave);line-height:1.55}
+  .badges-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:10px}
+  .badge-tile{background:rgba(255,255,255,.5);border:1px solid rgba(148,163,184,.3);border-radius:14px;padding:12px 8px;text-align:center;
+    opacity:.42;filter:grayscale(1);transition:opacity .2s,filter .2s,transform .15s}
+  .badge-tile.on{opacity:1;filter:none;background:var(--glass-fuerte);box-shadow:var(--sombra)}
+  .badge-tile.on:hover{transform:translateY(-2px)}
+  .badge-tile .bt-icon{font-size:26px;margin-bottom:4px}
+  .badge-tile .bt-label{font-size:10.5px;font-weight:700;color:var(--suave)}
+  .badge-tile.on .bt-label{color:var(--texto)}
+  .bookshelf-card{background:var(--glass-fuerte);border:1px solid var(--borde);border-radius:16px;padding:16px 18px 4px;box-shadow:var(--sombra)}
+  .bookshelf-label{font-size:12px;color:var(--suave);font-weight:700;margin-bottom:10px}
+  .bookshelf-row{display:flex;align-items:flex-end;gap:3px;flex-wrap:wrap;border-bottom:6px solid #8b6f47;padding-bottom:8px;min-height:52px}
+  .book-spine{width:9px;border-radius:2px 2px 0 0;flex-shrink:0;box-shadow:inset -2px 0 3px rgba(0,0,0,.15)}
+  .book-more{align-self:flex-end;font-size:11px;color:var(--suave);font-weight:700;margin-left:4px;margin-bottom:2px}
+  .occ-hist-wrap{margin-top:8px}
+  .occ-hist{display:flex;gap:14px;align-items:flex-end;height:56px;margin-top:6px}
+  .occ-hist-bar{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;height:100%;justify-content:flex-end}
+  .ohb-track{width:100%;height:40px;background:rgba(148,163,184,.2);border-radius:6px;display:flex;align-items:flex-end;overflow:hidden}
+  .ohb-fill{width:100%;border-radius:6px 6px 0 0}
+  .occ-hist-bar small{font-size:9.5px;color:var(--suave);font-weight:700}
   .kudos-btn{margin-top:12px;border:1px solid rgba(148,163,184,.4);background:rgba(255,255,255,.5);border-radius:99px;
     padding:7px 14px;font-weight:800;font-size:12.5px;cursor:pointer;color:var(--suave)}
   .kudos-btn:hover{border-color:#f59e0b;color:#b45309}
@@ -593,11 +612,21 @@
     <div class="container">
       <div class="page-title">Modo estudio</div>
       <div class="page-sub">Cronómetro de sesiones y meta de horas.</div>
-      <div class="seg" id="studyTab" style="margin-bottom:16px"><button data-t="crono" class="on">Cronómetro</button><button data-t="ofrecer">Ofrecer estudio</button></div>
+      <div class="seg" id="studyTab" style="margin-bottom:16px"><button data-t="crono" class="on">Cronómetro</button><button data-t="pomo">Pomodoro</button><button data-t="ofrecer">Ofrecer estudio</button></div>
       <div id="studyOfferPanel" class="hidden glasscard" style="margin-bottom:18px">
         <div class="page-sub" style="margin-bottom:12px">Dedica este tiempo de estudio a alguien o algo. Se guardará junto a tu próxima sesión.</div>
         <div class="field"><label>¿Por quién o qué ofreces tu estudio?</label><textarea id="offerText" rows="4" placeholder="Ej: Por mi abuela, que se recupere pronto…" style="width:100%;padding:11px 13px;border-radius:12px;border:1px solid rgba(148,163,184,.4);background:rgba(255,255,255,.7);font-size:14px;font-family:inherit;color:var(--texto);resize:vertical"></textarea></div>
         <button class="btn sm" id="btnSaveOffer">Guardar</button>
+      </div>
+      <div id="pomodoroPanel" class="hidden glasscard studyhero" style="margin-bottom:18px">
+        <div class="page-sub" id="pomoPhase" style="font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--acento)">Concéntrate</div>
+        <div class="timer-big" id="pomoTime">25:00</div>
+        <div class="study-place">Ciclos completados hoy: <b id="pomoCycles">0</b></div>
+        <div class="study-controls">
+          <button class="btn sm" id="btnPomoToggle">▶ Empezar</button>
+          <button class="btn sm ghost" id="btnPomoReset">↺ Reiniciar</button>
+        </div>
+        <div class="page-sub" style="margin-top:14px">25 min de foco + 5 min de descanso. Cada pomodoro completado se guarda como sesión.</div>
       </div>
       <div class="glasscard studyhero" id="studyCronoPanel">
         <div class="ring-wrap">
@@ -623,6 +652,10 @@
         <div class="stat"><div class="num" id="stWeek">0h 0m</div><div class="lab">Esta semana</div></div>
         <div class="stat"><div class="num" id="stSessions">0</div><div class="lab">Sesiones totales</div></div>
         <div class="stat"><div class="num" id="stStreak">0</div><div class="lab">Días seguidos</div></div>
+      </div>
+      <div class="bookshelf-card" style="margin-top:18px">
+        <div class="bookshelf-label" id="bookshelfLabel">0h de estudio acumuladas</div>
+        <div class="bookshelf-row" id="bookshelfRow"></div>
       </div>
       <div class="glasscard" id="roomCard" style="margin-top:18px"></div>
       <div class="section-title">📈 Actividad</div>
@@ -725,6 +758,9 @@
 
       <div class="section-title">🏅 Tus récords</div>
       <div class="stat-grid" id="recordsGrid"></div>
+
+      <div class="section-title">🏆 Insignias</div>
+      <div class="glasscard"><div class="badges-grid" id="badgesGrid"></div></div>
 
       <div class="section-title">💡 Sugerencia para ti</div>
       <div class="glasscard" id="suggestCard">
@@ -967,7 +1003,8 @@ function loadJSON(k,def){try{var v=localStorage.getItem(k);return v?JSON.parse(v
 function saveJSON(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
 function hashPass(s){var hsh=5381;for(var i=0;i<s.length;i++){hsh=((hsh<<5)+hsh)+s.charCodeAt(i);hsh=hsh&hsh;}return String(hsh);}
 function userKey(email){return "bpna_data_"+email.toLowerCase();}
-function dataDefault(){return {sessions:[],events:{},loans:[],goalMin:240,goalPeriod:"day",fav:null,geoCheck:false,sharePresence:false,occ:{},acadEvents:[],offeringText:""};}
+function dataDefault(){return {sessions:[],events:{},loans:[],goalMin:240,goalPeriod:"day",fav:null,geoCheck:false,sharePresence:false,occ:{},acadEvents:[],offeringText:"",
+  streakFreezes:0,usedFreezeDates:[],lastFreezeEarnedAtStreak:0,badges:{}};}
 function genId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
 
 /* ===================== BRAIN: capa única de guardado local =====================
@@ -994,7 +1031,9 @@ let DATA=null;      // datos del usuario actual
 function loadUserData(){DATA=Brain.getUserData(CURRENT);
   if(!DATA.events)DATA.events={}; if(!DATA.sessions)DATA.sessions=[]; if(!DATA.loans)DATA.loans=[];
   if(!DATA.goalMin)DATA.goalMin=240; if(typeof DATA.geoCheck!=="boolean")DATA.geoCheck=false; if(typeof DATA.sharePresence!=="boolean")DATA.sharePresence=false; if(!DATA.occ)DATA.occ={}; if(!DATA.acadEvents)DATA.acadEvents=[];
-  if(DATA.goalPeriod!=="day"&&DATA.goalPeriod!=="week")DATA.goalPeriod="day"; if(typeof DATA.offeringText!=="string")DATA.offeringText="";}
+  if(DATA.goalPeriod!=="day"&&DATA.goalPeriod!=="week")DATA.goalPeriod="day"; if(typeof DATA.offeringText!=="string")DATA.offeringText="";
+  if(typeof DATA.streakFreezes!=="number")DATA.streakFreezes=0; if(!DATA.usedFreezeDates)DATA.usedFreezeDates=[];
+  if(typeof DATA.lastFreezeEarnedAtStreak!=="number")DATA.lastFreezeEarnedAtStreak=0; if(!DATA.badges)DATA.badges={};}
 function saveUserData(){Brain.saveUserData(CURRENT,DATA);}
 
 
@@ -1078,6 +1117,7 @@ async function prayForExam(localId,ownerId,title){
     return;
   }
   showToast("🙏 Has rezado por el examen de "+title);
+  if(DATA&&!DATA.badges.first_prayer){DATA.badges.first_prayer=true;saveUserData();}
   await socialLoadPrayerCounts();
   renderCalFriendExams();socialRenderFriendEvents();
 }
@@ -1144,6 +1184,7 @@ async function postBlog(){
   var ins=await sb.from("book_posts").insert({user_id:SOCIAL.user.id,author_name:name,book_title:book,comment:comment});
   if(ins.error){showToast("No se pudo publicar: "+ins.error.message);return;}
   $("blogBook").value="";$("blogComment").value="";
+  if(DATA&&!DATA.badges.first_post){DATA.badges.first_post=true;saveUserData();}
   showToast("Publicado");renderBlog();
 }
 async function socialLoadFriends(){
@@ -1215,6 +1256,7 @@ async function createStudyRoom(name){
   var ins=await sb.from("study_rooms").insert({owner_id:SOCIAL.user.id,name:(name||"").trim()||"Sala de estudio"}).select("*").single();
   if(ins.error){showToast("No se pudo crear la sala: "+ins.error.message);return;}
   SOCIAL.room={code:ins.data.code,name:ins.data.name};
+  if(DATA&&!DATA.badges.first_room){DATA.badges.first_room=true;saveUserData();}
   await socialHeartbeat();
   await loadRoomMembers();
   renderStudyRoom();
@@ -1226,6 +1268,7 @@ async function joinStudyRoom(code){
   var r=await sb.from("study_rooms").select("*").eq("code",code).maybeSingle();
   if(r.error||!r.data){showToast("No encuentro esa sala");return;}
   SOCIAL.room={code:r.data.code,name:r.data.name};
+  if(DATA&&!DATA.badges.first_room){DATA.badges.first_room=true;saveUserData();}
   await socialHeartbeat();
   await loadRoomMembers();
   renderStudyRoom();
@@ -1589,7 +1632,34 @@ function occControlsHTML(i){
     '<button data-o="libre" onclick="reportOcc('+i+',\'libre\')">🟢 Libre</button>'+
     '<button data-o="media" onclick="reportOcc('+i+',\'media\')">🟡 Media</button>'+
     '<button data-o="llena" onclick="reportOcc('+i+',\'llena\')">🔴 Llena</button>'+
-    '</div>';
+    '</div>'+
+    '<div id="occHist'+i+'" class="occ-hist-wrap"><button class="linkbtn" style="font-size:11.5px" onclick="showOccHistory('+i+')">📊 Ver ocupación habitual</button></div>';
+}
+async function showOccHistory(i){
+  var wrap=document.getElementById("occHist"+i); if(!wrap)return;
+  wrap.innerHTML='<div class="occ-empty">Cargando tendencia…</div>';
+  var sb=socialClient();
+  if(!sb){wrap.innerHTML='<div class="occ-empty">Configura Supabase para ver la tendencia histórica</div>';return;}
+  var res=await sb.from("occupancy_reports").select("level,created_at").eq("bib_index",i).limit(500);
+  if(res.error||!res.data||!res.data.length){wrap.innerHTML='<div class="occ-empty">Aún no hay suficientes datos históricos</div>';return;}
+  var buckets={"Mañana":[],"Tarde":[],"Noche":[]};
+  res.data.forEach(function(r){
+    var h=new Date(r.created_at).getHours();
+    var b=h<14?"Mañana":(h<20?"Tarde":"Noche");
+    var sc=OCC_LEVELS[r.level]?OCC_LEVELS[r.level].score:null;
+    if(sc)buckets[b].push(sc);
+  });
+  var html='<div class="occ-title" style="margin-top:8px">Ocupación habitual</div><div class="occ-hist">';
+  ["Mañana","Tarde","Noche"].forEach(function(k){
+    var arr=buckets[k];
+    if(!arr.length){html+='<div class="occ-hist-bar"><div class="ohb-track"></div><small>'+k+'</small></div>';return;}
+    var avg=arr.reduce(function(a,b){return a+b;},0)/arr.length;
+    var pct=Math.max(10,Math.round((avg-1)/2*100));
+    var cls=avg>=2.35?"od-llena":(avg>=1.65?"od-media":"od-libre");
+    html+='<div class="occ-hist-bar"><div class="ohb-track"><div class="ohb-fill '+cls+'" style="height:'+pct+'%"></div></div><small>'+k+'</small></div>';
+  });
+  html+='</div><div class="occ-source">Basado en '+res.data.length+' reportes históricos de todos los usuarios.</div>';
+  wrap.innerHTML=html;
 }
 async function addOccReport(i,level,silent){
   if(!OCC_LEVELS[level])return;
@@ -1838,6 +1908,7 @@ function pedirValoracion(sesion){
 }
 function renderStudy(){
   if(!DATA)return;
+  checkStreakFreezes();
   var sec=elapsedSec();
   $("studyTimer").textContent=fmtClock(sec);
   if(studyTimer.running){
@@ -1852,9 +1923,73 @@ function renderStudy(){
   $("stToday").textContent=hMin(todayMinutes());
   $("stWeek").textContent=hMin(weekMinutes());
   $("stSessions").textContent=DATA.sessions.length;
-  $("stStreak").textContent=streakDays();
+  $("stStreak").textContent=streakDays()+(DATA.streakFreezes>0?" 🧊"+DATA.streakFreezes:"");
   updateGoalRing();
   renderSessionFeed();
+  renderBookshelf();
+}
+/* ===== MODO POMODORO ===== */
+const POMO_FOCUS_MIN=25, POMO_BREAK_MIN=5;
+var pomo={running:false,phase:"focus",secondsLeft:POMO_FOCUS_MIN*60,cycles:0,tick:null};
+function pomoToggle(){
+  if(pomo.running){
+    pomo.running=false; if(pomo.tick){clearInterval(pomo.tick);pomo.tick=null;}
+    renderPomodoro();return;
+  }
+  pomo.running=true;
+  if(pomo.tick)clearInterval(pomo.tick);
+  pomo.tick=setInterval(pomoTick,1000);
+  renderPomodoro();
+}
+function pomoReset(){
+  if(pomo.tick){clearInterval(pomo.tick);pomo.tick=null;}
+  pomo.running=false;pomo.phase="focus";pomo.secondsLeft=POMO_FOCUS_MIN*60;
+  renderPomodoro();
+}
+function pomoTick(){
+  pomo.secondsLeft--;
+  if(pomo.secondsLeft<=0){
+    if(pomo.phase==="focus"){
+      pomo.cycles++;
+      var bibIdx=studyTimer.bibIndex!=null?studyTimer.bibIndex:0;
+      var saved={id:genId(),date:new Date().toISOString().slice(0,10),min:POMO_FOCUS_MIN,sec:POMO_FOCUS_MIN*60,
+        bib:BIBLIOTECAS[bibIdx].nombre,ts:Date.now()-POMO_FOCUS_MIN*60000,verif:false,prod:null,note:"Pomodoro",offering:DATA.offeringText||""};
+      DATA.sessions.push(saved);saveUserData();socialShareSession(saved);
+      showToast("🍅 Pomodoro completado ("+POMO_FOCUS_MIN+" min). ¡A descansar!");
+      pomo.phase="break";pomo.secondsLeft=POMO_BREAK_MIN*60;
+      renderProfile();
+    }else{
+      showToast("⏰ Descanso terminado. ¿Otro pomodoro?");
+      pomo.running=false; if(pomo.tick){clearInterval(pomo.tick);pomo.tick=null;}
+      pomo.phase="focus";pomo.secondsLeft=POMO_FOCUS_MIN*60;
+    }
+  }
+  renderPomodoro();
+}
+function renderPomodoro(){
+  var t=$("pomoTime"); if(!t)return;
+  var mm=Math.floor(pomo.secondsLeft/60),ss=pomo.secondsLeft%60;
+  t.textContent=String(mm).padStart(2,"0")+":"+String(ss).padStart(2,"0");
+  var lbl=$("pomoPhase"); if(lbl)lbl.textContent=pomo.phase==="focus"?"Concéntrate":"Descanso";
+  var cyc=$("pomoCycles"); if(cyc)cyc.textContent=pomo.cycles;
+  var btn=$("btnPomoToggle"); if(btn)btn.textContent=pomo.running?"⏸ Pausar":"▶ Empezar";
+}
+const SHELF_COLORS=["#6c5ce7","#00d2d3","#f59e0b","#22c55e","#e17055","#0984e3","#e84393","#00b894"];
+function renderBookshelf(){
+  var el=$("bookshelfRow"),lab=$("bookshelfLabel"); if(!el||!DATA)return;
+  var totalMin=0;DATA.sessions.forEach(function(s){totalMin+=s.min;});
+  if(studyTimer.running)totalMin+=elapsedMin();
+  var hours=Math.floor(totalMin/60);
+  if(lab)lab.textContent=hours>0?(hours+"h de estudio acumuladas · un libro por cada hora"):"0h de estudio acumuladas";
+  if(!hours){el.innerHTML='<div class="empty-note">Aún no hay libros en tu estantería. Completa tu primera hora de estudio.</div>';return;}
+  var n=Math.min(hours,80),html="";
+  for(var i=0;i<n;i++){
+    var color=SHELF_COLORS[i%SHELF_COLORS.length];
+    var h=34+((i*37)%18);
+    html+='<div class="book-spine" style="background:'+color+';height:'+h+'px" title="Hora '+(i+1)+' de estudio"></div>';
+  }
+  if(hours>80)html+='<div class="book-more">+'+(hours-80)+'</div>';
+  el.innerHTML=html;
 }
 function fmtFeedDate(dateStr){
   var d=new Date(dateStr+"T00:00:00"),hoy=new Date(),ayer=new Date();ayer.setDate(hoy.getDate()-1);
@@ -1911,8 +2046,9 @@ function weekMinutes(){
   return sum;
 }
 function streakDays(){
-  if(!DATA.sessions.length)return studyTimer.running?1:0;
+  if(!DATA.sessions.length&&!(DATA.usedFreezeDates&&DATA.usedFreezeDates.length))return studyTimer.running?1:0;
   var days={};DATA.sessions.forEach(function(s){days[s.date]=true;});
+  (DATA.usedFreezeDates||[]).forEach(function(dt){days[dt]=true;});
   if(studyTimer.running)days[new Date().toISOString().slice(0,10)]=true;
   var streak=0;var d=new Date();
   for(;;){var k=d.toISOString().slice(0,10);if(days[k]){streak++;d.setDate(d.getDate()-1);}else{
@@ -1920,6 +2056,31 @@ function streakDays(){
     if(streak===0&&k===new Date().toISOString().slice(0,10)){d.setDate(d.getDate()-1);continue;}
     break;}}
   return streak;
+}
+function checkStreakFreezes(){
+  if(!DATA||!DATA.sessions.length)return;
+  var realDays={};DATA.sessions.forEach(function(s){realDays[s.date]=true;});
+  var realStreak=0;var d=new Date();
+  for(;;){var k=d.toISOString().slice(0,10);if(realDays[k]){realStreak++;d.setDate(d.getDate()-1);}else{
+    if(realStreak===0&&k===new Date().toISOString().slice(0,10)){d.setDate(d.getDate()-1);continue;}
+    break;}}
+  var earnedAt=Math.floor(realStreak/7)*7;
+  if(earnedAt>0&&earnedAt>DATA.lastFreezeEarnedAtStreak&&DATA.streakFreezes<3){
+    DATA.streakFreezes=Math.min(3,DATA.streakFreezes+1);
+    DATA.lastFreezeEarnedAtStreak=earnedAt;
+    saveUserData();
+    showToast("🧊 Has ganado un congelador de racha (racha de "+earnedAt+" días)");
+  }
+  var ayer=new Date();ayer.setDate(ayer.getDate()-1);var ayerK=ayer.toISOString().slice(0,10);
+  var anteayer=new Date();anteayer.setDate(anteayer.getDate()-2);var anteayerK=anteayer.toISOString().slice(0,10);
+  var hoyK=new Date().toISOString().slice(0,10);
+  var yaUsado=(DATA.usedFreezeDates||[]).indexOf(ayerK)!==-1;
+  var anteayerCubierto=realDays[anteayerK]||(DATA.usedFreezeDates||[]).indexOf(anteayerK)!==-1;
+  if(!realDays[ayerK]&&!yaUsado&&DATA.streakFreezes>0&&anteayerCubierto&&ayerK!==hoyK){
+    DATA.streakFreezes--; if(!DATA.usedFreezeDates)DATA.usedFreezeDates=[]; DATA.usedFreezeDates.push(ayerK);
+    saveUserData();
+    showToast("🧊 Se usó un congelador de racha para no perderla (no estudiaste ayer)");
+  }
 }
 function openGoalModal(){
   var cur=DATA.goalMin, period=DATA.goalPeriod||"day";
@@ -2021,6 +2182,7 @@ function renderProfile(){
   // semana
   renderWeekBars();
   renderRecords();
+  renderBadges();
   if(socialClient()&&SOCIAL.user){socialLoadLeaderboard().then(renderLeaderboard);}else{renderLeaderboard();}
   renderLoans();
   renderSugerencia();
@@ -2067,6 +2229,32 @@ function renderRecords(){
     '<div class="stat"><div class="num">'+hMin(maxMin)+'</div><div class="lab">Sesión más larga · '+escapeHTML(bestBib)+'</div></div>'+
     '<div class="stat"><div class="num">'+computeBestStreak()+'</div><div class="lab">Mejor racha (días)</div></div>'+
     '<div class="stat"><div class="num">'+Math.floor(totalMin/60)+'h</div><div class="lab">Total histórico</div></div>';
+}
+const BADGE_DEFS=[
+  {id:"first_session",icon:"🎯",label:"Primer paso",desc:"Completa tu primera sesión de estudio"},
+  {id:"ten_hours",icon:"📚",label:"10 horas",desc:"Acumula 10 horas de estudio en total"},
+  {id:"streak7",icon:"🔥",label:"Racha de 7",desc:"Consigue una racha de 7 días seguidos"},
+  {id:"night_owl",icon:"🌙",label:"Búho nocturno",desc:"Estudia entre las 22:00 y las 6:00"},
+  {id:"first_friend",icon:"🤝",label:"Primer amigo",desc:"Añade a tu primer amigo en la app"},
+  {id:"first_prayer",icon:"🙏",label:"Buena fe",desc:"Reza por el examen de un amigo"},
+  {id:"first_post",icon:"📖",label:"Crítico literario",desc:"Publica tu primera reseña en el blog"},
+  {id:"first_room",icon:"👥",label:"Trabajo en equipo",desc:"Estudia en una sala de grupo"}
+];
+function renderBadges(){
+  var el=$("badgesGrid"); if(!el||!DATA)return;
+  var changed=false;
+  function grant(id){if(!DATA.badges[id]){DATA.badges[id]=true;changed=true;}}
+  var totalMin=0;DATA.sessions.forEach(function(s){totalMin+=s.min;});
+  if(DATA.sessions.length>=1)grant("first_session");
+  if(totalMin>=600)grant("ten_hours");
+  if(computeBestStreak()>=7)grant("streak7");
+  if(DATA.sessions.some(function(s){var h=new Date(s.ts).getHours();return h>=22||h<6;}))grant("night_owl");
+  if(socialClient()&&SOCIAL.friends&&SOCIAL.friends.length>=1)grant("first_friend");
+  if(changed)saveUserData();
+  el.innerHTML=BADGE_DEFS.map(function(b){
+    var on=!!DATA.badges[b.id];
+    return '<div class="badge-tile'+(on?" on":"")+'" title="'+escapeHTML(b.desc)+'"><div class="bt-icon">'+b.icon+'</div><div class="bt-label">'+escapeHTML(b.label)+'</div></div>';
+  }).join("");
 }
 function renderLoans(){
   var el=$("loanList");el.innerHTML="";
@@ -2444,15 +2632,19 @@ window.addEventListener("DOMContentLoaded",function(){
   document.querySelectorAll("#studyTab button").forEach(function(b){b.addEventListener("click",function(){
     document.querySelectorAll("#studyTab button").forEach(function(x){x.classList.remove("on");});
     b.classList.add("on");
-    var ofrecer=b.dataset.t==="ofrecer";
-    $("studyOfferPanel").classList.toggle("hidden",!ofrecer);
-    $("studyCronoPanel").classList.toggle("hidden",ofrecer);
-    $("studyStats").classList.toggle("hidden",ofrecer);
-    if(ofrecer)$("offerText").value=DATA.offeringText||"";
+    var t=b.dataset.t;
+    $("studyOfferPanel").classList.toggle("hidden",t!=="ofrecer");
+    $("pomodoroPanel").classList.toggle("hidden",t!=="pomo");
+    $("studyCronoPanel").classList.toggle("hidden",t==="ofrecer"||t==="pomo");
+    $("studyStats").classList.toggle("hidden",t==="ofrecer");
+    if(t==="ofrecer")$("offerText").value=DATA.offeringText||"";
+    if(t==="pomo")renderPomodoro();
   });});
   $("btnSaveOffer").addEventListener("click",function(){
     DATA.offeringText=$("offerText").value.trim();saveUserData();renderStudy();showToast("Guardado");
   });
+  $("btnPomoToggle").addEventListener("click",pomoToggle);
+  $("btnPomoReset").addEventListener("click",pomoReset);
   document.querySelectorAll("#feedTabSeg button").forEach(function(b){b.addEventListener("click",function(){
     document.querySelectorAll("#feedTabSeg button").forEach(function(x){x.classList.remove("on");});
     b.classList.add("on");
