@@ -132,13 +132,16 @@
   .pop .dir{font-size:12.5px;color:var(--suave);margin-top:10px;line-height:1.4;display:flex;gap:7px}
   .pop .dir svg{flex-shrink:0;margin-top:1px}
   .pop .hours{margin-top:12px;border-top:1px solid rgba(148,163,184,.3);padding-top:10px}
-  .pop .hours h4{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--acento);margin-bottom:7px}
-  .pop .hours table{width:100%;border-collapse:collapse;font-size:12px}
-  .pop .hours td{padding:2.5px 0}
-  .pop .hours td:first-child{color:var(--suave);width:40px}
-  .pop .hours td:last-child{text-align:right}
-  .pop .hours tr.today td{font-weight:800;color:var(--texto)}
-  .pop .hours tr.today td:first-child{color:var(--acento)}
+  .pop .hours h4{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--acento);margin-bottom:8px}
+  .pop .hours table{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
+  .pop .hours td{padding:5px 0;border-bottom:1px solid rgba(148,163,184,.14)}
+  .pop .hours tr:last-child td{border-bottom:none}
+  .pop .hours td:first-child{color:var(--suave);width:44px;font-weight:700}
+  .pop .hours td:last-child{text-align:right;color:var(--texto)}
+  .pop .hours tr.today{background:rgba(108,92,231,.1)}
+  .pop .hours tr.today td{font-weight:800;color:var(--texto);border-radius:8px}
+  .pop .hours tr.today td:first-child{color:var(--acento);padding-left:6px;border-radius:8px 0 0 8px}
+  .pop .hours tr.today td:last-child{padding-right:6px;border-radius:0 8px 8px 0}
   .pop .btnstudy{margin-top:12px;width:100%;border:none;border-radius:12px;padding:10px;
     background:linear-gradient(135deg,var(--acento),#8b7bef);color:#fff;font-weight:700;font-size:13px;cursor:pointer}
   .closed-day{color:var(--cerrado)}
