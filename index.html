@@ -77,8 +77,14 @@
     display:flex;flex-direction:column;background:var(--glass);
     backdrop-filter:blur(22px) saturate(160%);-webkit-backdrop-filter:blur(22px) saturate(160%);
     border:1px solid var(--borde);border-radius:20px;box-shadow:var(--sombra);overflow:hidden}
-  .panel-head{padding:14px 16px 10px;border-bottom:1px solid rgba(148,163,184,.25)}
+  .panel-head{padding:14px 16px;border-bottom:1px solid rgba(148,163,184,.25);cursor:pointer;user-select:none}
+  .panel.collapsed .panel-head{border-bottom:none}
+  .panel-head .phrow{display:flex;align-items:center;justify-content:space-between;gap:10px}
   .panel-head .count{font-size:12px;color:var(--suave);font-weight:600}
+  .panel-head .chev{width:16px;height:16px;color:var(--suave);flex-shrink:0;transition:transform .2s}
+  .panel.collapsed .chev{transform:rotate(-90deg)}
+  .panel.collapsed{max-height:none}
+  .panel.collapsed .list{display:none}
   .season{display:inline-block;margin-top:6px;font-size:10.5px;font-weight:700;text-transform:uppercase;
     letter-spacing:.08em;padding:3px 9px;border-radius:99px;
     background:linear-gradient(135deg,rgba(108,92,231,.16),rgba(0,210,211,.16));color:var(--acento)}
@@ -528,9 +534,12 @@
   <div id="viewMap" class="view">
     <div id="map"></div>
     <div class="friend-banner hidden" id="friendBanner" style="position:fixed;top:78px;right:18px;z-index:960;max-width:300px"></div>
-    <div class="panel">
-      <div class="panel-head">
-        <div class="count" id="panelCount">Cargando…</div>
+    <div class="panel collapsed" id="libPanel">
+      <div class="panel-head" id="panelHead">
+        <div class="phrow">
+          <div class="count" id="panelCount">Cargando…</div>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
         <span class="season" id="seasonTag"></span>
       </div>
       <div class="list" id="list"></div>
@@ -2300,6 +2309,7 @@ window.addEventListener("DOMContentLoaded",function(){
   $("btnLogout").addEventListener("click",logout);
 
   // nuevas funciones
+  $("panelHead").addEventListener("click",function(){$("libPanel").classList.toggle("collapsed");});
   $("fabNow").addEventListener("click",abrirComparador);
   $("nowClose").addEventListener("click",function(){$("nowPanel").classList.add("hidden");});
   $("bellBtn").addEventListener("click",abrirAvisos);
