@@ -161,6 +161,23 @@
   .pop .hours tr.today td{font-weight:800;color:var(--texto);border-radius:8px}
   .pop .hours tr.today td:first-child{color:var(--acento);padding-left:6px;border-radius:8px 0 0 8px}
   .pop .hours tr.today td:last-child{padding-right:6px;border-radius:0 8px 8px 0}
+  .pop.pop-compact{text-align:center}
+  .pop-compact h2{font-size:15.5px}
+  .pop-meta{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px;flex-wrap:wrap}
+  .pop-dist{font-size:11.5px;font-weight:700;color:var(--suave);background:rgba(148,163,184,.16);padding:4px 9px;border-radius:99px}
+  .pop-today{font-size:12px;color:var(--suave);margin-top:8px}
+  .pop-chips{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;margin-top:10px}
+  .pop-chip{font-size:11px;font-weight:700;background:rgba(108,92,231,.1);color:var(--acento);padding:4px 9px;border-radius:99px;white-space:nowrap}
+  .locate-btn{position:fixed;z-index:900;background:var(--glass-fuerte);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    border:1px solid var(--borde);border-radius:12px;width:42px;height:42px;display:flex;align-items:center;justify-content:center;
+    box-shadow:var(--sombra);cursor:pointer;color:var(--acento);bottom:186px;right:18px;transition:transform .12s,background .12s}
+  .locate-btn:hover{background:var(--glass);transform:translateY(-2px)}
+  .locate-btn.active{color:#fff;background:linear-gradient(135deg,var(--acento),#8b7bef);border-color:transparent}
+  .locate-btn svg{width:19px;height:19px}
+  .user-dot-wrap{width:20px;height:20px;position:relative}
+  .user-dot-wrap::after{content:"";position:absolute;inset:-8px;border-radius:50%;background:rgba(59,130,246,.25);animation:userpulse 1.8s infinite}
+  .user-dot{width:16px;height:16px;border-radius:50%;background:#3b82f6;border:3px solid #fff;box-shadow:0 2px 8px rgba(2,6,23,.35);position:absolute;top:2px;left:2px}
+  @keyframes userpulse{0%{box-shadow:0 0 0 0 rgba(59,130,246,.45)}70%{box-shadow:0 0 0 14px rgba(59,130,246,0)}100%{box-shadow:0 0 0 0 rgba(59,130,246,0)}}
   .pop .btnstudy{margin-top:12px;width:100%;border:none;border-radius:12px;padding:10px;
     background:linear-gradient(135deg,var(--acento),#8b7bef);color:#fff;font-weight:700;font-size:13px;cursor:pointer}
   .closed-day{color:var(--cerrado)}
@@ -511,6 +528,7 @@
     .ministudy{bottom:220px}
     .fab{bottom:90px;left:10px;padding:11px 15px;font-size:13px}
     .nowpanel{bottom:150px;left:10px;right:10px;width:auto;max-width:none}
+    .locate-btn{bottom:150px;right:10px}
   }
 </style>
 </head>
@@ -590,6 +608,11 @@
       </div>
       <div class="list" id="list"></div>
     </div>
+
+    <!-- Botón: mi ubicación (en el propio mapa, sin abrir apps externas) -->
+    <button class="locate-btn" id="btnLocate" title="Mi ubicación">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg>
+    </button>
 
     <!-- Botón flotante: ¿a cuál voy ahora? -->
     <button class="fab" id="fabNow">
@@ -981,6 +1004,16 @@ BIBLIOTECAS.forEach(function(b){
   }
   b.acceso={tipo:"desconocido",detalle:"Sin confirmar"};
   b.accesibilidad={sillaRuedas:null,turistas:null,gratisDias:null,notas:"Sin confirmar"};
+});
+// Aforo, coste y recursos disponibles: se investigan progresivamente (ver EXTRA_INFO). Hasta entonces,
+// "sin confirmar" — nunca se inventa un número de aforo ni una lista de recursos.
+const EXTRA_INFO={};
+BIBLIOTECAS.forEach(function(b){
+  if(!b.tipoEspacio)b.tipoEspacio="biblioteca";
+  var extra=EXTRA_INFO[b.nombre];
+  b.capacidad=extra&&extra.capacidad!=null?extra.capacidad:null;
+  b.gratuito=extra&&typeof extra.gratuito==="boolean"?extra.gratuito:null;
+  b.recursos=extra&&extra.recursos?extra.recursos:[];
 });
 function fmtHoras(min){const hh=Math.floor(min/60),mm=min%60;return hh+":"+String(mm).padStart(2,"0");}
 function estadoBib(b){const now=new Date(),d=now.getDay(),m=now.getHours()*60+now.getMinutes();
@@ -1704,13 +1737,58 @@ function refreshOccUI(i){
 
 /* ===================== MAPA Y LISTA ===================== */
 let markers=[];
+function popIconRow(b){
+  var ac=b.acceso||{tipo:"desconocido"}, ax=b.accesibilidad||{};
+  var chips=[];
+  chips.push(ac.tipo==="libre"?"🎫 Libre":(ac.tipo==="restringido"?"🔒 Restringido":"❔ Acceso"));
+  if(b.gratuito===true)chips.push("💶 Gratis");
+  else if(b.gratuito===false)chips.push("💶 De pago");
+  if(b.capacidad)chips.push("🪑 "+b.capacidad);
+  if(ax.sillaRuedas===true)chips.push("♿");
+  if(b.recursos&&b.recursos.indexOf("wifi")!==-1)chips.push("📶");
+  return '<div class="pop-chips">'+chips.map(function(c){return '<span class="pop-chip">'+c+'</span>';}).join("")+'</div>';
+}
 function popupHTML(b,i){
-  var verano=esVerano(new Date());
   var abierto=estadoBib(b);
-  var s='<div class="pop"><h2>'+b.nombre+'</h2>';
+  var cal=horarioVigente(b),hoy=new Date().getDay();
+  var hoyTr=cal[hoy]||[];
+  var hoyTxt=hoyTr.length?hoyTr.map(function(t){return fmtHoras(t[0])+"–"+fmtHoras(t[1]);}).join(", "):"Cerrado hoy";
+  var distTxt="";
+  if(window.__userPos){
+    var dm=distMetros(window.__userPos.lat,window.__userPos.lon,b.lat,b.lon);
+    distTxt=dm<1000?Math.round(dm)+" m":(dm/1000).toFixed(1)+" km";
+  }
+  var s='<div class="pop pop-compact"><h2>'+escapeHTML(b.nombre)+'</h2>';
+  s+='<div class="pop-meta"><span class="estado '+(abierto?"open":"closed")+'">'+(abierto?"● Abierto":"● Cerrado")+'</span>'+(distTxt?'<span class="pop-dist">📍 '+distTxt+'</span>':'')+'</div>';
+  s+='<div class="pop-today">Hoy: '+escapeHTML(hoyTxt)+'</div>';
+  s+=popIconRow(b);
+  var o=occSummary(i);
+  s+='<div style="margin-top:10px">'+(o?('<div class="occ-report" style="justify-content:center"><span class="od '+o.info.className+'"></span><span><b>'+o.info.emoji+' '+o.info.label+'</b></span></div>'):'<div class="occ-empty">⚪ Sin datos recientes de afluencia</div>')+'</div>';
+  s+='<button class="linkbtn" style="display:block;margin:10px auto 0" onclick="openBibDetailModal('+i+')">Ver ficha completa →</button>';
+  s+='<button class="btnstudy" onclick="startStudyAt('+i+')">▶ Estudiar aquí</button>';
+  s+='</div>';
+  return s;
+}
+function recursosHTML(b){
+  var RES_LABELS={wifi:"📶 Wifi",enchufes:"🔌 Enchufes",salas_grupo:"👥 Salas de grupo",impresora:"🖨️ Impresora/fotocopias",cafeteria:"☕ Cafetería",silencio:"🤫 Zona de silencio",ordenadores:"💻 Ordenadores"};
+  var s='<div class="hours"><h4>Aforo y recursos</h4>';
+  s+='<div style="font-size:12.5px;color:var(--suave)">🪑 Aforo: '+(b.capacidad?(b.capacidad+" puestos"):"sin confirmar")+'</div>';
+  s+='<div style="font-size:12.5px;color:var(--suave);margin-top:4px">💶 '+(b.gratuito===true?"Gratuito":(b.gratuito===false?"De pago":"Coste sin confirmar"))+'</div>';
+  if(b.recursos&&b.recursos.length){
+    var txt=b.recursos.map(function(r){return RES_LABELS[r]||r;}).join(" · ");
+    s+='<div style="font-size:12.5px;color:var(--suave);margin-top:4px">'+txt+'</div>';
+  }else{
+    s+='<div style="font-size:11.5px;color:var(--suave);margin-top:4px;font-style:italic">Recursos disponibles sin confirmar todavía.</div>';
+  }
+  s+='</div>';
+  return s;
+}
+function openBibDetailModal(i){
+  var b=BIBLIOTECAS[i], verano=esVerano(new Date()), abierto=estadoBib(b);
+  var s='<div class="pop" style="padding:0"><h2>'+escapeHTML(b.nombre)+'</h2>';
   s+='<div class="estado '+(abierto?"open":"closed")+'">'+(abierto?"● Abierto ahora":"● Cerrado ahora")+'</div>';
   if(b.rating!=null)s+='<div class="rate-line"><b>★ '+b.rating.toFixed(1)+'</b> · '+b.reviews+' reseñas</div>';
-  s+='<div class="dir"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6c5ce7" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span>'+b.dir+'</span></div>';
+  s+='<div class="dir"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6c5ce7" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span>'+escapeHTML(b.dir)+'</span></div>';
   var cal=horarioVigente(b),hoy=new Date().getDay();
   s+='<div class="hours"><h4>'+(verano?"Horario de verano":"Horario de invierno")+'</h4><table>';
   for(var d=1;d<=7;d++){var di=d%7,tr=cal[di]||[];
@@ -1718,10 +1796,11 @@ function popupHTML(b,i){
     s+='<tr class="'+(di===hoy?"today":"")+'"><td>'+DIAS[di]+'</td><td>'+txt+'</td></tr>';}
   s+='</table></div>';
   s+=accesoAccesibilidadHTML(b);
+  s+=recursosHTML(b);
   s+=occControlsHTML(i);
-  s+='<button class="btnstudy" onclick="startStudyAt('+i+')">▶ Estudiar aquí</button>';
+  s+='<button class="btnstudy" onclick="closeModal();startStudyAt('+i+')">▶ Estudiar aquí</button>';
   s+='</div>';
-  return s;
+  openModal(s);
 }
 function accesoAccesibilidadHTML(b){
   var ac=b.acceso||{tipo:"desconocido"}, ax=b.accesibilidad||{};
@@ -1763,8 +1842,13 @@ function buildList(){
   var list=$("list");list.innerHTML="";
   BIBLIOTECAS.forEach(function(b,i){
     var abierto=estadoBib(b);
+    var distTxt="";
+    if(window.__userPos){
+      var dm=distMetros(window.__userPos.lat,window.__userPos.lon,b.lat,b.lon);
+      distTxt=" · 📍"+(dm<1000?Math.round(dm)+"m":(dm/1000).toFixed(1)+"km");
+    }
     var card=document.createElement("div");card.className="card";
-    card.innerHTML='<h3>'+(i+1)+'. '+b.nombre+'</h3><div class="row"><span class="dot '+(abierto?"open":"closed")+'"></span>'+(abierto?"Abierto ahora":"Cerrado ahora")+(b.rating!=null?'<span class="rate">★ '+b.rating.toFixed(1)+'</span>':'')+'</div>'+occStatusHTML(i,true);
+    card.innerHTML='<h3>'+(i+1)+'. '+b.nombre+'</h3><div class="row"><span class="dot '+(abierto?"open":"closed")+'"></span>'+(abierto?"Abierto ahora":"Cerrado ahora")+escapeHTML(distTxt)+(b.rating!=null?'<span class="rate">★ '+b.rating.toFixed(1)+'</span>':'')+'</div>'+occStatusHTML(i,true);
     card.addEventListener("click",function(){window.__selBib(i);});
     list.appendChild(card);
   });
@@ -1777,6 +1861,28 @@ function chinchetaIcon(i){
   if(abierto){var o=occSummary(i); if(o)occClass=" occ-"+o.level;}
   var libroSvg='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5c2-1.5 5-2 7-1v14c-2-1-5-.5-7 1V5z"/><path d="M22 5c-2-1.5-5-2-7-1v14c2-1 5-.5 7 1V5z"/></svg>';
   return L.divIcon({className:"",html:'<div class="chincheta'+(abierto?"":" closed")+occClass+'"><div class="cuerpo">'+libroSvg+'</div><div class="punta"></div></div>',iconSize:[34,44],iconAnchor:[17,44],popupAnchor:[0,-44]});
+}
+// "Mi ubicación": la pinta en el propio mapa, nunca abre Google Maps ni ninguna app externa.
+window.__userPos=null;
+window.__userMarker=null;
+function locateMe(){
+  if(!navigator.geolocation){showToast("Tu navegador no admite geolocalización");return;}
+  var btn=$("btnLocate"); if(btn)btn.classList.add("active");
+  navigator.geolocation.getCurrentPosition(function(pos){
+    window.__userPos={lat:pos.coords.latitude,lon:pos.coords.longitude};
+    if(window.__map){
+      var icon=L.divIcon({className:"",html:'<div class="user-dot-wrap"><div class="user-dot"></div></div>',iconSize:[20,20],iconAnchor:[10,10]});
+      if(window.__userMarker){window.__userMarker.setLatLng([window.__userPos.lat,window.__userPos.lon]);}
+      else{window.__userMarker=L.marker([window.__userPos.lat,window.__userPos.lon],{icon:icon,zIndexOffset:1000}).addTo(window.__map).bindPopup('<div class="pop" style="text-align:center"><b>📍 Estás aquí</b></div>');}
+      window.__map.flyTo([window.__userPos.lat,window.__userPos.lon],15,{duration:.6});
+    }
+    buildList();
+    if(markers&&markers.length)markers.forEach(function(mk,j){if(mk.getPopup()&&mk.isPopupOpen())mk.setPopupContent(popupHTML(BIBLIOTECAS[j],j));});
+    showToast("Ubicación encontrada");
+  },function(err){
+    if(btn)btn.classList.remove("active");
+    showToast(err.code===1?"Permiso de ubicación denegado":"No se pudo obtener tu ubicación");
+  },{timeout:8000,enableHighAccuracy:true});
 }
 // El mapa con chinchetas se monta cuando Leaflet está disponible
 function initMap(){
@@ -2451,7 +2557,9 @@ function abrirComparador(){
       list.appendChild(row);
     });
   }
-  if(navigator.geolocation){
+  if(window.__userPos){
+    pintar({latitude:window.__userPos.lat,longitude:window.__userPos.lon});
+  }else if(navigator.geolocation){
     navigator.geolocation.getCurrentPosition(
       function(pos){pintar(pos.coords);},
       function(){pintar(null);},
@@ -2670,6 +2778,7 @@ window.addEventListener("DOMContentLoaded",function(){
   // nuevas funciones
   $("panelHead").addEventListener("click",function(){$("libPanel").classList.toggle("collapsed");});
   $("fabNow").addEventListener("click",abrirComparador);
+  $("btnLocate").addEventListener("click",locateMe);
   $("nowClose").addEventListener("click",function(){$("nowPanel").classList.add("hidden");});
   $("bellBtn").addEventListener("click",abrirAvisos);
   $("miniShare").addEventListener("click",compartirEstado);
