@@ -20,9 +20,9 @@ Estado actual: tiene `name`, `short_name`, `description`, `start_url`, `scope`, 
 
 Arreglos recomendados (PWABuilder los marca como avisos):
 
-- **Falta `id`.** Añade `"id": "./"` (identidad estable de la app aunque cambie `start_url`).
+- ~~Falta `id`~~ Ya añadido: `"id": "./"`.
 - **Faltan `screenshots`.** Añade 2–4 capturas (p. ej. 1080×1920, `"form_factor": "narrow"`) en `icons/` o una carpeta `screenshots/`.
-- **Falta `categories`.** Añade `"categories": ["education", "productivity"]`.
+- ~~Falta `categories`~~ Ya añadido: `["education", "productivity"]`.
 - Opcional: `"dir": "ltr"` y `shortcuts` (p. ej. «Empezar a estudiar»).
 - Si cambias el manifest o los iconos, sube `CACHE_NAME` en `sw.js` para que los móviles cojan la versión nueva.
 
