@@ -1054,12 +1054,26 @@ BIBLIOTECAS.forEach(function(b){
 // Aforo, coste y recursos disponibles: se investigan progresivamente. Solo se rellena lo que ya está
 // respaldado por las fuentes citadas en ACCESO_INFO; lo demás queda "sin confirmar" — nunca se inventa
 // un número de aforo ni una lista de recursos.
+// Fuentes: pamplona.es (fichas de cada biblioteca y aviso municipal de 2018 sobre wifi y ordenadores
+// gratuitos en toda la red de Pamplona), Diario de Navarra 02-03-2011 (400 puestos en la inauguración de la
+// Biblioteca de Navarra), unav.edu (espacios y equipamiento), programa Civican otoño 2024.
+// El aforo de la UPNA no se pone: las estadísticas del ministerio dan cifras distintas según el año.
+const PAMPLONA_RED=["wifi","ordenadores"];
 const EXTRA_INFO={
-  "Biblioteca de Navarra":{gratuito:true,recursos:["wifi","salas_grupo","ordenadores"]},
-  "Biblioteca Civican":{gratuito:true},
-  "Biblioteca Universidad de Navarra · Central":{recursos:["ordenadores","salas_grupo","silencio"]},
-  "Biblioteca Universidad de Navarra · Ciencias":{capacidad:451,recursos:["salas_grupo"]},
-  "Biblioteca UPNA · Campus de Arrosadía":{gratuito:true}
+  "Biblioteca de Navarra":{gratuito:true,capacidad:400,recursos:["wifi","salas_grupo","ordenadores"]},
+  "Biblioteca Pública San Francisco":{recursos:PAMPLONA_RED},
+  "Biblioteca Pública Yamaguchi":{recursos:["wifi","ordenadores","impresora"]},
+  "Biblioteca Pública de la Milagrosa":{recursos:PAMPLONA_RED},
+  "Biblioteca Pública de Iturrama":{recursos:PAMPLONA_RED},
+  "Biblioteca Pública de la Txantrea":{recursos:PAMPLONA_RED},
+  "Biblioteca Pública de Mendillorri":{recursos:PAMPLONA_RED},
+  "Biblioteca Pública de San Pedro":{recursos:PAMPLONA_RED},
+  "Biblioteca Pública de San Jorge":{recursos:PAMPLONA_RED},
+  "Biblioteca Pública de Etxabakoitz":{recursos:PAMPLONA_RED},
+  "Biblioteca Civican":{gratuito:true,recursos:["cafeteria"]},
+  "Biblioteca Universidad de Navarra · Central":{capacidad:349,recursos:["wifi","enchufes","salas_grupo","impresora","ordenadores","silencio"]},
+  "Biblioteca Universidad de Navarra · Ciencias":{capacidad:451,recursos:["salas_grupo","impresora","ordenadores"]},
+  "Biblioteca UPNA · Campus de Arrosadía":{gratuito:true,recursos:["wifi","ordenadores","salas_grupo"]}
 };
 BIBLIOTECAS.forEach(function(b){
   if(!b.tipoEspacio)b.tipoEspacio="biblioteca";
