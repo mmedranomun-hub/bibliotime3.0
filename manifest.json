@@ -33,5 +33,28 @@
   "categories": [
     "education",
     "productivity"
+  ],
+  "screenshots": [
+    {
+      "src": "screenshots/estudio.png",
+      "sizes": "1080x1919",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Modo estudio con modo foco y asignaturas"
+    },
+    {
+      "src": "screenshots/asignaturas.png",
+      "sizes": "1080x1919",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Cronómetro y estadísticas del día"
+    },
+    {
+      "src": "screenshots/perfil.png",
+      "sizes": "1080x1919",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Tu semana de estudio"
+    }
   ]
 }

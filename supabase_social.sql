@@ -107,7 +107,6 @@ create table if not exists study_rooms (
 );
 alter table study_rooms enable row level security;
 drop policy if exists "study_rooms select all" on study_rooms;
-create policy "study_rooms select all" on study_rooms for select using (true);
 drop policy if exists "study_rooms insert own" on study_rooms;
 create policy "study_rooms insert own" on study_rooms for insert with check (auth.uid() = owner_id);
 drop policy if exists "study_rooms delete own" on study_rooms;
@@ -171,7 +170,6 @@ create table if not exists kudos (
 );
 alter table kudos enable row level security;
 drop policy if exists "kudos select all" on kudos;
-create policy "kudos select all" on kudos for select using (true);
 
 -- ===== AFLUENCIA DE BIBLIOTECAS (compartida entre todos los usuarios) =====
 create table if not exists occupancy_reports (
@@ -241,3 +239,24 @@ end;
 $$;
 revoke all on function public.delete_my_account() from public, anon;
 grant execute on function public.delete_my_account() to authenticated;
+
+-- ===== KUDOS Y SALAS: solo quien participa =====
+drop policy if exists "kudos select all" on kudos;
+drop policy if exists "kudos select involved" on kudos;
+-- Los ves si los diste, si son de tu sesión o si la sesión es de un amigo tuyo.
+create policy "kudos select involved" on kudos for select using (
+  auth.uid() = giver_id or auth.uid() = session_owner_id or public.are_friends(auth.uid(), session_owner_id)
+);
+
+drop policy if exists "study_rooms select all" on study_rooms;
+drop policy if exists "study_rooms select own or member" on study_rooms;
+create policy "study_rooms select own or member" on study_rooms for select using (
+  auth.uid() = owner_id or code = public.my_room_code()
+);
+-- Unirse con código: devuelve la sala solo a quien conoce el código exacto (no se pueden listar todas).
+create or replace function public.join_study_room(p_code text) returns table(code text, name text)
+language sql stable security definer set search_path = public as $$
+  select r.code, r.name from study_rooms r where r.code = upper(trim(p_code)) limit 1;
+$$;
+revoke all on function public.join_study_room(text) from public, anon;
+grant execute on function public.join_study_room(text) to authenticated;

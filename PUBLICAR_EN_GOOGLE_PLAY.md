@@ -21,7 +21,7 @@ Estado actual: tiene `name`, `short_name`, `description`, `start_url`, `scope`, 
 Arreglos recomendados (PWABuilder los marca como avisos):
 
 - ~~Falta `id`~~ Ya añadido: `"id": "./"`.
-- **Faltan `screenshots`.** Añade 2–4 capturas (p. ej. 1080×1920, `"form_factor": "narrow"`) en `icons/` o una carpeta `screenshots/`.
+- ~~Faltan `screenshots`~~ Ya añadidas 3 capturas en `screenshots/` (estudio, estadísticas, semana). Falta una del mapa hecha en tu móvil.
 - ~~Falta `categories`~~ Ya añadido: `["education", "productivity"]`.
 - Opcional: `"dir": "ltr"` y `shortcuts` (p. ej. «Empezar a estudiar»).
 - Si cambias el manifest o los iconos, sube `CACHE_NAME` en `sw.js` para que los móviles cojan la versión nueva.
@@ -118,3 +118,9 @@ Checklist:
 
 - Cambios en la web (HTML/JS): **no hace falta** subir nada a Play; la app carga la web. Sube `CACHE_NAME` en `sw.js`.
 - Cambios en nombre, icono, colores o `start_url`: regenera el `.aab` con **la misma llave** y un `versionCode` mayor.
+
+
+## Archivos ya preparados
+
+- `play/assetlinks.json`: plantilla del archivo de verificación (ver `play/LEEME.md`).
+- `screenshots/`: capturas para la ficha de la tienda.
