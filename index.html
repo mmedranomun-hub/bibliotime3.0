@@ -891,6 +891,8 @@
           <label class="switch"><input type="checkbox" id="chkExtras"><span class="slider"></span></label>
         </div>
         <button class="btn danger" id="btnLogout">Cerrar sesión</button>
+        <button class="linkbtn" id="btnDeleteAccount" style="display:block;margin:14px auto 0;color:var(--cerrado)">Eliminar mi cuenta y mis datos</button>
+        <a class="linkbtn" href="privacidad.html" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:10px">Política de privacidad</a>
       </div>
     </div>
   </div>
@@ -1171,15 +1173,15 @@ function socialNameById(id){
 async function socialEnsureProfile(user,name,email){
   var sb=socialClient(); if(!sb||!user)return;
   SOCIAL.user=user;
-  var got=await sb.from("profiles").select("*").eq("id",user.id).maybeSingle();
+  var got=await sb.from("profiles").select("id,name,friend_code").eq("id",user.id).maybeSingle();
   if(got.error && got.error.code!=="PGRST116"){console.warn(got.error);return;}
   var prof=got.data;
   if(!prof){
-    var ins=await sb.from("profiles").insert({id:user.id,email:email||user.email,name:name||((email||user.email||"").split("@")[0])}).select("*").single();
+    var ins=await sb.from("profiles").insert({id:user.id,name:name||((email||user.email||"").split("@")[0])}).select("id,name,friend_code").single();
     if(ins.error){console.warn(ins.error);return;}
     prof=ins.data;
   }else if(name && prof.name!==name){
-    var upd=await sb.from("profiles").update({name:name,email:email||user.email}).eq("id",user.id).select("*").single();
+    var upd=await sb.from("profiles").update({name:name}).eq("id",user.id).select("id,name,friend_code").single();
     if(!upd.error)prof=upd.data;
   }
   SOCIAL.profile=prof;
@@ -1317,7 +1319,7 @@ async function socialLoadFriends(){
   var ids=[]; rows.forEach(function(r){ids.push(r.requester_id===me?r.addressee_id:r.requester_id);});
   ids=[...new Set(ids)];
   var profs=[];
-  if(ids.length){var pr=await sb.from("profiles").select("id,name,email,friend_code").in("id",ids); if(!pr.error)profs=pr.data||[];}
+  if(ids.length){var pr=await sb.from("profiles").select("id,name,friend_code").in("id",ids); if(!pr.error)profs=pr.data||[];}
   function prof(id){return profs.filter(function(p){return p.id===id;})[0]||{id:id,name:"Amigo"};}
   SOCIAL.friends=rows.filter(function(r){return r.status==="accepted";}).map(function(r){var oid=r.requester_id===me?r.addressee_id:r.requester_id;return {row:r,profile:prof(oid)};});
   SOCIAL.requests=rows.filter(function(r){return r.status==="pending"&&r.addressee_id===me;}).map(function(r){return {row:r,profile:prof(r.requester_id)};});
@@ -1692,6 +1694,19 @@ function applyExtras(){
   document.body.classList.toggle("no-extras",!on);
   var c=$("chkExtras"); if(c)c.checked=on;
   if(!on&&$("studyOfferPanel")&&!$("studyOfferPanel").classList.contains("hidden")){var b=document.querySelector('#studyTab button[data-t="crono"]');if(b)b.click();}
+}
+// Borra la cuenta en la nube (función delete_my_account del SQL) y todos los datos de este dispositivo.
+async function deleteAccount(){
+  if(!confirm("Se borrarán tu cuenta, tus sesiones, amigos y todo lo que hayas compartido. No se puede deshacer. ¿Continuar?"))return;
+  var email=CURRENT, sb=socialClient();
+  if(sb&&SOCIAL.user){
+    var r=await sb.rpc("delete_my_account");
+    if(r.error){showToast("No se pudo borrar la cuenta en la nube: "+r.error.message);return;}
+  }
+  if(studyTimer.running)stopStudy(true);
+  try{localStorage.removeItem(userKey(email));var users=Brain.getUsers();delete users[email];Brain.saveUsers(users);}catch(e){}
+  logout();
+  showToast("Tu cuenta y tus datos se han eliminado");
 }
 function logout(){
   // stopStudy(true): sin el diálogo de valoración, que se quedaba encima del login sin usuario.
@@ -2585,7 +2600,7 @@ function openDayModal(key){
     '<div style="border-top:1px solid rgba(148,163,184,.3);margin:16px 0 14px"></div>'+
     '<div class="seg" id="evType"><button data-t="examen" class="on">Examen</button><button data-t="tarea">Tarea</button><button data-t="otro">Otro</button></div>'+
     '<div class="field"><input type="text" id="evTitle" placeholder="Ej: Examen de Cálculo II"></div>'+
-    '<label id="evShareWrap" style="display:flex;align-items:center;gap:9px;margin:-2px 0 14px;font-size:13px;color:var(--suave);font-weight:700"><input type="checkbox" id="evShareExam" checked> Compartir con mis amigos (podrán rezar por él)</label>'+
+    '<label id="evShareWrap" style="display:flex;align-items:center;gap:9px;margin:-2px 0 14px;font-size:13px;color:var(--suave);font-weight:700"><input type="checkbox" id="evShareExam"> Compartir con mis amigos (podrán rezar por él)</label>'+
     '<button class="btn" id="evAdd">Añadir</button>',
     function(){
       var selType="examen";
@@ -2822,7 +2837,7 @@ function openEventModal(){
     '<div class="field"><label>Hora (opcional)</label><input type="time" id="evtTime"></div>'+
     '<div class="field"><label>Lugar (opcional)</label><input type="text" id="evtPlace" placeholder="Ej: Aula Magna UPNA"></div>'+
     '<div class="field"><label>Enlace (opcional)</label><input type="url" id="evtUrl" placeholder="https://…"></div>'+
-    '<label style="display:flex;align-items:center;gap:9px;margin:-2px 0 14px;font-size:13px;color:var(--suave);font-weight:700"><input type="checkbox" id="evtShare" checked> Compartir con mis amigos aceptados</label>'+
+    '<label style="display:flex;align-items:center;gap:9px;margin:-2px 0 14px;font-size:13px;color:var(--suave);font-weight:700"><input type="checkbox" id="evtShare"> Compartir con mis amigos aceptados</label>'+
     '<button class="btn" id="evtSave">Guardar evento</button>',
     function(){
       var selType="charla";
@@ -3195,6 +3210,7 @@ window.addEventListener("DOMContentLoaded",function(){
   $("btnAddEvent").addEventListener("click",openEventModal);
   $("btnPostBlog").addEventListener("click",postBlog);
   $("btnLogout").addEventListener("click",logout);
+  $("btnDeleteAccount").addEventListener("click",deleteAccount);
 
   // nuevas funciones
   $("panelClose").addEventListener("click",function(e){e.stopPropagation();cerrarLista();});

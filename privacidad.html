@@ -56,7 +56,7 @@
   <h2>Resumen en 30 segundos</h2>
   <ul>
     <li>Tus sesiones de estudio, objetivos, rachas, asignaturas, notas, préstamos y calendario se guardan <b>en tu propio dispositivo</b>.</li>
-    <li>Si creas una cuenta, guardamos tu <b>correo, nombre y un código de amigo</b> para que puedas iniciar sesión y añadir amigos.</li>
+    <li>Si creas una cuenta, guardamos tu <b>correo (en el sistema de inicio de sesión), nombre y un código de amigo</b> para que puedas iniciar sesión y añadir amigos.</li>
     <li>Tu <b>ubicación GPS nunca sale de tu móvil</b>: se usa solo en el dispositivo para calcular distancias, mostrar «Mi ubicación» y verificar el check-in.</li>
     <li>Solo compartimos con tus amigos la <b>biblioteca</b> donde estudias, tus sesiones o tus eventos <b>si tú lo activas</b>.</li>
     <li><b>Sin publicidad, sin analítica, sin rastreadores</b> y no vendemos tus datos.</li>
@@ -76,7 +76,7 @@
   <h3>2.1. Cuenta de usuario</h3>
   <p>Para usar la app tienes que crear una cuenta con <b>correo electrónico, nombre y contraseña</b>.</p>
   <ul>
-    <li><b>Cuenta en la nube (modo normal):</b> el registro y el inicio de sesión se gestionan con Supabase Auth. La contraseña la guarda Supabase cifrada; nosotros nunca la vemos. Se crea un perfil con tu <b>correo, nombre y un código de amigo</b> generado al azar.</li>
+    <li><b>Cuenta en la nube (modo normal):</b> el registro y el inicio de sesión se gestionan con Supabase Auth. La contraseña la guarda Supabase cifrada; nosotros nunca la vemos. Se crea un perfil público con tu <b>nombre y un código de amigo</b>; tu correo queda solo en el sistema de inicio de sesión y ningún otro usuario puede leerlo generado al azar.</li>
     <li><b>Cuenta solo local (modo de respaldo):</b> si el servicio en la nube no está disponible, la cuenta se crea únicamente en el almacenamiento de tu navegador (<code>localStorage</code>) con tu correo, tu nombre y una huella (hash) de la contraseña. No se envía a ningún servidor.</li>
   </ul>
   <p>En ambos casos también se guarda en tu dispositivo esa huella de la contraseña y la sesión abierta, para que no tengas que identificarte cada vez.</p>
@@ -106,7 +106,7 @@
       <tr><td><b>Presencia</b>: biblioteca de la lista en la que estás estudiando y hora de inicio</td><td>Solo con el cronómetro en marcha y la opción «Compartir tu actividad» activada</td><td>Tus amigos aceptados</td></tr>
       <tr><td><b>Salas de estudio en grupo</b>: nombre y código de la sala, y tu biblioteca y hora de inicio mientras estudias en ella</td><td>Cuando creas una sala o te unes con su código</td><td>Las personas que están en la misma sala (el nombre y el código de la sala, cualquiera que tenga el código)</td></tr>
       <tr><td><b>Sesiones compartidas</b>: biblioteca, minutos, fecha, asignatura, nota, ofrecimiento, productividad, resultado del modo foco y si fue verificada</td><td>Al terminar una sesión, solo si tienes activada la opción «Compartir tu actividad»</td><td>Tus amigos aceptados</td></tr>
-      <tr><td><b>Eventos compartidos</b>: título, tipo, fecha, hora, lugar y enlace de un examen o evento</td><td>Al guardar un examen o evento con la casilla «Compartir con mis amigos» marcada (viene marcada por defecto; desmárcala si no quieres compartirlo)</td><td>Tus amigos aceptados</td></tr>
+      <tr><td><b>Eventos compartidos</b>: título, tipo, fecha, hora, lugar y enlace de un examen o evento</td><td>Al guardar un examen o evento con la casilla «Compartir con mis amigos» marcada (viene desmarcada: solo se comparte si la marcas)</td><td>Tus amigos aceptados</td></tr>
       <tr><td><b>Kudos</b>: que has felicitado una sesión y tu nombre</td><td>Cuando das un kudos</td><td>Otros usuarios de la app</td></tr>
       <tr><td><b>Oraciones por exámenes</b>: que rezas por el examen de un amigo, el título del examen y tu nombre</td><td>Cuando pulsas «Rezar»</td><td>Tú y la persona dueña del examen</td></tr>
       <tr><td><b>Blog de lecturas</b>: título del libro, comentario y tu nombre</td><td>Cuando publicas una reseña</td><td>Todos los usuarios de la app</td></tr>
@@ -114,7 +114,7 @@
     </tbody>
   </table>
   </div>
-  <p><b>Tu perfil</b> (nombre y código de amigo) puede ser consultado por otros usuarios de la app para poder encontrarte y agregarte; tu correo solo se muestra en la app a tus amigos.</p>
+  <p><b>Tu perfil</b> (nombre y código de amigo) puede ser consultado por otros usuarios de la app para poder encontrarte y agregarte; tu correo no es visible para ningún otro usuario.</p>
   <p><b>Datos sensibles:</b> las funciones «Ofrecer estudio» y «Rezar por un examen» podrían revelar creencias religiosas. Son totalmente opcionales y solo se comparten cuando tú decides usarlas; al hacerlo das tu consentimiento explícito (art. 9.2.a RGPD). Si no quieres compartir el texto de tu ofrecimiento, déjalo vacío o desactiva «Compartir tu actividad».</p>
   <p><b>Base legal:</b> tu consentimiento (art. 6.1.a RGPD), que puedes retirar en cualquier momento desactivando la opción correspondiente o borrando el contenido.</p>
 
@@ -170,7 +170,8 @@
 <section>
   <h2>7. Cómo eliminar tu cuenta y tus datos</h2>
   <ul>
-    <li><b>Cuenta en la nube y datos compartidos:</b> envía un correo a <b>[EMAIL DE CONTACTO]</b> con el asunto «Eliminar mi cuenta» desde el correo de tu cuenta. Borraremos tu cuenta y todos los datos asociados en la nube en un plazo máximo de 30 días y te lo confirmaremos.</li>
+    <li><b>Desde la app:</b> Perfil → Ajustes y cuenta → «Eliminar mi cuenta y mis datos». Se borran al momento tu cuenta, todos los datos asociados en la nube y los guardados en este dispositivo.</li>
+    <li><b>Por correo:</b> si no puedes entrar en la app, escribe a <b>[EMAIL DE CONTACTO]</b> con el asunto «Eliminar mi cuenta» desde el correo de tu cuenta y lo haremos en un plazo máximo de 30 días.</li>
     <li><b>Datos en tu dispositivo:</b> en Android, Ajustes → Aplicaciones → Bibliotecas de Navarra → Almacenamiento → Borrar datos (o desinstala la app). En el navegador, borra los datos del sitio.</li>
   </ul>
 </section>

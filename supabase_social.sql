@@ -222,3 +222,22 @@ drop policy if exists "shared_sessions select own friends" on shared_sessions;
 create policy "shared_sessions select own friends" on shared_sessions for select using (
   auth.uid() = owner_id or public.are_friends(auth.uid(), owner_id)
 );
+
+-- ===== CORREOS PRIVADOS: nadie puede leer el email de otros usuarios desde la app =====
+-- La app ya no guarda el email en profiles (está en auth.users). Se borran los que había y se
+-- limita la lectura a las columnas públicas.
+update profiles set email = null where email is not null;
+revoke select on profiles from anon, authenticated;
+grant select (id, name, friend_code, created_at) on profiles to anon, authenticated;
+
+-- ===== ELIMINAR CUENTA (lo exige Google Play) =====
+-- Borra el usuario de auth.users; todas las tablas cuelgan de profiles con "on delete cascade".
+create or replace function public.delete_my_account() returns void
+language plpgsql security definer set search_path = public, auth as $$
+begin
+  if auth.uid() is null then raise exception 'no autenticado'; end if;
+  delete from auth.users where id = auth.uid();
+end;
+$$;
+revoke all on function public.delete_my_account() from public, anon;
+grant execute on function public.delete_my_account() to authenticated;

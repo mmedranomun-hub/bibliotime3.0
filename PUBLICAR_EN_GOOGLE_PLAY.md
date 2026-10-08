@@ -80,7 +80,7 @@ Basado en `privacidad.html`. Respuestas propuestas:
 - **Creencias religiosas** (en «Información personal»): «Ofrecer estudio» y «Rezar» lo pueden revelar; declararlo como **opcional**.
 - Compartido con terceros: **No** (Supabase es proveedor de servicios y no cuenta como «compartir»).
 - Publicidad / analítica: **No**.
-- **Eliminación de cuenta:** Google exige una URL donde se pueda pedir. Usa la sección 7 de `privacidad.html` (`.../privacidad.html`). Ideal a medio plazo: un botón «Eliminar cuenta» dentro de la app.
+- **Eliminación de cuenta:** ya hay botón en la app (Perfil → Ajustes y cuenta → «Eliminar mi cuenta y mis datos»). Google pide además una URL: usa la sección 7 de `privacidad.html` (`.../privacidad.html`).
 
 ## 8. Ficha de la tienda
 
