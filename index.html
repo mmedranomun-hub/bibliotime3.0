@@ -97,6 +97,20 @@
   .panel.collapsed .chev{transform:rotate(-90deg)}
   .panel.collapsed{max-height:none}
   .panel.collapsed .list,.panel.collapsed .list-filters{display:none}
+  .subj-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--suave)}
+  .focus-toggle{display:flex;align-items:center;gap:6px;text-transform:none;letter-spacing:0;font-size:12.5px;cursor:pointer}
+  .subj-chips{display:flex;flex-wrap:wrap;gap:6px}
+  .subj-chips button{font:inherit;font-size:12.5px;font-weight:600;padding:6px 11px;border-radius:999px;cursor:pointer;
+    border:1px solid rgba(148,163,184,.4);background:rgba(255,255,255,.5);color:var(--suave)}
+  .subj-chips button.on{background:linear-gradient(135deg,var(--acento),#8b7bef);color:#fff;border-color:transparent}
+  .subj-chips button .x{margin-left:6px;opacity:.7}
+  .focus-plant{margin-top:12px;text-align:center;font-size:13px;color:var(--suave)}
+  .focus-plant .em{display:block;font-size:44px;line-height:1.1;transition:transform .4s}
+  .subj-row{display:flex;align-items:center;gap:10px;margin:8px 0;font-size:13px}
+  .subj-row .nm{width:34%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+  .subj-row .bar{flex:1;height:8px;border-radius:99px;background:rgba(148,163,184,.25);overflow:hidden}
+  .subj-row .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--acento),#00d2d3)}
+  .subj-row .tm{width:62px;text-align:right;font-variant-numeric:tabular-nums;color:var(--suave)}
   .list-filters{display:flex;flex-wrap:wrap;gap:6px;padding:8px 8px 0}
   .list-filters button{font:inherit;font-size:11.5px;font-weight:600;padding:5px 10px;border-radius:999px;cursor:pointer;
     border:1px solid rgba(148,163,184,.4);background:rgba(255,255,255,.5);color:var(--suave)}
@@ -669,6 +683,11 @@
       <div class="page-title">Modo estudio</div>
       <div class="page-sub">Cronómetro de sesiones y meta de horas.</div>
       <div class="seg" id="studyTab" style="margin-bottom:16px"><button data-t="crono" class="on">Cronómetro</button><button data-t="pomo">Pomodoro</button><button data-t="ofrecer">Ofrecer estudio</button></div>
+      <div class="glasscard" id="subjectCard" style="margin-bottom:16px">
+        <div class="subj-head"><span>Asignatura</span><label class="focus-toggle" title="Si sales de la app más de 15 s durante la sesión, tu planta se marchita"><input type="checkbox" id="focusToggle"> 🌱 Modo foco</label></div>
+        <div class="subj-chips" id="subjectChips"></div>
+        <div class="focus-plant hidden" id="focusPlant"></div>
+      </div>
       <div id="studyOfferPanel" class="hidden glasscard" style="margin-bottom:18px">
         <div class="page-sub" style="margin-bottom:12px">Dedica este tiempo de estudio a alguien o algo. Se guardará junto a tu próxima sesión.</div>
         <div class="field"><label>¿Por quién o qué ofreces tu estudio?</label><textarea id="offerText" rows="4" placeholder="Ej: Por mi abuela, que se recupere pronto…" style="width:100%;padding:11px 13px;border-radius:12px;border:1px solid rgba(148,163,184,.4);background:rgba(255,255,255,.7);font-size:14px;font-family:inherit;color:var(--texto);resize:vertical"></textarea></div>
@@ -709,6 +728,7 @@
         <div class="stat"><div class="num" id="stSessions">0</div><div class="lab">Sesiones totales</div></div>
         <div class="stat"><div class="num" id="stStreak">0</div><div class="lab">Días seguidos</div></div>
       </div>
+      <div class="glasscard" id="subjectStats" style="margin-top:18px"></div>
       <div class="bookshelf-card" style="margin-top:18px">
         <div class="bookshelf-label" id="bookshelfLabel">0h de estudio acumuladas</div>
         <div class="bookshelf-row" id="bookshelfRow"></div>
@@ -809,8 +829,8 @@
       <div class="section-title">📊 Estudio esta semana</div>
       <div class="glasscard"><div class="week-bars" id="weekBars"></div></div>
 
-      <div class="section-title">🏆 Ranking semanal con amigos</div>
-      <div class="glasscard"><div id="leaderboardList"></div></div>
+      <div class="section-title">🏆 Ranking con amigos</div>
+      <div class="glasscard"><div class="seg" id="lbPeriodSeg"><button data-p="day">Hoy</button><button data-p="week" class="on">Esta semana</button></div><div id="leaderboardList"></div></div>
 
       <div class="section-title">🏅 Tus récords</div>
       <div class="stat-grid" id="recordsGrid"></div>
@@ -1438,10 +1458,16 @@ async function socialLoadLeaderboard(){
   var sb=socialClient(); if(!sb||!SOCIAL.user)return;
   var ids=SOCIAL.friends.map(function(f){return f.profile.id;}); ids.push(SOCIAL.user.id);
   var now=new Date(),day=(now.getDay()+6)%7,monday=new Date(now);monday.setDate(now.getDate()-day);monday.setHours(0,0,0,0);
-  var res=await sb.from("shared_sessions").select("owner_id,minutes,date").in("owner_id",ids).gte("date",monday.toISOString().slice(0,10));
-  if(res.error){SOCIAL.leaderboard=[];return;}
-  var totals={};
-  (res.data||[]).forEach(function(r){totals[r.owner_id]=(totals[r.owner_id]||0)+r.minutes;});
+  var res=await sb.from("shared_sessions").select("owner_id,minutes,date").in("owner_id",ids).gte("date",ymd(monday));
+  if(res.error){SOCIAL.leaderboard=[];SOCIAL.lbRows=[];return;}
+  SOCIAL.lbRows=res.data||[];
+  computeLeaderboard();
+}
+var lbPeriod="week";
+function computeLeaderboard(){
+  if(!SOCIAL.user)return;
+  var hoy=ymd(), totals={};
+  (SOCIAL.lbRows||[]).forEach(function(r){if(lbPeriod==="day"&&r.date!==hoy)return;totals[r.owner_id]=(totals[r.owner_id]||0)+r.minutes;});
   var arr=Object.keys(totals).map(function(id){return {id:id,min:totals[id],name:id===SOCIAL.user.id?"Tú":socialNameById(id)};});
   arr.sort(function(a,b){return b.min-a.min;});
   SOCIAL.leaderboard=arr;
@@ -1449,9 +1475,9 @@ async function socialLoadLeaderboard(){
 function renderLeaderboard(){
   var el=$("leaderboardList"); if(!el)return;
   if(!socialClient()){el.innerHTML='<div class="empty-note">Configura Supabase para ver el ranking con amigos</div>';return;}
-  if(!SOCIAL.leaderboard.length){el.innerHTML='<div class="empty-note">Sin datos de esta semana todavía (necesitas amigos y sesiones compartidas)</div>';return;}
+  if(!SOCIAL.leaderboard.length){el.innerHTML='<div class="empty-note">Sin datos '+(lbPeriod==="day"?"de hoy":"de esta semana")+' todavía (necesitas amigos y sesiones compartidas)</div>';return;}
   el.innerHTML=SOCIAL.leaderboard.map(function(p,i){
-    return '<div class="nowrow" style="cursor:default"><div class="rank">'+(i+1)+'</div><div class="ni"><b>'+escapeHTML(p.name)+'</b><small>'+hMin(p.min)+' esta semana</small></div></div>';
+    return '<div class="nowrow" style="cursor:default"><div class="rank">'+(i+1)+'</div><div class="ni"><b>'+escapeHTML(p.name)+'</b><small>'+hMin(p.min)+(lbPeriod==="day"?' hoy':' esta semana')+'</small></div></div>';
   }).join("");
 }
 async function socialShareEvent(ev){
@@ -1468,7 +1494,7 @@ async function socialLoadFriendEvents(){
   var sb=socialClient(); if(!sb||!SOCIAL.user)return;
   var ids=SOCIAL.friends.map(function(f){return f.profile.id;});
   if(!ids.length){SOCIAL.events=[];return;}
-  var today=new Date().toISOString().slice(0,10);
+  var today=ymd();
   var res=await sb.from("shared_events").select("*").in("owner_id",ids).gte("date",today).order("date",{ascending:true}).limit(30);
   if(res.error){console.warn(res.error);SOCIAL.events=[];return;}
   SOCIAL.events=res.data||[];
@@ -2071,6 +2097,8 @@ function startStudyAt(i){
 }
 function arrancarSesion(i,verificada){
   studyTimer.running=true;studyTimer.start=Date.now();studyTimer.bibIndex=i;studyTimer.verificada=!!verificada;
+  studyTimer.subject=DATA.currentSubject||null;
+  focusStart();
   startTick();
   $("miniStudy").classList.remove("hidden");
   $("miniPlace").textContent=BIBLIOTECAS[i].nombre.replace("Biblioteca ","").replace("Pública ","");
@@ -2092,13 +2120,14 @@ function fmtClock(sec){var hh=Math.floor(sec/3600),mm=Math.floor((sec%3600)/60),
 function updateTimers(){
   var sec=elapsedSec();
   var t=$("studyTimer");if(t)t.textContent=fmtClock(sec);
+  renderFocusPlant();
   var mt=$("miniTime");if(mt){var mm=Math.floor(sec/60),ss=sec%60;mt.textContent=String(mm).padStart(2,"0")+":"+String(ss).padStart(2,"0");}
   updateGoalRing();
 }
 function todayMinutes(){
-  var today=new Date().toISOString().slice(0,10);
+  var today=ymd();
   var sum=0;DATA.sessions.forEach(function(s){if(s.date===today)sum+=s.min;});
-  if(studyTimer.running&&new Date(studyTimer.start).toISOString().slice(0,10)===today)sum+=elapsedMin();
+  if(studyTimer.running&&ymd(new Date(studyTimer.start))===today)sum+=elapsedMin();
   return sum;
 }
 function updateGoalRing(){
@@ -2119,12 +2148,13 @@ function stopStudy(silent){
   if(studyTimer.tick)clearInterval(studyTimer.tick);
   var saved=null;
   if(sec>=20){
-    saved={id:genId(),date:new Date(ts).toISOString().slice(0,10),min:Math.max(1,min),sec:sec,bib:BIBLIOTECAS[bibIdx].nombre,ts:ts,verif:verif,prod:null,note:"",offering:DATA.offeringText||""};
+    saved={id:genId(),date:ymd(new Date(ts)),min:Math.max(1,min),sec:sec,bib:BIBLIOTECAS[bibIdx].nombre,ts:ts,verif:verif,prod:null,note:"",offering:DATA.offeringText||"",subject:studyTimer.subject||null,focus:focusResult()};
     DATA.sessions.push(saved);
     saveUserData();
     socialShareSession(saved);
   }
-  studyTimer.running=false;studyTimer.bibIndex=null;studyTimer.verificada=false;
+  studyTimer.running=false;studyTimer.bibIndex=null;studyTimer.verificada=false;studyTimer.subject=null;
+  releaseWakeLock();
   $("miniStudy").classList.add("hidden");
   socialClearPresence();
   renderStudy();renderProfile();
@@ -2177,6 +2207,89 @@ function renderStudy(){
   updateGoalRing();
   renderSessionFeed();
   renderBookshelf();
+  renderSubjects();
+  renderSubjectStats();
+  renderFocusPlant();
+}
+/* ===== ASIGNATURAS (como YPT: el tiempo se apunta a una asignatura) ===== */
+function renderSubjects(){
+  var el=$("subjectChips"); if(!el||!DATA)return;
+  var subs=DATA.subjects||[], cur=DATA.currentSubject||null;
+  var html='<button data-s="" class="'+(cur?"":"on")+'">Sin asignatura</button>';
+  subs.forEach(function(n,k){html+='<button data-k="'+k+'" class="'+(cur===n?"on":"")+'">'+escapeHTML(n)+'<span class="x" data-del="'+k+'" title="Quitar">×</span></button>';});
+  html+='<button data-add="1">+ Añadir</button>';
+  el.innerHTML=html;
+  var ft=$("focusToggle"); if(ft)ft.checked=!!DATA.focusMode;
+}
+function initSubjectUI(){
+  $("subjectChips").addEventListener("click",function(e){
+    var t=e.target, btn=t.closest("button"); if(!btn||!DATA)return;
+    if(studyTimer.running||pomo.running){showToast("Termina o pausa la sesión para cambiar de asignatura");return;}
+    var subs=DATA.subjects=DATA.subjects||[];
+    if(t.dataset.del!=null){
+      var name=subs[+t.dataset.del];
+      if(!confirm("¿Quitar \""+name+"\" de tus asignaturas? Las sesiones ya guardadas la conservan."))return;
+      subs.splice(+t.dataset.del,1); if(DATA.currentSubject===name)DATA.currentSubject=null;
+    }else if(btn.dataset.add){
+      var n=(prompt("Nombre de la asignatura (ej: Cálculo, Temario oposición…)")||"").trim().slice(0,40);
+      if(!n)return;
+      if(subs.indexOf(n)===-1)subs.push(n);
+      DATA.currentSubject=n;
+    }else{
+      DATA.currentSubject=btn.dataset.k!=null?subs[+btn.dataset.k]:null;
+    }
+    saveUserData();renderSubjects();
+  });
+  $("focusToggle").addEventListener("change",function(){
+    DATA.focusMode=this.checked;saveUserData();
+    if(this.checked){showToast("🌱 Modo foco: si sales de la app más de "+FOCUS_GRACE_SEC+" s, tu planta se marchita");if(focusActive())focusStart();}
+    else{releaseWakeLock();}
+    renderFocusPlant();
+  });
+}
+function renderSubjectStats(){
+  var el=$("subjectStats"); if(!el||!DATA)return;
+  var hoy=ymd(), mins={};
+  DATA.sessions.forEach(function(s){if(s.date===hoy){var k=s.subject||"Sin asignatura";mins[k]=(mins[k]||0)+s.min;}});
+  if(studyTimer.running){var k=studyTimer.subject||"Sin asignatura";mins[k]=(mins[k]||0)+elapsedMin();}
+  var keys=Object.keys(mins).filter(function(k){return mins[k]>0;}).sort(function(a,b){return mins[b]-mins[a];});
+  var max=keys.length?mins[keys[0]]:0;
+  var html='<div class="section-title" style="margin-top:0">📚 Hoy por asignatura</div>';
+  html+=keys.length?keys.map(function(k){return '<div class="subj-row"><span class="nm">'+escapeHTML(k)+'</span><span class="bar"><i style="width:'+Math.round(mins[k]/max*100)+'%"></i></span><span class="tm">'+hMin(mins[k])+'</span></div>';}).join("")
+    :'<div class="empty-note">Elige una asignatura arriba y empieza: aquí verás cuánto le dedicas cada día.</div>';
+  var ok=0,ko=0;DATA.sessions.forEach(function(s){if(s.focus==="ok")ok++;else if(s.focus==="withered")ko++;});
+  if(ok||ko)html+='<div class="page-sub" style="margin-top:10px">Modo foco: 🌳 '+ok+' '+(ok===1?"planta":"plantas")+' crecida'+(ok===1?"":"s")+' · 🥀 '+ko+' marchita'+(ko===1?"":"s")+'</div>';
+  el.innerHTML=html;
+}
+/* ===== MODO FOCO (como Forest: si sales de la app durante la sesión, la planta se marchita) ===== */
+const FOCUS_GRACE_SEC=15;
+var FOCUS={hiddenAt:0,withered:false,lock:null};
+function focusActive(){return !!(DATA&&DATA.focusMode)&&(studyTimer.running||(pomo.running&&pomo.phase==="focus"));}
+function focusStart(){FOCUS.withered=false;FOCUS.hiddenAt=0;if(DATA&&DATA.focusMode)requestWakeLock();renderFocusPlant();}
+function focusResult(){return DATA&&DATA.focusMode?(FOCUS.withered?"withered":"ok"):null;}
+// Mantiene la pantalla encendida durante el foco: así bloquear el móvil no cuenta como "salir".
+async function requestWakeLock(){
+  try{if(navigator.wakeLock&&document.visibilityState==="visible"&&!FOCUS.lock){FOCUS.lock=await navigator.wakeLock.request("screen");FOCUS.lock.addEventListener("release",function(){FOCUS.lock=null;});}}catch(e){}
+}
+function releaseWakeLock(){try{if(FOCUS.lock){FOCUS.lock.release();FOCUS.lock=null;}}catch(e){}}
+document.addEventListener("visibilitychange",function(){
+  if(!focusActive())return;
+  if(document.visibilityState==="hidden"){FOCUS.hiddenAt=Date.now();return;}
+  requestWakeLock();
+  if(FOCUS.hiddenAt){
+    var away=Math.round((Date.now()-FOCUS.hiddenAt)/1000);FOCUS.hiddenAt=0;
+    if(away>=FOCUS_GRACE_SEC&&!FOCUS.withered){FOCUS.withered=true;showToast("🥀 Tu planta se ha marchitado: saliste "+away+" s de la app");}
+    renderFocusPlant();
+  }
+});
+function renderFocusPlant(){
+  var el=$("focusPlant"); if(!el)return;
+  if(!focusActive()){el.classList.add("hidden");return;}
+  var min=studyTimer.running?elapsedMin():Math.floor((POMO_FOCUS_MIN*60-pomo.secondsLeft)/60);
+  var st=FOCUS.withered?["🥀","Marchita. Termina la sesión y vuelve a intentarlo."]
+    :min<5?["🌱","Brote · no salgas de la app"]:min<15?["🌿","Creciendo · "+min+" min"]:min<30?["🪴","Casi lista · "+min+" min"]:["🌳","¡Árbol completo! · "+min+" min"];
+  el.classList.remove("hidden");
+  el.innerHTML='<span class="em">'+st[0]+'</span>'+st[1];
 }
 /* ===== MODO POMODORO ===== */
 const POMO_FOCUS_MIN=25, POMO_BREAK_MIN=5;
@@ -2187,6 +2300,7 @@ function pomoToggle(){
     renderPomodoro();return;
   }
   pomo.running=true;
+  if(pomo.phase==="focus"&&pomo.secondsLeft===POMO_FOCUS_MIN*60)focusStart();
   if(pomo.tick)clearInterval(pomo.tick);
   pomo.tick=setInterval(pomoTick,1000);
   renderPomodoro();
@@ -2202,11 +2316,12 @@ function pomoTick(){
     if(pomo.phase==="focus"){
       pomo.cycles++;
       var bibIdx=studyTimer.bibIndex!=null?studyTimer.bibIndex:0;
-      var saved={id:genId(),date:new Date().toISOString().slice(0,10),min:POMO_FOCUS_MIN,sec:POMO_FOCUS_MIN*60,
-        bib:BIBLIOTECAS[bibIdx].nombre,ts:Date.now()-POMO_FOCUS_MIN*60000,verif:false,prod:null,note:"Pomodoro",offering:DATA.offeringText||""};
+      var saved={id:genId(),date:ymd(),min:POMO_FOCUS_MIN,sec:POMO_FOCUS_MIN*60,
+        bib:BIBLIOTECAS[bibIdx].nombre,ts:Date.now()-POMO_FOCUS_MIN*60000,verif:false,prod:null,note:"Pomodoro",offering:DATA.offeringText||"",subject:DATA.currentSubject||null,focus:focusResult()};
       DATA.sessions.push(saved);saveUserData();socialShareSession(saved);
       showToast("🍅 Pomodoro completado ("+POMO_FOCUS_MIN+" min). ¡A descansar!");
       pomo.phase="break";pomo.secondsLeft=POMO_BREAK_MIN*60;
+      releaseWakeLock();
       renderProfile();
     }else{
       showToast("⏰ Descanso terminado. ¿Otro pomodoro?");
@@ -2222,6 +2337,7 @@ function renderPomodoro(){
   t.textContent=String(mm).padStart(2,"0")+":"+String(ss).padStart(2,"0");
   var lbl=$("pomoPhase"); if(lbl)lbl.textContent=pomo.phase==="focus"?"Concéntrate":"Descanso";
   var cyc=$("pomoCycles"); if(cyc)cyc.textContent=pomo.cycles;
+  renderFocusPlant();
   var btn=$("btnPomoToggle"); if(btn)btn.textContent=pomo.running?"⏸ Pausar":"▶ Empezar";
 }
 const SHELF_COLORS=["#6c5ce7","#00d2d3","#f59e0b","#22c55e","#e17055","#0984e3","#e84393","#00b894"];
@@ -2280,7 +2396,8 @@ function renderSessionFeed(){
     var lugar=s.bib.replace("Biblioteca ","").replace("Pública ","");
     var valoracion=s.prod?("★".repeat(s.prod)+"☆".repeat(5-s.prod)):"—";
     var prBanner=(idx in prAt)?('<div class="pr-banner"><span class="pr-badge">RP</span>¡Tu sesión más larga hasta ahora!'+(prAt[idx]?'<span class="pr-delta">▲ +'+hMin(prAt[idx])+'</span>':'')+'</div>'):'';
-    return '<div class="feed-item"><div class="fhead"><div class="fplace">'+escapeHTML(lugar)+(s.verif?' <span class="fverif" title="Check-in verificado">✓</span>':'')+'</div><div class="fdate">'+fmtFeedDate(s.date)+'</div></div>'+
+    var extra=(s.subject?' · '+escapeHTML(s.subject):'')+(s.focus==="ok"?' <span title="Sesión de foco completada">🌳</span>':(s.focus==="withered"?' <span title="Saliste de la app durante el modo foco">🥀</span>':''));
+    return '<div class="feed-item"><div class="fhead"><div class="fplace">'+escapeHTML(lugar)+extra+(s.verif?' <span class="fverif" title="Check-in verificado">✓</span>':'')+'</div><div class="fdate">'+fmtFeedDate(s.date)+'</div></div>'+
       '<div class="fstats"><div class="fstat"><small>Duración</small><b>'+hMin(s.min)+'</b></div><div class="fstat"><small>Valoración</small><b class="fstars">'+valoracion+'</b></div></div>'+
       prBanner+
       (s.note?'<div class="fnote">"'+escapeHTML(s.note)+'"</div>':'')+
@@ -2288,6 +2405,9 @@ function renderSessionFeed(){
       '</div>';
   }).join("");
 }
+// Fecha local AAAA-MM-DD. toISOString() da la fecha UTC: entre las 0:00 y las 2:00 en España
+// contaba lo estudiado como del día anterior (y podía romper rachas).
+function ymd(d){d=d||new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
 function hMin(min){var hh=Math.floor(min/60),mm=min%60;return hh+"h "+mm+"m";}
 function weekMinutes(){
   var now=new Date();var monday=new Date(now);var day=(now.getDay()+6)%7;monday.setDate(now.getDate()-day);monday.setHours(0,0,0,0);
@@ -2299,11 +2419,11 @@ function streakDays(){
   if(!DATA.sessions.length&&!(DATA.usedFreezeDates&&DATA.usedFreezeDates.length))return studyTimer.running?1:0;
   var days={};DATA.sessions.forEach(function(s){days[s.date]=true;});
   (DATA.usedFreezeDates||[]).forEach(function(dt){days[dt]=true;});
-  if(studyTimer.running)days[new Date().toISOString().slice(0,10)]=true;
+  if(studyTimer.running)days[ymd()]=true;
   var streak=0;var d=new Date();
-  for(;;){var k=d.toISOString().slice(0,10);if(days[k]){streak++;d.setDate(d.getDate()-1);}else{
+  for(;;){var k=ymd(d);if(days[k]){streak++;d.setDate(d.getDate()-1);}else{
     // permitir que hoy aún no tenga sesión sin romper la racha
-    if(streak===0&&k===new Date().toISOString().slice(0,10)){d.setDate(d.getDate()-1);continue;}
+    if(streak===0&&k===ymd()){d.setDate(d.getDate()-1);continue;}
     break;}}
   return streak;
 }
@@ -2311,8 +2431,8 @@ function checkStreakFreezes(){
   if(!DATA||!DATA.sessions.length)return;
   var realDays={};DATA.sessions.forEach(function(s){realDays[s.date]=true;});
   var realStreak=0;var d=new Date();
-  for(;;){var k=d.toISOString().slice(0,10);if(realDays[k]){realStreak++;d.setDate(d.getDate()-1);}else{
-    if(realStreak===0&&k===new Date().toISOString().slice(0,10)){d.setDate(d.getDate()-1);continue;}
+  for(;;){var k=ymd(d);if(realDays[k]){realStreak++;d.setDate(d.getDate()-1);}else{
+    if(realStreak===0&&k===ymd()){d.setDate(d.getDate()-1);continue;}
     break;}}
   var earnedAt=Math.floor(realStreak/7)*7;
   if(earnedAt>0&&earnedAt>DATA.lastFreezeEarnedAtStreak&&DATA.streakFreezes<3){
@@ -2321,9 +2441,9 @@ function checkStreakFreezes(){
     saveUserData();
     showToast("🧊 Has ganado un congelador de racha (racha de "+earnedAt+" días)");
   }
-  var ayer=new Date();ayer.setDate(ayer.getDate()-1);var ayerK=ayer.toISOString().slice(0,10);
-  var anteayer=new Date();anteayer.setDate(anteayer.getDate()-2);var anteayerK=anteayer.toISOString().slice(0,10);
-  var hoyK=new Date().toISOString().slice(0,10);
+  var ayer=new Date();ayer.setDate(ayer.getDate()-1);var ayerK=ymd(ayer);
+  var anteayer=new Date();anteayer.setDate(anteayer.getDate()-2);var anteayerK=ymd(anteayer);
+  var hoyK=ymd();
   var yaUsado=(DATA.usedFreezeDates||[]).indexOf(ayerK)!==-1;
   var anteayerCubierto=realDays[anteayerK]||(DATA.usedFreezeDates||[]).indexOf(anteayerK)!==-1;
   if(!realDays[ayerK]&&!yaUsado&&DATA.streakFreezes>0&&anteayerCubierto&&ayerK!==hoyK){
@@ -2361,7 +2481,7 @@ function renderCal(){
   DOW.forEach(function(d){var e=document.createElement("div");e.className="cal-dow";e.textContent=d;grid.appendChild(e);});
   var first=new Date(y,m,1);var startDow=(first.getDay()+6)%7;
   var daysInMonth=new Date(y,m+1,0).getDate();
-  var todayStr=new Date().toISOString().slice(0,10);
+  var todayStr=ymd();
   for(var i=0;i<startDow;i++){var c=document.createElement("div");c.className="cal-cell empty";grid.appendChild(c);}
   for(var dn=1;dn<=daysInMonth;dn++){
     var key=y+"-"+String(m+1).padStart(2,"0")+"-"+String(dn).padStart(2,"0");
@@ -2449,7 +2569,7 @@ function renderWeekBars(){
   var monday=new Date(now);monday.setDate(now.getDate()-day);monday.setHours(0,0,0,0);
   var labels=["L","M","X","J","V","S","D"];var mins=[0,0,0,0,0,0,0];
   DATA.sessions.forEach(function(s){var d=new Date(s.date);var diff=Math.floor((d-monday)/86400000);if(diff>=0&&diff<7)mins[diff]+=s.min;});
-  if(studyTimer.running){var diff=Math.floor((new Date(new Date().toISOString().slice(0,10))-monday)/86400000);if(diff>=0&&diff<7)mins[diff]+=elapsedMin();}
+  if(studyTimer.running){var diff=Math.floor((new Date(ymd())-monday)/86400000);if(diff>=0&&diff<7)mins[diff]+=elapsedMin();}
   var max=Math.max(60,Math.max.apply(null,mins));
   for(var i=0;i<7;i++){
     var pct=Math.round(mins[i]/max*100);
@@ -2532,7 +2652,7 @@ function openLoanModal(){
   openModal('<h3>Nuevo préstamo</h3><div class="sub">Registra un libro que has cogido prestado</div>'+
     '<div class="field"><label>Título del libro</label><input type="text" id="lnTitle" placeholder="Ej: Cien años de soledad"></div>'+
     '<div class="field"><label>Biblioteca</label><select id="lnBib">'+opts+'</select></div>'+
-    '<div class="field"><label>Fecha de devolución</label><input type="date" id="lnDue" value="'+defDue.toISOString().slice(0,10)+'"></div>'+
+    '<div class="field"><label>Fecha de devolución</label><input type="date" id="lnDue" value="'+ymd(defDue)+'"></div>'+
     '<button class="btn" id="lnAdd">Guardar préstamo</button>',
     function(){ $("lnAdd").addEventListener("click",function(){
       var t=$("lnTitle").value.trim();if(!t)return;
@@ -2614,7 +2734,7 @@ function renderEvents(){
 }
 function openEventModal(){
   var tipos=TIPOS_EVT.map(function(t,i){return '<button data-t="'+t.v+'"'+(i===0?' class="on"':'')+'>'+t.l+'</button>';}).join("");
-  var hoy=new Date().toISOString().slice(0,10);
+  var hoy=ymd();
   openModal('<h3>Añadir evento</h3><div class="sub">Guárdalo en tu agenda. Aparecerá también en tu calendario y tus avisos.</div>'+
     '<div class="seg" id="evtType" style="flex-wrap:wrap">'+tipos+'</div>'+
     '<div class="field"><label>Título</label><input type="text" id="evtTitle" placeholder="Ej: Conferencia sobre IA y sociedad"></div>'+
@@ -2779,7 +2899,7 @@ function pedirPermisoNotif(){
 }
 function lanzarNotifsDelDia(){
   if(!("Notification" in window)||Notification.permission!=="granted")return;
-  var hoyKey=new Date().toISOString().slice(0,10);
+  var hoyKey=ymd();
   if(Brain.getNotifDay(CURRENT)===hoyKey)return; // una vez al día
   var avisos=calcularAvisos().filter(function(a){return a.dias<=1;});
   if(avisos.length){
@@ -2878,6 +2998,12 @@ window.addEventListener("DOMContentLoaded",function(){
 
   document.querySelectorAll(".dock button").forEach(function(b){b.addEventListener("click",function(){goView(b.dataset.view);});});
   $("btnStart").addEventListener("click",startStudyCurrent);
+  initSubjectUI();
+  document.querySelectorAll("#lbPeriodSeg button").forEach(function(b){b.addEventListener("click",function(){
+    lbPeriod=b.dataset.p;
+    document.querySelectorAll("#lbPeriodSeg button").forEach(function(x){x.classList.toggle("on",x===b);});
+    computeLeaderboard();renderLeaderboard();
+  });});
   $("btnStop").addEventListener("click",function(){stopStudy(false);});
   $("btnGoal").addEventListener("click",openGoalModal);
   $("miniStop").addEventListener("click",function(){stopStudy(false);});
