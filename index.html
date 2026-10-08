@@ -96,7 +96,11 @@
   .panel-head .chev{width:16px;height:16px;color:var(--suave);flex-shrink:0;transition:transform .2s}
   .panel.collapsed .chev{transform:rotate(-90deg)}
   .panel.collapsed{max-height:none}
-  .panel.collapsed .list{display:none}
+  .panel.collapsed .list,.panel.collapsed .list-filters{display:none}
+  .list-filters{display:flex;flex-wrap:wrap;gap:6px;padding:8px 8px 0}
+  .list-filters button{font:inherit;font-size:11.5px;font-weight:600;padding:5px 10px;border-radius:999px;cursor:pointer;
+    border:1px solid rgba(148,163,184,.4);background:rgba(255,255,255,.5);color:var(--suave)}
+  .list-filters button.on{background:linear-gradient(135deg,var(--acento),#8b7bef);color:#fff;border-color:transparent}
   .season{display:inline-block;margin-top:6px;font-size:10.5px;font-weight:700;text-transform:uppercase;
     letter-spacing:.08em;padding:3px 9px;border-radius:99px;
     background:linear-gradient(135deg,rgba(108,92,231,.16),rgba(0,210,211,.16));color:var(--acento)}
@@ -622,6 +626,12 @@
         </div>
         <span class="season" id="seasonTag"></span>
       </div>
+      <div class="list-filters" id="listFilters">
+        <button data-f="abiertas">● Abiertas ahora</button>
+        <button data-f="cerca">📍 Más cercanas</button>
+        <button data-f="libre">🎫 Acceso libre</button>
+        <button data-f="wifi">📶 Wifi</button>
+      </div>
       <div class="list" id="list"></div>
     </div>
 
@@ -1021,14 +1031,23 @@ BIBLIOTECAS.forEach(function(b){
   b.acceso={tipo:"desconocido",detalle:"Sin confirmar"};
   b.accesibilidad={sillaRuedas:null,turistas:null,gratisDias:null,notas:"Sin confirmar"};
 });
-// Aforo, coste y recursos disponibles: se investigan progresivamente (ver EXTRA_INFO). Hasta entonces,
-// "sin confirmar" — nunca se inventa un número de aforo ni una lista de recursos.
-const EXTRA_INFO={};
+// Aforo, coste y recursos disponibles: se investigan progresivamente. Solo se rellena lo que ya está
+// respaldado por las fuentes citadas en ACCESO_INFO; lo demás queda "sin confirmar" — nunca se inventa
+// un número de aforo ni una lista de recursos.
+const EXTRA_INFO={
+  "Biblioteca de Navarra":{gratuito:true,recursos:["wifi","salas_grupo","ordenadores"]},
+  "Biblioteca Civican":{gratuito:true},
+  "Biblioteca Universidad de Navarra · Central":{recursos:["ordenadores","salas_grupo","silencio"]},
+  "Biblioteca Universidad de Navarra · Ciencias":{capacidad:451,recursos:["salas_grupo"]},
+  "Biblioteca UPNA · Campus de Arrosadía":{gratuito:true}
+};
 BIBLIOTECAS.forEach(function(b){
   if(!b.tipoEspacio)b.tipoEspacio="biblioteca";
   var extra=EXTRA_INFO[b.nombre];
   b.capacidad=extra&&extra.capacidad!=null?extra.capacidad:null;
   b.gratuito=extra&&typeof extra.gratuito==="boolean"?extra.gratuito:null;
+  // La ficha de acceso ya afirma "acceso libre y gratuito" (Ley Foral 32/2002 en la red pública).
+  if(b.gratuito===null&&b.acceso&&b.acceso.tipo==="libre"&&/gratuit/i.test(b.acceso.detalle||""))b.gratuito=true;
   b.recursos=extra&&extra.recursos?extra.recursos:[];
 });
 function fmtHoras(min){const hh=Math.floor(min/60),mm=min%60;return hh+":"+String(mm).padStart(2,"0");}
@@ -1856,7 +1875,21 @@ function buildList(){
   var verano=esVerano(new Date());
   $("seasonTag").textContent=verano?"Horario de verano":"Horario de invierno";
   var list=$("list");list.innerHTML="";
+  syncListFilterButtons();
+  var F=LIST_FILTERS, idx=[];
   BIBLIOTECAS.forEach(function(b,i){
+    if(F.abiertas&&!estadoBib(b))return;
+    if(F.libre&&!(b.acceso&&b.acceso.tipo==="libre"))return;
+    if(F.wifi&&!(b.recursos&&b.recursos.indexOf("wifi")!==-1))return;
+    idx.push(i);
+  });
+  if(F.cerca&&window.__userPos){
+    var up=window.__userPos;
+    idx.sort(function(a,c){return distMetros(up.lat,up.lon,BIBLIOTECAS[a].lat,BIBLIOTECAS[a].lon)-distMetros(up.lat,up.lon,BIBLIOTECAS[c].lat,BIBLIOTECAS[c].lon);});
+  }
+  if(!idx.length)list.innerHTML='<div class="empty-note">Ninguna biblioteca cumple estos filtros'+(F.wifi?' (el wifi solo figura donde está confirmado)':'')+'.</div>';
+  idx.forEach(function(i){
+    var b=BIBLIOTECAS[i];
     var abierto=estadoBib(b);
     var distTxt="";
     if(window.__userPos){
@@ -1868,8 +1901,24 @@ function buildList(){
     card.addEventListener("click",function(){window.__selBib(i);});
     list.appendChild(card);
   });
-  $("panelCount").textContent=BIBLIOTECAS.length+" bibliotecas en Navarra";
+  var activos=Object.keys(F).some(function(k){return F[k];});
+  $("panelCount").textContent=activos?(idx.length+" de "+BIBLIOTECAS.length+" bibliotecas"):(BIBLIOTECAS.length+" bibliotecas en Navarra");
 }
+// Filtros de la lista (se recuerdan en este navegador). "Más cercanas" pide la ubicación si aún no la hay.
+var LIST_FILTERS=Object.assign({abiertas:false,cerca:false,libre:false,wifi:false},loadJSON("bpna_list_filters",{}));
+function syncListFilterButtons(){
+  document.querySelectorAll("#listFilters button").forEach(function(btn){btn.classList.toggle("on",!!LIST_FILTERS[btn.dataset.f]);});
+}
+document.querySelectorAll("#listFilters button").forEach(function(btn){
+  btn.addEventListener("click",function(e){
+    e.stopPropagation();
+    var f=btn.dataset.f;
+    LIST_FILTERS[f]=!LIST_FILTERS[f];
+    saveJSON("bpna_list_filters",LIST_FILTERS);
+    if(f==="cerca"&&LIST_FILTERS.cerca&&!window.__userPos){locateMe();}
+    buildList();
+  });
+});
 // Color de la chincheta según la afluencia reportada (sin números): verde/ámbar/rojo, gris si está cerrada, morado si no hay datos.
 function chinchetaIcon(i){
   var b=BIBLIOTECAS[i], abierto=estadoBib(b);
