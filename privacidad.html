@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Política de privacidad · Bibliotecas de Navarra</title>
+<meta name="description" content="Política de privacidad de la app Bibliotecas de Navarra (Bibliotime): qué datos se tratan, para qué, con quién se comparten y cómo ejercer tus derechos.">
+<meta name="robots" content="index, follow">
+<meta name="color-scheme" content="light dark">
+<style>
+  :root{
+    --bg:#f6f7fb; --card:#ffffff; --text:#1f2430; --muted:#5b6475; --line:#e3e6ee;
+    --accent:#6c5ce7; --accent-soft:#efedff; --code:#f1f3f8;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#12131a; --card:#1b1d27; --text:#e8eaf1; --muted:#a3aabb; --line:#2c2f3d;
+      --accent:#a99dff; --accent-soft:#262342; --code:#232634;
+    }
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  main{max-width:760px;margin:0 auto;padding:24px 16px 48px}
+  header{margin-bottom:20px}
+  h1{font-size:1.6rem;line-height:1.25;margin:0 0 6px}
+  .sub{color:var(--muted);margin:0}
+  .date{display:inline-block;margin-top:10px;font-size:.9rem;color:var(--muted)}
+  section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 18px 8px;margin:14px 0}
+  h2{font-size:1.15rem;margin:0 0 10px;color:var(--accent)}
+  h3{font-size:1rem;margin:16px 0 6px}
+  p,li{overflow-wrap:anywhere}
+  ul{padding-left:1.2em;margin:8px 0 12px}
+  li{margin:4px 0}
+  .summary{background:var(--accent-soft);border-color:transparent}
+  .summary li{margin:6px 0}
+  .table-wrap{overflow-x:auto;margin:8px 0 14px}
+  table{width:100%;border-collapse:collapse;font-size:.92rem}
+  th,td{border-bottom:1px solid var(--line);padding:8px 6px;text-align:left;vertical-align:top}
+  th{color:var(--muted);font-weight:600}
+  code{background:var(--code);padding:1px 5px;border-radius:5px;font-size:.88em}
+  a{color:var(--accent)}
+  footer{color:var(--muted);font-size:.85rem;text-align:center;margin-top:24px}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <h1>Política de privacidad</h1>
+  <p class="sub">App «Bibliotecas de Navarra» (Bibliotime)</p>
+  <span class="date">Última actualización: 8 de octubre de 2026</span>
+</header>
+
+<section class="summary" aria-label="Resumen">
+  <h2>Resumen en 30 segundos</h2>
+  <ul>
+    <li>Tus sesiones de estudio, objetivos, rachas, asignaturas, notas, préstamos y calendario se guardan <b>en tu propio dispositivo</b>.</li>
+    <li>Si creas una cuenta, guardamos tu <b>correo, nombre y un código de amigo</b> para que puedas iniciar sesión y añadir amigos.</li>
+    <li>Tu <b>ubicación GPS nunca sale de tu móvil</b>: se usa solo en el dispositivo para calcular distancias, mostrar «Mi ubicación» y verificar el check-in.</li>
+    <li>Solo compartimos con tus amigos la <b>biblioteca</b> donde estudias, tus sesiones o tus eventos <b>si tú lo activas</b>.</li>
+    <li><b>Sin publicidad, sin analítica, sin rastreadores</b> y no vendemos tus datos.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>1. Responsable del tratamiento</h2>
+  <p><b>Responsable:</b> [NOMBRE DEL RESPONSABLE]<br>
+  <b>Contacto para privacidad:</b> [EMAIL DE CONTACTO]</p>
+  <p>Esta política explica cómo trata tus datos la aplicación web progresiva (PWA) «Bibliotecas de Navarra», también disponible como app Android, conforme al Reglamento General de Protección de Datos (RGPD, Reglamento UE 2016/679) y a la Ley Orgánica 3/2018 de Protección de Datos y Garantía de los Derechos Digitales (LOPDGDD).</p>
+</section>
+
+<section>
+  <h2>2. Qué datos tratamos y para qué</h2>
+
+  <h3>2.1. Cuenta de usuario</h3>
+  <p>Para usar la app tienes que crear una cuenta con <b>correo electrónico, nombre y contraseña</b>.</p>
+  <ul>
+    <li><b>Cuenta en la nube (modo normal):</b> el registro y el inicio de sesión se gestionan con Supabase Auth. La contraseña la guarda Supabase cifrada; nosotros nunca la vemos. Se crea un perfil con tu <b>correo, nombre y un código de amigo</b> generado al azar.</li>
+    <li><b>Cuenta solo local (modo de respaldo):</b> si el servicio en la nube no está disponible, la cuenta se crea únicamente en el almacenamiento de tu navegador (<code>localStorage</code>) con tu correo, tu nombre y una huella (hash) de la contraseña. No se envía a ningún servidor.</li>
+  </ul>
+  <p>En ambos casos también se guarda en tu dispositivo esa huella de la contraseña y la sesión abierta, para que no tengas que identificarte cada vez.</p>
+  <p><b>Base legal:</b> ejecución del servicio que solicitas al registrarte (art. 6.1.b RGPD).</p>
+
+  <h3>2.2. Datos de estudio (solo en tu dispositivo)</h3>
+  <p>Sesiones de estudio y su duración, biblioteca, asignatura, valoración de productividad, notas, objetivos, rachas e insignias, préstamos de libros, calendario de exámenes y tareas, eventos académicos, biblioteca favorita, preferencias y el texto de «Ofrecer estudio». Todo esto se guarda en el <code>localStorage</code> de tu navegador o de la app y <b>no sale de tu dispositivo</b> salvo en los casos de la sección 2.4, que siempre activas tú.</p>
+  <p>Si borras los datos de la app o del navegador, esta información se pierde y no podemos recuperarla.</p>
+
+  <h3>2.3. Ubicación</h3>
+  <p>La app solo pide permiso de ubicación cuando tú lo solicitas, para:</p>
+  <ul>
+    <li>mostrar tu posición en el mapa («Mi ubicación»);</li>
+    <li>calcular la distancia a las bibliotecas y ordenar por «Más cercanas»;</li>
+    <li>verificar el check-in de una sesión (comprobar que estás a menos de unos 400 m de la biblioteca), si activas esa opción.</li>
+  </ul>
+  <p><b>Las coordenadas se procesan solo en tu dispositivo y nunca se envían a nuestros servidores ni a terceros.</b> Lo único que puede llegar a la nube es si una sesión quedó «verificada» (sí/no) y, si lo compartes, qué biblioteca de la lista has elegido (nunca tus coordenadas). Puedes negar o retirar el permiso en cualquier momento desde los ajustes del móvil o del navegador; la app seguirá funcionando sin esas funciones.</p>
+  <p><b>Base legal:</b> tu consentimiento (art. 6.1.a RGPD), que das al conceder el permiso.</p>
+
+  <h3>2.4. Funciones sociales (opcionales)</h3>
+  <p>Solo con cuenta en la nube. Estos datos se guardan en nuestra base de datos alojada en Supabase:</p>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Qué</th><th>Cuándo se envía</th><th>Quién lo ve</th></tr></thead>
+    <tbody>
+      <tr><td><b>Amistades</b>: solicitudes y estado (pendiente/aceptada)</td><td>Cuando envías o aceptas una solicitud con un código de amigo</td><td>Las dos personas implicadas</td></tr>
+      <tr><td><b>Presencia</b>: biblioteca de la lista en la que estás estudiando y hora de inicio</td><td>Solo con el cronómetro en marcha y la opción «Compartir tu actividad» activada</td><td>Tus amigos aceptados</td></tr>
+      <tr><td><b>Salas de estudio en grupo</b>: nombre y código de la sala, y tu biblioteca y hora de inicio mientras estudias en ella</td><td>Cuando creas una sala o te unes con su código</td><td>Las personas que están en la misma sala (el nombre y el código de la sala, cualquiera que tenga el código)</td></tr>
+      <tr><td><b>Sesiones compartidas</b>: biblioteca, minutos, fecha, asignatura, nota, ofrecimiento, productividad, resultado del modo foco y si fue verificada</td><td>Al terminar una sesión, solo si tienes activada la opción «Compartir tu actividad»</td><td>Tus amigos aceptados</td></tr>
+      <tr><td><b>Eventos compartidos</b>: título, tipo, fecha, hora, lugar y enlace de un examen o evento</td><td>Al guardar un examen o evento con la casilla «Compartir con mis amigos» marcada (viene marcada por defecto; desmárcala si no quieres compartirlo)</td><td>Tus amigos aceptados</td></tr>
+      <tr><td><b>Kudos</b>: que has felicitado una sesión y tu nombre</td><td>Cuando das un kudos</td><td>Otros usuarios de la app</td></tr>
+      <tr><td><b>Oraciones por exámenes</b>: que rezas por el examen de un amigo, el título del examen y tu nombre</td><td>Cuando pulsas «Rezar»</td><td>Tú y la persona dueña del examen</td></tr>
+      <tr><td><b>Blog de lecturas</b>: título del libro, comentario y tu nombre</td><td>Cuando publicas una reseña</td><td>Todos los usuarios de la app</td></tr>
+      <tr><td><b>Reportes de afluencia</b>: biblioteca, nivel (libre/media/llena), fecha y hora, asociado a tu cuenta</td><td>Cuando informas de cómo está una biblioteca</td><td>Los demás usuarios ven el nivel agregado y anónimo, nunca quién lo envió</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p><b>Tu perfil</b> (nombre y código de amigo) puede ser consultado por otros usuarios de la app para poder encontrarte y agregarte; tu correo solo se muestra en la app a tus amigos.</p>
+  <p><b>Datos sensibles:</b> las funciones «Ofrecer estudio» y «Rezar por un examen» podrían revelar creencias religiosas. Son totalmente opcionales y solo se comparten cuando tú decides usarlas; al hacerlo das tu consentimiento explícito (art. 9.2.a RGPD). Si no quieres compartir el texto de tu ofrecimiento, déjalo vacío o desactiva «Compartir tu actividad».</p>
+  <p><b>Base legal:</b> tu consentimiento (art. 6.1.a RGPD), que puedes retirar en cualquier momento desactivando la opción correspondiente o borrando el contenido.</p>
+
+  <h3>2.5. Notificaciones</h3>
+  <p>Si las activas, la app muestra recordatorios de exámenes, tareas y préstamos. Se generan en tu dispositivo a partir de tus datos locales; no usamos servicios de notificaciones push externos.</p>
+</section>
+
+<section>
+  <h2>3. Lo que NO hacemos</h2>
+  <ul>
+    <li>No mostramos publicidad.</li>
+    <li>No usamos herramientas de analítica, estadísticas de uso, cookies de seguimiento ni identificadores publicitarios.</li>
+    <li>No vendemos ni alquilamos tus datos, ni los usamos para crear perfiles comerciales.</li>
+    <li>No enviamos tus coordenadas GPS a ningún servidor.</li>
+    <li>No tomamos decisiones automatizadas con efectos legales sobre ti.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>4. Proveedores y terceros</h2>
+  <p>Para funcionar, la app se apoya en estos servicios. Algunos reciben inevitablemente tu <b>dirección IP</b> y datos técnicos del navegador (como cualquier web que visitas) al descargar recursos:</p>
+  <ul>
+    <li><b>Supabase</b> (Supabase Inc.): aloja la base de datos y el sistema de cuentas. Actúa como encargado del tratamiento. Región del servidor: [REGIÓN DEL PROYECTO SUPABASE]. Si hubiera transferencias fuera del Espacio Económico Europeo, se amparan en las cláusulas contractuales tipo de la Comisión Europea y/o el Marco de Privacidad de Datos UE-EE. UU.</li>
+    <li><b>Teselas del mapa</b>: las imágenes del mapa se descargan de <b>tile.openstreetmap.de</b> (OpenStreetMap Alemania / FOSSGIS e.V.) y, si eliges la capa de relieve, de <b>OpenTopoMap</b> (opentopomap.org). Si se habilita la capa satélite, de <b>MapTiler</b>. Estos servidores reciben tu IP y la zona del mapa que estás viendo, no tu ubicación GPS.</li>
+    <li><b>CDN de librerías</b>: la librería de mapas Leaflet se carga desde <b>unpkg.com</b> (o, de respaldo, <b>cdn.jsdelivr.net</b>), y la librería de Supabase desde <b>cdn.jsdelivr.net</b>. Reciben tu IP al descargar esos archivos.</li>
+    <li><b>Alojamiento de la web</b>: el servidor donde está publicada la app (por ejemplo, GitHub Pages) recibe tu IP y registros técnicos al cargar la página.</li>
+    <li><b>Enlaces externos</b>: si pulsas «Cómo llegar» se abre Google Maps con la ubicación de la biblioteca de destino (no la tuya); si compartes por WhatsApp, se abre WhatsApp con el mensaje que tú envías; las webs de las bibliotecas se abren en tu navegador. Desde ese momento se aplican las políticas de privacidad de esos servicios.</li>
+  </ul>
+  <p>No cedemos tus datos a nadie más, salvo obligación legal.</p>
+</section>
+
+<section>
+  <h2>5. Cuánto tiempo guardamos los datos</h2>
+  <ul>
+    <li><b>Datos en tu dispositivo:</b> hasta que los borres (borrando los datos de la app o del navegador, o desinstalándola).</li>
+    <li><b>Cuenta y perfil:</b> mientras tengas la cuenta. Al eliminarla se borran también, de forma automática, tus amistades, presencia, salas, sesiones y eventos compartidos, kudos, oraciones, reseñas y reportes de afluencia.</li>
+    <li><b>Presencia:</b> se sobrescribe en cada actualización y deja de mostrarse cuando terminas de estudiar o desactivas la opción.</li>
+    <li><b>Eventos compartidos:</b> puedes borrarlos tú; al borrar un evento compartido en la app también se elimina de la nube.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>6. Tus derechos</h2>
+  <p>Puedes ejercer en cualquier momento tus derechos de <b>acceso, rectificación, supresión, portabilidad, oposición y limitación del tratamiento</b>, así como retirar tu consentimiento, escribiendo a <b>[EMAIL DE CONTACTO]</b> desde el correo con el que te registraste. Te responderemos en el plazo máximo de un mes.</p>
+  <ul>
+    <li><b>Rectificar:</b> escríbenos para corregir tu nombre o tu correo.</li>
+    <li><b>Dejar de compartir:</b> desactiva «Compartir tu actividad», desmarca «Compartir con mis amigos» al crear un evento o borra el evento compartido.</li>
+    <li><b>Ubicación:</b> retira el permiso desde los ajustes de Android o del navegador.</li>
+  </ul>
+  <p>Si consideras que no hemos tratado bien tus datos, puedes reclamar ante la <b>Agencia Española de Protección de Datos</b> (www.aepd.es).</p>
+</section>
+
+<section>
+  <h2>7. Cómo eliminar tu cuenta y tus datos</h2>
+  <ul>
+    <li><b>Cuenta en la nube y datos compartidos:</b> envía un correo a <b>[EMAIL DE CONTACTO]</b> con el asunto «Eliminar mi cuenta» desde el correo de tu cuenta. Borraremos tu cuenta y todos los datos asociados en la nube en un plazo máximo de 30 días y te lo confirmaremos.</li>
+    <li><b>Datos en tu dispositivo:</b> en Android, Ajustes → Aplicaciones → Bibliotecas de Navarra → Almacenamiento → Borrar datos (o desinstala la app). En el navegador, borra los datos del sitio.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>8. Edad mínima</h2>
+  <p>La app está pensada para estudiantes. Para crear una cuenta debes tener <b>al menos 14 años</b> (art. 7 LOPDGDD). Si eres menor de 14 años, necesitas el consentimiento de tus padres o tutores. Si detectamos una cuenta de un menor de 14 años sin ese consentimiento, la eliminaremos.</p>
+</section>
+
+<section>
+  <h2>9. Seguridad</h2>
+  <p>Las comunicaciones con nuestros servidores van cifradas (HTTPS). La base de datos aplica reglas de acceso por fila para que cada persona solo pueda modificar sus propios datos y ver solo lo que la tabla anterior indica. Aun así, ningún sistema es 100 % seguro: usa una contraseña que no utilices en otros sitios.</p>
+</section>
+
+<section>
+  <h2>10. Cambios en esta política</h2>
+  <p>Si cambiamos esta política, actualizaremos la fecha de arriba y, si el cambio es importante, te avisaremos dentro de la app.</p>
+</section>
+
+<footer>Bibliotecas de Navarra · Bibliotime</footer>
+</main>
+</body>
+</html>
