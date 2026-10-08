@@ -1250,7 +1250,7 @@ function renderCalFriendExams(){
     var d=new Date(ev.date+"T00:00:00"), dd=String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0");
     var who=socialNameById(ev.owner_id), n=SOCIAL.prayerCounts[ev.local_id]||0, ya=!!SOCIAL.prayedByMe[ev.local_id];
     return '<div class="pray-row"><div class="pi"><b>'+escapeHTML(ev.title)+'</b><small>De '+escapeHTML(who)+' · '+dd+(n?' · 🙏 '+n:'')+'</small></div>'+
-      '<button '+(ya?"disabled":"")+' onclick="prayForExam(\''+escapeHTML(ev.local_id)+'\',\''+escapeHTML(ev.owner_id)+'\',\''+escapeHTML(ev.title).replace(/'/g,"\\'")+'\')">'+(ya?"🙏 Ya recé":"🙏 Rezar")+'</button></div>';
+      '<button '+(ya?"disabled":"")+' onclick="prayForExam('+jsArg(ev.local_id)+','+jsArg(ev.owner_id)+','+jsArg(ev.title)+')">'+(ya?"🙏 Ya recé":"🙏 Rezar")+'</button></div>';
   }).join("");
 }
 /* ===== BLOG DE LECTURAS (público entre usuarios de la app) ===== */
@@ -1337,7 +1337,9 @@ async function socialRejectFriend(id){
 }
 async function socialHeartbeat(){
   var sb=socialClient(); if(!sb||!SOCIAL.user||!DATA)return;
-  var payload={user_id:SOCIAL.user.id,sharing:false,room_code:SOCIAL.room?SOCIAL.room.code:null,updated_at:new Date().toISOString()};
+  // started_at/bib_index se envían siempre: el upsert solo toca las columnas enviadas y, si no, quedaba
+  // el valor viejo y la sala seguía mostrando a alguien que ya había terminado.
+  var payload={user_id:SOCIAL.user.id,sharing:false,room_code:SOCIAL.room?SOCIAL.room.code:null,updated_at:new Date().toISOString(),started_at:null,bib_index:null};
   if(DATA.sharePresence&&studyTimer.running&&typeof studyTimer.bibIndex==="number"){
     payload.sharing=true;payload.bib_index=studyTimer.bibIndex;payload.started_at=new Date(studyTimer.start).toISOString();
   }
@@ -1348,7 +1350,7 @@ async function socialHeartbeat(){
 }
 async function socialClearPresence(){
   if(!socialClient()||!SOCIAL.user)return;
-  await socialClient().from("presence").upsert({user_id:SOCIAL.user.id,sharing:false,updated_at:new Date().toISOString()},{onConflict:"user_id"});
+  await socialClient().from("presence").upsert({user_id:SOCIAL.user.id,sharing:false,started_at:null,bib_index:null,updated_at:new Date().toISOString()},{onConflict:"user_id"});
 }
 async function socialLoadPresence(){
   var sb=socialClient(); if(!sb||!SOCIAL.user)return;
@@ -1538,8 +1540,8 @@ function socialRenderPanel(err){
     if(!SOCIAL.requests.length&&!SOCIAL.sent.length){req.innerHTML='<div class="empty-note">Sin solicitudes pendientes</div>';}
     else{
       var html="";
-      SOCIAL.requests.forEach(function(x){html+='<div class="friend-row"><div class="fav">'+socialInitial(x.profile.name)+'</div><div class="fi"><b>'+escapeHTML(x.profile.name||"Amigo")+'</b><small>Quiere añadirte</small></div><div class="factions"><button class="okbtn" onclick="socialAcceptFriend(\''+x.row.id+'\')">Aceptar</button><button class="nobtn" onclick="socialRejectFriend(\''+x.row.id+'\')">Borrar</button></div></div>';});
-      SOCIAL.sent.forEach(function(x){html+='<div class="friend-row"><div class="fav">'+socialInitial(x.profile.name)+'</div><div class="fi"><b>'+escapeHTML(x.profile.name||"Amigo")+'</b><small>Solicitud enviada, pendiente de aceptar</small></div><div class="factions"><button class="nobtn" onclick="socialRejectFriend(\''+x.row.id+'\')">Cancelar</button></div></div>';});
+      SOCIAL.requests.forEach(function(x){html+='<div class="friend-row"><div class="fav">'+socialInitial(x.profile.name)+'</div><div class="fi"><b>'+escapeHTML(x.profile.name||"Amigo")+'</b><small>Quiere añadirte</small></div><div class="factions"><button class="okbtn" onclick="socialAcceptFriend('+jsArg(x.row.id)+')">Aceptar</button><button class="nobtn" onclick="socialRejectFriend('+jsArg(x.row.id)+')">Borrar</button></div></div>';});
+      SOCIAL.sent.forEach(function(x){html+='<div class="friend-row"><div class="fav">'+socialInitial(x.profile.name)+'</div><div class="fi"><b>'+escapeHTML(x.profile.name||"Amigo")+'</b><small>Solicitud enviada, pendiente de aceptar</small></div><div class="factions"><button class="nobtn" onclick="socialRejectFriend('+jsArg(x.row.id)+')">Cancelar</button></div></div>';});
       req.innerHTML=html;
     }
   }
@@ -1549,7 +1551,7 @@ function socialRenderPanel(err){
       fl.innerHTML=SOCIAL.friends.map(function(f){
         var p=socialPresenceFor(f.profile.id), loc='No está compartiendo ubicación ahora';
         var mapbtn='';
-        if(p&&BIBLIOTECAS[p.bib_index]){var age=Math.round((Date.now()-new Date(p.updated_at).getTime())/60000);loc='Está en '+BIBLIOTECAS[p.bib_index].nombre.replace("Biblioteca ","").replace("Pública ","")+' · hace '+Math.max(0,age)+' min';mapbtn='<button class="mapbtn" onclick="socialGoFriend(\''+f.profile.id+'\')">Mapa</button>';}
+        if(p&&BIBLIOTECAS[p.bib_index]){var age=Math.round((Date.now()-new Date(p.updated_at).getTime())/60000);loc='Está en '+BIBLIOTECAS[p.bib_index].nombre.replace("Biblioteca ","").replace("Pública ","")+' · hace '+Math.max(0,age)+' min';mapbtn='<button class="mapbtn" onclick="socialGoFriend('+jsArg(f.profile.id)+')">Mapa</button>';}
         return '<div class="friend-row"><div class="fav">'+socialInitial(f.profile.name)+'</div><div class="fi"><b>'+escapeHTML(f.profile.name||"Amigo")+'</b><small>'+escapeHTML(loc)+'</small></div><div class="factions">'+mapbtn+'</div></div>';
       }).join("");
     }
@@ -1570,7 +1572,7 @@ function socialRenderFriendEvents(){
     var prayBtn="";
     if(ev.type==="examen"){
       var np=SOCIAL.prayerCounts[ev.local_id]||0, yap=!!SOCIAL.prayedByMe[ev.local_id];
-      prayBtn='<button '+(yap?"disabled":"")+' style="margin-top:6px;border:none;border-radius:10px;padding:6px 10px;font-weight:800;font-size:11.5px;cursor:pointer;background:rgba(108,92,231,.14);color:var(--acento)" onclick="prayForExam(\''+escapeHTML(ev.local_id)+'\',\''+escapeHTML(ev.owner_id)+'\',\''+escapeHTML(ev.title).replace(/'/g,"\\'")+'\')">'+(yap?"🙏 Ya recé":"🙏 Rezar")+(np?" · "+np:"")+'</button>';
+      prayBtn='<button '+(yap?"disabled":"")+' style="margin-top:6px;border:none;border-radius:10px;padding:6px 10px;font-weight:800;font-size:11.5px;cursor:pointer;background:rgba(108,92,231,.14);color:var(--acento)" onclick="prayForExam('+jsArg(ev.local_id)+','+jsArg(ev.owner_id)+','+jsArg(ev.title)+')">'+(yap?"🙏 Ya recé":"🙏 Rezar")+(np?" · "+np:"")+'</button>';
     }
     return '<div class="friend-event"><span class="etag evt-'+escapeHTML(ev.type||"otro")+'"></span><div style="flex:1"><div class="who">'+escapeHTML(who)+'</div><b>'+escapeHTML(ev.title)+'</b><small>'+dd+(ev.time?' · '+escapeHTML(ev.time):'')+(ev.place?' · '+escapeHTML(ev.place):'')+'</small>'+(ev.url?'<br><a href="'+escapeHTML(ev.url)+'" target="_blank" rel="noopener" style="font-size:11.5px;color:var(--acento);font-weight:700;text-decoration:none">Ver más ↗</a>':'')+prayBtn+'</div></div>';
   }).join("");
@@ -1659,7 +1661,7 @@ async function enterApp(){
   $("profName").textContent=u.name;
   $("profEmail").textContent=CURRENT;
   $("profAvatar").textContent=(u.name||"?").trim().charAt(0).toUpperCase();
-  if(!window.__listReady) buildList();
+  if(!window.__listReady){buildList(); if(LIST_FILTERS.cerca&&!window.__userPos)locateMe();}
   if(!window.__mapReady) initMap();
   renderStudy(); renderProfile();
   socialInitAfterLogin();
@@ -1671,7 +1673,9 @@ async function enterApp(){
 }
 
 function logout(){
-  if(studyTimer.running) stopStudy(false);
+  // stopStudy(true): sin el diálogo de valoración, que se quedaba encima del login sin usuario.
+  if(studyTimer.running){stopStudy(true);showToast("Sesión de estudio guardada");}
+  pomoReset();closeModal();releaseWakeLock();
   if(socialClient())socialClient().auth.signOut();
   if(SOCIAL.timer)clearInterval(SOCIAL.timer);
   Brain.clearSession();
@@ -1954,6 +1958,8 @@ function buildList(){
   $("panelCount").textContent=activos?(idx.length+" de "+BIBLIOTECAS.length+" bibliotecas"):(BIBLIOTECAS.length+" bibliotecas en Navarra");
 }
 // Filtros de la lista (se recuerdan en este navegador). "Más cercanas" pide la ubicación si aún no la hay.
+// "Abiertas ahora" depende de la hora: se recalcula cada minuto aunque no lleguen datos nuevos.
+setInterval(function(){if(LIST_FILTERS.abiertas&&window.__listReady)buildList();},60000);
 var LIST_FILTERS=Object.assign({abiertas:false,cerca:false,libre:false,wifi:false},loadJSON("bpna_list_filters",{}));
 function syncListFilterButtons(){
   document.querySelectorAll("#listFilters button").forEach(function(btn){btn.classList.toggle("on",!!LIST_FILTERS[btn.dataset.f]);});
@@ -1996,6 +2002,7 @@ function locateMe(){
   },function(err){
     if(btn)btn.classList.remove("active");
     showToast(err.code===1?"Permiso de ubicación denegado":"No se pudo obtener tu ubicación");
+    if(LIST_FILTERS.cerca&&!window.__userPos){LIST_FILTERS.cerca=false;saveJSON("bpna_list_filters",LIST_FILTERS);buildList();}
   },{timeout:8000,enableHighAccuracy:true});
 }
 // El mapa con chinchetas se monta cuando Leaflet está disponible
@@ -2098,6 +2105,7 @@ function distMetros(la1,lo1,la2,lo2){
   return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
 function startStudyAt(i){
+  if(pomo.running){showToast("Tienes un Pomodoro en marcha: páusalo antes de usar el cronómetro");return;}
   if(studyTimer.running){ if(!confirm("Ya hay una sesión en curso. ¿Terminarla y empezar otra?"))return; stopStudy(true); }
   // check-in con ubicación si está activado
   if(DATA&&DATA.geoCheck&&navigator.geolocation){
@@ -2315,6 +2323,8 @@ function renderFocusPlant(){
   el.innerHTML='<span class="em">'+st[0]+'</span>'+st[1];
 }
 /* ===== MODO POMODORO ===== */
+// Los pomodoros no van ligados a una biblioteca: no cuentan para "favorita" ni sugerencias.
+const NO_BIB="Sin biblioteca";
 const POMO_FOCUS_MIN=25, POMO_BREAK_MIN=5;
 var pomo={running:false,phase:"focus",secondsLeft:POMO_FOCUS_MIN*60,cycles:0,tick:null};
 function pomoToggle(){
@@ -2322,7 +2332,10 @@ function pomoToggle(){
     pomo.running=false; if(pomo.tick){clearInterval(pomo.tick);pomo.tick=null;}
     renderPomodoro();return;
   }
+  if(studyTimer.running){showToast("Ya tienes el cronómetro en marcha: termínalo antes de usar el Pomodoro");return;}
   pomo.running=true;
+  // Cuenta por hora de fin, no por ticks: con la pestaña en segundo plano los intervalos se ralentizan.
+  pomo.endAt=Date.now()+pomo.secondsLeft*1000;
   if(pomo.phase==="focus"&&pomo.secondsLeft===POMO_FOCUS_MIN*60)focusStart();
   if(pomo.tick)clearInterval(pomo.tick);
   pomo.tick=setInterval(pomoTick,1000);
@@ -2334,16 +2347,18 @@ function pomoReset(){
   renderPomodoro();
 }
 function pomoTick(){
-  pomo.secondsLeft--;
+  pomo.secondsLeft=Math.max(0,Math.ceil((pomo.endAt-Date.now())/1000));
   if(pomo.secondsLeft<=0){
     if(pomo.phase==="focus"){
       pomo.cycles++;
-      var bibIdx=studyTimer.bibIndex!=null?studyTimer.bibIndex:0;
+      // Si el pomodoro termina con la app oculta, el modo foco no llegó a ver la vuelta: se marchita aquí.
+      if(DATA.focusMode&&(document.visibilityState==="hidden"||(FOCUS.hiddenAt&&Date.now()-FOCUS.hiddenAt>=FOCUS_GRACE_SEC*1000)))FOCUS.withered=true;
+      FOCUS.hiddenAt=0;
       var saved={id:genId(),date:ymd(),min:POMO_FOCUS_MIN,sec:POMO_FOCUS_MIN*60,
-        bib:BIBLIOTECAS[bibIdx].nombre,ts:Date.now()-POMO_FOCUS_MIN*60000,verif:false,prod:null,note:"Pomodoro",offering:DATA.offeringText||"",subject:DATA.currentSubject||null,focus:focusResult()};
+        bib:NO_BIB,ts:Date.now()-POMO_FOCUS_MIN*60000,verif:false,prod:null,note:"Pomodoro",offering:DATA.offeringText||"",subject:DATA.currentSubject||null,focus:focusResult()};
       DATA.sessions.push(saved);saveUserData();socialShareSession(saved);
       showToast("🍅 Pomodoro completado ("+POMO_FOCUS_MIN+" min). ¡A descansar!");
-      pomo.phase="break";pomo.secondsLeft=POMO_BREAK_MIN*60;
+      pomo.phase="break";pomo.secondsLeft=POMO_BREAK_MIN*60;pomo.endAt=Date.now()+pomo.secondsLeft*1000;
       releaseWakeLock();
       renderProfile();
     }else{
@@ -2403,7 +2418,7 @@ function renderSessionFeed(){
         '<div class="fmeta">'+stars+'</div>'+
         (s.note?'<div class="fnote">"'+escapeHTML(s.note)+'"</div>':'')+
         (s.offering?'<div class="foffer">🙏 Ofrecido por '+escapeHTML(s.offering)+'</div>':'')+
-        '<button class="kudos-btn'+(ya?" on":"")+'" '+(ya?"disabled":"")+' onclick="giveKudos(\''+escapeHTML(s.local_id)+'\',\''+escapeHTML(s.owner_id)+'\')">👏 '+(n?n:"Dar kudos")+'</button>'+
+        '<button class="kudos-btn'+(ya?" on":"")+'" '+(ya?"disabled":"")+' onclick="giveKudos('+jsArg(s.local_id)+','+jsArg(s.owner_id)+')">👏 '+(n?n:"Dar kudos")+'</button>'+
         '</div>';
     }).join("");
     return;
@@ -2435,7 +2450,7 @@ function ymd(d){d=d||new Date();return d.getFullYear()+"-"+String(d.getMonth()+1
 function hMin(min){var hh=Math.floor(min/60),mm=min%60;return hh+"h "+mm+"m";}
 function weekMinutes(){
   var now=new Date();var monday=new Date(now);var day=(now.getDay()+6)%7;monday.setDate(now.getDate()-day);monday.setHours(0,0,0,0);
-  var sum=0;DATA.sessions.forEach(function(s){var d=new Date(s.date);if(d>=monday)sum+=s.min;});
+  var sum=0;DATA.sessions.forEach(function(s){if(s.date>=ymd(monday))sum+=s.min;});
   if(studyTimer.running&&studyTimer.start>=monday.getTime())sum+=elapsedMin();
   return sum;
 }
@@ -2458,6 +2473,8 @@ function checkStreakFreezes(){
   for(;;){var k=ymd(d);if(realDays[k]){realStreak++;d.setDate(d.getDate()-1);}else{
     if(realStreak===0&&k===ymd()){d.setDate(d.getDate()-1);continue;}
     break;}}
+  // Si la racha se rompió, el contador de "congelador ganado" vuelve a empezar con ella.
+  if(realStreak<(DATA.lastFreezeEarnedAtStreak||0))DATA.lastFreezeEarnedAtStreak=Math.floor(realStreak/7)*7;
   var earnedAt=Math.floor(realStreak/7)*7;
   if(earnedAt>0&&earnedAt>DATA.lastFreezeEarnedAtStreak&&DATA.streakFreezes<3){
     DATA.streakFreezes=Math.min(3,DATA.streakFreezes+1);
@@ -2465,15 +2482,15 @@ function checkStreakFreezes(){
     saveUserData();
     showToast("🧊 Has ganado un congelador de racha (racha de "+earnedAt+" días)");
   }
-  var ayer=new Date();ayer.setDate(ayer.getDate()-1);var ayerK=ymd(ayer);
-  var anteayer=new Date();anteayer.setDate(anteayer.getDate()-2);var anteayerK=ymd(anteayer);
-  var hoyK=ymd();
-  var yaUsado=(DATA.usedFreezeDates||[]).indexOf(ayerK)!==-1;
-  var anteayerCubierto=realDays[anteayerK]||(DATA.usedFreezeDates||[]).indexOf(anteayerK)!==-1;
-  if(!realDays[ayerK]&&!yaUsado&&DATA.streakFreezes>0&&anteayerCubierto&&ayerK!==hoyK){
-    DATA.streakFreezes--; if(!DATA.usedFreezeDates)DATA.usedFreezeDates=[]; DATA.usedFreezeDates.push(ayerK);
+  // Hueco de uno o más días sin estudiar justo antes de hoy: se cubre si hay congeladores para todos.
+  var used=DATA.usedFreezeDates=DATA.usedFreezeDates||[];
+  var cubierto=function(k){return realDays[k]||used.indexOf(k)!==-1;};
+  var gap=[],dd=new Date();dd.setDate(dd.getDate()-1);
+  while(!cubierto(ymd(dd))&&gap.length<=DATA.streakFreezes){gap.push(ymd(dd));dd.setDate(dd.getDate()-1);}
+  if(gap.length>0&&gap.length<=DATA.streakFreezes&&cubierto(ymd(dd))){
+    DATA.streakFreezes-=gap.length; gap.forEach(function(k){used.push(k);});
     saveUserData();
-    showToast("🧊 Se usó un congelador de racha para no perderla (no estudiaste ayer)");
+    showToast("🧊 Se "+(gap.length===1?"usó un congelador":"usaron "+gap.length+" congeladores")+" para no perder tu racha");
   }
 }
 function openGoalModal(){
@@ -2569,7 +2586,7 @@ function renderProfile(){
   $("pSessions").textContent=DATA.sessions.length;
   $("pLoans").textContent=DATA.loans.filter(function(l){return !l.returned;}).length;
   // favorita
-  var counts={};DATA.sessions.forEach(function(s){counts[s.bib]=(counts[s.bib]||0)+s.min;});
+  var counts={};DATA.sessions.forEach(function(s){if(s.bib!==NO_BIB)counts[s.bib]=(counts[s.bib]||0)+s.min;});
   var fav="—",best=0;for(var k in counts){if(counts[k]>best){best=counts[k];fav=k;}}
   $("pFav").textContent=fav==="—"?"—":fav.replace("Biblioteca ","").replace("Pública ","").split("·")[0].trim();
   $("pFav").style.fontSize=fav==="—"?"28px":"15px";
@@ -2592,8 +2609,8 @@ function renderWeekBars(){
   var now=new Date();var day=(now.getDay()+6)%7;
   var monday=new Date(now);monday.setDate(now.getDate()-day);monday.setHours(0,0,0,0);
   var labels=["L","M","X","J","V","S","D"];var mins=[0,0,0,0,0,0,0];
-  DATA.sessions.forEach(function(s){var d=new Date(s.date);var diff=Math.floor((d-monday)/86400000);if(diff>=0&&diff<7)mins[diff]+=s.min;});
-  if(studyTimer.running){var diff=Math.floor((new Date(ymd())-monday)/86400000);if(diff>=0&&diff<7)mins[diff]+=elapsedMin();}
+  DATA.sessions.forEach(function(s){var d=new Date(s.date+"T00:00:00");var diff=Math.round((d-monday)/86400000);if(diff>=0&&diff<7)mins[diff]+=s.min;});
+  if(studyTimer.running){var diff=Math.round((new Date(ymd()+"T00:00:00")-monday)/86400000);if(diff>=0&&diff<7)mins[diff]+=elapsedMin();}
   var max=Math.max(60,Math.max.apply(null,mins));
   for(var i=0;i<7;i++){
     var pct=Math.round(mins[i]/max*100);
@@ -2605,6 +2622,7 @@ function renderWeekBars(){
 function computeBestStreak(){
   if(!DATA.sessions.length)return 0;
   var days={};DATA.sessions.forEach(function(s){days[s.date]=true;});
+  (DATA.usedFreezeDates||[]).forEach(function(k){days[k]=true;});
   var dates=Object.keys(days).sort();
   var best=1,cur=1;
   for(var i=1;i<dates.length;i++){
@@ -2700,6 +2718,9 @@ function showToast(msg){
   document.body.appendChild(t);
   setTimeout(function(){t.style.transition="opacity .4s";t.style.opacity="0";setTimeout(function(){t.remove();},400);},2200);
 }
+// Argumento seguro para un onclick="...": literal JS (JSON) escapado para atributo HTML.
+// escapeHTML solo no basta: el navegador decodifica &#39; antes de ejecutar el handler.
+function jsArg(s){return escapeHTML(JSON.stringify(String(s==null?"":s)));}
 function escapeHTML(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 
 /* ===================== EVENTOS ACADÉMICOS ===================== */
@@ -2962,11 +2983,11 @@ function comprobarEnlaceCompartido(){
     var code=hash.slice(7);
     var payload=JSON.parse(decodeURIComponent(escape(atob(code))));
     var b=BIBLIOTECAS[payload.b]; if(!b)return;
-    var mins=Math.round((Date.now()-payload.t)/60000);
+    var mins=Math.round((Date.now()-Number(payload.t))/60000); if(!isFinite(mins))return;
     var hace = mins<1?"hace un momento":(mins<60?"hace "+mins+" min":"hace "+Math.floor(mins/60)+" h");
     var banner=$("friendBanner");
     banner.innerHTML='<div class="fav">'+escapeHTML((payload.n||"?").charAt(0).toUpperCase())+'</div>'+
-      '<div class="ft"><b>'+escapeHTML(payload.n||"Alguien")+' está estudiando</b><small>en '+escapeHTML(b.nombre.replace("Biblioteca ",""))+' · '+hace+(payload.h?" · hasta ~"+payload.h:"")+'</small></div>'+
+      '<div class="ft"><b>'+escapeHTML(payload.n||"Alguien")+' está estudiando</b><small>en '+escapeHTML(b.nombre.replace("Biblioteca ",""))+' · '+hace+(/^\d{1,2}:\d{2}$/.test(String(payload.h||""))?" · hasta ~"+payload.h:"")+'</small></div>'+
       '<button class="nowclose" id="friendClose" style="margin-left:auto">×</button>';
     banner.classList.remove("hidden");
     setTimeout(function(){
@@ -2992,18 +3013,18 @@ function renderSugerencia(){
   ses.forEach(function(s){
     var hh=new Date(s.ts).getHours();
     if(hh<14)franjas.manana+=s.min; else if(hh<20)franjas.tarde+=s.min; else franjas.noche+=s.min;
-    porBib[s.bib]=(porBib[s.bib]||0)+s.min;
+    if(s.bib!==NO_BIB)porBib[s.bib]=(porBib[s.bib]||0)+s.min;
   });
   var mejorFranja=Object.keys(franjas).sort(function(a,b){return franjas[b]-franjas[a];})[0];
   var franjaTxt={manana:"por la mañana",tarde:"por la tarde",noche:"por la noche"}[mejorFranja];
   var mejorBib=Object.keys(porBib).sort(function(a,b){return porBib[b]-porBib[a];})[0];
   // productividad media por biblioteca (solo sesiones valoradas)
   var prodBib={};
-  ses.forEach(function(s){ if(s.prod){ if(!prodBib[s.bib])prodBib[s.bib]={sum:0,n:0}; prodBib[s.bib].sum+=s.prod; prodBib[s.bib].n++; } });
+  ses.forEach(function(s){ if(s.prod&&s.bib!==NO_BIB){ if(!prodBib[s.bib])prodBib[s.bib]={sum:0,n:0}; prodBib[s.bib].sum+=s.prod; prodBib[s.bib].n++; } });
   var mejorProd=null,mejorMedia=0;
   for(var k in prodBib){ var media=prodBib[k].sum/prodBib[k].n; if(media>mejorMedia){mejorMedia=media;mejorProd=k;} }
   var html='<div style="font-size:14px;line-height:1.6">';
-  html+='Sueles rendir más cuando estudias <b>'+franjaTxt+'</b>, y donde más horas acumulas es en <b>'+escapeHTML(mejorBib.replace("Biblioteca ",""))+'</b>.';
+  html+='Sueles rendir más cuando estudias <b>'+franjaTxt+'</b>'+(mejorBib?', y donde más horas acumulas es en <b>'+escapeHTML(mejorBib.replace("Biblioteca ",""))+'</b>':'')+'.';
   if(mejorProd){ html+='<br>Según tus propias valoraciones, donde mejor te concentras es en <b>'+escapeHTML(mejorProd.replace("Biblioteca ",""))+'</b> ('+mejorMedia.toFixed(1)+'★ de media).'; }
   html+='</div><div style="font-size:11.5px;color:var(--suave);margin-top:10px;font-style:italic">Basado solo en tus '+ses.length+' sesiones registradas.</div>';
   card.innerHTML=html;

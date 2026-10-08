@@ -50,7 +50,6 @@ create table if not exists presence (
 );
 alter table presence enable row level security;
 drop policy if exists "presence select all" on presence;
-create policy "presence select all" on presence for select using (true);
 drop policy if exists "presence insert own" on presence;
 create policy "presence insert own" on presence for insert with check (auth.uid() = user_id);
 drop policy if exists "presence update own" on presence;
@@ -72,7 +71,6 @@ create table if not exists shared_events (
 );
 alter table shared_events enable row level security;
 drop policy if exists "shared_events select all" on shared_events;
-create policy "shared_events select all" on shared_events for select using (true);
 drop policy if exists "shared_events insert own" on shared_events;
 create policy "shared_events insert own" on shared_events for insert with check (auth.uid() = owner_id);
 drop policy if exists "shared_events update own" on shared_events;
@@ -155,7 +153,6 @@ alter table shared_sessions drop constraint if exists shared_sessions_focus_chec
 alter table shared_sessions add constraint shared_sessions_focus_check check (focus is null or focus in ('ok','withered'));
 alter table shared_sessions enable row level security;
 drop policy if exists "shared_sessions select all" on shared_sessions;
-create policy "shared_sessions select all" on shared_sessions for select using (true);
 drop policy if exists "shared_sessions insert own" on shared_sessions;
 create policy "shared_sessions insert own" on shared_sessions for insert with check (auth.uid() = owner_id);
 drop policy if exists "shared_sessions update own" on shared_sessions;
@@ -191,3 +188,37 @@ drop policy if exists "occupancy_reports insert own" on occupancy_reports;
 create policy "occupancy_reports insert own" on occupancy_reports for insert with check (auth.uid() = user_id);
 drop policy if exists "kudos insert own" on kudos;
 create policy "kudos insert own" on kudos for insert with check (auth.uid() = giver_id);
+
+-- ===== PRIVACIDAD: solo tú y tus amigos aceptados veis tu presencia, eventos y sesiones =====
+-- Antes estas tablas eran legibles por cualquiera con la clave pública (select using (true)).
+-- Las funciones son "security definer" para poder consultar friendships/presence sin recursión de RLS.
+create or replace function public.are_friends(a uuid, b uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists(select 1 from friendships f where f.status = 'accepted'
+    and ((f.requester_id = a and f.addressee_id = b) or (f.requester_id = b and f.addressee_id = a)));
+$$;
+create or replace function public.my_room_code() returns text
+language sql stable security definer set search_path = public as $$
+  select room_code from presence where user_id = auth.uid();
+$$;
+
+drop policy if exists "presence select all" on presence;
+drop policy if exists "presence select own friends room" on presence;
+-- Tu fila; la de un amigo solo si comparte ubicación; la de quien está en tu misma sala de estudio.
+create policy "presence select own friends room" on presence for select using (
+  auth.uid() = user_id
+  or (sharing and public.are_friends(auth.uid(), user_id))
+  or (room_code is not null and room_code = public.my_room_code())
+);
+
+drop policy if exists "shared_events select all" on shared_events;
+drop policy if exists "shared_events select own friends" on shared_events;
+create policy "shared_events select own friends" on shared_events for select using (
+  auth.uid() = owner_id or public.are_friends(auth.uid(), owner_id)
+);
+
+drop policy if exists "shared_sessions select all" on shared_sessions;
+drop policy if exists "shared_sessions select own friends" on shared_sessions;
+create policy "shared_sessions select own friends" on shared_sessions for select using (
+  auth.uid() = owner_id or public.are_friends(auth.uid(), owner_id)
+);
