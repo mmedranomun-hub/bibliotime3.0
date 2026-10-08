@@ -1424,10 +1424,19 @@ function renderStudyRoom(){
   $("btnLeaveRoom").addEventListener("click",leaveStudyRoom);
 }
 /* ===== SESIONES COMPARTIDAS + KUDOS (feed de amigos, estilo Strava) ===== */
+// Si la BD aún no tiene las columnas subject/focus (SQL sin actualizar), dejamos de enviarlas
+var SHARE_NO_SUBJECT_FOCUS=false;
 async function socialShareSession(saved){
   var sb=socialClient(); if(!sb||!SOCIAL.user||!DATA||!DATA.sharePresence)return;
   var payload={owner_id:SOCIAL.user.id,local_id:saved.id,bib_name:saved.bib,minutes:saved.min,date:saved.date,note:saved.note||null,offering:saved.offering||null,verif:!!saved.verif,prod:saved.prod||null};
-  await sb.from("shared_sessions").upsert(payload,{onConflict:"owner_id,local_id"});
+  if(!SHARE_NO_SUBJECT_FOCUS){payload.subject=saved.subject||null;payload.focus=(saved.focus==="ok"||saved.focus==="withered")?saved.focus:null;}
+  var res=await sb.from("shared_sessions").upsert(payload,{onConflict:"owner_id,local_id"});
+  var err=res&&res.error;
+  if(err&&!SHARE_NO_SUBJECT_FOCUS&&(err.code==="PGRST204"||/subject|focus|column/i.test(err.message||""))){
+    SHARE_NO_SUBJECT_FOCUS=true;
+    delete payload.subject;delete payload.focus;
+    await sb.from("shared_sessions").upsert(payload,{onConflict:"owner_id,local_id"});
+  }
 }
 async function socialLoadFriendSessions(){
   var sb=socialClient(); if(!sb||!SOCIAL.user)return;
@@ -2374,7 +2383,8 @@ function renderSessionFeed(){
       var who=socialNameById(s.owner_id);
       var stars=s.prod?'<span class="fstars">'+"★".repeat(s.prod)+"☆".repeat(5-s.prod)+'</span>':'';
       var n=SOCIAL.kudosCounts[s.local_id]||0, ya=!!SOCIAL.kudosByMe[s.local_id];
-      return '<div class="feed-item"><div class="fhead"><div class="fplace">'+escapeHTML(who)+' · '+escapeHTML(lugar)+(s.verif?' <span class="fverif" title="Check-in verificado">✓</span>':'')+'</div><div class="fdate">'+fmtFeedDate(s.date)+'</div></div>'+
+      var extra=(s.subject?' · '+escapeHTML(s.subject):'')+(s.focus==="ok"?' <span title="Sesión de foco completada">🌳</span>':(s.focus==="withered"?' <span title="Salió de la app durante el modo foco">🥀</span>':''));
+      return '<div class="feed-item"><div class="fhead"><div class="fplace">'+escapeHTML(who)+' · '+escapeHTML(lugar)+extra+(s.verif?' <span class="fverif" title="Check-in verificado">✓</span>':'')+'</div><div class="fdate">'+fmtFeedDate(s.date)+'</div></div>'+
         '<div class="fdur">'+hMin(s.minutes)+'</div>'+
         '<div class="fmeta">'+stars+'</div>'+
         (s.note?'<div class="fnote">"'+escapeHTML(s.note)+'"</div>':'')+

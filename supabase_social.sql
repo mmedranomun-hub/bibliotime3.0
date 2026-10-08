@@ -148,6 +148,11 @@ create table if not exists shared_sessions (
   unique(owner_id, local_id)
 );
 alter table shared_sessions add column if not exists prod int;
+-- Asignatura estudiada y resultado del modo foco (estilo Forest): 'ok' = planta crecida, 'withered' = marchita
+alter table shared_sessions add column if not exists subject text;
+alter table shared_sessions add column if not exists focus text;
+alter table shared_sessions drop constraint if exists shared_sessions_focus_check;
+alter table shared_sessions add constraint shared_sessions_focus_check check (focus is null or focus in ('ok','withered'));
 alter table shared_sessions enable row level security;
 drop policy if exists "shared_sessions select all" on shared_sessions;
 create policy "shared_sessions select all" on shared_sessions for select using (true);
