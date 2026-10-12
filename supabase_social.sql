@@ -192,13 +192,18 @@ create policy "kudos insert own" on kudos for insert with check (auth.uid() = gi
 -- Las funciones son "security definer" para poder consultar friendships/presence sin recursión de RLS.
 create or replace function public.are_friends(a uuid, b uuid) returns boolean
 language sql stable security definer set search_path = public as $$
-  select exists(select 1 from friendships f where f.status = 'accepted'
+  -- solo responde sobre ti mismo: así nadie puede reconstruir quién es amigo de quién
+  select auth.uid() in (a, b) and exists(select 1 from friendships f where f.status = 'accepted'
     and ((f.requester_id = a and f.addressee_id = b) or (f.requester_id = b and f.addressee_id = a)));
 $$;
+revoke all on function public.are_friends(uuid, uuid) from public, anon;
+grant execute on function public.are_friends(uuid, uuid) to authenticated;
 create or replace function public.my_room_code() returns text
 language sql stable security definer set search_path = public as $$
   select room_code from presence where user_id = auth.uid();
 $$;
+revoke all on function public.my_room_code() from public, anon;
+grant execute on function public.my_room_code() to authenticated;
 
 drop policy if exists "presence select all" on presence;
 drop policy if exists "presence select own friends room" on presence;
@@ -226,7 +231,7 @@ create policy "shared_sessions select own friends" on shared_sessions for select
 -- limita la lectura a las columnas públicas.
 update profiles set email = null where email is not null;
 revoke select on profiles from anon, authenticated;
-grant select (id, name, friend_code, created_at) on profiles to anon, authenticated;
+grant select (id, name, friend_code, created_at) on profiles to authenticated;
 
 -- ===== ELIMINAR CUENTA (lo exige Google Play) =====
 -- Borra el usuario de auth.users; todas las tablas cuelgan de profiles con "on delete cascade".

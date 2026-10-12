@@ -1386,8 +1386,9 @@ async function socialHeartbeat(){
   if(DATA.sharePresence&&studyTimer.running&&studyTimer.bibIndex>=0){
     payload.sharing=true;payload.bib_index=studyTimer.bibIndex;payload.started_at=new Date(studyTimer.start).toISOString();
   }
-  if(SOCIAL.room&&studyTimer.running&&studyTimer.bibIndex>=0){
-    payload.bib_index=studyTimer.bibIndex;payload.started_at=new Date(studyTimer.start).toISOString();
+  if(SOCIAL.room&&studyTimer.running){
+    payload.started_at=new Date(studyTimer.start).toISOString();
+    if(studyTimer.bibIndex>=0)payload.bib_index=studyTimer.bibIndex;
   }
   await sb.from("presence").upsert(payload,{onConflict:"user_id"});
 }
@@ -1490,7 +1491,7 @@ function renderStudyRoom(){
 var SHARE_NO_SUBJECT_FOCUS=false;
 async function socialShareSession(saved){
   var sb=socialClient(); if(!sb||!SOCIAL.user||!DATA||!DATA.sharePresence)return;
-  var payload={owner_id:SOCIAL.user.id,local_id:saved.id,bib_name:saved.bib,minutes:saved.min,date:saved.date,note:saved.note||null,offering:saved.offering||null,verif:!!saved.verif,prod:saved.prod||null};
+  var payload={owner_id:SOCIAL.user.id,local_id:saved.id,bib_name:saved.bib,minutes:saved.min,date:saved.date,note:saved.note||null,offering:DATA.extras?saved.offering:null||null,verif:!!saved.verif,prod:saved.prod||null};
   if(!SHARE_NO_SUBJECT_FOCUS){payload.subject=saved.subject||null;payload.focus=(saved.focus==="ok"||saved.focus==="withered")?saved.focus:null;}
   var res=await sb.from("shared_sessions").upsert(payload,{onConflict:"owner_id,local_id"});
   var err=res&&res.error;
@@ -1783,7 +1784,7 @@ function onboarding(){
       PERFILES.map(function(p){return '<button data-p="'+p[0]+'"><b>'+p[1]+'</b></button>';}).join("")+'</div>',function(){
       document.querySelectorAll(".pick-list button").forEach(function(b){b.addEventListener("click",function(){
         DATA.perfil=b.dataset.p;
-        if(DATA.perfil==="opositor"){DATA.goalPeriod="week";DATA.goalMin=25*60;}
+        if(DATA.perfil==="opositor"&&!DATA.goalCustom){DATA.goalPeriod="week";DATA.goalMin=25*60;}
         saveUserData();paso2();});});
     });
   }
@@ -1858,6 +1859,7 @@ async function deleteAccount(){
   showToast("Tu cuenta y tus datos se han eliminado");
 }
 function logout(){
+  PRESENCIA_VISTA=null;
   // stopStudy(true): sin el diálogo de valoración, que se quedaba encima del login sin usuario.
   if(studyTimer.running){stopStudy(true);showToast("Sesión de estudio guardada");}
   pomoReset();closeModal();releaseWakeLock();
@@ -2150,7 +2152,7 @@ function buildList(){
 }
 // Filtros de la lista (se recuerdan en este navegador). "Más cercanas" pide la ubicación si aún no la hay.
 // "Abiertas ahora" depende de la hora: se recalcula cada minuto aunque no lleguen datos nuevos.
-setInterval(function(){if(LIST_FILTERS.abiertas&&window.__listReady)buildList();},60000);
+setInterval(function(){if(!window.__listReady)return; if(LIST_FILTERS.abiertas)buildList(); else renderNowCard();},60000);
 var LIST_FILTERS=Object.assign({abiertas:false,cerca:false,libre:false,wifi:false},loadJSON("bpna_list_filters",{}));
 function syncListFilterButtons(){
   document.querySelectorAll("#listFilters button").forEach(function(btn){btn.classList.toggle("on",!!LIST_FILTERS[btn.dataset.f]);});
@@ -2338,7 +2340,7 @@ function startStudyCurrent(){
     if(pos){
       var best=-1,bd=1e9;
       BIBLIOTECAS.forEach(function(b,i){var d=distMetros(pos.lat,pos.lon,b.lat,b.lon);if(d<bd){bd=d;best=i;}});
-      if(best>=0&&bd<=400){showToast("📍 Estás en "+cortoNombre(BIBLIOTECAS[best].nombre));startStudyAt(best);return;}
+      if(best>=0&&bd<=400&&minutosHastaCierre(BIBLIOTECAS[best])>0){showToast("📍 Estás en "+cortoNombre(BIBLIOTECAS[best].nombre));startStudyAt(best);return;}
     }
     elegirLugarEstudio();
   }
@@ -2453,7 +2455,7 @@ function stopStudy(silent,endTs){
   if(studyTimer.tick)clearInterval(studyTimer.tick);
   var saved=null;
   if(sec>=20){
-    saved={id:genId(),date:ymd(new Date(ts)),min:Math.max(1,min),sec:sec,bib:bibIdx>=0?BIBLIOTECAS[bibIdx].nombre:NO_BIB,ts:ts,verif:verif,prod:null,note:"",offering:DATA.offeringText||"",subject:studyTimer.subject||null,focus:focusResult()};
+    saved={id:genId(),date:ymd(new Date(ts)),min:Math.max(1,min),sec:sec,bib:bibIdx>=0?BIBLIOTECAS[bibIdx].nombre:NO_BIB,ts:ts,verif:verif,prod:null,note:"",offering:(DATA.extras&&DATA.offeringText)||"",subject:studyTimer.subject||null,focus:focusResult()};
     DATA.sessions.push(saved);
     saveUserData();
     socialShareSession(saved);
@@ -2657,7 +2659,7 @@ function pomoTick(){
       if(DATA.focusMode&&(document.visibilityState==="hidden"||(FOCUS.hiddenAt&&Date.now()-FOCUS.hiddenAt>=FOCUS_GRACE_SEC*1000)))FOCUS.withered=true;
       FOCUS.hiddenAt=0;
       var saved={id:genId(),date:ymd(),min:POMO_FOCUS_MIN,sec:POMO_FOCUS_MIN*60,
-        bib:NO_BIB,ts:Date.now()-POMO_FOCUS_MIN*60000,verif:false,prod:null,note:"Pomodoro",offering:DATA.offeringText||"",subject:DATA.currentSubject||null,focus:focusResult()};
+        bib:NO_BIB,ts:Date.now()-POMO_FOCUS_MIN*60000,verif:false,prod:null,note:"Pomodoro",offering:(DATA.extras&&DATA.offeringText)||"",subject:DATA.currentSubject||null,focus:focusResult()};
       DATA.sessions.push(saved);saveUserData();socialShareSession(saved);
       showToast("🍅 Pomodoro completado ("+POMO_FOCUS_MIN+" min). ¡A descansar!");
       pomo.phase="break";pomo.secondsLeft=POMO_BREAK_MIN*60;pomo.endAt=Date.now()+pomo.secondsLeft*1000;
@@ -2808,7 +2810,7 @@ function openGoalModal(){
         document.querySelectorAll("#goalPeriodSeg button").forEach(function(x){x.classList.remove("on");});
         b.classList.add("on");selPeriod=b.dataset.p;});});
       $("goalSave").addEventListener("click",function(){
-        var v=parseFloat($("goalH").value)||0;DATA.goalMin=Math.max(30,Math.round(v*60));DATA.goalPeriod=selPeriod;saveUserData();closeModal();renderStudy();
+        var v=parseFloat($("goalH").value)||0;DATA.goalMin=Math.max(30,Math.round(v*60));DATA.goalPeriod=selPeriod;DATA.goalCustom=true;saveUserData();closeModal();renderStudy();
       });
     });
 }
@@ -3186,10 +3188,19 @@ function renderNowCard(){
   el.classList.remove("hidden");
   var cands=recomendarBiblioteca(), html;
   if(!cands.length){
+    // abiertas pero cerrando en menos de 30 min: avisar, no decir "todas cerradas"
+    var pronto=[];BIBLIOTECAS.forEach(function(b,i){var c=minutosHastaCierre(b);if(c>0)pronto.push({i:i,c:c});});
+    if(pronto.length){
+      pronto.sort(function(a,b){return b.c-a.c;});var u=BIBLIOTECAS[pronto[0].i];
+      el.innerHTML='<div class="nc-kicker">Ahora mismo</div><div class="nc-title">Todas cierran en menos de 30 min</div>'+
+        '<div class="nc-why">La que más tarde cierra: <b>'+escapeHTML(cortoNombre(u.nombre))+'</b> · '+escapeHTML(estadoTexto(u).txt.replace("Abierta · ",""))+'</div>'+
+        '<div class="nc-actions"><button class="btn sm ghost" onclick="window.__selBib('+pronto[0].i+')">Ver en el mapa</button><button class="btn sm ghost" onclick="abrirLista(false)">Ver todas</button></div>';
+      return;
+    }
     var prox=null;BIBLIOTECAS.forEach(function(b,i){var p=proximaApertura(b);if(p&&(!prox||p.dias*1440+p.min<prox.p.dias*1440+prox.p.min))prox={i:i,p:p};});
     html='<div class="nc-kicker">Ahora mismo</div><div class="nc-title">Todas las bibliotecas están cerradas</div>';
     if(prox){var t=estadoTexto(BIBLIOTECAS[prox.i]);html+='<div class="nc-why">La primera en abrir: <b>'+escapeHTML(cortoNombre(BIBLIOTECAS[prox.i].nombre))+'</b> · '+escapeHTML(t.txt.replace("Cerrada · ",""))+'</div>'+
-      '<div class="nc-actions"><button class="btn sm ghost" onclick="window.__selBib('+prox.i+')">Ver en el mapa</button><button class="btn sm ghost" onclick="abrirLista()">Ver todas</button></div>';}
+      '<div class="nc-actions"><button class="btn sm ghost" onclick="window.__selBib('+prox.i+')">Ver en el mapa</button><button class="btn sm ghost" onclick="abrirLista(false)">Ver todas</button></div>';}
     el.innerHTML=html;return;
   }
   var r=cands[0], t=estadoTexto(r.b), why=[];
@@ -3206,8 +3217,9 @@ function renderNowCard(){
   if(!window.__userPos)html+='<button class="linkbtn nc-loc" onclick="locateMe()">📍 Usa tu ubicación para recomendarte la más cercana</button>';
   el.innerHTML=html;
 }
-function abrirLista(){
-  if(!LIST_FILTERS.abiertas){LIST_FILTERS.abiertas=true;}
+function abrirLista(soloAbiertas){
+  // "Otras" abre la lista ya filtrada; con todo cerrado (soloAbiertas=false) se ven todas
+  LIST_FILTERS.abiertas=soloAbiertas!==false;
   if(window.__userPos)LIST_FILTERS.cerca=true;
   saveJSON("bpna_list_filters",LIST_FILTERS);
   $("libPanel").classList.remove("hidden");$("libPanel").classList.remove("collapsed");
