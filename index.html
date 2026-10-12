@@ -481,6 +481,7 @@
   .nc-actions .btn{flex:1;width:auto;margin:0;padding:9px 6px;font-size:13px}
   .nc-loc{display:block;margin:10px auto 0;font-size:12px}
   .ob-step{font-size:11px;font-weight:800;color:var(--acento);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+  .feed-edit{display:block;margin:8px 0 0 auto;font-size:12px}
   .pick-list{display:flex;flex-direction:column;gap:8px;margin-top:12px}
   .pick-list button{font:inherit;text-align:left;padding:12px 14px;border-radius:14px;cursor:pointer;border:1px solid rgba(148,163,184,.35);background:rgba(255,255,255,.7);color:var(--texto)}
   .pick-list button b{display:block;font-size:14.5px}
@@ -877,6 +878,7 @@
         <button onclick="goView('cal')"><span>📅</span>Agenda</button>
         <button onclick="goView('events')"><span>🎓</span>Eventos</button>
         <button onclick="goView('blog')"><span>📖</span>Blog</button>
+        <button id="btnInstall" class="hidden" onclick="instalarApp()"><span>📲</span>Instalar</button>
       </div>
 
       <div class="section-title">📚 Préstamos de libros</div>
@@ -900,6 +902,7 @@
           <label class="switch"><input type="checkbox" id="chkExtras"><span class="slider"></span></label>
         </div>
         <button class="btn sm ghost" id="btnRename" style="margin-bottom:12px">✏️ Cambiar mi nombre</button>
+        <button class="btn sm ghost" id="btnFeedback" style="margin-bottom:12px">💬 Enviar una sugerencia o un error</button>
         <button class="btn danger" id="btnLogout">Cerrar sesión</button>
         <button class="linkbtn" id="btnDeleteAccount" style="display:block;margin:14px auto 0;color:var(--cerrado)">Eliminar mi cuenta y mis datos</button>
         <a class="linkbtn" href="privacidad.html" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:10px">Política de privacidad</a>
@@ -1710,9 +1713,10 @@ async function enterApp(){
   $("profName").textContent=u.name;
   $("profEmail").textContent=CURRENT;
   $("profAvatar").textContent=(u.name||"?").trim().charAt(0).toUpperCase();
-  applyExtras();
+  applyExtras();actualizarBotonInstalar();
   if(!window.__listReady){buildList(); if(LIST_FILTERS.cerca&&!window.__userPos)locateMe();}
   if(!window.__mapReady) initMap();
+  restaurarSesionActiva();
   renderStudy(); renderProfile();
   socialInitAfterLogin();
   if(!DATA.onboarded){
@@ -1758,6 +1762,17 @@ function compartirSemana(){
     var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="mi-semana.png";document.body.appendChild(a);a.click();a.remove();
     showToast("Imagen descargada: compártela donde quieras");
   },"image/png");
+}
+/* ===== INSTALAR LA APP (antes de estar en Google Play) ===== */
+var INSTALL_EVT=null;
+function esStandalone(){return (window.matchMedia&&matchMedia("(display-mode: standalone)").matches)||navigator.standalone===true;}
+function esIOS(){return /iphone|ipad|ipod/i.test(navigator.userAgent);}
+window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();INSTALL_EVT=e;actualizarBotonInstalar();});
+window.addEventListener("appinstalled",function(){INSTALL_EVT=null;actualizarBotonInstalar();showToast("App instalada ✓");});
+function actualizarBotonInstalar(){var b=$("btnInstall");if(b)b.classList.toggle("hidden",esStandalone()||!(INSTALL_EVT||esIOS()));}
+function instalarApp(){
+  if(INSTALL_EVT){INSTALL_EVT.prompt();INSTALL_EVT.userChoice.finally(function(){INSTALL_EVT=null;actualizarBotonInstalar();});return;}
+  if(esIOS())openModal('<h3>Instalar en iPhone</h3><div class="sub">1. Pulsa el botón Compartir (el cuadrado con la flecha) en Safari.<br>2. Elige «Añadir a pantalla de inicio».<br>3. Pulsa «Añadir».</div><button class="btn" onclick="closeModal()">Entendido</button>');
 }
 /* ===== BIENVENIDA (3 pasos) ===== */
 function onboarding(){
@@ -1805,6 +1820,20 @@ function applyExtras(){
   if(!on&&$("studyOfferPanel")&&!$("studyOfferPanel").classList.contains("hidden")){var b=document.querySelector('#studyTab button[data-t="crono"]');if(b)b.click();}
 }
 // Borra la cuenta en la nube (función delete_my_account del SQL) y todos los datos de este dispositivo.
+function enviarSugerencia(){
+  openModal('<h3>¿Qué mejorarías?</h3><div class="sub">Cuéntanos un error, una idea o una biblioteca con datos mal. Lo leemos todo.</div>'+
+    '<div class="field"><textarea id="fbText" rows="5" maxlength="2000" style="width:100%;padding:11px 13px;border-radius:12px;border:1px solid rgba(148,163,184,.4);font:inherit" placeholder="Ej: el horario de Iturrama ha cambiado…"></textarea></div>'+
+    '<button class="btn" id="fbSend">Enviar</button>',function(){
+    $("fbSend").addEventListener("click",async function(){
+      var t=$("fbText").value.trim(); if(!t){showToast("Escribe algo primero");return;}
+      var sb=socialClient();
+      if(!sb||!SOCIAL.user){showToast("Necesitas iniciar sesión con la cuenta en la nube para enviarla");return;}
+      var r=await sb.from("feedback").insert({user_id:SOCIAL.user.id,message:t.slice(0,2000),context:navigator.userAgent.slice(0,200)});
+      if(r.error){showToast("No se pudo enviar: "+r.error.message);return;}
+      closeModal();showToast("¡Gracias! Sugerencia enviada");
+    });
+  });
+}
 async function cambiarNombre(){
   var users=Brain.getUsers(), actual=(users[CURRENT]&&users[CURRENT].name)||"";
   var n=(prompt("Tu nombre (lo verán tus amigos)",actual)||"").trim().slice(0,40);
@@ -2292,6 +2321,8 @@ function startStudyAt(i){
 function arrancarSesion(i,verificada){
   studyTimer.running=true;studyTimer.start=Date.now();studyTimer.bibIndex=i;studyTimer.verificada=!!verificada;
   studyTimer.subject=DATA.currentSubject||null;
+  // Se guarda para no perderla si el móvil cierra la app en segundo plano.
+  DATA.active={start:studyTimer.start,bibIndex:i,verificada:!!verificada,subject:studyTimer.subject};saveUserData();
   focusStart();
   startTick();
   $("miniStudy").classList.remove("hidden");
@@ -2341,11 +2372,52 @@ function elapsedMin(){return studyTimer.running?Math.floor((Date.now()-studyTime
 function elapsedSec(){return studyTimer.running?Math.floor((Date.now()-studyTimer.start)/1000):0;}
 function fmtClock(sec){var hh=Math.floor(sec/3600),mm=Math.floor((sec%3600)/60),ss=sec%60;
   return String(hh).padStart(2,"0")+":"+String(mm).padStart(2,"0")+":"+String(ss).padStart(2,"0");}
+// Hora (ms) en que cerró la biblioteca por primera vez después de empezar la sesión.
+function cierreTrasInicio(b,startTs){
+  var cal=horarioVigente(b), d0=new Date(startTs); d0.setHours(0,0,0,0);
+  for(var off=0;off<8;off++){
+    var dia=new Date(d0); dia.setDate(d0.getDate()+off);
+    var tr=cal[dia.getDay()]||[];
+    for(var k=0;k<tr.length;k++){var fin=dia.getTime()+tr[k][1]*60000; if(fin>startTs)return fin;}
+  }
+  return null;
+}
+// Si la biblioteca cerró hace más de 15 min y el cronómetro sigue, se te olvidó pararlo: se guarda hasta el cierre.
+function revisarCronoOlvidado(){
+  if(!studyTimer.running)return false;
+  var ahora=Date.now();
+  if(studyTimer.bibIndex>=0){
+    var b=BIBLIOTECAS[studyTimer.bibIndex], fin=cierreTrasInicio(b,studyTimer.start);
+    if(fin&&ahora-fin>15*60000){
+      stopStudy(true,fin);
+      notificar("⏹ Tu sesión en "+cortoNombre(b.nombre)+" se guardó hasta la hora de cierre ("+fmtHoras(new Date(fin).getHours()*60+new Date(fin).getMinutes())+")");
+      return true;
+    }
+  }else if(ahora-studyTimer.start>12*3600000&&!revisarCronoOlvidado.preguntado){
+    revisarCronoOlvidado.preguntado=true;
+    var h=parseFloat((prompt("Llevas más de 12 h con el cronómetro en marcha. ¿Cuántas horas estudiaste de verdad?","2")||"").replace(",","."));
+    if(h>0&&h<16){stopStudy(true,studyTimer.start+h*3600000);showToast("Sesión guardada: "+h+" h");return true;}
+  }
+  return false;
+}
+function restaurarSesionActiva(){
+  var a=DATA&&DATA.active; if(!a||studyTimer.running)return;
+  studyTimer.running=true;studyTimer.start=a.start;studyTimer.bibIndex=a.bibIndex;studyTimer.verificada=!!a.verificada;studyTimer.subject=a.subject||null;
+  studyTimer.avisoCierre=false;
+  // la app se cerró: si estaba en modo foco, la planta no sobrevive
+  if(DATA.focusMode){FOCUS.withered=true;FOCUS.hiddenAt=0;}
+  if(revisarCronoOlvidado())return;
+  startTick();
+  $("miniStudy").classList.remove("hidden");
+  $("miniPlace").textContent=a.bibIndex>=0?cortoNombre(BIBLIOTECAS[a.bibIndex].nombre):"Estudiando";
+  showToast("▶ Tu sesión sigue en marcha");
+}
 function notificar(txt){
   showToast(txt);
   try{if("Notification" in window&&Notification.permission==="granted"&&document.visibilityState==="hidden")new Notification("Bibliotecas de Navarra",{body:txt,icon:"icons/icon-192.png"});}catch(e){}
 }
 function updateTimers(){
+  if(studyTimer.running&&(updateTimers._n=(updateTimers._n||0)+1)%30===0&&revisarCronoOlvidado())return;
   var sec=elapsedSec();
   if(studyTimer.running&&studyTimer.bibIndex>=0&&!studyTimer.avisoCierre){
     var mc=minutosHastaCierre(BIBLIOTECAS[studyTimer.bibIndex]);
@@ -2372,9 +2444,10 @@ function updateGoalRing(){
   var gp=$("goalPct");if(gp)gp.textContent=pct+"%";
   var gl=$("goalLbl");if(gl)gl.textContent="de "+(goal/60).toFixed(goal%60?1:0)+"h/"+(period==="week"?"sem":"día");
 }
-function stopStudy(silent){
+function stopStudy(silent,endTs){
   if(!studyTimer.running)return;
-  var sec=elapsedSec();
+  var sec=endTs?Math.max(0,Math.floor((endTs-studyTimer.start)/1000)):elapsedSec();
+  if(DATA){DATA.active=null;saveUserData();}
   var min=Math.round(sec/60);
   var bibIdx=studyTimer.bibIndex, ts=studyTimer.start, verif=studyTimer.verificada;
   if(studyTimer.tick)clearInterval(studyTimer.tick);
@@ -2397,6 +2470,24 @@ function stopStudy(silent){
   }
 }
 function bibIdxDe(sesion){if(!sesion||sesion.bib===NO_BIB)return -1;for(var k=0;k<BIBLIOTECAS.length;k++){if(BIBLIOTECAS[k].nombre===sesion.bib)return k;}return -1;}
+function editarSesion(idx){
+  var s=DATA.sessions[idx]; if(!s)return;
+  openModal('<h3>Editar sesión</h3><div class="sub">'+escapeHTML(fmtFeedDate(s.date))+' · '+escapeHTML(cortoNombre(s.bib))+'</div>'+
+    '<div class="field"><label>Minutos estudiados</label><input type="number" id="edMin" min="1" max="960" value="'+s.min+'"></div>'+
+    '<button class="btn" id="edSave">Guardar</button>'+
+    '<button class="linkbtn" id="edDel" style="display:block;margin:14px auto 0;color:var(--cerrado)">Borrar esta sesión</button>',function(){
+    $("edSave").addEventListener("click",function(){
+      var m=parseInt($("edMin").value,10); if(!(m>=1&&m<=960)){showToast("Pon entre 1 y 960 minutos");return;}
+      s.min=m;s.sec=m*60;saveUserData();socialShareSession(s);closeModal();renderStudy();renderProfile();showToast("Sesión actualizada");
+    });
+    $("edDel").addEventListener("click",function(){
+      if(!confirm("¿Borrar esta sesión? Se descontará de tus horas y rachas."))return;
+      DATA.sessions.splice(idx,1);saveUserData();
+      var sb=socialClient(); if(sb&&SOCIAL.user)sb.from("shared_sessions").delete().eq("owner_id",SOCIAL.user.id).eq("local_id",s.id);
+      closeModal();renderStudy();renderProfile();showToast("Sesión borrada");
+    });
+  });
+}
 function pedirValoracion(sesion){
   var sel={v:0};
   openModal('<h3>Sesión terminada</h3><div class="sub">'+fmtHoras(sesion.min)+' h en '+escapeHTML(sesion.bib.replace("Biblioteca ","").replace("Pública ",""))+(sesion.verif?' · <span class="badge-ok">✓ verificada</span>':'')+'</div>'+
@@ -2650,6 +2741,7 @@ function renderSessionFeed(){
     return '<div class="feed-item"><div class="fhead"><div class="fplace">'+escapeHTML(lugar)+extra+(s.verif?' <span class="fverif" title="Check-in verificado">✓</span>':'')+'</div><div class="fdate">'+fmtFeedDate(s.date)+'</div></div>'+
       '<div class="fstats"><div class="fstat"><small>Duración</small><b>'+hMin(s.min)+'</b></div><div class="fstat"><small>Valoración</small><b class="fstars">'+valoracion+'</b></div></div>'+
       prBanner+
+      '<button class="linkbtn feed-edit" onclick="editarSesion('+idx+')">Editar</button>'+
       (s.note?'<div class="fnote">"'+escapeHTML(s.note)+'"</div>':'')+
       (s.offering?'<div class="foffer">🙏 Ofrecido por '+escapeHTML(s.offering)+'</div>':'')+
       '</div>';
@@ -3378,6 +3470,7 @@ window.addEventListener("DOMContentLoaded",function(){
   $("btnLogout").addEventListener("click",logout);
   $("btnDeleteAccount").addEventListener("click",deleteAccount);
   $("btnRename").addEventListener("click",cambiarNombre);
+  $("btnFeedback").addEventListener("click",enviarSugerencia);
   $("btnShareWeek").addEventListener("click",compartirSemana);
 
   // nuevas funciones

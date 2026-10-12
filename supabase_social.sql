@@ -260,3 +260,16 @@ language sql stable security definer set search_path = public as $$
 $$;
 revoke all on function public.join_study_room(text) from public, anon;
 grant execute on function public.join_study_room(text) to authenticated;
+
+-- ===== BUZÓN DE SUGERENCIAS (beta) =====
+-- Los usuarios solo pueden enviar; se leen desde el panel de Supabase (Table editor → feedback).
+create table if not exists feedback (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references profiles(id) on delete cascade,
+  message text not null check (char_length(message) between 1 and 2000),
+  context text,
+  created_at timestamptz default now()
+);
+alter table feedback enable row level security;
+drop policy if exists "feedback insert own" on feedback;
+create policy "feedback insert own" on feedback for insert with check (auth.uid() = user_id);
