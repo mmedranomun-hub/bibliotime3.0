@@ -96,7 +96,25 @@
   .panel-head .chev{width:16px;height:16px;color:var(--suave);flex-shrink:0;transition:transform .2s}
   .panel.collapsed .chev{transform:rotate(-90deg)}
   .panel.collapsed{max-height:none}
-  .panel.collapsed .list{display:none}
+  .panel.collapsed .list,.panel.collapsed .list-filters{display:none}
+  .subj-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--suave)}
+  .focus-toggle{display:flex;align-items:center;gap:6px;text-transform:none;letter-spacing:0;font-size:12.5px;cursor:pointer}
+  .subj-chips{display:flex;flex-wrap:wrap;gap:6px}
+  .subj-chips button{font:inherit;font-size:12.5px;font-weight:600;padding:6px 11px;border-radius:999px;cursor:pointer;
+    border:1px solid rgba(148,163,184,.4);background:rgba(255,255,255,.5);color:var(--suave)}
+  .subj-chips button.on{background:linear-gradient(135deg,var(--acento),#8b7bef);color:#fff;border-color:transparent}
+  .subj-chips button .x{margin-left:6px;opacity:.7}
+  .focus-plant{margin-top:12px;text-align:center;font-size:13px;color:var(--suave)}
+  .focus-plant .em{display:block;font-size:44px;line-height:1.1;transition:transform .4s}
+  .subj-row{display:flex;align-items:center;gap:10px;margin:8px 0;font-size:13px}
+  .subj-row .nm{width:34%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+  .subj-row .bar{flex:1;height:8px;border-radius:99px;background:rgba(148,163,184,.25);overflow:hidden}
+  .subj-row .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--acento),#00d2d3)}
+  .subj-row .tm{width:62px;text-align:right;font-variant-numeric:tabular-nums;color:var(--suave)}
+  .list-filters{display:flex;flex-wrap:wrap;gap:6px;padding:8px 8px 0}
+  .list-filters button{font:inherit;font-size:11.5px;font-weight:600;padding:5px 10px;border-radius:999px;cursor:pointer;
+    border:1px solid rgba(148,163,184,.4);background:rgba(255,255,255,.5);color:var(--suave)}
+  .list-filters button.on{background:linear-gradient(135deg,var(--acento),#8b7bef);color:#fff;border-color:transparent}
   .season{display:inline-block;margin-top:6px;font-size:10.5px;font-weight:700;text-transform:uppercase;
     letter-spacing:.08em;padding:3px 9px;border-radius:99px;
     background:linear-gradient(135deg,rgba(108,92,231,.16),rgba(0,210,211,.16));color:var(--acento)}
@@ -450,6 +468,36 @@
   .nowhead{display:flex;align-items:flex-start;justify-content:space-between;padding:15px 16px 11px;border-bottom:1px solid rgba(148,163,184,.25)}
   .nowhead b{font-size:15px}
   .nowsub{font-size:11.5px;color:var(--suave);margin-top:2px}
+  .nowcard{position:fixed;left:50%;transform:translateX(-50%);bottom:96px;z-index:950;width:420px;max-width:calc(100vw - 20px);
+    padding:14px 16px;border-radius:20px;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    box-shadow:0 12px 34px rgba(15,23,42,.18);border:1px solid rgba(148,163,184,.3)}
+  .nowcard.hidden{display:none}
+  #libPanel:not(.hidden) ~ .locate-btn{display:none}
+  .nc-kicker{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--acento)}
+  .nc-exam{color:#b45309}
+  .nc-title{font-size:18px;font-weight:800;margin:2px 0 4px;cursor:pointer}
+  .nc-why{font-size:12.5px;color:var(--suave);line-height:1.45}
+  .nc-actions{display:flex;gap:8px;margin-top:12px}
+  .nc-actions .btn{flex:1;width:auto;margin:0;padding:9px 6px;font-size:13px}
+  .nc-loc{display:block;margin:10px auto 0;font-size:12px}
+  .ob-step{font-size:11px;font-weight:800;color:var(--acento);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+  .feed-edit{display:block;margin:8px 0 0 auto;font-size:12px}
+  .pick-list{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+  .pick-list button{font:inherit;text-align:left;padding:12px 14px;border-radius:14px;cursor:pointer;border:1px solid rgba(148,163,184,.35);background:rgba(255,255,255,.7);color:var(--texto)}
+  .pick-list button b{display:block;font-size:14.5px}
+  .pick-list button small{color:var(--suave);font-size:12px}
+  .pick-list button.on{border-color:var(--acento);background:rgba(108,92,231,.14)}
+  .occ-quick{display:flex;gap:6px;margin-top:6px}
+  .occ-quick button{flex:1;font:inherit;font-size:12.5px;font-weight:700;padding:9px 4px;border-radius:12px;cursor:pointer;
+    border:1px solid rgba(148,163,184,.4);background:rgba(255,255,255,.6);color:var(--texto)}
+  .occ-quick button.on{border-color:var(--acento);background:rgba(108,92,231,.14)}
+  .bib-actions{display:flex;gap:8px;margin:10px 0 4px}
+  .bib-actions .btn{flex:1;width:auto;margin:0;text-align:center;text-decoration:none;padding:9px 6px;font-size:13px}
+  body.no-extras .extra{display:none!important}
+  .more-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .more-grid button{font:inherit;font-weight:700;font-size:13px;padding:14px 6px;border-radius:14px;cursor:pointer;
+    border:1px solid rgba(148,163,184,.35);background:rgba(255,255,255,.6);color:var(--texto)}
+  .more-grid button span{display:block;font-size:22px;margin-bottom:4px}
   .nowclose{border:none;background:none;font-size:22px;color:var(--suave);cursor:pointer;line-height:1;padding:0 2px}
   .nowlist{overflow-y:auto;padding:8px}
   .nowrow{display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:13px;cursor:pointer;transition:background .12s}
@@ -536,7 +584,7 @@
     .selected{align-items:flex-start;text-align:left;max-width:none;flex:1}
     .selected .name{max-width:50vw}
     .act{padding:9px 11px;font-size:12px}.act .txt{display:none}
-    .panel{position:fixed;top:auto;bottom:160px;left:10px;right:10px;width:auto;max-height:28vh;border-radius:18px}
+    .panel{position:fixed;top:auto;bottom:96px;left:10px;right:10px;width:auto;max-height:62vh;border-radius:18px}
     .dock{left:8px;right:8px;transform:none;width:auto;justify-content:space-between;padding:6px;gap:2px}
     .dock button{padding:8px 4px;flex:1;min-width:0}.dock button .dlbl{font-size:8.7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
     .dock button svg{width:19px;height:19px}
@@ -544,7 +592,7 @@
     .ministudy{bottom:220px}
     .fab{bottom:90px;left:10px;padding:11px 15px;font-size:13px}
     .nowpanel{bottom:150px;left:10px;right:10px;width:auto;max-width:none}
-    .locate-btn{bottom:150px;right:10px}
+    .locate-btn{bottom:auto;top:78px;right:10px}
   }
 </style>
 </head>
@@ -590,20 +638,6 @@
       <div class="kicker">Iruña · Navarra</div>
       <h1>Bibliotecas de <span>Navarra</span></h1>
     </div>
-    <div class="actionwrap" id="mapActions">
-      <div class="selected">
-        <div class="lbl">Seleccionada</div>
-        <div class="name empty" id="selName">Pincha una chincheta</div>
-      </div>
-      <div class="actions">
-        <a class="act primary disabled" id="actRuta" target="_blank" rel="noopener">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg><span class="txt">Cómo llegar</span></a>
-        <a class="act disabled" id="actTel">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg><span class="txt">Llamar</span></a>
-        <a class="act disabled" id="actWeb" target="_blank" rel="noopener">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg><span class="txt">Web</span></a>
-      </div>
-    </div>
     <button class="bell" id="bellBtn" title="Avisos">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
       <span class="bell-badge hidden" id="bellBadge">0</span>
@@ -614,13 +648,19 @@
   <div id="viewMap" class="view">
     <div id="map"></div>
     <div class="friend-banner hidden" id="friendBanner" style="position:fixed;top:78px;right:18px;z-index:960;max-width:300px"></div>
-    <div class="panel collapsed" id="libPanel">
+    <div class="panel hidden" id="libPanel">
       <div class="panel-head" id="panelHead">
         <div class="phrow">
           <div class="count" id="panelCount">Cargando…</div>
-          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          <button class="nowclose" id="panelClose" title="Cerrar lista">×</button>
         </div>
         <span class="season" id="seasonTag"></span>
+      </div>
+      <div class="list-filters" id="listFilters">
+        <button data-f="abiertas">● Abiertas ahora</button>
+        <button data-f="cerca">📍 Más cercanas</button>
+        <button data-f="libre">🎫 Acceso libre</button>
+        <button data-f="wifi">📶 Wifi</button>
       </div>
       <div class="list" id="list"></div>
     </div>
@@ -630,20 +670,8 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg>
     </button>
 
-    <!-- Botón flotante: ¿a cuál voy ahora? -->
-    <button class="fab" id="fabNow">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>
-      <span>¿A cuál voy?</span>
-    </button>
-
-    <!-- Panel del comparador -->
-    <div class="nowpanel hidden" id="nowPanel">
-      <div class="nowhead">
-        <div><b>Abiertas ahora mismo</b><div class="nowsub" id="nowSub">Ordenadas por cercanía</div></div>
-        <button class="nowclose" id="nowClose">×</button>
-      </div>
-      <div class="nowlist" id="nowList"></div>
-    </div>
+    <!-- Tarjeta principal: la mejor biblioteca para ir ahora mismo -->
+    <div class="nowcard" id="nowCard"></div>
 
     <div class="ministudy hidden" id="miniStudy">
       <div class="pulse"></div>
@@ -658,7 +686,12 @@
     <div class="container">
       <div class="page-title">Modo estudio</div>
       <div class="page-sub">Cronómetro de sesiones y meta de horas.</div>
-      <div class="seg" id="studyTab" style="margin-bottom:16px"><button data-t="crono" class="on">Cronómetro</button><button data-t="pomo">Pomodoro</button><button data-t="ofrecer">Ofrecer estudio</button></div>
+      <div class="seg" id="studyTab" style="margin-bottom:16px"><button data-t="crono" class="on">Cronómetro</button><button data-t="pomo">Pomodoro</button><button data-t="ofrecer" class="extra">Ofrecer estudio</button></div>
+      <div class="glasscard" id="subjectCard" style="margin-bottom:16px">
+        <div class="subj-head"><span id="subjLabel">Asignatura</span><label class="focus-toggle" title="Si sales de la app más de 15 s durante la sesión, tu planta se marchita"><input type="checkbox" id="focusToggle"> 🌱 Modo foco</label></div>
+        <div class="subj-chips" id="subjectChips"></div>
+        <div class="focus-plant hidden" id="focusPlant"></div>
+      </div>
       <div id="studyOfferPanel" class="hidden glasscard" style="margin-bottom:18px">
         <div class="page-sub" style="margin-bottom:12px">Dedica este tiempo de estudio a alguien o algo. Se guardará junto a tu próxima sesión.</div>
         <div class="field"><label>¿Por quién o qué ofreces tu estudio?</label><textarea id="offerText" rows="4" placeholder="Ej: Por mi abuela, que se recupere pronto…" style="width:100%;padding:11px 13px;border-radius:12px;border:1px solid rgba(148,163,184,.4);background:rgba(255,255,255,.7);font-size:14px;font-family:inherit;color:var(--texto);resize:vertical"></textarea></div>
@@ -699,6 +732,7 @@
         <div class="stat"><div class="num" id="stSessions">0</div><div class="lab">Sesiones totales</div></div>
         <div class="stat"><div class="num" id="stStreak">0</div><div class="lab">Días seguidos</div></div>
       </div>
+      <div class="glasscard" id="subjectStats" style="margin-top:18px"></div>
       <div class="bookshelf-card" style="margin-top:18px">
         <div class="bookshelf-label" id="bookshelfLabel">0h de estudio acumuladas</div>
         <div class="bookshelf-row" id="bookshelfRow"></div>
@@ -728,8 +762,8 @@
         </div>
       </div>
 
-      <div class="section-title hidden" id="prayTitle">🙏 Exámenes de tus amigos</div>
-      <div class="glasscard hidden" id="prayCard">
+      <div class="section-title hidden extra" id="prayTitle">🙏 Exámenes de tus amigos</div>
+      <div class="glasscard hidden extra" id="prayCard">
         <div class="page-sub" style="margin-bottom:12px">Reza por el examen de un amigo. Se registra y le avisamos.</div>
         <div id="prayList"></div>
       </div>
@@ -781,6 +815,34 @@
     </div>
   </div>
 
+  <!-- VISTA AMIGOS -->
+  <div id="viewFriends" class="scrollview hidden">
+    <div class="container">
+      <div class="page-title">Amigos</div>
+      <div class="page-sub">Quién estudia hoy, dónde y cuánto.</div>
+      <button class="btn" onclick="invitarAmigos()" style="margin-bottom:6px">📨 Invitar a amigos</button>
+      <div class="section-title">🏆 Ranking con amigos</div>
+      <div class="glasscard"><div class="seg" id="lbPeriodSeg"><button data-p="day">Hoy</button><button data-p="week" class="on">Esta semana</button></div><div id="leaderboardList"></div></div>
+
+      <div class="section-title">👥 Tus amigos</div>
+      <div class="glasscard" id="socialCard">
+        <div class="social-note" id="socialNote">Para que los amigos funcionen entre dispositivos, configura Supabase en el código. Si no lo haces, esta sección queda en modo local.</div>
+        <div class="codebox"><span style="font-size:12px;color:var(--suave);font-weight:800">Tu código</span><code id="friendCode">—</code><button class="btn sm ghost" id="btnCopyFriendCode" style="width:auto">Copiar</button></div>
+        <div class="field"><label>Añadir amigo por código</label><input type="text" id="friendCodeInput" placeholder="Ej: A1B2C3D4" style="text-transform:uppercase"></div>
+        <button class="btn sm" id="btnAddFriend" style="margin-bottom:14px">+ Enviar solicitud</button>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;padding:11px 12px;border-radius:13px;background:rgba(255,255,255,.55)">
+          <div><b style="font-size:14px">Compartir tu actividad</b><div style="font-size:12px;color:var(--suave)">Tus amigos verán la biblioteca donde estudias y tus sesiones terminadas (duración, nota, valoración). Nunca tus coordenadas GPS exactas.</div></div>
+          <label class="switch"><input type="checkbox" id="chkSharePresence"><span class="slider"></span></label>
+        </div>
+        <div class="section-title" style="margin-top:10px">Solicitudes</div>
+        <div id="friendRequests"><div class="empty-note">Sin solicitudes pendientes</div></div>
+        <div class="section-title" style="margin-top:18px">Mis amigos</div>
+        <div id="friendsList"><div class="empty-note">Aún no has añadido amigos</div></div>
+      </div>
+
+    </div>
+  </div>
+
   <!-- VISTA PERFIL -->
   <div id="viewProfile" class="scrollview hidden">
     <div class="container">
@@ -797,10 +859,8 @@
       </div>
 
       <div class="section-title">📊 Estudio esta semana</div>
-      <div class="glasscard"><div class="week-bars" id="weekBars"></div></div>
-
-      <div class="section-title">🏆 Ranking semanal con amigos</div>
-      <div class="glasscard"><div id="leaderboardList"></div></div>
+      <div class="glasscard"><div class="week-bars" id="weekBars"></div>
+        <button class="btn sm" id="btnShareWeek" style="margin-top:14px">📤 Compartir mi semana</button></div>
 
       <div class="section-title">🏅 Tus récords</div>
       <div class="stat-grid" id="recordsGrid"></div>
@@ -813,20 +873,12 @@
         <div class="empty-note">Estudia algunas sesiones y aquí verás recomendaciones basadas en tu propio historial.</div>
       </div>
 
-      <div class="section-title">👥 Amigos</div>
-      <div class="glasscard" id="socialCard">
-        <div class="social-note" id="socialNote">Para que los amigos funcionen entre dispositivos, configura Supabase en el código. Si no lo haces, esta sección queda en modo local.</div>
-        <div class="codebox"><span style="font-size:12px;color:var(--suave);font-weight:800">Tu código</span><code id="friendCode">—</code><button class="btn sm ghost" id="btnCopyFriendCode" style="width:auto">Copiar</button></div>
-        <div class="field"><label>Añadir amigo por código</label><input type="text" id="friendCodeInput" placeholder="Ej: A1B2C3D4" style="text-transform:uppercase"></div>
-        <button class="btn sm" id="btnAddFriend" style="margin-bottom:14px">+ Enviar solicitud</button>
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;padding:11px 12px;border-radius:13px;background:rgba(255,255,255,.55)">
-          <div><b style="font-size:14px">Compartir tu actividad</b><div style="font-size:12px;color:var(--suave)">Tus amigos verán la biblioteca donde estudias y tus sesiones terminadas (duración, nota, valoración). Nunca tus coordenadas GPS exactas.</div></div>
-          <label class="switch"><input type="checkbox" id="chkSharePresence"><span class="slider"></span></label>
-        </div>
-        <div class="section-title" style="margin-top:10px">Solicitudes</div>
-        <div id="friendRequests"><div class="empty-note">Sin solicitudes pendientes</div></div>
-        <div class="section-title" style="margin-top:18px">Mis amigos</div>
-        <div id="friendsList"><div class="empty-note">Aún no has añadido amigos</div></div>
+      <div class="section-title">✨ Más</div>
+      <div class="more-grid">
+        <button onclick="goView('cal')"><span>📅</span>Agenda</button>
+        <button onclick="goView('events')"><span>🎓</span>Eventos</button>
+        <button onclick="goView('blog')"><span>📖</span>Blog</button>
+        <button id="btnInstall" class="hidden" onclick="instalarApp()"><span>📲</span>Instalar</button>
       </div>
 
       <div class="section-title">📚 Préstamos de libros</div>
@@ -845,7 +897,15 @@
           <div><b style="font-size:14px">Check-in con ubicación</b><div style="font-size:12px;color:var(--suave)">Solo cuenta la sesión si estás en la biblioteca</div></div>
           <label class="switch"><input type="checkbox" id="chkGeo"><span class="slider"></span></label>
         </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px">
+          <div><b style="font-size:14px">Rezar y ofrecer estudio</b><div style="font-size:12px;color:var(--suave)">Rezar por los exámenes de tus amigos y dedicar tus horas de estudio</div></div>
+          <label class="switch"><input type="checkbox" id="chkExtras"><span class="slider"></span></label>
+        </div>
+        <button class="btn sm ghost" id="btnRename" style="margin-bottom:12px">✏️ Cambiar mi nombre</button>
+        <button class="btn sm ghost" id="btnFeedback" style="margin-bottom:12px">💬 Enviar una sugerencia o un error</button>
         <button class="btn danger" id="btnLogout">Cerrar sesión</button>
+        <button class="linkbtn" id="btnDeleteAccount" style="display:block;margin:14px auto 0;color:var(--cerrado)">Eliminar mi cuenta y mis datos</button>
+        <a class="linkbtn" href="privacidad.html" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:10px">Política de privacidad</a>
       </div>
     </div>
   </div>
@@ -853,10 +913,8 @@
   <!-- DOCK -->
   <div class="dock" id="dock">
     <button data-view="map" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg><span class="dlbl">Mapa</span></button>
-    <button data-view="cal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="dlbl">Calendario</span></button>
+    <button data-view="friends"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="dlbl">Amigos</span></button>
     <button data-view="study" class="dock-record"><span class="rec-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg></span><span class="dlbl">Estudio</span></button>
-    <button data-view="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><span class="dlbl">Eventos</span></button>
-    <button data-view="blog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span class="dlbl">Blog</span></button>
     <button data-view="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="dlbl">Perfil</span></button>
   </div>
 
@@ -1021,14 +1079,37 @@ BIBLIOTECAS.forEach(function(b){
   b.acceso={tipo:"desconocido",detalle:"Sin confirmar"};
   b.accesibilidad={sillaRuedas:null,turistas:null,gratisDias:null,notas:"Sin confirmar"};
 });
-// Aforo, coste y recursos disponibles: se investigan progresivamente (ver EXTRA_INFO). Hasta entonces,
-// "sin confirmar" — nunca se inventa un número de aforo ni una lista de recursos.
-const EXTRA_INFO={};
+// Aforo, coste y recursos disponibles: se investigan progresivamente. Solo se rellena lo que ya está
+// respaldado por las fuentes citadas en ACCESO_INFO; lo demás queda "sin confirmar" — nunca se inventa
+// un número de aforo ni una lista de recursos.
+// Fuentes: pamplona.es (fichas de cada biblioteca y aviso municipal de 2018 sobre wifi y ordenadores
+// gratuitos en toda la red de Pamplona), Diario de Navarra 02-03-2011 (400 puestos en la inauguración de la
+// Biblioteca de Navarra), unav.edu (espacios y equipamiento), programa Civican otoño 2024.
+// El aforo de la UPNA no se pone: las estadísticas del ministerio dan cifras distintas según el año.
+const PAMPLONA_RED=["wifi","ordenadores"];
+const EXTRA_INFO={
+  "Biblioteca de Navarra":{gratuito:true,capacidad:400,recursos:["wifi","salas_grupo","ordenadores"]},
+  "Biblioteca Pública San Francisco":{recursos:PAMPLONA_RED},
+  "Biblioteca Pública Yamaguchi":{recursos:["wifi","ordenadores","impresora"]},
+  "Biblioteca Pública de la Milagrosa":{recursos:PAMPLONA_RED},
+  "Biblioteca Pública de Iturrama":{recursos:PAMPLONA_RED},
+  "Biblioteca Pública de la Txantrea":{recursos:PAMPLONA_RED},
+  "Biblioteca Pública de Mendillorri":{recursos:PAMPLONA_RED},
+  "Biblioteca Pública de San Pedro":{recursos:PAMPLONA_RED},
+  "Biblioteca Pública de San Jorge":{recursos:PAMPLONA_RED},
+  "Biblioteca Pública de Etxabakoitz":{recursos:PAMPLONA_RED},
+  "Biblioteca Civican":{gratuito:true,recursos:["cafeteria"]},
+  "Biblioteca Universidad de Navarra · Central":{capacidad:349,recursos:["wifi","enchufes","salas_grupo","impresora","ordenadores","silencio"]},
+  "Biblioteca Universidad de Navarra · Ciencias":{capacidad:451,recursos:["salas_grupo","impresora","ordenadores"]},
+  "Biblioteca UPNA · Campus de Arrosadía":{gratuito:true,recursos:["wifi","ordenadores","salas_grupo"]}
+};
 BIBLIOTECAS.forEach(function(b){
   if(!b.tipoEspacio)b.tipoEspacio="biblioteca";
   var extra=EXTRA_INFO[b.nombre];
   b.capacidad=extra&&extra.capacidad!=null?extra.capacidad:null;
   b.gratuito=extra&&typeof extra.gratuito==="boolean"?extra.gratuito:null;
+  // La ficha de acceso ya afirma "acceso libre y gratuito" (Ley Foral 32/2002 en la red pública).
+  if(b.gratuito===null&&b.acceso&&b.acceso.tipo==="libre"&&/gratuit/i.test(b.acceso.detalle||""))b.gratuito=true;
   b.recursos=extra&&extra.recursos?extra.recursos:[];
 });
 function fmtHoras(min){const hh=Math.floor(min/60),mm=min%60;return hh+":"+String(mm).padStart(2,"0");}
@@ -1105,15 +1186,15 @@ function socialNameById(id){
 async function socialEnsureProfile(user,name,email){
   var sb=socialClient(); if(!sb||!user)return;
   SOCIAL.user=user;
-  var got=await sb.from("profiles").select("*").eq("id",user.id).maybeSingle();
+  var got=await sb.from("profiles").select("id,name,friend_code").eq("id",user.id).maybeSingle();
   if(got.error && got.error.code!=="PGRST116"){console.warn(got.error);return;}
   var prof=got.data;
   if(!prof){
-    var ins=await sb.from("profiles").insert({id:user.id,email:email||user.email,name:name||((email||user.email||"").split("@")[0])}).select("*").single();
+    var ins=await sb.from("profiles").insert({id:user.id,name:name||((email||user.email||"").split("@")[0])}).select("id,name,friend_code").single();
     if(ins.error){console.warn(ins.error);return;}
     prof=ins.data;
   }else if(name && prof.name!==name){
-    var upd=await sb.from("profiles").update({name:name,email:email||user.email}).eq("id",user.id).select("*").single();
+    var upd=await sb.from("profiles").update({name:name}).eq("id",user.id).select("id,name,friend_code").single();
     if(!upd.error)prof=upd.data;
   }
   SOCIAL.profile=prof;
@@ -1139,10 +1220,25 @@ async function socialInitAfterLogin(){
     },45000);
   }catch(e){console.warn(e);socialRenderPanel("No he podido cargar Supabase: "+(e.message||e));}
 }
+// Avisa cuando un amigo empieza a estudiar (no en la primera carga, para no avisar de todo lo que ya había).
+var PRESENCIA_VISTA=null;
+function avisarAmigosQueEmpiezan(){
+  var ahora={};
+  (SOCIAL.presence||[]).forEach(function(p){if(p.started_at&&p.bib_index>=0)ahora[p.user_id+"|"+p.started_at]=p;});
+  if(PRESENCIA_VISTA){
+    Object.keys(ahora).forEach(function(k){
+      if(PRESENCIA_VISTA[k])return;
+      var p=ahora[k], b=BIBLIOTECAS[p.bib_index];
+      if(b&&Date.now()-new Date(p.started_at).getTime()<15*60000)notificar("📚 "+socialNameById(p.user_id)+" ha empezado a estudiar en "+cortoNombre(b.nombre));
+    });
+  }
+  PRESENCIA_VISTA=ahora;
+}
 async function socialRefreshAll(){
   var sb=socialClient(); if(!sb||!SOCIAL.user)return;
   await socialLoadFriends();
   await socialLoadPresence();
+  avisarAmigosQueEmpiezan();
   await socialLoadFriendEvents();
   await socialLoadPrayerCounts();
   socialRenderPanel();
@@ -1197,7 +1293,7 @@ function renderCalFriendExams(){
     var d=new Date(ev.date+"T00:00:00"), dd=String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0");
     var who=socialNameById(ev.owner_id), n=SOCIAL.prayerCounts[ev.local_id]||0, ya=!!SOCIAL.prayedByMe[ev.local_id];
     return '<div class="pray-row"><div class="pi"><b>'+escapeHTML(ev.title)+'</b><small>De '+escapeHTML(who)+' · '+dd+(n?' · 🙏 '+n:'')+'</small></div>'+
-      '<button '+(ya?"disabled":"")+' onclick="prayForExam(\''+escapeHTML(ev.local_id)+'\',\''+escapeHTML(ev.owner_id)+'\',\''+escapeHTML(ev.title).replace(/'/g,"\\'")+'\')">'+(ya?"🙏 Ya recé":"🙏 Rezar")+'</button></div>';
+      '<button '+(ya?"disabled":"")+' onclick="prayForExam('+jsArg(ev.local_id)+','+jsArg(ev.owner_id)+','+jsArg(ev.title)+')">'+(ya?"🙏 Ya recé":"🙏 Rezar")+'</button></div>';
   }).join("");
 }
 /* ===== BLOG DE LECTURAS (público entre usuarios de la app) ===== */
@@ -1251,7 +1347,7 @@ async function socialLoadFriends(){
   var ids=[]; rows.forEach(function(r){ids.push(r.requester_id===me?r.addressee_id:r.requester_id);});
   ids=[...new Set(ids)];
   var profs=[];
-  if(ids.length){var pr=await sb.from("profiles").select("id,name,email,friend_code").in("id",ids); if(!pr.error)profs=pr.data||[];}
+  if(ids.length){var pr=await sb.from("profiles").select("id,name,friend_code").in("id",ids); if(!pr.error)profs=pr.data||[];}
   function prof(id){return profs.filter(function(p){return p.id===id;})[0]||{id:id,name:"Amigo"};}
   SOCIAL.friends=rows.filter(function(r){return r.status==="accepted";}).map(function(r){var oid=r.requester_id===me?r.addressee_id:r.requester_id;return {row:r,profile:prof(oid)};});
   SOCIAL.requests=rows.filter(function(r){return r.status==="pending"&&r.addressee_id===me;}).map(function(r){return {row:r,profile:prof(r.requester_id)};});
@@ -1284,18 +1380,21 @@ async function socialRejectFriend(id){
 }
 async function socialHeartbeat(){
   var sb=socialClient(); if(!sb||!SOCIAL.user||!DATA)return;
-  var payload={user_id:SOCIAL.user.id,sharing:false,room_code:SOCIAL.room?SOCIAL.room.code:null,updated_at:new Date().toISOString()};
-  if(DATA.sharePresence&&studyTimer.running&&typeof studyTimer.bibIndex==="number"){
+  // started_at/bib_index se envían siempre: el upsert solo toca las columnas enviadas y, si no, quedaba
+  // el valor viejo y la sala seguía mostrando a alguien que ya había terminado.
+  var payload={user_id:SOCIAL.user.id,sharing:false,room_code:SOCIAL.room?SOCIAL.room.code:null,updated_at:new Date().toISOString(),started_at:null,bib_index:null};
+  if(DATA.sharePresence&&studyTimer.running&&studyTimer.bibIndex>=0){
     payload.sharing=true;payload.bib_index=studyTimer.bibIndex;payload.started_at=new Date(studyTimer.start).toISOString();
   }
-  if(SOCIAL.room&&studyTimer.running&&typeof studyTimer.bibIndex==="number"){
-    payload.bib_index=studyTimer.bibIndex;payload.started_at=new Date(studyTimer.start).toISOString();
+  if(SOCIAL.room&&studyTimer.running){
+    payload.started_at=new Date(studyTimer.start).toISOString();
+    if(studyTimer.bibIndex>=0)payload.bib_index=studyTimer.bibIndex;
   }
   await sb.from("presence").upsert(payload,{onConflict:"user_id"});
 }
 async function socialClearPresence(){
   if(!socialClient()||!SOCIAL.user)return;
-  await socialClient().from("presence").upsert({user_id:SOCIAL.user.id,sharing:false,updated_at:new Date().toISOString()},{onConflict:"user_id"});
+  await socialClient().from("presence").upsert({user_id:SOCIAL.user.id,sharing:false,started_at:null,bib_index:null,updated_at:new Date().toISOString()},{onConflict:"user_id"});
 }
 async function socialLoadPresence(){
   var sb=socialClient(); if(!sb||!SOCIAL.user)return;
@@ -1321,7 +1420,10 @@ async function createStudyRoom(name){
 async function joinStudyRoom(code){
   var sb=socialClient(); if(!sb||!SOCIAL.user){showToast("Necesitas Supabase configurado e iniciar sesión");return;}
   code=(code||"").trim().toUpperCase(); if(!code){showToast("Escribe un código de sala");return;}
-  var r=await sb.from("study_rooms").select("*").eq("code",code).maybeSingle();
+  // join_study_room (SQL nuevo); si aún no existe, consulta directa como antes
+  var r=await sb.rpc("join_study_room",{p_code:code});
+  if(r.error){r=await sb.from("study_rooms").select("*").eq("code",code).maybeSingle();}
+  else{r={data:(r.data&&r.data[0])||null};}
   if(r.error||!r.data){showToast("No encuentro esa sala");return;}
   SOCIAL.room={code:r.data.code,name:r.data.name};
   if(DATA&&!DATA.badges.first_room){DATA.badges.first_room=true;saveUserData();}
@@ -1385,10 +1487,19 @@ function renderStudyRoom(){
   $("btnLeaveRoom").addEventListener("click",leaveStudyRoom);
 }
 /* ===== SESIONES COMPARTIDAS + KUDOS (feed de amigos, estilo Strava) ===== */
+// Si la BD aún no tiene las columnas subject/focus (SQL sin actualizar), dejamos de enviarlas
+var SHARE_NO_SUBJECT_FOCUS=false;
 async function socialShareSession(saved){
   var sb=socialClient(); if(!sb||!SOCIAL.user||!DATA||!DATA.sharePresence)return;
-  var payload={owner_id:SOCIAL.user.id,local_id:saved.id,bib_name:saved.bib,minutes:saved.min,date:saved.date,note:saved.note||null,offering:saved.offering||null,verif:!!saved.verif,prod:saved.prod||null};
-  await sb.from("shared_sessions").upsert(payload,{onConflict:"owner_id,local_id"});
+  var payload={owner_id:SOCIAL.user.id,local_id:saved.id,bib_name:saved.bib,minutes:saved.min,date:saved.date,note:saved.note||null,offering:DATA.extras?saved.offering:null||null,verif:!!saved.verif,prod:saved.prod||null};
+  if(!SHARE_NO_SUBJECT_FOCUS){payload.subject=saved.subject||null;payload.focus=(saved.focus==="ok"||saved.focus==="withered")?saved.focus:null;}
+  var res=await sb.from("shared_sessions").upsert(payload,{onConflict:"owner_id,local_id"});
+  var err=res&&res.error;
+  if(err&&!SHARE_NO_SUBJECT_FOCUS&&(err.code==="PGRST204"||/subject|focus|column/i.test(err.message||""))){
+    SHARE_NO_SUBJECT_FOCUS=true;
+    delete payload.subject;delete payload.focus;
+    await sb.from("shared_sessions").upsert(payload,{onConflict:"owner_id,local_id"});
+  }
 }
 async function socialLoadFriendSessions(){
   var sb=socialClient(); if(!sb||!SOCIAL.user)return;
@@ -1419,10 +1530,16 @@ async function socialLoadLeaderboard(){
   var sb=socialClient(); if(!sb||!SOCIAL.user)return;
   var ids=SOCIAL.friends.map(function(f){return f.profile.id;}); ids.push(SOCIAL.user.id);
   var now=new Date(),day=(now.getDay()+6)%7,monday=new Date(now);monday.setDate(now.getDate()-day);monday.setHours(0,0,0,0);
-  var res=await sb.from("shared_sessions").select("owner_id,minutes,date").in("owner_id",ids).gte("date",monday.toISOString().slice(0,10));
-  if(res.error){SOCIAL.leaderboard=[];return;}
-  var totals={};
-  (res.data||[]).forEach(function(r){totals[r.owner_id]=(totals[r.owner_id]||0)+r.minutes;});
+  var res=await sb.from("shared_sessions").select("owner_id,minutes,date").in("owner_id",ids).gte("date",ymd(monday));
+  if(res.error){SOCIAL.leaderboard=[];SOCIAL.lbRows=[];return;}
+  SOCIAL.lbRows=res.data||[];
+  computeLeaderboard();
+}
+var lbPeriod="week";
+function computeLeaderboard(){
+  if(!SOCIAL.user)return;
+  var hoy=ymd(), totals={};
+  (SOCIAL.lbRows||[]).forEach(function(r){if(lbPeriod==="day"&&r.date!==hoy)return;totals[r.owner_id]=(totals[r.owner_id]||0)+r.minutes;});
   var arr=Object.keys(totals).map(function(id){return {id:id,min:totals[id],name:id===SOCIAL.user.id?"Tú":socialNameById(id)};});
   arr.sort(function(a,b){return b.min-a.min;});
   SOCIAL.leaderboard=arr;
@@ -1430,9 +1547,9 @@ async function socialLoadLeaderboard(){
 function renderLeaderboard(){
   var el=$("leaderboardList"); if(!el)return;
   if(!socialClient()){el.innerHTML='<div class="empty-note">Configura Supabase para ver el ranking con amigos</div>';return;}
-  if(!SOCIAL.leaderboard.length){el.innerHTML='<div class="empty-note">Sin datos de esta semana todavía (necesitas amigos y sesiones compartidas)</div>';return;}
+  if(!SOCIAL.leaderboard.length){el.innerHTML='<div class="empty-note">Sin datos '+(lbPeriod==="day"?"de hoy":"de esta semana")+' todavía (necesitas amigos y sesiones compartidas)</div>';return;}
   el.innerHTML=SOCIAL.leaderboard.map(function(p,i){
-    return '<div class="nowrow" style="cursor:default"><div class="rank">'+(i+1)+'</div><div class="ni"><b>'+escapeHTML(p.name)+'</b><small>'+hMin(p.min)+' esta semana</small></div></div>';
+    return '<div class="nowrow" style="cursor:default"><div class="rank">'+(i+1)+'</div><div class="ni"><b>'+escapeHTML(p.name)+'</b><small>'+hMin(p.min)+(lbPeriod==="day"?' hoy':' esta semana')+'</small></div></div>';
   }).join("");
 }
 async function socialShareEvent(ev){
@@ -1449,7 +1566,7 @@ async function socialLoadFriendEvents(){
   var sb=socialClient(); if(!sb||!SOCIAL.user)return;
   var ids=SOCIAL.friends.map(function(f){return f.profile.id;});
   if(!ids.length){SOCIAL.events=[];return;}
-  var today=new Date().toISOString().slice(0,10);
+  var today=ymd();
   var res=await sb.from("shared_events").select("*").in("owner_id",ids).gte("date",today).order("date",{ascending:true}).limit(30);
   if(res.error){console.warn(res.error);SOCIAL.events=[];return;}
   SOCIAL.events=res.data||[];
@@ -1470,8 +1587,8 @@ function socialRenderPanel(err){
     if(!SOCIAL.requests.length&&!SOCIAL.sent.length){req.innerHTML='<div class="empty-note">Sin solicitudes pendientes</div>';}
     else{
       var html="";
-      SOCIAL.requests.forEach(function(x){html+='<div class="friend-row"><div class="fav">'+socialInitial(x.profile.name)+'</div><div class="fi"><b>'+escapeHTML(x.profile.name||"Amigo")+'</b><small>Quiere añadirte</small></div><div class="factions"><button class="okbtn" onclick="socialAcceptFriend(\''+x.row.id+'\')">Aceptar</button><button class="nobtn" onclick="socialRejectFriend(\''+x.row.id+'\')">Borrar</button></div></div>';});
-      SOCIAL.sent.forEach(function(x){html+='<div class="friend-row"><div class="fav">'+socialInitial(x.profile.name)+'</div><div class="fi"><b>'+escapeHTML(x.profile.name||"Amigo")+'</b><small>Solicitud enviada, pendiente de aceptar</small></div><div class="factions"><button class="nobtn" onclick="socialRejectFriend(\''+x.row.id+'\')">Cancelar</button></div></div>';});
+      SOCIAL.requests.forEach(function(x){html+='<div class="friend-row"><div class="fav">'+socialInitial(x.profile.name)+'</div><div class="fi"><b>'+escapeHTML(x.profile.name||"Amigo")+'</b><small>Quiere añadirte</small></div><div class="factions"><button class="okbtn" onclick="socialAcceptFriend('+jsArg(x.row.id)+')">Aceptar</button><button class="nobtn" onclick="socialRejectFriend('+jsArg(x.row.id)+')">Borrar</button></div></div>';});
+      SOCIAL.sent.forEach(function(x){html+='<div class="friend-row"><div class="fav">'+socialInitial(x.profile.name)+'</div><div class="fi"><b>'+escapeHTML(x.profile.name||"Amigo")+'</b><small>Solicitud enviada, pendiente de aceptar</small></div><div class="factions"><button class="nobtn" onclick="socialRejectFriend('+jsArg(x.row.id)+')">Cancelar</button></div></div>';});
       req.innerHTML=html;
     }
   }
@@ -1481,11 +1598,17 @@ function socialRenderPanel(err){
       fl.innerHTML=SOCIAL.friends.map(function(f){
         var p=socialPresenceFor(f.profile.id), loc='No está compartiendo ubicación ahora';
         var mapbtn='';
-        if(p&&BIBLIOTECAS[p.bib_index]){var age=Math.round((Date.now()-new Date(p.updated_at).getTime())/60000);loc='Está en '+BIBLIOTECAS[p.bib_index].nombre.replace("Biblioteca ","").replace("Pública ","")+' · hace '+Math.max(0,age)+' min';mapbtn='<button class="mapbtn" onclick="socialGoFriend(\''+f.profile.id+'\')">Mapa</button>';}
-        return '<div class="friend-row"><div class="fav">'+socialInitial(f.profile.name)+'</div><div class="fi"><b>'+escapeHTML(f.profile.name||"Amigo")+'</b><small>'+escapeHTML(loc)+'</small></div><div class="factions">'+mapbtn+'</div></div>';
+        if(p&&BIBLIOTECAS[p.bib_index]){var age=Math.round((Date.now()-new Date(p.updated_at).getTime())/60000);loc='Está en '+BIBLIOTECAS[p.bib_index].nombre.replace("Biblioteca ","").replace("Pública ","")+' · hace '+Math.max(0,age)+' min';mapbtn='<button class="mapbtn" onclick="socialGoFriend('+jsArg(f.profile.id)+')">Mapa</button>';}
+        return '<div class="friend-row"><div class="fav">'+socialInitial(f.profile.name)+'</div><div class="fi"><b>'+escapeHTML(f.profile.name||"Amigo")+'</b><small>'+escapeHTML(loc)+'</small></div><div class="factions">'+mapbtn+'<button class="nobtn" title="Quitar de amigos" onclick="socialRemoveFriend('+jsArg(f.row.id)+','+jsArg(f.profile.name||"este amigo")+')">✕</button></div></div>';
       }).join("");
     }
   }
+}
+async function socialRemoveFriend(rowId,name){
+  if(!confirm("¿Quitar a "+name+" de tus amigos? Dejaréis de ver vuestra actividad."))return;
+  var sb=socialClient(); if(!sb)return;
+  var r=await sb.from("friendships").delete().eq("id",rowId);
+  if(r.error)showToast("No se pudo quitar"); else{showToast("Amigo eliminado");socialRefreshAll();}
 }
 function socialGoFriend(id){
   var p=socialPresenceFor(id); if(!p||!BIBLIOTECAS[p.bib_index]){showToast("Ese amigo no está compartiendo ubicación ahora");return;}
@@ -1502,7 +1625,7 @@ function socialRenderFriendEvents(){
     var prayBtn="";
     if(ev.type==="examen"){
       var np=SOCIAL.prayerCounts[ev.local_id]||0, yap=!!SOCIAL.prayedByMe[ev.local_id];
-      prayBtn='<button '+(yap?"disabled":"")+' style="margin-top:6px;border:none;border-radius:10px;padding:6px 10px;font-weight:800;font-size:11.5px;cursor:pointer;background:rgba(108,92,231,.14);color:var(--acento)" onclick="prayForExam(\''+escapeHTML(ev.local_id)+'\',\''+escapeHTML(ev.owner_id)+'\',\''+escapeHTML(ev.title).replace(/'/g,"\\'")+'\')">'+(yap?"🙏 Ya recé":"🙏 Rezar")+(np?" · "+np:"")+'</button>';
+      prayBtn='<button class="extra" '+(yap?"disabled":"")+' style="margin-top:6px;border:none;border-radius:10px;padding:6px 10px;font-weight:800;font-size:11.5px;cursor:pointer;background:rgba(108,92,231,.14);color:var(--acento)" onclick="prayForExam('+jsArg(ev.local_id)+','+jsArg(ev.owner_id)+','+jsArg(ev.title)+')">'+(yap?"🙏 Ya recé":"🙏 Rezar")+(np?" · "+np:"")+'</button>';
     }
     return '<div class="friend-event"><span class="etag evt-'+escapeHTML(ev.type||"otro")+'"></span><div style="flex:1"><div class="who">'+escapeHTML(who)+'</div><b>'+escapeHTML(ev.title)+'</b><small>'+dd+(ev.time?' · '+escapeHTML(ev.time):'')+(ev.place?' · '+escapeHTML(ev.place):'')+'</small>'+(ev.url?'<br><a href="'+escapeHTML(ev.url)+'" target="_blank" rel="noopener" style="font-size:11.5px;color:var(--acento);font-weight:700;text-decoration:none">Ver más ↗</a>':'')+prayBtn+'</div></div>';
   }).join("");
@@ -1591,10 +1714,16 @@ async function enterApp(){
   $("profName").textContent=u.name;
   $("profEmail").textContent=CURRENT;
   $("profAvatar").textContent=(u.name||"?").trim().charAt(0).toUpperCase();
-  if(!window.__listReady) buildList();
+  applyExtras();actualizarBotonInstalar();
+  if(!window.__listReady){buildList(); if(LIST_FILTERS.cerca&&!window.__userPos)locateMe();}
   if(!window.__mapReady) initMap();
+  restaurarSesionActiva();
   renderStudy(); renderProfile();
   socialInitAfterLogin();
+  if(!DATA.onboarded){
+    if(DATA.sessions.length){DATA.onboarded=true;saveUserData();}
+    else setTimeout(onboarding,400);
+  }
   actualizarBadge();
   setTimeout(comprobarEnlaceCompartido,500);
   if("Notification" in window && Notification.permission==="granted") lanzarNotifsDelDia();
@@ -1602,8 +1731,138 @@ async function enterApp(){
   $("inPass").value="";
 }
 
+// Funciones de fe (rezar / ofrecer estudio): ocultas por defecto, se activan en Ajustes.
+/* ===== COMPARTIR MI SEMANA (imagen para stories / WhatsApp, estilo Strava) ===== */
+function minutosSemanaPorDia(){
+  var now=new Date(),monday=new Date(now);monday.setDate(now.getDate()-((now.getDay()+6)%7));monday.setHours(0,0,0,0);
+  var mins=[0,0,0,0,0,0,0],subj={},n=0;
+  DATA.sessions.forEach(function(s){var diff=Math.round((new Date(s.date+"T00:00:00")-monday)/86400000);
+    if(diff>=0&&diff<7){mins[diff]+=s.min;n++;if(s.subject)subj[s.subject]=(subj[s.subject]||0)+s.min;}});
+  if(studyTimer.running){var d=Math.round((new Date(ymd()+"T00:00:00")-monday)/86400000);if(d>=0&&d<7)mins[d]+=elapsedMin();}
+  var top=null,tm=0;for(var k in subj)if(subj[k]>tm){tm=subj[k];top=k;}
+  return {mins:mins,sesiones:n,top:top};
+}
+function compartirSemana(){
+  var w=minutosSemanaPorDia(), total=w.mins.reduce(function(a,b){return a+b;},0);
+  if(!total){showToast("Aún no has estudiado esta semana: ¡empieza una sesión!");return;}
+  var W=1080,H=1350,c=document.createElement("canvas");c.width=W;c.height=H;var g=c.getContext("2d");
+  var grad=g.createLinearGradient(0,0,W,H);grad.addColorStop(0,"#6c5ce7");grad.addColorStop(1,"#00b4c5");g.fillStyle=grad;g.fillRect(0,0,W,H);
+  g.fillStyle="rgba(255,255,255,.85)";g.font="700 40px system-ui,sans-serif";g.fillText("MI SEMANA DE ESTUDIO",80,140);
+  g.fillStyle="#fff";g.font="800 190px system-ui,sans-serif";g.fillText(Math.floor(total/60)+"h "+(total%60)+"m",72,340);
+  g.font="600 44px system-ui,sans-serif";g.fillStyle="rgba(255,255,255,.9)";
+  var lineas=[w.sesiones+" sesiones","🔥 racha de "+streakDays()+(streakDays()===1?" día":" días")];if(w.top)lineas.push("📚 sobre todo "+w.top);
+  lineas.forEach(function(t,k){g.fillText(t,80,430+k*64);});
+  var max=Math.max(60,Math.max.apply(null,w.mins)),bx=80,bw=(W-160)/7,base=1130,alto=420,dias=["L","M","X","J","V","S","D"];
+  w.mins.forEach(function(m,k){var h=Math.max(8,m/max*alto);g.fillStyle=m?"#fff":"rgba(255,255,255,.3)";
+    var x=bx+k*bw+bw*.18,ww=bw*.64;g.beginPath();if(g.roundRect)g.roundRect(x,base-h,ww,h,18);else g.rect(x,base-h,ww,h);g.fill();
+    g.fillStyle="rgba(255,255,255,.9)";g.font="700 36px system-ui,sans-serif";g.textAlign="center";g.fillText(dias[k],x+ww/2,base+56);g.textAlign="left";});
+  g.fillStyle="#fff";g.font="800 40px system-ui,sans-serif";g.fillText("Bibliotecas de Navarra",80,H-80);
+  c.toBlob(function(blob){
+    var file=new File([blob],"mi-semana.png",{type:"image/png"});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){navigator.share({files:[file],title:"Mi semana de estudio"}).catch(function(){});return;}
+    var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="mi-semana.png";document.body.appendChild(a);a.click();a.remove();
+    showToast("Imagen descargada: compártela donde quieras");
+  },"image/png");
+}
+/* ===== INSTALAR LA APP (antes de estar en Google Play) ===== */
+var INSTALL_EVT=null;
+function esStandalone(){return (window.matchMedia&&matchMedia("(display-mode: standalone)").matches)||navigator.standalone===true;}
+function esIOS(){return /iphone|ipad|ipod/i.test(navigator.userAgent);}
+window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();INSTALL_EVT=e;actualizarBotonInstalar();});
+window.addEventListener("appinstalled",function(){INSTALL_EVT=null;actualizarBotonInstalar();showToast("App instalada ✓");});
+function actualizarBotonInstalar(){var b=$("btnInstall");if(b)b.classList.toggle("hidden",esStandalone()||!(INSTALL_EVT||esIOS()));}
+function instalarApp(){
+  if(INSTALL_EVT){INSTALL_EVT.prompt();INSTALL_EVT.userChoice.finally(function(){INSTALL_EVT=null;actualizarBotonInstalar();});return;}
+  if(esIOS())openModal('<h3>Instalar en iPhone</h3><div class="sub">1. Pulsa el botón Compartir (el cuadrado con la flecha) en Safari.<br>2. Elige «Añadir a pantalla de inicio».<br>3. Pulsa «Añadir».</div><button class="btn" onclick="closeModal()">Entendido</button>');
+}
+/* ===== BIENVENIDA (3 pasos) ===== */
+function onboarding(){
+  DATA.onboarded=true;saveUserData(); // si cierra la ventana, no se vuelve a mostrar
+  var PERFILES=[["upna","🎓 Estudio en la UPNA"],["unav","🎓 Estudio en la Universidad de Navarra"],["opositor","📘 Preparo oposiciones"],["bach","📝 Bachillerato o FP"],["otro","🙂 Otra cosa"]];
+  function paso1(){
+    openModal('<div class="ob-step">1 de 3</div><h3>¿Qué estudias?</h3><div class="sub">Así te recomendamos mejor dónde ir.</div><div class="pick-list">'+
+      PERFILES.map(function(p){return '<button data-p="'+p[0]+'"><b>'+p[1]+'</b></button>';}).join("")+'</div>',function(){
+      document.querySelectorAll(".pick-list button").forEach(function(b){b.addEventListener("click",function(){
+        DATA.perfil=b.dataset.p;
+        if(DATA.perfil==="opositor"&&!DATA.goalCustom){DATA.goalPeriod="week";DATA.goalMin=25*60;}
+        saveUserData();paso2();});});
+    });
+  }
+  function paso2(){
+    var idx=BIBLIOTECAS.map(function(b,i){return i;}).filter(function(i){return distMetros(42.8125,-1.6458,BIBLIOTECAS[i].lat,BIBLIOTECAS[i].lon)<8000;});
+    var opts=idx.map(function(i){return '<option value="'+i+'">'+escapeHTML(cortoNombre(BIBLIOTECAS[i].nombre))+'</option>';}).join("");
+    var todas=BIBLIOTECAS.map(function(b,i){return idx.indexOf(i)===-1?'<option value="'+i+'">'+escapeHTML(cortoNombre(b.nombre))+'</option>':'';}).join("");
+    openModal('<div class="ob-step">2 de 3</div><h3>¿Dónde sueles estudiar?</h3><div class="sub">La tendremos en cuenta al recomendarte y al empezar a estudiar.</div>'+
+      '<div class="field"><select id="obBib" style="width:100%;padding:11px;border-radius:12px;border:1px solid rgba(148,163,184,.4);font:inherit"><option value="-1">Aún no lo sé</option><optgroup label="Pamplona y cercanías">'+opts+'</optgroup><optgroup label="Resto de Navarra">'+todas+'</optgroup></select></div>'+
+      '<button class="btn" id="obNext">Siguiente</button>',function(){
+      $("obNext").addEventListener("click",function(){var v=+$("obBib").value;DATA.habitualIdx=v>=0?v:null;saveUserData();paso3();});
+    });
+  }
+  function paso3(){
+    openModal('<div class="ob-step">3 de 3</div><h3>Estudia con tus amigos</h3><div class="sub">Verás dónde estudian, competiréis en horas y podréis crear salas de estudio. Mándales la app con tu código.</div>'+
+      '<button class="btn" id="obInvite">📨 Invitar a amigos</button><button class="linkbtn" id="obDone" style="display:block;margin:14px auto 0">Empezar a usar la app</button>',function(){
+      $("obInvite").addEventListener("click",invitarAmigos);
+      $("obDone").addEventListener("click",function(){closeModal();renderNowCard();renderSubjects();});
+    });
+  }
+  paso1();
+}
+function invitarAmigos(){
+  var code=SOCIAL.profile&&SOCIAL.profile.friend_code;
+  var url=location.origin&&location.origin!=="null"?location.origin+location.pathname:"";
+  var txt="Estoy usando Bibliotecas de Navarra para saber qué biblioteca está abierta y con sitio, y estudiar con amigos."+(code?" Añádeme con mi código: "+code+".":"")+(url?" "+url:"");
+  if(navigator.share){navigator.share({title:"Bibliotecas de Navarra",text:txt}).catch(function(){});}
+  else{try{navigator.clipboard.writeText(txt);showToast("Invitación copiada: pégala en WhatsApp");}catch(e){prompt("Copia y envía este mensaje:",txt);}}
+}
+function applyExtras(){
+  var on=!!(DATA&&DATA.extras);
+  document.body.classList.toggle("no-extras",!on);
+  var c=$("chkExtras"); if(c)c.checked=on;
+  if(!on&&$("studyOfferPanel")&&!$("studyOfferPanel").classList.contains("hidden")){var b=document.querySelector('#studyTab button[data-t="crono"]');if(b)b.click();}
+}
+// Borra la cuenta en la nube (función delete_my_account del SQL) y todos los datos de este dispositivo.
+function enviarSugerencia(){
+  openModal('<h3>¿Qué mejorarías?</h3><div class="sub">Cuéntanos un error, una idea o una biblioteca con datos mal. Lo leemos todo.</div>'+
+    '<div class="field"><textarea id="fbText" rows="5" maxlength="2000" style="width:100%;padding:11px 13px;border-radius:12px;border:1px solid rgba(148,163,184,.4);font:inherit" placeholder="Ej: el horario de Iturrama ha cambiado…"></textarea></div>'+
+    '<button class="btn" id="fbSend">Enviar</button>',function(){
+    $("fbSend").addEventListener("click",async function(){
+      var t=$("fbText").value.trim(); if(!t){showToast("Escribe algo primero");return;}
+      var sb=socialClient();
+      if(!sb||!SOCIAL.user){showToast("Necesitas iniciar sesión con la cuenta en la nube para enviarla");return;}
+      var r=await sb.from("feedback").insert({user_id:SOCIAL.user.id,message:t.slice(0,2000),context:navigator.userAgent.slice(0,200)});
+      if(r.error){showToast("No se pudo enviar: "+r.error.message);return;}
+      closeModal();showToast("¡Gracias! Sugerencia enviada");
+    });
+  });
+}
+async function cambiarNombre(){
+  var users=Brain.getUsers(), actual=(users[CURRENT]&&users[CURRENT].name)||"";
+  var n=(prompt("Tu nombre (lo verán tus amigos)",actual)||"").trim().slice(0,40);
+  if(!n||n===actual)return;
+  if(users[CURRENT]){users[CURRENT].name=n;Brain.saveUsers(users);}
+  var sb=socialClient();
+  if(sb&&SOCIAL.user){var r=await sb.from("profiles").update({name:n}).eq("id",SOCIAL.user.id).select("id,name,friend_code").single();
+    if(r.error){showToast("No se pudo guardar en la nube");return;} SOCIAL.profile=r.data;}
+  $("profName").textContent=n;$("profAvatar").textContent=n.charAt(0).toUpperCase();
+  showToast("Nombre actualizado");
+}
+async function deleteAccount(){
+  if(!confirm("Se borrarán tu cuenta, tus sesiones, amigos y todo lo que hayas compartido. No se puede deshacer. ¿Continuar?"))return;
+  var email=CURRENT, sb=socialClient();
+  if(sb&&SOCIAL.user){
+    var r=await sb.rpc("delete_my_account");
+    if(r.error){showToast("No se pudo borrar la cuenta en la nube: "+r.error.message);return;}
+  }
+  if(studyTimer.running)stopStudy(true);
+  try{localStorage.removeItem(userKey(email));var users=Brain.getUsers();delete users[email];Brain.saveUsers(users);}catch(e){}
+  logout();
+  showToast("Tu cuenta y tus datos se han eliminado");
+}
 function logout(){
-  if(studyTimer.running) stopStudy(false);
+  PRESENCIA_VISTA=null;
+  // stopStudy(true): sin el diálogo de valoración, que se quedaba encima del login sin usuario.
+  if(studyTimer.running){stopStudy(true);showToast("Sesión de estudio guardada");}
+  pomoReset();closeModal();releaseWakeLock();
   if(socialClient())socialClient().auth.signOut();
   if(SOCIAL.timer)clearInterval(SOCIAL.timer);
   Brain.clearSession();
@@ -1614,17 +1873,18 @@ function logout(){
 }
 
 /* ===================== NAVEGACIÓN ===================== */
-const VIEWS={map:"viewMap",study:"viewStudy",cal:"viewCal",events:"viewEvents",blog:"viewBlog",profile:"viewProfile"};
+const VIEWS={map:"viewMap",study:"viewStudy",friends:"viewFriends",cal:"viewCal",events:"viewEvents",blog:"viewBlog",profile:"viewProfile"};
 function goView(v){
   for(var k in VIEWS){ $(VIEWS[k]).classList.toggle("hidden",k!==v); }
-  $("mapActions").style.visibility = (v==="map")?"visible":"hidden";
-  document.querySelectorAll(".dock button").forEach(function(b){b.classList.toggle("on",b.dataset.view===v);});
+  // pestañas secundarias (Agenda, Eventos, Blog) se abren desde Perfil
+  var tab={cal:"profile",events:"profile",blog:"profile"}[v]||v;
+  document.querySelectorAll(".dock button").forEach(function(b){b.classList.toggle("on",b.dataset.view===tab);});
   if(v==="map"&&window.__map){setTimeout(function(){window.__map.invalidateSize();},120);}
   if(v==="study"){renderStudy();renderStudyRoom();if(SOCIAL.room)loadRoomMembers().then(renderStudyRoom);}
   if(v==="cal")renderCal();
   if(v==="events")renderEvents();
   if(v==="blog")renderBlog();
-  if(v==="profile")renderProfile();
+  if(v==="profile"||v==="friends")renderProfile();
 }
 
 
@@ -1748,7 +2008,6 @@ function refreshOccUI(i){
       markers.forEach(function(mk,j){mk.setPopupContent(popupHTML(BIBLIOTECAS[j],j));if(mk.setIcon)mk.setIcon(chinchetaIcon(j));});
     }
   }
-  if(!$('nowPanel').classList.contains('hidden'))abrirComparador();
 }
 
 /* ===================== MAPA Y LISTA ===================== */
@@ -1775,13 +2034,14 @@ function popupHTML(b,i){
     distTxt=dm<1000?Math.round(dm)+" m":(dm/1000).toFixed(1)+" km";
   }
   var s='<div class="pop pop-compact"><h2>'+escapeHTML(b.nombre)+'</h2>';
-  s+='<div class="pop-meta"><span class="estado '+(abierto?"open":"closed")+'">'+(abierto?"● Abierto":"● Cerrado")+'</span>'+(distTxt?'<span class="pop-dist">📍 '+distTxt+'</span>':'')+'</div>';
-  s+='<div class="pop-today">Hoy: '+escapeHTML(hoyTxt)+'</div>';
+  s+='<div class="pop-meta"><span class="estado '+(abierto?"open":"closed")+'">'+(abierto?"● Abierta":"● Cerrada")+'</span>'+(distTxt?'<span class="pop-dist">📍 '+distTxt+'</span>':'')+'</div>';
+  s+='<div class="pop-today">'+escapeHTML(estadoTexto(b).txt)+'</div>';
   s+=popIconRow(b);
+  if(epocaExamenes()&&esUPNA(b))s+='<div class="pop-today" style="color:#b45309">⚠️ En exámenes la sala suele reservarse a la comunidad UPNA</div>';
   var o=occSummary(i);
   s+='<div style="margin-top:10px">'+(o?('<div class="occ-report" style="justify-content:center"><span class="od '+o.info.className+'"></span><span><b>'+o.info.emoji+' '+o.info.label+'</b></span></div>'):'<div class="occ-empty">⚪ Sin datos recientes de afluencia</div>')+'</div>';
-  s+='<button class="linkbtn" style="display:block;margin:10px auto 0" onclick="openBibDetailModal('+i+')">Ver ficha completa →</button>';
   s+='<button class="btnstudy" onclick="startStudyAt('+i+')">▶ Estudiar aquí</button>';
+  s+='<button class="linkbtn" style="display:block;margin:8px auto 0" onclick="openBibDetailModal('+i+')">Horario, acceso y cómo llegar →</button>';
   s+='</div>';
   return s;
 }
@@ -1805,6 +2065,9 @@ function openBibDetailModal(i){
   s+='<div class="estado '+(abierto?"open":"closed")+'">'+(abierto?"● Abierto ahora":"● Cerrado ahora")+'</div>';
   if(b.rating!=null)s+='<div class="rate-line"><b>★ '+b.rating.toFixed(1)+'</b> · '+b.reviews+' reseñas</div>';
   s+='<div class="dir"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6c5ce7" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span>'+escapeHTML(b.dir)+'</span></div>';
+  s+='<div class="bib-actions"><a class="btn sm" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination='+b.lat+','+b.lon+'">🧭 Cómo llegar</a>'+
+    (b.tel?'<a class="btn sm ghost" href="tel:'+escapeHTML(b.tel.replace(/\s/g,""))+'">📞 Llamar</a>':'')+
+    (b.web&&/^https?:\/\//.test(b.web)?'<a class="btn sm ghost" target="_blank" rel="noopener" href="'+escapeHTML(b.web)+'">🌐 Web</a>':'')+'</div>';
   var cal=horarioVigente(b),hoy=new Date().getDay();
   s+='<div class="hours"><h4>'+(verano?"Horario de verano":"Horario de invierno")+'</h4><table>';
   for(var d=1;d<=7;d++){var di=d%7,tr=cal[di]||[];
@@ -1836,6 +2099,7 @@ function accesoAccesibilidadHTML(b){
 }
 function actualizarAcciones(b){
   var elName=$("selName"),actRuta=$("actRuta"),actTel=$("actTel"),actWeb=$("actWeb");
+  if(!elName)return;
   if(!b){elName.textContent="Pincha una chincheta";elName.classList.add("empty");
     [actRuta,actTel,actWeb].forEach(function(a){a.classList.add("disabled");});return;}
   elName.textContent=b.nombre;elName.classList.remove("empty");
@@ -1847,7 +2111,7 @@ window.__selBib=function(i){
   var b=BIBLIOTECAS[i];actualizarAcciones(b);
   markers.forEach(function(mk,j){var el=mk&&mk.getElement&&mk.getElement();
     if(el){var ch=el.querySelector(".chincheta");if(ch)ch.classList.toggle("sel",j===i);}});
-  document.querySelectorAll(".card").forEach(function(c,j){c.classList.toggle("active",j===i);});
+  document.querySelectorAll("#list .card").forEach(function(c){c.classList.toggle("active",+c.dataset.i===i);});
   if(window.__map&&markers[i]){window.__map.flyTo([b.lat,b.lon],16,{duration:.6});markers[i].openPopup();}
 };
 // La lista lateral se construye SIEMPRE (no depende de Leaflet)
@@ -1856,20 +2120,53 @@ function buildList(){
   var verano=esVerano(new Date());
   $("seasonTag").textContent=verano?"Horario de verano":"Horario de invierno";
   var list=$("list");list.innerHTML="";
+  syncListFilterButtons();
+  var F=LIST_FILTERS, idx=[];
   BIBLIOTECAS.forEach(function(b,i){
+    if(F.abiertas&&!estadoBib(b))return;
+    if(F.libre&&!(b.acceso&&b.acceso.tipo==="libre"))return;
+    if(F.wifi&&!(b.recursos&&b.recursos.indexOf("wifi")!==-1))return;
+    idx.push(i);
+  });
+  if(F.cerca&&window.__userPos){
+    var up=window.__userPos;
+    idx.sort(function(a,c){return distMetros(up.lat,up.lon,BIBLIOTECAS[a].lat,BIBLIOTECAS[a].lon)-distMetros(up.lat,up.lon,BIBLIOTECAS[c].lat,BIBLIOTECAS[c].lon);});
+  }
+  if(!idx.length)list.innerHTML='<div class="empty-note">Ninguna biblioteca cumple estos filtros'+(F.wifi?' (el wifi solo figura donde está confirmado)':'')+'.</div>';
+  idx.forEach(function(i){
+    var b=BIBLIOTECAS[i];
     var abierto=estadoBib(b);
     var distTxt="";
     if(window.__userPos){
       var dm=distMetros(window.__userPos.lat,window.__userPos.lon,b.lat,b.lon);
       distTxt=" · 📍"+(dm<1000?Math.round(dm)+"m":(dm/1000).toFixed(1)+"km");
     }
-    var card=document.createElement("div");card.className="card";
-    card.innerHTML='<h3>'+(i+1)+'. '+b.nombre+'</h3><div class="row"><span class="dot '+(abierto?"open":"closed")+'"></span>'+(abierto?"Abierto ahora":"Cerrado ahora")+escapeHTML(distTxt)+(b.rating!=null?'<span class="rate">★ '+b.rating.toFixed(1)+'</span>':'')+'</div>'+occStatusHTML(i,true);
+    var card=document.createElement("div");card.className="card";card.dataset.i=i;
+    card.innerHTML='<h3>'+escapeHTML(cortoNombre(b.nombre))+'</h3><div class="row"><span class="dot '+(abierto?"open":"closed")+'"></span>'+escapeHTML(estadoTexto(b).txt)+escapeHTML(distTxt)+(b.rating!=null?'<span class="rate">★ '+b.rating.toFixed(1)+'</span>':'')+'</div>'+occStatusHTML(i,true);
     card.addEventListener("click",function(){window.__selBib(i);});
     list.appendChild(card);
   });
-  $("panelCount").textContent=BIBLIOTECAS.length+" bibliotecas en Navarra";
+  var activos=Object.keys(F).some(function(k){return F[k];});
+  renderNowCard();
+  $("panelCount").textContent=activos?(idx.length+" de "+BIBLIOTECAS.length+" bibliotecas"):(BIBLIOTECAS.length+" bibliotecas en Navarra");
 }
+// Filtros de la lista (se recuerdan en este navegador). "Más cercanas" pide la ubicación si aún no la hay.
+// "Abiertas ahora" depende de la hora: se recalcula cada minuto aunque no lleguen datos nuevos.
+setInterval(function(){if(!window.__listReady)return; if(LIST_FILTERS.abiertas)buildList(); else renderNowCard();},60000);
+var LIST_FILTERS=Object.assign({abiertas:false,cerca:false,libre:false,wifi:false},loadJSON("bpna_list_filters",{}));
+function syncListFilterButtons(){
+  document.querySelectorAll("#listFilters button").forEach(function(btn){btn.classList.toggle("on",!!LIST_FILTERS[btn.dataset.f]);});
+}
+document.querySelectorAll("#listFilters button").forEach(function(btn){
+  btn.addEventListener("click",function(e){
+    e.stopPropagation();
+    var f=btn.dataset.f;
+    LIST_FILTERS[f]=!LIST_FILTERS[f];
+    saveJSON("bpna_list_filters",LIST_FILTERS);
+    if(f==="cerca"&&LIST_FILTERS.cerca&&!window.__userPos){locateMe();}
+    buildList();
+  });
+});
 // Color de la chincheta según la afluencia reportada (sin números): verde/ámbar/rojo, gris si está cerrada, morado si no hay datos.
 function chinchetaIcon(i){
   var b=BIBLIOTECAS[i], abierto=estadoBib(b);
@@ -1898,6 +2195,7 @@ function locateMe(){
   },function(err){
     if(btn)btn.classList.remove("active");
     showToast(err.code===1?"Permiso de ubicación denegado":"No se pudo obtener tu ubicación");
+    if(LIST_FILTERS.cerca&&!window.__userPos){LIST_FILTERS.cerca=false;saveJSON("bpna_list_filters",LIST_FILTERS);buildList();}
   },{timeout:8000,enableHighAccuracy:true});
 }
 // El mapa con chinchetas se monta cuando Leaflet está disponible
@@ -2000,7 +2298,9 @@ function distMetros(la1,lo1,la2,lo2){
   return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
 function startStudyAt(i){
+  if(pomo.running){showToast("Tienes un Pomodoro en marcha: páusalo antes de usar el cronómetro");return;}
   if(studyTimer.running){ if(!confirm("Ya hay una sesión en curso. ¿Terminarla y empezar otra?"))return; stopStudy(true); }
+  if(i<0){arrancarSesion(-1,false);return;}
   // check-in con ubicación si está activado
   if(DATA&&DATA.geoCheck&&navigator.geolocation){
     showToast("Comprobando que estás en la biblioteca…");
@@ -2022,15 +2322,49 @@ function startStudyAt(i){
 }
 function arrancarSesion(i,verificada){
   studyTimer.running=true;studyTimer.start=Date.now();studyTimer.bibIndex=i;studyTimer.verificada=!!verificada;
+  studyTimer.subject=DATA.currentSubject||null;
+  // Se guarda para no perderla si el móvil cierra la app en segundo plano.
+  DATA.active={start:studyTimer.start,bibIndex:i,verificada:!!verificada,subject:studyTimer.subject};saveUserData();
+  focusStart();
   startTick();
   $("miniStudy").classList.remove("hidden");
-  $("miniPlace").textContent=BIBLIOTECAS[i].nombre.replace("Biblioteca ","").replace("Pública ","");
+  $("miniPlace").textContent=i>=0?cortoNombre(BIBLIOTECAS[i].nombre):"Estudiando";
+  studyTimer.avisoCierre=false;
   renderStudy();
   socialHeartbeat();
 }
+// "Empezar" con un toque: si estás a menos de 400 m de una biblioteca, empieza ahí;
+// si no, pregunta dónde estás con las opciones más probables arriba.
 function startStudyCurrent(){
-  var i=studyTimer.bibIndex!=null?studyTimer.bibIndex:0;
-  startStudyAt(i);
+  function conPos(pos){
+    if(pos){
+      var best=-1,bd=1e9;
+      BIBLIOTECAS.forEach(function(b,i){var d=distMetros(pos.lat,pos.lon,b.lat,b.lon);if(d<bd){bd=d;best=i;}});
+      if(best>=0&&bd<=400&&minutosHastaCierre(BIBLIOTECAS[best])>0){showToast("📍 Estás en "+cortoNombre(BIBLIOTECAS[best].nombre));startStudyAt(best);return;}
+    }
+    elegirLugarEstudio();
+  }
+  if(window.__userPos){conPos(window.__userPos);return;}
+  if(!navigator.geolocation){conPos(null);return;}
+  navigator.geolocation.getCurrentPosition(function(p){window.__userPos={lat:p.coords.latitude,lon:p.coords.longitude};conPos(window.__userPos);},function(){conPos(null);},{timeout:6000,maximumAge:120000});
+}
+function elegirLugarEstudio(){
+  var ops=[],vistos={};
+  function add(i,etq){if(i==null||i<0||vistos[i])return;vistos[i]=1;ops.push({i:i,etq:etq});}
+  var hab=bibHabitual(); if(hab>=0)add(hab,"⭐ Tu habitual");
+  recomendarBiblioteca().slice(0,4).forEach(function(c){add(c.i,c.dist!=null?"📍 "+fmtDist(c.dist):"Abierta");});
+  var html='<h3>¿Dónde estudias?</h3><div class="sub">No estás junto a ninguna biblioteca. Elige dónde, o estudia en casa.</div><div class="pick-list">'+
+    ops.map(function(o){return '<button data-i="'+o.i+'"><b>'+escapeHTML(cortoNombre(BIBLIOTECAS[o.i].nombre))+'</b><small>'+escapeHTML(o.etq)+'</small></button>';}).join("")+
+    '<button data-i="-1"><b>🏠 En casa u otro sitio</b><small>Cuenta para tus horas, sin biblioteca</small></button></div>';
+  openModal(html,function(){
+    document.querySelectorAll(".pick-list button").forEach(function(b){b.addEventListener("click",function(){closeModal();startStudyAt(+b.dataset.i);});});
+  });
+}
+function bibHabitual(){
+  if(DATA&&DATA.sessions.length){var c={};DATA.sessions.forEach(function(s){if(s.bib!==NO_BIB)c[s.bib]=(c[s.bib]||0)+s.min;});
+    var best=null,m=0;for(var k in c){if(c[k]>m){m=c[k];best=k;}}
+    if(best){for(var j=0;j<BIBLIOTECAS.length;j++)if(BIBLIOTECAS[j].nombre===best)return j;}}
+  return DATA&&typeof DATA.habitualIdx==="number"?DATA.habitualIdx:-1;
 }
 function startTick(){
   if(studyTimer.tick)clearInterval(studyTimer.tick);
@@ -2040,16 +2374,66 @@ function elapsedMin(){return studyTimer.running?Math.floor((Date.now()-studyTime
 function elapsedSec(){return studyTimer.running?Math.floor((Date.now()-studyTimer.start)/1000):0;}
 function fmtClock(sec){var hh=Math.floor(sec/3600),mm=Math.floor((sec%3600)/60),ss=sec%60;
   return String(hh).padStart(2,"0")+":"+String(mm).padStart(2,"0")+":"+String(ss).padStart(2,"0");}
+// Hora (ms) en que cerró la biblioteca por primera vez después de empezar la sesión.
+function cierreTrasInicio(b,startTs){
+  var cal=horarioVigente(b), d0=new Date(startTs); d0.setHours(0,0,0,0);
+  for(var off=0;off<8;off++){
+    var dia=new Date(d0); dia.setDate(d0.getDate()+off);
+    var tr=cal[dia.getDay()]||[];
+    for(var k=0;k<tr.length;k++){var fin=dia.getTime()+tr[k][1]*60000; if(fin>startTs)return fin;}
+  }
+  return null;
+}
+// Si la biblioteca cerró hace más de 15 min y el cronómetro sigue, se te olvidó pararlo: se guarda hasta el cierre.
+function revisarCronoOlvidado(){
+  if(!studyTimer.running)return false;
+  var ahora=Date.now();
+  if(studyTimer.bibIndex>=0){
+    var b=BIBLIOTECAS[studyTimer.bibIndex], fin=cierreTrasInicio(b,studyTimer.start);
+    if(fin&&ahora-fin>15*60000){
+      stopStudy(true,fin);
+      notificar("⏹ Tu sesión en "+cortoNombre(b.nombre)+" se guardó hasta la hora de cierre ("+fmtHoras(new Date(fin).getHours()*60+new Date(fin).getMinutes())+")");
+      return true;
+    }
+  }else if(ahora-studyTimer.start>12*3600000&&!revisarCronoOlvidado.preguntado){
+    revisarCronoOlvidado.preguntado=true;
+    var h=parseFloat((prompt("Llevas más de 12 h con el cronómetro en marcha. ¿Cuántas horas estudiaste de verdad?","2")||"").replace(",","."));
+    if(h>0&&h<16){stopStudy(true,studyTimer.start+h*3600000);showToast("Sesión guardada: "+h+" h");return true;}
+  }
+  return false;
+}
+function restaurarSesionActiva(){
+  var a=DATA&&DATA.active; if(!a||studyTimer.running)return;
+  studyTimer.running=true;studyTimer.start=a.start;studyTimer.bibIndex=a.bibIndex;studyTimer.verificada=!!a.verificada;studyTimer.subject=a.subject||null;
+  studyTimer.avisoCierre=false;
+  // la app se cerró: si estaba en modo foco, la planta no sobrevive
+  if(DATA.focusMode){FOCUS.withered=true;FOCUS.hiddenAt=0;}
+  if(revisarCronoOlvidado())return;
+  startTick();
+  $("miniStudy").classList.remove("hidden");
+  $("miniPlace").textContent=a.bibIndex>=0?cortoNombre(BIBLIOTECAS[a.bibIndex].nombre):"Estudiando";
+  showToast("▶ Tu sesión sigue en marcha");
+}
+function notificar(txt){
+  showToast(txt);
+  try{if("Notification" in window&&Notification.permission==="granted"&&document.visibilityState==="hidden")new Notification("Bibliotecas de Navarra",{body:txt,icon:"icons/icon-192.png"});}catch(e){}
+}
 function updateTimers(){
+  if(studyTimer.running&&(updateTimers._n=(updateTimers._n||0)+1)%30===0&&revisarCronoOlvidado())return;
   var sec=elapsedSec();
+  if(studyTimer.running&&studyTimer.bibIndex>=0&&!studyTimer.avisoCierre){
+    var mc=minutosHastaCierre(BIBLIOTECAS[studyTimer.bibIndex]);
+    if(mc>0&&mc<=30){studyTimer.avisoCierre=true;notificar("⏰ "+cortoNombre(BIBLIOTECAS[studyTimer.bibIndex].nombre)+" cierra en "+mc+" min");}
+  }
   var t=$("studyTimer");if(t)t.textContent=fmtClock(sec);
+  renderFocusPlant();
   var mt=$("miniTime");if(mt){var mm=Math.floor(sec/60),ss=sec%60;mt.textContent=String(mm).padStart(2,"0")+":"+String(ss).padStart(2,"0");}
   updateGoalRing();
 }
 function todayMinutes(){
-  var today=new Date().toISOString().slice(0,10);
+  var today=ymd();
   var sum=0;DATA.sessions.forEach(function(s){if(s.date===today)sum+=s.min;});
-  if(studyTimer.running&&new Date(studyTimer.start).toISOString().slice(0,10)===today)sum+=elapsedMin();
+  if(studyTimer.running&&ymd(new Date(studyTimer.start))===today)sum+=elapsedMin();
   return sum;
 }
 function updateGoalRing(){
@@ -2062,20 +2446,22 @@ function updateGoalRing(){
   var gp=$("goalPct");if(gp)gp.textContent=pct+"%";
   var gl=$("goalLbl");if(gl)gl.textContent="de "+(goal/60).toFixed(goal%60?1:0)+"h/"+(period==="week"?"sem":"día");
 }
-function stopStudy(silent){
+function stopStudy(silent,endTs){
   if(!studyTimer.running)return;
-  var sec=elapsedSec();
+  var sec=endTs?Math.max(0,Math.floor((endTs-studyTimer.start)/1000)):elapsedSec();
+  if(DATA){DATA.active=null;saveUserData();}
   var min=Math.round(sec/60);
   var bibIdx=studyTimer.bibIndex, ts=studyTimer.start, verif=studyTimer.verificada;
   if(studyTimer.tick)clearInterval(studyTimer.tick);
   var saved=null;
   if(sec>=20){
-    saved={id:genId(),date:new Date(ts).toISOString().slice(0,10),min:Math.max(1,min),sec:sec,bib:BIBLIOTECAS[bibIdx].nombre,ts:ts,verif:verif,prod:null,note:"",offering:DATA.offeringText||""};
+    saved={id:genId(),date:ymd(new Date(ts)),min:Math.max(1,min),sec:sec,bib:bibIdx>=0?BIBLIOTECAS[bibIdx].nombre:NO_BIB,ts:ts,verif:verif,prod:null,note:"",offering:(DATA.extras&&DATA.offeringText)||"",subject:studyTimer.subject||null,focus:focusResult()};
     DATA.sessions.push(saved);
     saveUserData();
     socialShareSession(saved);
   }
-  studyTimer.running=false;studyTimer.bibIndex=null;studyTimer.verificada=false;
+  studyTimer.running=false;studyTimer.bibIndex=null;studyTimer.verificada=false;studyTimer.subject=null;
+  releaseWakeLock();
   $("miniStudy").classList.add("hidden");
   socialClearPresence();
   renderStudy();renderProfile();
@@ -2085,11 +2471,32 @@ function stopStudy(silent){
     showToast("Sesión guardada: "+fmtHoras(Math.max(1,min))+" h");
   }
 }
+function bibIdxDe(sesion){if(!sesion||sesion.bib===NO_BIB)return -1;for(var k=0;k<BIBLIOTECAS.length;k++){if(BIBLIOTECAS[k].nombre===sesion.bib)return k;}return -1;}
+function editarSesion(idx){
+  var s=DATA.sessions[idx]; if(!s)return;
+  openModal('<h3>Editar sesión</h3><div class="sub">'+escapeHTML(fmtFeedDate(s.date))+' · '+escapeHTML(cortoNombre(s.bib))+'</div>'+
+    '<div class="field"><label>Minutos estudiados</label><input type="number" id="edMin" min="1" max="960" value="'+s.min+'"></div>'+
+    '<button class="btn" id="edSave">Guardar</button>'+
+    '<button class="linkbtn" id="edDel" style="display:block;margin:14px auto 0;color:var(--cerrado)">Borrar esta sesión</button>',function(){
+    $("edSave").addEventListener("click",function(){
+      var m=parseInt($("edMin").value,10); if(!(m>=1&&m<=960)){showToast("Pon entre 1 y 960 minutos");return;}
+      s.min=m;s.sec=m*60;saveUserData();socialShareSession(s);closeModal();renderStudy();renderProfile();showToast("Sesión actualizada");
+    });
+    $("edDel").addEventListener("click",function(){
+      if(!confirm("¿Borrar esta sesión? Se descontará de tus horas y rachas."))return;
+      DATA.sessions.splice(idx,1);saveUserData();
+      var sb=socialClient(); if(sb&&SOCIAL.user)sb.from("shared_sessions").delete().eq("owner_id",SOCIAL.user.id).eq("local_id",s.id);
+      closeModal();renderStudy();renderProfile();showToast("Sesión borrada");
+    });
+  });
+}
 function pedirValoracion(sesion){
   var sel={v:0};
   openModal('<h3>Sesión terminada</h3><div class="sub">'+fmtHoras(sesion.min)+' h en '+escapeHTML(sesion.bib.replace("Biblioteca ","").replace("Pública ",""))+(sesion.verif?' · <span class="badge-ok">✓ verificada</span>':'')+'</div>'+
     '<label style="font-size:12px;font-weight:700;color:var(--suave);text-transform:uppercase;letter-spacing:.05em">¿Qué tal ha ido?</label>'+
     '<div class="prodstars" id="prodStars">'+[1,2,3,4,5].map(function(n){return '<button data-v="'+n+'">★</button>';}).join("")+'</div>'+
+    (bibIdxDe(sesion)>=0?'<label style="display:block;margin-top:12px;font-size:12px;font-weight:700;color:var(--suave);text-transform:uppercase;letter-spacing:.05em">¿Cómo estaba de llena?</label>'+
+      '<div class="occ-quick" id="sessOcc"><button data-l="libre">🟢 Con sitio</button><button data-l="media">🟡 Media</button><button data-l="llena">🔴 Llena</button></div>':'')+
     '<div class="field" style="margin-top:10px"><input type="text" id="sessNote" placeholder="Nota opcional (ej: terminé el tema 4)"></div>'+
     '<button class="btn" id="sessSave">Guardar</button>'+
     '<button class="linkbtn" id="sessSkip" style="display:block;margin:12px auto 0">Omitir</button>',
@@ -2100,7 +2507,13 @@ function pedirValoracion(sesion){
           document.querySelectorAll("#prodStars button").forEach(function(x,idx){x.classList.toggle("on",idx<sel.v);});
         });
       });
+      var occSel=null;
+      document.querySelectorAll("#sessOcc button").forEach(function(b){
+        b.addEventListener("click",function(){occSel=b.dataset.l;document.querySelectorAll("#sessOcc button").forEach(function(x){x.classList.toggle("on",x===b);});});
+      });
       $("sessSave").addEventListener("click",function(){
+        // la afluencia solo vale si la sesión acaba de terminar (no se reporta para una sesión antigua)
+        if(occSel&&bibIdxDe(sesion)>=0)addOccReport(bibIdxDe(sesion),occSel,true);
         sesion.prod=sel.v||null; sesion.note=$("sessNote").value.trim();
         saveUserData();socialShareSession(sesion);closeModal();renderProfile();renderStudy();showToast("Sesión guardada");
       });
@@ -2113,7 +2526,7 @@ function renderStudy(){
   var sec=elapsedSec();
   $("studyTimer").textContent=fmtClock(sec);
   if(studyTimer.running){
-    $("studyPlace").textContent="En "+BIBLIOTECAS[studyTimer.bibIndex].nombre+(DATA.offeringText?" · 🙏 ofrecido por "+DATA.offeringText:"");
+    $("studyPlace").textContent=(studyTimer.bibIndex>=0?"En "+BIBLIOTECAS[studyTimer.bibIndex].nombre:"Estudiando fuera de una biblioteca")+(DATA.offeringText&&DATA.extras?" · 🙏 ofrecido por "+DATA.offeringText:"");
     $("btnStart").classList.add("hidden");$("btnStop").classList.remove("hidden");
     if(!studyTimer.tick)startTick();
   }else{
@@ -2128,8 +2541,94 @@ function renderStudy(){
   updateGoalRing();
   renderSessionFeed();
   renderBookshelf();
+  renderSubjects();
+  renderSubjectStats();
+  renderFocusPlant();
+}
+/* ===== ASIGNATURAS (como YPT: el tiempo se apunta a una asignatura) ===== */
+function renderSubjects(){
+  var el=$("subjectChips"); if(!el||!DATA)return;
+  var subs=DATA.subjects||[], cur=DATA.currentSubject||null;
+  var html='<button data-s="" class="'+(cur?"":"on")+'">Sin asignatura</button>';
+  subs.forEach(function(n,k){html+='<button data-k="'+k+'" class="'+(cur===n?"on":"")+'">'+escapeHTML(n)+'<span class="x" data-del="'+k+'" title="Quitar">×</span></button>';});
+  html+='<button data-add="1">+ Añadir</button>';
+  el.innerHTML=html;
+  var ft=$("focusToggle"); if(ft)ft.checked=!!DATA.focusMode;
+  var sl=$("subjLabel"); if(sl)sl.textContent=DATA.perfil==="opositor"?"Tema":"Asignatura";
+}
+function initSubjectUI(){
+  $("subjectChips").addEventListener("click",function(e){
+    var t=e.target, btn=t.closest("button"); if(!btn||!DATA)return;
+    if(studyTimer.running||pomo.running){showToast("Termina o pausa la sesión para cambiar de asignatura");return;}
+    var subs=DATA.subjects=DATA.subjects||[];
+    if(t.dataset.del!=null){
+      var name=subs[+t.dataset.del];
+      if(!confirm("¿Quitar \""+name+"\" de tus asignaturas? Las sesiones ya guardadas la conservan."))return;
+      subs.splice(+t.dataset.del,1); if(DATA.currentSubject===name)DATA.currentSubject=null;
+    }else if(btn.dataset.add){
+      var n=(prompt("Nombre de la asignatura (ej: Cálculo, Temario oposición…)")||"").trim().slice(0,40);
+      if(!n)return;
+      if(subs.indexOf(n)===-1)subs.push(n);
+      DATA.currentSubject=n;
+    }else{
+      DATA.currentSubject=btn.dataset.k!=null?subs[+btn.dataset.k]:null;
+    }
+    saveUserData();renderSubjects();
+  });
+  $("focusToggle").addEventListener("change",function(){
+    DATA.focusMode=this.checked;saveUserData();
+    if(this.checked){showToast("🌱 Modo foco: si sales de la app más de "+FOCUS_GRACE_SEC+" s, tu planta se marchita");if(focusActive())focusStart();}
+    else{releaseWakeLock();}
+    renderFocusPlant();
+  });
+}
+function renderSubjectStats(){
+  var el=$("subjectStats"); if(!el||!DATA)return;
+  var hoy=ymd(), mins={};
+  DATA.sessions.forEach(function(s){if(s.date===hoy){var k=s.subject||"Sin asignatura";mins[k]=(mins[k]||0)+s.min;}});
+  if(studyTimer.running){var k=studyTimer.subject||"Sin asignatura";mins[k]=(mins[k]||0)+elapsedMin();}
+  var keys=Object.keys(mins).filter(function(k){return mins[k]>0;}).sort(function(a,b){return mins[b]-mins[a];});
+  var max=keys.length?mins[keys[0]]:0;
+  var html='<div class="section-title" style="margin-top:0">📚 Hoy por asignatura</div>';
+  html+=keys.length?keys.map(function(k){return '<div class="subj-row"><span class="nm">'+escapeHTML(k)+'</span><span class="bar"><i style="width:'+Math.round(mins[k]/max*100)+'%"></i></span><span class="tm">'+hMin(mins[k])+'</span></div>';}).join("")
+    :'<div class="empty-note">Elige una asignatura arriba y empieza: aquí verás cuánto le dedicas cada día.</div>';
+  var ok=0,ko=0;DATA.sessions.forEach(function(s){if(s.focus==="ok")ok++;else if(s.focus==="withered")ko++;});
+  if(ok||ko)html+='<div class="page-sub" style="margin-top:10px">Modo foco: 🌳 '+ok+' '+(ok===1?"planta":"plantas")+' crecida'+(ok===1?"":"s")+' · 🥀 '+ko+' marchita'+(ko===1?"":"s")+'</div>';
+  el.innerHTML=html;
+}
+/* ===== MODO FOCO (como Forest: si sales de la app durante la sesión, la planta se marchita) ===== */
+const FOCUS_GRACE_SEC=15;
+var FOCUS={hiddenAt:0,withered:false,lock:null};
+function focusActive(){return !!(DATA&&DATA.focusMode)&&(studyTimer.running||(pomo.running&&pomo.phase==="focus"));}
+function focusStart(){FOCUS.withered=false;FOCUS.hiddenAt=0;if(DATA&&DATA.focusMode)requestWakeLock();renderFocusPlant();}
+function focusResult(){return DATA&&DATA.focusMode?(FOCUS.withered?"withered":"ok"):null;}
+// Mantiene la pantalla encendida durante el foco: así bloquear el móvil no cuenta como "salir".
+async function requestWakeLock(){
+  try{if(navigator.wakeLock&&document.visibilityState==="visible"&&!FOCUS.lock){FOCUS.lock=await navigator.wakeLock.request("screen");FOCUS.lock.addEventListener("release",function(){FOCUS.lock=null;});}}catch(e){}
+}
+function releaseWakeLock(){try{if(FOCUS.lock){FOCUS.lock.release();FOCUS.lock=null;}}catch(e){}}
+document.addEventListener("visibilitychange",function(){
+  if(!focusActive())return;
+  if(document.visibilityState==="hidden"){FOCUS.hiddenAt=Date.now();return;}
+  requestWakeLock();
+  if(FOCUS.hiddenAt){
+    var away=Math.round((Date.now()-FOCUS.hiddenAt)/1000);FOCUS.hiddenAt=0;
+    if(away>=FOCUS_GRACE_SEC&&!FOCUS.withered){FOCUS.withered=true;showToast("🥀 Tu planta se ha marchitado: saliste "+away+" s de la app");}
+    renderFocusPlant();
+  }
+});
+function renderFocusPlant(){
+  var el=$("focusPlant"); if(!el)return;
+  if(!focusActive()){el.classList.add("hidden");return;}
+  var min=studyTimer.running?elapsedMin():Math.floor((POMO_FOCUS_MIN*60-pomo.secondsLeft)/60);
+  var st=FOCUS.withered?["🥀","Marchita. Termina la sesión y vuelve a intentarlo."]
+    :min<5?["🌱","Brote · no salgas de la app"]:min<15?["🌿","Creciendo · "+min+" min"]:min<30?["🪴","Casi lista · "+min+" min"]:["🌳","¡Árbol completo! · "+min+" min"];
+  el.classList.remove("hidden");
+  el.innerHTML='<span class="em">'+st[0]+'</span>'+st[1];
 }
 /* ===== MODO POMODORO ===== */
+// Los pomodoros no van ligados a una biblioteca: no cuentan para "favorita" ni sugerencias.
+const NO_BIB="Sin biblioteca";
 const POMO_FOCUS_MIN=25, POMO_BREAK_MIN=5;
 var pomo={running:false,phase:"focus",secondsLeft:POMO_FOCUS_MIN*60,cycles:0,tick:null};
 function pomoToggle(){
@@ -2137,7 +2636,11 @@ function pomoToggle(){
     pomo.running=false; if(pomo.tick){clearInterval(pomo.tick);pomo.tick=null;}
     renderPomodoro();return;
   }
+  if(studyTimer.running){showToast("Ya tienes el cronómetro en marcha: termínalo antes de usar el Pomodoro");return;}
   pomo.running=true;
+  // Cuenta por hora de fin, no por ticks: con la pestaña en segundo plano los intervalos se ralentizan.
+  pomo.endAt=Date.now()+pomo.secondsLeft*1000;
+  if(pomo.phase==="focus"&&pomo.secondsLeft===POMO_FOCUS_MIN*60)focusStart();
   if(pomo.tick)clearInterval(pomo.tick);
   pomo.tick=setInterval(pomoTick,1000);
   renderPomodoro();
@@ -2148,16 +2651,19 @@ function pomoReset(){
   renderPomodoro();
 }
 function pomoTick(){
-  pomo.secondsLeft--;
+  pomo.secondsLeft=Math.max(0,Math.ceil((pomo.endAt-Date.now())/1000));
   if(pomo.secondsLeft<=0){
     if(pomo.phase==="focus"){
       pomo.cycles++;
-      var bibIdx=studyTimer.bibIndex!=null?studyTimer.bibIndex:0;
-      var saved={id:genId(),date:new Date().toISOString().slice(0,10),min:POMO_FOCUS_MIN,sec:POMO_FOCUS_MIN*60,
-        bib:BIBLIOTECAS[bibIdx].nombre,ts:Date.now()-POMO_FOCUS_MIN*60000,verif:false,prod:null,note:"Pomodoro",offering:DATA.offeringText||""};
+      // Si el pomodoro termina con la app oculta, el modo foco no llegó a ver la vuelta: se marchita aquí.
+      if(DATA.focusMode&&(document.visibilityState==="hidden"||(FOCUS.hiddenAt&&Date.now()-FOCUS.hiddenAt>=FOCUS_GRACE_SEC*1000)))FOCUS.withered=true;
+      FOCUS.hiddenAt=0;
+      var saved={id:genId(),date:ymd(),min:POMO_FOCUS_MIN,sec:POMO_FOCUS_MIN*60,
+        bib:NO_BIB,ts:Date.now()-POMO_FOCUS_MIN*60000,verif:false,prod:null,note:"Pomodoro",offering:(DATA.extras&&DATA.offeringText)||"",subject:DATA.currentSubject||null,focus:focusResult()};
       DATA.sessions.push(saved);saveUserData();socialShareSession(saved);
       showToast("🍅 Pomodoro completado ("+POMO_FOCUS_MIN+" min). ¡A descansar!");
-      pomo.phase="break";pomo.secondsLeft=POMO_BREAK_MIN*60;
+      pomo.phase="break";pomo.secondsLeft=POMO_BREAK_MIN*60;pomo.endAt=Date.now()+pomo.secondsLeft*1000;
+      releaseWakeLock();
       renderProfile();
     }else{
       showToast("⏰ Descanso terminado. ¿Otro pomodoro?");
@@ -2173,6 +2679,7 @@ function renderPomodoro(){
   t.textContent=String(mm).padStart(2,"0")+":"+String(ss).padStart(2,"0");
   var lbl=$("pomoPhase"); if(lbl)lbl.textContent=pomo.phase==="focus"?"Concéntrate":"Descanso";
   var cyc=$("pomoCycles"); if(cyc)cyc.textContent=pomo.cycles;
+  renderFocusPlant();
   var btn=$("btnPomoToggle"); if(btn)btn.textContent=pomo.running?"⏸ Pausar":"▶ Empezar";
 }
 const SHELF_COLORS=["#6c5ce7","#00d2d3","#f59e0b","#22c55e","#e17055","#0984e3","#e84393","#00b894"];
@@ -2209,12 +2716,13 @@ function renderSessionFeed(){
       var who=socialNameById(s.owner_id);
       var stars=s.prod?'<span class="fstars">'+"★".repeat(s.prod)+"☆".repeat(5-s.prod)+'</span>':'';
       var n=SOCIAL.kudosCounts[s.local_id]||0, ya=!!SOCIAL.kudosByMe[s.local_id];
-      return '<div class="feed-item"><div class="fhead"><div class="fplace">'+escapeHTML(who)+' · '+escapeHTML(lugar)+(s.verif?' <span class="fverif" title="Check-in verificado">✓</span>':'')+'</div><div class="fdate">'+fmtFeedDate(s.date)+'</div></div>'+
+      var extra=(s.subject?' · '+escapeHTML(s.subject):'')+(s.focus==="ok"?' <span title="Sesión de foco completada">🌳</span>':(s.focus==="withered"?' <span title="Salió de la app durante el modo foco">🥀</span>':''));
+      return '<div class="feed-item"><div class="fhead"><div class="fplace">'+escapeHTML(who)+' · '+escapeHTML(lugar)+extra+(s.verif?' <span class="fverif" title="Check-in verificado">✓</span>':'')+'</div><div class="fdate">'+fmtFeedDate(s.date)+'</div></div>'+
         '<div class="fdur">'+hMin(s.minutes)+'</div>'+
         '<div class="fmeta">'+stars+'</div>'+
         (s.note?'<div class="fnote">"'+escapeHTML(s.note)+'"</div>':'')+
         (s.offering?'<div class="foffer">🙏 Ofrecido por '+escapeHTML(s.offering)+'</div>':'')+
-        '<button class="kudos-btn'+(ya?" on":"")+'" '+(ya?"disabled":"")+' onclick="giveKudos(\''+escapeHTML(s.local_id)+'\',\''+escapeHTML(s.owner_id)+'\')">👏 '+(n?n:"Dar kudos")+'</button>'+
+        '<button class="kudos-btn'+(ya?" on":"")+'" '+(ya?"disabled":"")+' onclick="giveKudos('+jsArg(s.local_id)+','+jsArg(s.owner_id)+')">👏 '+(n?n:"Dar kudos")+'</button>'+
         '</div>';
     }).join("");
     return;
@@ -2231,18 +2739,23 @@ function renderSessionFeed(){
     var lugar=s.bib.replace("Biblioteca ","").replace("Pública ","");
     var valoracion=s.prod?("★".repeat(s.prod)+"☆".repeat(5-s.prod)):"—";
     var prBanner=(idx in prAt)?('<div class="pr-banner"><span class="pr-badge">RP</span>¡Tu sesión más larga hasta ahora!'+(prAt[idx]?'<span class="pr-delta">▲ +'+hMin(prAt[idx])+'</span>':'')+'</div>'):'';
-    return '<div class="feed-item"><div class="fhead"><div class="fplace">'+escapeHTML(lugar)+(s.verif?' <span class="fverif" title="Check-in verificado">✓</span>':'')+'</div><div class="fdate">'+fmtFeedDate(s.date)+'</div></div>'+
+    var extra=(s.subject?' · '+escapeHTML(s.subject):'')+(s.focus==="ok"?' <span title="Sesión de foco completada">🌳</span>':(s.focus==="withered"?' <span title="Saliste de la app durante el modo foco">🥀</span>':''));
+    return '<div class="feed-item"><div class="fhead"><div class="fplace">'+escapeHTML(lugar)+extra+(s.verif?' <span class="fverif" title="Check-in verificado">✓</span>':'')+'</div><div class="fdate">'+fmtFeedDate(s.date)+'</div></div>'+
       '<div class="fstats"><div class="fstat"><small>Duración</small><b>'+hMin(s.min)+'</b></div><div class="fstat"><small>Valoración</small><b class="fstars">'+valoracion+'</b></div></div>'+
       prBanner+
+      '<button class="linkbtn feed-edit" onclick="editarSesion('+idx+')">Editar</button>'+
       (s.note?'<div class="fnote">"'+escapeHTML(s.note)+'"</div>':'')+
       (s.offering?'<div class="foffer">🙏 Ofrecido por '+escapeHTML(s.offering)+'</div>':'')+
       '</div>';
   }).join("");
 }
+// Fecha local AAAA-MM-DD. toISOString() da la fecha UTC: entre las 0:00 y las 2:00 en España
+// contaba lo estudiado como del día anterior (y podía romper rachas).
+function ymd(d){d=d||new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
 function hMin(min){var hh=Math.floor(min/60),mm=min%60;return hh+"h "+mm+"m";}
 function weekMinutes(){
   var now=new Date();var monday=new Date(now);var day=(now.getDay()+6)%7;monday.setDate(now.getDate()-day);monday.setHours(0,0,0,0);
-  var sum=0;DATA.sessions.forEach(function(s){var d=new Date(s.date);if(d>=monday)sum+=s.min;});
+  var sum=0;DATA.sessions.forEach(function(s){if(s.date>=ymd(monday))sum+=s.min;});
   if(studyTimer.running&&studyTimer.start>=monday.getTime())sum+=elapsedMin();
   return sum;
 }
@@ -2250,11 +2763,11 @@ function streakDays(){
   if(!DATA.sessions.length&&!(DATA.usedFreezeDates&&DATA.usedFreezeDates.length))return studyTimer.running?1:0;
   var days={};DATA.sessions.forEach(function(s){days[s.date]=true;});
   (DATA.usedFreezeDates||[]).forEach(function(dt){days[dt]=true;});
-  if(studyTimer.running)days[new Date().toISOString().slice(0,10)]=true;
+  if(studyTimer.running)days[ymd()]=true;
   var streak=0;var d=new Date();
-  for(;;){var k=d.toISOString().slice(0,10);if(days[k]){streak++;d.setDate(d.getDate()-1);}else{
+  for(;;){var k=ymd(d);if(days[k]){streak++;d.setDate(d.getDate()-1);}else{
     // permitir que hoy aún no tenga sesión sin romper la racha
-    if(streak===0&&k===new Date().toISOString().slice(0,10)){d.setDate(d.getDate()-1);continue;}
+    if(streak===0&&k===ymd()){d.setDate(d.getDate()-1);continue;}
     break;}}
   return streak;
 }
@@ -2262,9 +2775,11 @@ function checkStreakFreezes(){
   if(!DATA||!DATA.sessions.length)return;
   var realDays={};DATA.sessions.forEach(function(s){realDays[s.date]=true;});
   var realStreak=0;var d=new Date();
-  for(;;){var k=d.toISOString().slice(0,10);if(realDays[k]){realStreak++;d.setDate(d.getDate()-1);}else{
-    if(realStreak===0&&k===new Date().toISOString().slice(0,10)){d.setDate(d.getDate()-1);continue;}
+  for(;;){var k=ymd(d);if(realDays[k]){realStreak++;d.setDate(d.getDate()-1);}else{
+    if(realStreak===0&&k===ymd()){d.setDate(d.getDate()-1);continue;}
     break;}}
+  // Si la racha se rompió, el contador de "congelador ganado" vuelve a empezar con ella.
+  if(realStreak<(DATA.lastFreezeEarnedAtStreak||0))DATA.lastFreezeEarnedAtStreak=Math.floor(realStreak/7)*7;
   var earnedAt=Math.floor(realStreak/7)*7;
   if(earnedAt>0&&earnedAt>DATA.lastFreezeEarnedAtStreak&&DATA.streakFreezes<3){
     DATA.streakFreezes=Math.min(3,DATA.streakFreezes+1);
@@ -2272,15 +2787,15 @@ function checkStreakFreezes(){
     saveUserData();
     showToast("🧊 Has ganado un congelador de racha (racha de "+earnedAt+" días)");
   }
-  var ayer=new Date();ayer.setDate(ayer.getDate()-1);var ayerK=ayer.toISOString().slice(0,10);
-  var anteayer=new Date();anteayer.setDate(anteayer.getDate()-2);var anteayerK=anteayer.toISOString().slice(0,10);
-  var hoyK=new Date().toISOString().slice(0,10);
-  var yaUsado=(DATA.usedFreezeDates||[]).indexOf(ayerK)!==-1;
-  var anteayerCubierto=realDays[anteayerK]||(DATA.usedFreezeDates||[]).indexOf(anteayerK)!==-1;
-  if(!realDays[ayerK]&&!yaUsado&&DATA.streakFreezes>0&&anteayerCubierto&&ayerK!==hoyK){
-    DATA.streakFreezes--; if(!DATA.usedFreezeDates)DATA.usedFreezeDates=[]; DATA.usedFreezeDates.push(ayerK);
+  // Hueco de uno o más días sin estudiar justo antes de hoy: se cubre si hay congeladores para todos.
+  var used=DATA.usedFreezeDates=DATA.usedFreezeDates||[];
+  var cubierto=function(k){return realDays[k]||used.indexOf(k)!==-1;};
+  var gap=[],dd=new Date();dd.setDate(dd.getDate()-1);
+  while(!cubierto(ymd(dd))&&gap.length<=DATA.streakFreezes){gap.push(ymd(dd));dd.setDate(dd.getDate()-1);}
+  if(gap.length>0&&gap.length<=DATA.streakFreezes&&cubierto(ymd(dd))){
+    DATA.streakFreezes-=gap.length; gap.forEach(function(k){used.push(k);});
     saveUserData();
-    showToast("🧊 Se usó un congelador de racha para no perderla (no estudiaste ayer)");
+    showToast("🧊 Se "+(gap.length===1?"usó un congelador":"usaron "+gap.length+" congeladores")+" para no perder tu racha");
   }
 }
 function openGoalModal(){
@@ -2295,7 +2810,7 @@ function openGoalModal(){
         document.querySelectorAll("#goalPeriodSeg button").forEach(function(x){x.classList.remove("on");});
         b.classList.add("on");selPeriod=b.dataset.p;});});
       $("goalSave").addEventListener("click",function(){
-        var v=parseFloat($("goalH").value)||0;DATA.goalMin=Math.max(30,Math.round(v*60));DATA.goalPeriod=selPeriod;saveUserData();closeModal();renderStudy();
+        var v=parseFloat($("goalH").value)||0;DATA.goalMin=Math.max(30,Math.round(v*60));DATA.goalPeriod=selPeriod;DATA.goalCustom=true;saveUserData();closeModal();renderStudy();
       });
     });
 }
@@ -2312,7 +2827,7 @@ function renderCal(){
   DOW.forEach(function(d){var e=document.createElement("div");e.className="cal-dow";e.textContent=d;grid.appendChild(e);});
   var first=new Date(y,m,1);var startDow=(first.getDay()+6)%7;
   var daysInMonth=new Date(y,m+1,0).getDate();
-  var todayStr=new Date().toISOString().slice(0,10);
+  var todayStr=ymd();
   for(var i=0;i<startDow;i++){var c=document.createElement("div");c.className="cal-cell empty";grid.appendChild(c);}
   for(var dn=1;dn<=daysInMonth;dn++){
     var key=y+"-"+String(m+1).padStart(2,"0")+"-"+String(dn).padStart(2,"0");
@@ -2340,7 +2855,7 @@ function openDayModal(key){
     '<div style="border-top:1px solid rgba(148,163,184,.3);margin:16px 0 14px"></div>'+
     '<div class="seg" id="evType"><button data-t="examen" class="on">Examen</button><button data-t="tarea">Tarea</button><button data-t="otro">Otro</button></div>'+
     '<div class="field"><input type="text" id="evTitle" placeholder="Ej: Examen de Cálculo II"></div>'+
-    '<label id="evShareWrap" style="display:flex;align-items:center;gap:9px;margin:-2px 0 14px;font-size:13px;color:var(--suave);font-weight:700"><input type="checkbox" id="evShareExam" checked> Compartir con mis amigos (podrán rezar por él)</label>'+
+    '<label id="evShareWrap" style="display:flex;align-items:center;gap:9px;margin:-2px 0 14px;font-size:13px;color:var(--suave);font-weight:700"><input type="checkbox" id="evShareExam"> Compartir con mis amigos (podrán rezar por él)</label>'+
     '<button class="btn" id="evAdd">Añadir</button>',
     function(){
       var selType="examen";
@@ -2376,7 +2891,7 @@ function renderProfile(){
   $("pSessions").textContent=DATA.sessions.length;
   $("pLoans").textContent=DATA.loans.filter(function(l){return !l.returned;}).length;
   // favorita
-  var counts={};DATA.sessions.forEach(function(s){counts[s.bib]=(counts[s.bib]||0)+s.min;});
+  var counts={};DATA.sessions.forEach(function(s){if(s.bib!==NO_BIB)counts[s.bib]=(counts[s.bib]||0)+s.min;});
   var fav="—",best=0;for(var k in counts){if(counts[k]>best){best=counts[k];fav=k;}}
   $("pFav").textContent=fav==="—"?"—":fav.replace("Biblioteca ","").replace("Pública ","").split("·")[0].trim();
   $("pFav").style.fontSize=fav==="—"?"28px":"15px";
@@ -2399,8 +2914,8 @@ function renderWeekBars(){
   var now=new Date();var day=(now.getDay()+6)%7;
   var monday=new Date(now);monday.setDate(now.getDate()-day);monday.setHours(0,0,0,0);
   var labels=["L","M","X","J","V","S","D"];var mins=[0,0,0,0,0,0,0];
-  DATA.sessions.forEach(function(s){var d=new Date(s.date);var diff=Math.floor((d-monday)/86400000);if(diff>=0&&diff<7)mins[diff]+=s.min;});
-  if(studyTimer.running){var diff=Math.floor((new Date(new Date().toISOString().slice(0,10))-monday)/86400000);if(diff>=0&&diff<7)mins[diff]+=elapsedMin();}
+  DATA.sessions.forEach(function(s){var d=new Date(s.date+"T00:00:00");var diff=Math.round((d-monday)/86400000);if(diff>=0&&diff<7)mins[diff]+=s.min;});
+  if(studyTimer.running){var diff=Math.round((new Date(ymd()+"T00:00:00")-monday)/86400000);if(diff>=0&&diff<7)mins[diff]+=elapsedMin();}
   var max=Math.max(60,Math.max.apply(null,mins));
   for(var i=0;i<7;i++){
     var pct=Math.round(mins[i]/max*100);
@@ -2412,6 +2927,7 @@ function renderWeekBars(){
 function computeBestStreak(){
   if(!DATA.sessions.length)return 0;
   var days={};DATA.sessions.forEach(function(s){days[s.date]=true;});
+  (DATA.usedFreezeDates||[]).forEach(function(k){days[k]=true;});
   var dates=Object.keys(days).sort();
   var best=1,cur=1;
   for(var i=1;i<dates.length;i++){
@@ -2483,7 +2999,7 @@ function openLoanModal(){
   openModal('<h3>Nuevo préstamo</h3><div class="sub">Registra un libro que has cogido prestado</div>'+
     '<div class="field"><label>Título del libro</label><input type="text" id="lnTitle" placeholder="Ej: Cien años de soledad"></div>'+
     '<div class="field"><label>Biblioteca</label><select id="lnBib">'+opts+'</select></div>'+
-    '<div class="field"><label>Fecha de devolución</label><input type="date" id="lnDue" value="'+defDue.toISOString().slice(0,10)+'"></div>'+
+    '<div class="field"><label>Fecha de devolución</label><input type="date" id="lnDue" value="'+ymd(defDue)+'"></div>'+
     '<button class="btn" id="lnAdd">Guardar préstamo</button>',
     function(){ $("lnAdd").addEventListener("click",function(){
       var t=$("lnTitle").value.trim();if(!t)return;
@@ -2507,6 +3023,9 @@ function showToast(msg){
   document.body.appendChild(t);
   setTimeout(function(){t.style.transition="opacity .4s";t.style.opacity="0";setTimeout(function(){t.remove();},400);},2200);
 }
+// Argumento seguro para un onclick="...": literal JS (JSON) escapado para atributo HTML.
+// escapeHTML solo no basta: el navegador decodifica &#39; antes de ejecutar el handler.
+function jsArg(s){return escapeHTML(JSON.stringify(String(s==null?"":s)));}
 function escapeHTML(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 
 /* ===================== EVENTOS ACADÉMICOS ===================== */
@@ -2565,7 +3084,7 @@ function renderEvents(){
 }
 function openEventModal(){
   var tipos=TIPOS_EVT.map(function(t,i){return '<button data-t="'+t.v+'"'+(i===0?' class="on"':'')+'>'+t.l+'</button>';}).join("");
-  var hoy=new Date().toISOString().slice(0,10);
+  var hoy=ymd();
   openModal('<h3>Añadir evento</h3><div class="sub">Guárdalo en tu agenda. Aparecerá también en tu calendario y tus avisos.</div>'+
     '<div class="seg" id="evtType" style="flex-wrap:wrap">'+tipos+'</div>'+
     '<div class="field"><label>Título</label><input type="text" id="evtTitle" placeholder="Ej: Conferencia sobre IA y sociedad"></div>'+
@@ -2573,7 +3092,7 @@ function openEventModal(){
     '<div class="field"><label>Hora (opcional)</label><input type="time" id="evtTime"></div>'+
     '<div class="field"><label>Lugar (opcional)</label><input type="text" id="evtPlace" placeholder="Ej: Aula Magna UPNA"></div>'+
     '<div class="field"><label>Enlace (opcional)</label><input type="url" id="evtUrl" placeholder="https://…"></div>'+
-    '<label style="display:flex;align-items:center;gap:9px;margin:-2px 0 14px;font-size:13px;color:var(--suave);font-weight:700"><input type="checkbox" id="evtShare" checked> Compartir con mis amigos aceptados</label>'+
+    '<label style="display:flex;align-items:center;gap:9px;margin:-2px 0 14px;font-size:13px;color:var(--suave);font-weight:700"><input type="checkbox" id="evtShare"> Compartir con mis amigos aceptados</label>'+
     '<button class="btn" id="evtSave">Guardar evento</button>',
     function(){
       var selType="charla";
@@ -2615,6 +3134,98 @@ function minutosHastaCierre(b){
   for(var k=0;k<tr.length;k++){ if(m>=tr[k][0]&&m<tr[k][1]) return tr[k][1]-m; }
   return -1; // cerrada
 }
+// "Abierta · cierra a las 21:00" / "Cerrada · abre mañana a las 8:30"
+function proximaApertura(b){
+  var now=new Date(),m=now.getHours()*60+now.getMinutes(),cal=horarioVigente(b);
+  for(var dd=0;dd<7;dd++){
+    var day=(now.getDay()+dd)%7,tr=cal[day]||[];
+    for(var k=0;k<tr.length;k++){if(dd>0||tr[k][0]>m)return {dias:dd,min:tr[k][0],day:day};}
+  }
+  return null;
+}
+function estadoTexto(b){
+  var c=minutosHastaCierre(b);
+  if(c>0){var now=new Date(),fin=now.getHours()*60+now.getMinutes()+c;return {abierta:true,txt:"Abierta · cierra a las "+fmtHoras(fin),cierre:c};}
+  var p=proximaApertura(b);
+  if(!p)return {abierta:false,txt:"Cerrada"};
+  var cuando=p.dias===0?"hoy":(p.dias===1?"mañana":"el "+["domingo","lunes","martes","miércoles","jueves","viernes","sábado"][p.day]);
+  return {abierta:false,txt:"Cerrada · abre "+cuando+" a las "+fmtHoras(p.min),prox:p};
+}
+function fmtDist(dm){return dm<1000?Math.round(dm)+" m":(dm/1000).toFixed(1)+" km";}
+// Recomendación: abierta con margen, cerca, con hueco, de acceso libre; tu biblioteca habitual suma.
+// Época de exámenes (aprox.): 15 dic – 10 feb y 10 may – 5 jul. La UPNA cierra su sala al público general.
+function epocaExamenes(d){d=d||new Date();var m=d.getMonth(),dd=d.getDate();
+  return (m===11&&dd>=15)||m===0||(m===1&&dd<=10)||(m===4&&dd>=10)||m===5||(m===6&&dd<=5);}
+function esUNAV(b){return b.nombre.indexOf("Universidad de Navarra")!==-1;}
+function esUPNA(b){return b.nombre.indexOf("UPNA")!==-1;}
+function recomendarBiblioteca(){
+  var up=window.__userPos, hi=bibHabitual(), habitual=hi>=0?BIBLIOTECAS[hi].nombre:null;
+  var perfil=DATA&&DATA.perfil, examenes=epocaExamenes();
+  var cands=[];
+  BIBLIOTECAS.forEach(function(b,i){
+    var c=minutosHastaCierre(b); if(c<30)return;
+    var o=occSummary(i), dist=up?distMetros(up.lat,up.lon,b.lat,b.lon):null;
+    var score=(dist!=null?dist/1000:0);
+    if(o&&o.level==="llena")score+=3; else if(o&&o.level==="media")score+=1; else if(o&&o.level==="libre")score-=.5;
+    if(b.acceso&&b.acceso.tipo==="restringido"&&!(perfil==="unav"&&esUNAV(b)))score+=2.5;
+    if(examenes&&esUPNA(b)&&perfil!=="upna")score+=4;
+    if(c<75)score+=1.5;
+    if(b.nombre===habitual)score-=1;
+    if(dist==null)score-=Math.min(c,600)/300; // sin ubicación: mejor la que cierra más tarde
+    cands.push({i:i,b:b,score:score,dist:dist,occ:o,cierre:c,habitual:b.nombre===habitual});
+  });
+  cands.sort(function(a,b){return a.score-b.score;});
+  return cands;
+}
+function cortoNombre(n){
+  n=n.replace(/^Biblioteca Pública (de la |del |de )?/,"");
+  if(n.indexOf("Biblioteca ")===0&&n!=="Biblioteca de Navarra")n=n.slice(11);
+  return n;
+}
+function renderNowCard(){
+  var el=$("nowCard"); if(!el)return;
+  if(!$("libPanel").classList.contains("hidden")){el.classList.add("hidden");return;}
+  el.classList.remove("hidden");
+  var cands=recomendarBiblioteca(), html;
+  if(!cands.length){
+    // abiertas pero cerrando en menos de 30 min: avisar, no decir "todas cerradas"
+    var pronto=[];BIBLIOTECAS.forEach(function(b,i){var c=minutosHastaCierre(b);if(c>0)pronto.push({i:i,c:c});});
+    if(pronto.length){
+      pronto.sort(function(a,b){return b.c-a.c;});var u=BIBLIOTECAS[pronto[0].i];
+      el.innerHTML='<div class="nc-kicker">Ahora mismo</div><div class="nc-title">Todas cierran en menos de 30 min</div>'+
+        '<div class="nc-why">La que más tarde cierra: <b>'+escapeHTML(cortoNombre(u.nombre))+'</b> · '+escapeHTML(estadoTexto(u).txt.replace("Abierta · ",""))+'</div>'+
+        '<div class="nc-actions"><button class="btn sm ghost" onclick="window.__selBib('+pronto[0].i+')">Ver en el mapa</button><button class="btn sm ghost" onclick="abrirLista(false)">Ver todas</button></div>';
+      return;
+    }
+    var prox=null;BIBLIOTECAS.forEach(function(b,i){var p=proximaApertura(b);if(p&&(!prox||p.dias*1440+p.min<prox.p.dias*1440+prox.p.min))prox={i:i,p:p};});
+    html='<div class="nc-kicker">Ahora mismo</div><div class="nc-title">Todas las bibliotecas están cerradas</div>';
+    if(prox){var t=estadoTexto(BIBLIOTECAS[prox.i]);html+='<div class="nc-why">La primera en abrir: <b>'+escapeHTML(cortoNombre(BIBLIOTECAS[prox.i].nombre))+'</b> · '+escapeHTML(t.txt.replace("Cerrada · ",""))+'</div>'+
+      '<div class="nc-actions"><button class="btn sm ghost" onclick="window.__selBib('+prox.i+')">Ver en el mapa</button><button class="btn sm ghost" onclick="abrirLista(false)">Ver todas</button></div>';}
+    el.innerHTML=html;return;
+  }
+  var r=cands[0], t=estadoTexto(r.b), why=[];
+  if(r.dist!=null)why.push("📍 "+fmtDist(r.dist));
+  why.push(t.txt.replace("Abierta · ",""));
+  why.push(r.occ?(r.occ.info.emoji+" "+r.occ.info.label.toLowerCase()):"⚪ sin datos de afluencia");
+  if(r.habitual)why.push("⭐ tu habitual");
+  html='<div class="nc-kicker">Te recomiendo ahora'+(epocaExamenes()?' · <span class="nc-exam">época de exámenes</span>':'')+'</div>'+
+    '<div class="nc-title" onclick="window.__selBib('+r.i+')">'+escapeHTML(cortoNombre(r.b.nombre))+'</div>'+
+    '<div class="nc-why">'+why.map(escapeHTML).join(" · ")+'</div>'+
+    '<div class="nc-actions"><button class="btn sm" onclick="startStudyAt('+r.i+')">▶ Estudiar aquí</button>'+
+    '<button class="btn sm ghost" onclick="window.__selBib('+r.i+')">Ver</button>'+
+    '<button class="btn sm ghost" onclick="abrirLista()">'+(cands.length>1?"Otras "+(cands.length-1):"Ver todas")+'</button></div>';
+  if(!window.__userPos)html+='<button class="linkbtn nc-loc" onclick="locateMe()">📍 Usa tu ubicación para recomendarte la más cercana</button>';
+  el.innerHTML=html;
+}
+function abrirLista(soloAbiertas){
+  // "Otras" abre la lista ya filtrada; con todo cerrado (soloAbiertas=false) se ven todas
+  LIST_FILTERS.abiertas=soloAbiertas!==false;
+  if(window.__userPos)LIST_FILTERS.cerca=true;
+  saveJSON("bpna_list_filters",LIST_FILTERS);
+  $("libPanel").classList.remove("hidden");$("libPanel").classList.remove("collapsed");
+  buildList();
+}
+function cerrarLista(){$("libPanel").classList.add("hidden");renderNowCard();}
 function abrirComparador(){
   var panel=$("nowPanel");
   panel.classList.remove("hidden");
@@ -2689,7 +3300,7 @@ function calcularAvisos(){
     });
   }
   // bibliotecas que cierran pronto (solo si tienes sesión activa)
-  if(studyTimer.running){
+  if(studyTimer.running&&studyTimer.bibIndex>=0){
     var cierre=minutosHastaCierre(BIBLIOTECAS[studyTimer.bibIndex]);
     if(cierre>0&&cierre<=30){
       avisos.push({type:"close",icon:"⏰",title:BIBLIOTECAS[studyTimer.bibIndex].nombre.replace("Biblioteca ","")+" cierra pronto",sub:"En "+cierre+" min",dias:0});
@@ -2730,7 +3341,7 @@ function pedirPermisoNotif(){
 }
 function lanzarNotifsDelDia(){
   if(!("Notification" in window)||Notification.permission!=="granted")return;
-  var hoyKey=new Date().toISOString().slice(0,10);
+  var hoyKey=ymd();
   if(Brain.getNotifDay(CURRENT)===hoyKey)return; // una vez al día
   var avisos=calcularAvisos().filter(function(a){return a.dias<=1;});
   if(avisos.length){
@@ -2741,7 +3352,7 @@ function lanzarNotifsDelDia(){
 
 /* ===================== COMPARTIR ESTADO ===================== */
 function compartirEstado(){
-  if(!studyTimer.running){showToast("Empieza una sesión para compartir dónde estudias");return;}
+  if(!studyTimer.running||studyTimer.bibIndex<0){showToast("Empieza una sesión en una biblioteca para compartir dónde estudias");return;}
   var b=BIBLIOTECAS[studyTimer.bibIndex];
   var users=Brain.getUsers(); var nombre=(users[CURRENT]&&users[CURRENT].name)||"Alguien";
   var cierre=minutosHastaCierre(b);
@@ -2769,11 +3380,11 @@ function comprobarEnlaceCompartido(){
     var code=hash.slice(7);
     var payload=JSON.parse(decodeURIComponent(escape(atob(code))));
     var b=BIBLIOTECAS[payload.b]; if(!b)return;
-    var mins=Math.round((Date.now()-payload.t)/60000);
+    var mins=Math.round((Date.now()-Number(payload.t))/60000); if(!isFinite(mins))return;
     var hace = mins<1?"hace un momento":(mins<60?"hace "+mins+" min":"hace "+Math.floor(mins/60)+" h");
     var banner=$("friendBanner");
     banner.innerHTML='<div class="fav">'+escapeHTML((payload.n||"?").charAt(0).toUpperCase())+'</div>'+
-      '<div class="ft"><b>'+escapeHTML(payload.n||"Alguien")+' está estudiando</b><small>en '+escapeHTML(b.nombre.replace("Biblioteca ",""))+' · '+hace+(payload.h?" · hasta ~"+payload.h:"")+'</small></div>'+
+      '<div class="ft"><b>'+escapeHTML(payload.n||"Alguien")+' está estudiando</b><small>en '+escapeHTML(b.nombre.replace("Biblioteca ",""))+' · '+hace+(/^\d{1,2}:\d{2}$/.test(String(payload.h||""))?" · hasta ~"+payload.h:"")+'</small></div>'+
       '<button class="nowclose" id="friendClose" style="margin-left:auto">×</button>';
     banner.classList.remove("hidden");
     setTimeout(function(){
@@ -2799,18 +3410,18 @@ function renderSugerencia(){
   ses.forEach(function(s){
     var hh=new Date(s.ts).getHours();
     if(hh<14)franjas.manana+=s.min; else if(hh<20)franjas.tarde+=s.min; else franjas.noche+=s.min;
-    porBib[s.bib]=(porBib[s.bib]||0)+s.min;
+    if(s.bib!==NO_BIB)porBib[s.bib]=(porBib[s.bib]||0)+s.min;
   });
   var mejorFranja=Object.keys(franjas).sort(function(a,b){return franjas[b]-franjas[a];})[0];
   var franjaTxt={manana:"por la mañana",tarde:"por la tarde",noche:"por la noche"}[mejorFranja];
   var mejorBib=Object.keys(porBib).sort(function(a,b){return porBib[b]-porBib[a];})[0];
   // productividad media por biblioteca (solo sesiones valoradas)
   var prodBib={};
-  ses.forEach(function(s){ if(s.prod){ if(!prodBib[s.bib])prodBib[s.bib]={sum:0,n:0}; prodBib[s.bib].sum+=s.prod; prodBib[s.bib].n++; } });
+  ses.forEach(function(s){ if(s.prod&&s.bib!==NO_BIB){ if(!prodBib[s.bib])prodBib[s.bib]={sum:0,n:0}; prodBib[s.bib].sum+=s.prod; prodBib[s.bib].n++; } });
   var mejorProd=null,mejorMedia=0;
   for(var k in prodBib){ var media=prodBib[k].sum/prodBib[k].n; if(media>mejorMedia){mejorMedia=media;mejorProd=k;} }
   var html='<div style="font-size:14px;line-height:1.6">';
-  html+='Sueles rendir más cuando estudias <b>'+franjaTxt+'</b>, y donde más horas acumulas es en <b>'+escapeHTML(mejorBib.replace("Biblioteca ",""))+'</b>.';
+  html+='Sueles rendir más cuando estudias <b>'+franjaTxt+'</b>'+(mejorBib?', y donde más horas acumulas es en <b>'+escapeHTML(mejorBib.replace("Biblioteca ",""))+'</b>':'')+'.';
   if(mejorProd){ html+='<br>Según tus propias valoraciones, donde mejor te concentras es en <b>'+escapeHTML(mejorProd.replace("Biblioteca ",""))+'</b> ('+mejorMedia.toFixed(1)+'★ de media).'; }
   html+='</div><div style="font-size:11.5px;color:var(--suave);margin-top:10px;font-style:italic">Basado solo en tus '+ses.length+' sesiones registradas.</div>';
   card.innerHTML=html;
@@ -2829,6 +3440,13 @@ window.addEventListener("DOMContentLoaded",function(){
 
   document.querySelectorAll(".dock button").forEach(function(b){b.addEventListener("click",function(){goView(b.dataset.view);});});
   $("btnStart").addEventListener("click",startStudyCurrent);
+  initSubjectUI();
+  $("chkExtras").addEventListener("change",function(){DATA.extras=this.checked;saveUserData();applyExtras();});
+  document.querySelectorAll("#lbPeriodSeg button").forEach(function(b){b.addEventListener("click",function(){
+    lbPeriod=b.dataset.p;
+    document.querySelectorAll("#lbPeriodSeg button").forEach(function(x){x.classList.toggle("on",x===b);});
+    computeLeaderboard();renderLeaderboard();
+  });});
   $("btnStop").addEventListener("click",function(){stopStudy(false);});
   $("btnGoal").addEventListener("click",openGoalModal);
   $("miniStop").addEventListener("click",function(){stopStudy(false);});
@@ -2862,12 +3480,14 @@ window.addEventListener("DOMContentLoaded",function(){
   $("btnAddEvent").addEventListener("click",openEventModal);
   $("btnPostBlog").addEventListener("click",postBlog);
   $("btnLogout").addEventListener("click",logout);
+  $("btnDeleteAccount").addEventListener("click",deleteAccount);
+  $("btnRename").addEventListener("click",cambiarNombre);
+  $("btnFeedback").addEventListener("click",enviarSugerencia);
+  $("btnShareWeek").addEventListener("click",compartirSemana);
 
   // nuevas funciones
-  $("panelHead").addEventListener("click",function(){$("libPanel").classList.toggle("collapsed");});
-  $("fabNow").addEventListener("click",abrirComparador);
+  $("panelClose").addEventListener("click",function(e){e.stopPropagation();cerrarLista();});
   $("btnLocate").addEventListener("click",locateMe);
-  $("nowClose").addEventListener("click",function(){$("nowPanel").classList.add("hidden");});
   $("bellBtn").addEventListener("click",abrirAvisos);
   $("miniShare").addEventListener("click",compartirEstado);
   $("btnNotifPerm").addEventListener("click",pedirPermisoNotif);

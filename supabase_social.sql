@@ -50,7 +50,6 @@ create table if not exists presence (
 );
 alter table presence enable row level security;
 drop policy if exists "presence select all" on presence;
-create policy "presence select all" on presence for select using (true);
 drop policy if exists "presence insert own" on presence;
 create policy "presence insert own" on presence for insert with check (auth.uid() = user_id);
 drop policy if exists "presence update own" on presence;
@@ -72,7 +71,6 @@ create table if not exists shared_events (
 );
 alter table shared_events enable row level security;
 drop policy if exists "shared_events select all" on shared_events;
-create policy "shared_events select all" on shared_events for select using (true);
 drop policy if exists "shared_events insert own" on shared_events;
 create policy "shared_events insert own" on shared_events for insert with check (auth.uid() = owner_id);
 drop policy if exists "shared_events update own" on shared_events;
@@ -109,7 +107,6 @@ create table if not exists study_rooms (
 );
 alter table study_rooms enable row level security;
 drop policy if exists "study_rooms select all" on study_rooms;
-create policy "study_rooms select all" on study_rooms for select using (true);
 drop policy if exists "study_rooms insert own" on study_rooms;
 create policy "study_rooms insert own" on study_rooms for insert with check (auth.uid() = owner_id);
 drop policy if exists "study_rooms delete own" on study_rooms;
@@ -148,9 +145,13 @@ create table if not exists shared_sessions (
   unique(owner_id, local_id)
 );
 alter table shared_sessions add column if not exists prod int;
+-- Asignatura estudiada y resultado del modo foco (estilo Forest): 'ok' = planta crecida, 'withered' = marchita
+alter table shared_sessions add column if not exists subject text;
+alter table shared_sessions add column if not exists focus text;
+alter table shared_sessions drop constraint if exists shared_sessions_focus_check;
+alter table shared_sessions add constraint shared_sessions_focus_check check (focus is null or focus in ('ok','withered'));
 alter table shared_sessions enable row level security;
 drop policy if exists "shared_sessions select all" on shared_sessions;
-create policy "shared_sessions select all" on shared_sessions for select using (true);
 drop policy if exists "shared_sessions insert own" on shared_sessions;
 create policy "shared_sessions insert own" on shared_sessions for insert with check (auth.uid() = owner_id);
 drop policy if exists "shared_sessions update own" on shared_sessions;
@@ -169,7 +170,6 @@ create table if not exists kudos (
 );
 alter table kudos enable row level security;
 drop policy if exists "kudos select all" on kudos;
-create policy "kudos select all" on kudos for select using (true);
 
 -- ===== AFLUENCIA DE BIBLIOTECAS (compartida entre todos los usuarios) =====
 create table if not exists occupancy_reports (
@@ -186,3 +186,95 @@ drop policy if exists "occupancy_reports insert own" on occupancy_reports;
 create policy "occupancy_reports insert own" on occupancy_reports for insert with check (auth.uid() = user_id);
 drop policy if exists "kudos insert own" on kudos;
 create policy "kudos insert own" on kudos for insert with check (auth.uid() = giver_id);
+
+-- ===== PRIVACIDAD: solo tú y tus amigos aceptados veis tu presencia, eventos y sesiones =====
+-- Antes estas tablas eran legibles por cualquiera con la clave pública (select using (true)).
+-- Las funciones son "security definer" para poder consultar friendships/presence sin recursión de RLS.
+create or replace function public.are_friends(a uuid, b uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  -- solo responde sobre ti mismo: así nadie puede reconstruir quién es amigo de quién
+  select auth.uid() in (a, b) and exists(select 1 from friendships f where f.status = 'accepted'
+    and ((f.requester_id = a and f.addressee_id = b) or (f.requester_id = b and f.addressee_id = a)));
+$$;
+revoke all on function public.are_friends(uuid, uuid) from public, anon;
+grant execute on function public.are_friends(uuid, uuid) to authenticated;
+create or replace function public.my_room_code() returns text
+language sql stable security definer set search_path = public as $$
+  select room_code from presence where user_id = auth.uid();
+$$;
+revoke all on function public.my_room_code() from public, anon;
+grant execute on function public.my_room_code() to authenticated;
+
+drop policy if exists "presence select all" on presence;
+drop policy if exists "presence select own friends room" on presence;
+-- Tu fila; la de un amigo solo si comparte ubicación; la de quien está en tu misma sala de estudio.
+create policy "presence select own friends room" on presence for select using (
+  auth.uid() = user_id
+  or (sharing and public.are_friends(auth.uid(), user_id))
+  or (room_code is not null and room_code = public.my_room_code())
+);
+
+drop policy if exists "shared_events select all" on shared_events;
+drop policy if exists "shared_events select own friends" on shared_events;
+create policy "shared_events select own friends" on shared_events for select using (
+  auth.uid() = owner_id or public.are_friends(auth.uid(), owner_id)
+);
+
+drop policy if exists "shared_sessions select all" on shared_sessions;
+drop policy if exists "shared_sessions select own friends" on shared_sessions;
+create policy "shared_sessions select own friends" on shared_sessions for select using (
+  auth.uid() = owner_id or public.are_friends(auth.uid(), owner_id)
+);
+
+-- ===== CORREOS PRIVADOS: nadie puede leer el email de otros usuarios desde la app =====
+-- La app ya no guarda el email en profiles (está en auth.users). Se borran los que había y se
+-- limita la lectura a las columnas públicas.
+update profiles set email = null where email is not null;
+revoke select on profiles from anon, authenticated;
+grant select (id, name, friend_code, created_at) on profiles to authenticated;
+
+-- ===== ELIMINAR CUENTA (lo exige Google Play) =====
+-- Borra el usuario de auth.users; todas las tablas cuelgan de profiles con "on delete cascade".
+create or replace function public.delete_my_account() returns void
+language plpgsql security definer set search_path = public, auth as $$
+begin
+  if auth.uid() is null then raise exception 'no autenticado'; end if;
+  delete from auth.users where id = auth.uid();
+end;
+$$;
+revoke all on function public.delete_my_account() from public, anon;
+grant execute on function public.delete_my_account() to authenticated;
+
+-- ===== KUDOS Y SALAS: solo quien participa =====
+drop policy if exists "kudos select all" on kudos;
+drop policy if exists "kudos select involved" on kudos;
+-- Los ves si los diste, si son de tu sesión o si la sesión es de un amigo tuyo.
+create policy "kudos select involved" on kudos for select using (
+  auth.uid() = giver_id or auth.uid() = session_owner_id or public.are_friends(auth.uid(), session_owner_id)
+);
+
+drop policy if exists "study_rooms select all" on study_rooms;
+drop policy if exists "study_rooms select own or member" on study_rooms;
+create policy "study_rooms select own or member" on study_rooms for select using (
+  auth.uid() = owner_id or code = public.my_room_code()
+);
+-- Unirse con código: devuelve la sala solo a quien conoce el código exacto (no se pueden listar todas).
+create or replace function public.join_study_room(p_code text) returns table(code text, name text)
+language sql stable security definer set search_path = public as $$
+  select r.code, r.name from study_rooms r where r.code = upper(trim(p_code)) limit 1;
+$$;
+revoke all on function public.join_study_room(text) from public, anon;
+grant execute on function public.join_study_room(text) to authenticated;
+
+-- ===== BUZÓN DE SUGERENCIAS (beta) =====
+-- Los usuarios solo pueden enviar; se leen desde el panel de Supabase (Table editor → feedback).
+create table if not exists feedback (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references profiles(id) on delete cascade,
+  message text not null check (char_length(message) between 1 and 2000),
+  context text,
+  created_at timestamptz default now()
+);
+alter table feedback enable row level security;
+drop policy if exists "feedback insert own" on feedback;
+create policy "feedback insert own" on feedback for insert with check (auth.uid() = user_id);
