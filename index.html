@@ -3233,7 +3233,10 @@ function proximaApertura(b){
 function estadoTexto(b){
   if(b.sinHorario)return {abierta:false,desconocido:true,txt:"Horario sin confirmar"};
   var c=minutosHastaCierre(b);
-  if(c>0){var now=new Date(),fin=now.getHours()*60+now.getMinutes()+c;return {abierta:true,txt:"Abierta · cierra a las "+fmtHoras(fin),cierre:c};}
+  if(c>0){var now=new Date(),fin=now.getHours()*60+now.getMinutes()+c;
+    var hoyTr=horarioVigente(b)[now.getDay()]||[];
+    if(hoyTr.length===1&&hoyTr[0][0]===0&&hoyTr[0][1]>=1440)return {abierta:true,txt:"Abierta 24 h",cierre:c};
+    return {abierta:true,txt:"Abierta · cierra a las "+fmtHoras(fin),cierre:c};}
   var p=proximaApertura(b);
   if(!p)return {abierta:false,txt:"Cerrada"};
   var cuando=p.dias===0?"hoy":(p.dias===1?"mañana":"el "+["domingo","lunes","martes","miércoles","jueves","viernes","sábado"][p.day]);
