@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bibliotecas de Navarra</title>
+<title>Bibliotecas de Navarra y España</title>
 <meta name="description" content="Mapa de las bibliotecas públicas y universitarias de Navarra: horarios en tiempo real, cómo llegar, afluencia compartida, modo estudio con cronómetro, sesiones en grupo, calendario de exámenes y agenda de eventos académicos.">
 <link rel="canonical" href="https://mmedranomun-hub.github.io/bibliotime3.0/">
 <meta property="og:type" content="website">
@@ -22,6 +22,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Bibliotime">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
       onerror="this.onerror=null;this.href='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css';" />
 <style>
@@ -111,6 +113,8 @@
   .subj-row .bar{flex:1;height:8px;border-radius:99px;background:rgba(148,163,184,.25);overflow:hidden}
   .subj-row .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--acento),#00d2d3)}
   .subj-row .tm{width:62px;text-align:right;font-variant-numeric:tabular-nums;color:var(--suave)}
+  .list-search{padding:8px 8px 0}
+  .list-search input{width:100%;padding:9px 12px;border-radius:12px;border:1px solid rgba(148,163,184,.4);font:inherit;font-size:13.5px;background:rgba(255,255,255,.8)}
   .list-filters{display:flex;flex-wrap:wrap;gap:6px;padding:8px 8px 0}
   .list-filters button{font:inherit;font-size:11.5px;font-weight:600;padding:5px 10px;border-radius:999px;cursor:pointer;
     border:1px solid rgba(148,163,184,.4);background:rgba(255,255,255,.5);color:var(--suave)}
@@ -137,6 +141,9 @@
   .chincheta.sel{transform:scale(1.22) translateY(-3px)}
   .chincheta .cuerpo{position:absolute;top:0;left:0;width:34px;height:34px;border-radius:50%;
     background:linear-gradient(140deg,var(--acento),#8b7bef);border:3px solid #fff;display:flex;align-items:center;justify-content:center}
+  .chincheta.unk .cuerpo{background:linear-gradient(140deg,#a3adc2,#7c879c)}
+  .dot.unk{background:#94a3b8}
+  .estado.unk{background:rgba(148,163,184,.2);color:var(--suave)}
   .chincheta.closed .cuerpo{background:linear-gradient(140deg,#4f7ed6,#2f5bb8)}
   .chincheta .cuerpo svg{width:17px;height:17px;color:#fff;stroke-width:2.1}
   .chincheta.occ-libre .cuerpo{background:linear-gradient(140deg,#22c55e,#16a34a)}
@@ -602,7 +609,7 @@
 <div class="authwrap" id="authView">
   <div class="authbox">
     <div class="logo">
-      <div class="kicker">Iruña · Navarra</div>
+      <div class="kicker">Navarra · España</div>
       <h1>Bibliotecas de <span>Navarra</span></h1>
     </div>
     <div class="glasscard">
@@ -635,7 +642,7 @@
 
   <div class="topbar">
     <div class="brand">
-      <div class="kicker">Iruña · Navarra</div>
+      <div class="kicker">Navarra · España</div>
       <h1>Bibliotecas de <span>Navarra</span></h1>
     </div>
     <button class="bell" id="bellBtn" title="Avisos">
@@ -656,6 +663,7 @@
         </div>
         <span class="season" id="seasonTag"></span>
       </div>
+      <div class="list-search"><input type="search" id="listSearch" placeholder="Buscar biblioteca o ciudad…" autocomplete="off"></div>
       <div class="list-filters" id="listFilters">
         <button data-f="abiertas">● Abiertas ahora</button>
         <button data-f="cerca">📍 Más cercanas</button>
@@ -925,6 +933,9 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js';document.head.appendChild(s);"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" defer></script>
+<!-- Bibliotecas del resto de España (datos abiertos de Overture Maps; ver el propio archivo) -->
+<script src="bibliotecas-espana.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ===================== DATOS BIBLIOTECAS ===================== */
@@ -932,7 +943,8 @@ function h(hh,mm){return hh*60+mm}
 const DIAS=["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
 function esVerano(d){const m=d.getMonth(),dia=d.getDate();
   if(m>5&&m<8)return true; if(m===5&&dia>=15)return true; if(m===8&&dia<=14)return true; return false;}
-function horarioVigente(b){const v=esVerano(new Date());
+const SIN_HORARIO=[[],[],[],[],[],[],[]];
+function horarioVigente(b){if(b.sinHorario)return SIN_HORARIO;const v=esVerano(new Date());
   if(v&&b.horasVerano)return b.horasVerano; if(!v&&b.horasInvierno)return b.horasInvierno;
   return b.horas||b.horasInvierno||b.horasVerano;}
 const HM=[[h(8,30),h(14,30)]], HT=[[h(14,0),h(20,0)]];
@@ -1065,12 +1077,27 @@ var ACCESO_INFO={
   "Biblioteca Universidad de Navarra · Facultades Eclesiásticas":{acceso:{tipo:"restringido",detalle:"Pensada principalmente para alumnado y profesorado de Teología, Derecho Canónico y Filosofía Eclesiástica, aunque no parece haber barrera estricta de entrada para el resto de la comunidad UNAV."},accesibilidad:{sillaRuedas:null,turistas:false,gratisDias:null,notas:"Conocida coloquialmente como \"Biblioteca de Teología\". Fondo especializado (~8.300 libros, +200 revistas). Horario detallado y accesibilidad física sin confirmar; coordenadas aproximadas (sin verificar con precisión)."}},
   "Biblioteca UPNA · Campus de Arrosadía":{acceso:{tipo:"libre",detalle:"Sala de lectura abierta al público general, EXCEPTO en época de exámenes (solo comunidad universitaria). El préstamo es solo para comunidad universitaria o convenios."},accesibilidad:{sillaRuedas:true,turistas:true,gratisDias:null,notas:"Entrada y aparcamiento accesibles. En época de exámenes se restringen los puestos de estudio a la comunidad universitaria."}}
 };
+// Bibliotecas del resto de España: se añaden AL FINAL para no cambiar los índices de las de Navarra
+// (los reportes de afluencia y la presencia de amigos guardan el índice). Sin horario verificado.
+const N_NAVARRA=BIBLIOTECAS.length;
+(window.BIBLIOTECAS_ES||[]).forEach(function(r){
+  BIBLIOTECAS.push({nombre:r.n,lat:r.lat,lon:r.lon,dir:r.dir||"",tel:r.tel||"",web:r.web||"",rating:null,reviews:null,
+    sinHorario:true,ciudad:r.c||"",provincia:r.p||"",tipoBib:r.t||"otra"});
+});
 BIBLIOTECAS.forEach(function(b){
   var info=ACCESO_INFO[b.nombre];
   if(info){b.acceso=info.acceso;b.accesibilidad=info.accesibilidad;return;}
   // Red de Bibliotecas Públicas de Navarra: la Ley Foral 32/2002 establece acceso libre en toda la red.
   // Se aplica por defecto a las bibliotecas municipales sin ficha investigada individualmente; el resto de
   // datos de accesibilidad física sí quedan como "sin confirmar" al no haberse verificado edificio por edificio.
+  if(b.sinHorario){
+    // Ley 10/2007 de la lectura, art. 13: acceso libre y gratuito a los servicios básicos de las bibliotecas públicas.
+    if(b.tipoBib==="publica")b.acceso={tipo:"libre",detalle:"Biblioteca pública: acceso libre y gratuito a los servicios básicos (Ley 10/2007 de la lectura). Sin ficha individual verificada."};
+    else if(b.tipoBib==="universidad")b.acceso={tipo:"desconocido",detalle:"Biblioteca universitaria: el acceso suele estar limitado a su comunidad, sobre todo en exámenes. Consulta su web."};
+    else b.acceso={tipo:"desconocido",detalle:"Sin confirmar"};
+    b.accesibilidad={sillaRuedas:null,turistas:null,gratisDias:null,notas:"Sin confirmar"};
+    return;
+  }
   if(/^Biblioteca Pública/.test(b.nombre)){
     b.acceso={tipo:"libre",detalle:"Acceso libre y gratuito, como el resto de la red pública de Navarra (Ley Foral 32/2002). Sin ficha individual investigada para esta biblioteca."};
     b.accesibilidad={sillaRuedas:null,turistas:true,gratisDias:null,notas:"Sin confirmar accesibilidad física — dato no investigado individualmente para esta biblioteca."};
@@ -1793,7 +1820,7 @@ function onboarding(){
     var opts=idx.map(function(i){return '<option value="'+i+'">'+escapeHTML(cortoNombre(BIBLIOTECAS[i].nombre))+'</option>';}).join("");
     var todas=BIBLIOTECAS.map(function(b,i){return idx.indexOf(i)===-1?'<option value="'+i+'">'+escapeHTML(cortoNombre(b.nombre))+'</option>':'';}).join("");
     openModal('<div class="ob-step">2 de 3</div><h3>¿Dónde sueles estudiar?</h3><div class="sub">La tendremos en cuenta al recomendarte y al empezar a estudiar.</div>'+
-      '<div class="field"><select id="obBib" style="width:100%;padding:11px;border-radius:12px;border:1px solid rgba(148,163,184,.4);font:inherit"><option value="-1">Aún no lo sé</option><optgroup label="Pamplona y cercanías">'+opts+'</optgroup><optgroup label="Resto de Navarra">'+todas+'</optgroup></select></div>'+
+      '<div class="field"><select id="obBib" style="width:100%;padding:11px;border-radius:12px;border:1px solid rgba(148,163,184,.4);font:inherit"><option value="-1">Aún no lo sé</option><optgroup label="Pamplona y cercanías">'+opts+'</optgroup><optgroup label="Resto de Navarra y España">'+todas+'</optgroup></select></div>'+
       '<button class="btn" id="obNext">Siguiente</button>',function(){
       $("obNext").addEventListener("click",function(){var v=+$("obBib").value;DATA.habitualIdx=v>=0?v:null;saveUserData();paso3();});
     });
@@ -1821,9 +1848,9 @@ function applyExtras(){
   if(!on&&$("studyOfferPanel")&&!$("studyOfferPanel").classList.contains("hidden")){var b=document.querySelector('#studyTab button[data-t="crono"]');if(b)b.click();}
 }
 // Borra la cuenta en la nube (función delete_my_account del SQL) y todos los datos de este dispositivo.
-function enviarSugerencia(){
+function enviarSugerencia(sobre){
   openModal('<h3>¿Qué mejorarías?</h3><div class="sub">Cuéntanos un error, una idea o una biblioteca con datos mal. Lo leemos todo.</div>'+
-    '<div class="field"><textarea id="fbText" rows="5" maxlength="2000" style="width:100%;padding:11px 13px;border-radius:12px;border:1px solid rgba(148,163,184,.4);font:inherit" placeholder="Ej: el horario de Iturrama ha cambiado…"></textarea></div>'+
+    '<div class="field"><textarea id="fbText" rows="5" maxlength="2000" style="width:100%;padding:11px 13px;border-radius:12px;border:1px solid rgba(148,163,184,.4);font:inherit" placeholder="Ej: el horario de Iturrama ha cambiado…">'+(sobre?escapeHTML("Sobre «"+sobre+"»: "):"")+'</textarea></div>'+
     '<button class="btn" id="fbSend">Enviar</button>',function(){
     $("fbSend").addEventListener("click",async function(){
       var t=$("fbText").value.trim(); if(!t){showToast("Escribe algo primero");return;}
@@ -2034,7 +2061,7 @@ function popupHTML(b,i){
     distTxt=dm<1000?Math.round(dm)+" m":(dm/1000).toFixed(1)+" km";
   }
   var s='<div class="pop pop-compact"><h2>'+escapeHTML(b.nombre)+'</h2>';
-  s+='<div class="pop-meta"><span class="estado '+(abierto?"open":"closed")+'">'+(abierto?"● Abierta":"● Cerrada")+'</span>'+(distTxt?'<span class="pop-dist">📍 '+distTxt+'</span>':'')+'</div>';
+  s+='<div class="pop-meta"><span class="estado '+(b.sinHorario?"unk":(abierto?"open":"closed"))+'">'+(b.sinHorario?"● Horario sin confirmar":(abierto?"● Abierta":"● Cerrada"))+'</span>'+(distTxt?'<span class="pop-dist">📍 '+distTxt+'</span>':'')+'</div>';
   s+='<div class="pop-today">'+escapeHTML(estadoTexto(b).txt)+'</div>';
   s+=popIconRow(b);
   if(epocaExamenes()&&esUPNA(b))s+='<div class="pop-today" style="color:#b45309">⚠️ En exámenes la sala suele reservarse a la comunidad UPNA</div>';
@@ -2062,22 +2089,28 @@ function recursosHTML(b){
 function openBibDetailModal(i){
   var b=BIBLIOTECAS[i], verano=esVerano(new Date()), abierto=estadoBib(b);
   var s='<div class="pop" style="padding:0"><h2>'+escapeHTML(b.nombre)+'</h2>';
-  s+='<div class="estado '+(abierto?"open":"closed")+'">'+(abierto?"● Abierto ahora":"● Cerrado ahora")+'</div>';
+  s+='<div class="estado '+(b.sinHorario?"unk":(abierto?"open":"closed"))+'">'+(b.sinHorario?"● Horario sin confirmar":(abierto?"● Abierto ahora":"● Cerrado ahora"))+'</div>';
   if(b.rating!=null)s+='<div class="rate-line"><b>★ '+b.rating.toFixed(1)+'</b> · '+b.reviews+' reseñas</div>';
   s+='<div class="dir"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6c5ce7" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span>'+escapeHTML(b.dir)+'</span></div>';
   s+='<div class="bib-actions"><a class="btn sm" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination='+b.lat+','+b.lon+'">🧭 Cómo llegar</a>'+
     (b.tel?'<a class="btn sm ghost" href="tel:'+escapeHTML(b.tel.replace(/\s/g,""))+'">📞 Llamar</a>':'')+
     (b.web&&/^https?:\/\//.test(b.web)?'<a class="btn sm ghost" target="_blank" rel="noopener" href="'+escapeHTML(b.web)+'">🌐 Web</a>':'')+'</div>';
   var cal=horarioVigente(b),hoy=new Date().getDay();
+  if(b.sinHorario){
+    s+='<div class="hours"><h4>Horario</h4><div style="font-size:12.5px;color:var(--suave)">Sin confirmar todavía'+(b.web?': consúltalo en su web.':'.')+
+      ' <button class="linkbtn" onclick="closeModal();enviarSugerencia('+jsArg("Horario de "+b.nombre)+')">¿Lo sabes? Cuéntanoslo</button></div></div>';
+  }else{
   s+='<div class="hours"><h4>'+(verano?"Horario de verano":"Horario de invierno")+'</h4><table>';
   for(var d=1;d<=7;d++){var di=d%7,tr=cal[di]||[];
     var txt=tr.length?tr.map(function(t){return fmtHoras(t[0])+"–"+fmtHoras(t[1]);}).join(", "):'<span class="closed-day">Cerrado</span>';
     s+='<tr class="'+(di===hoy?"today":"")+'"><td>'+DIAS[di]+'</td><td>'+txt+'</td></tr>';}
   s+='</table></div>';
+  }
   s+=accesoAccesibilidadHTML(b);
   s+=recursosHTML(b);
   s+=occControlsHTML(i);
   s+='<button class="btnstudy" onclick="closeModal();startStudyAt('+i+')">▶ Estudiar aquí</button>';
+  s+='<button class="linkbtn" style="display:block;margin:10px auto 0;font-size:12px" onclick="closeModal();enviarSugerencia('+jsArg(b.nombre)+')">Avisar de un error en esta ficha</button>';
   s+='</div>';
   openModal(s);
 }
@@ -2112,7 +2145,11 @@ window.__selBib=function(i){
   markers.forEach(function(mk,j){var el=mk&&mk.getElement&&mk.getElement();
     if(el){var ch=el.querySelector(".chincheta");if(ch)ch.classList.toggle("sel",j===i);}});
   document.querySelectorAll("#list .card").forEach(function(c){c.classList.toggle("active",+c.dataset.i===i);});
-  if(window.__map&&markers[i]){window.__map.flyTo([b.lat,b.lon],16,{duration:.6});markers[i].openPopup();}
+  if(window.__map&&markers[i]){
+    var mk=markers[i], cap=window.__capaBibs;
+    if(cap&&cap.zoomToShowLayer){window.__map.setView([b.lat,b.lon],16);cap.zoomToShowLayer(mk,function(){mk.openPopup();});}
+    else{window.__map.flyTo([b.lat,b.lon],16,{duration:.6});mk.openPopup();}
+  }
 };
 // La lista lateral se construye SIEMPRE (no depende de Leaflet)
 function buildList(){
@@ -2121,11 +2158,12 @@ function buildList(){
   $("seasonTag").textContent=verano?"Horario de verano":"Horario de invierno";
   var list=$("list");list.innerHTML="";
   syncListFilterButtons();
-  var F=LIST_FILTERS, idx=[];
+  var F=LIST_FILTERS, idx=[], q=normTxt(($("listSearch")||{}).value||"").trim();
   BIBLIOTECAS.forEach(function(b,i){
     if(F.abiertas&&!estadoBib(b))return;
     if(F.libre&&!(b.acceso&&b.acceso.tipo==="libre"))return;
     if(F.wifi&&!(b.recursos&&b.recursos.indexOf("wifi")!==-1))return;
+    if(q&&normTxt(b.nombre+" "+(b.ciudad||"")+" "+(b.provincia||"")+" "+(b.dir||"")).indexOf(q)===-1)return;
     idx.push(i);
   });
   if(F.cerca&&window.__userPos){
@@ -2133,6 +2171,8 @@ function buildList(){
     idx.sort(function(a,c){return distMetros(up.lat,up.lon,BIBLIOTECAS[a].lat,BIBLIOTECAS[a].lon)-distMetros(up.lat,up.lon,BIBLIOTECAS[c].lat,BIBLIOTECAS[c].lon);});
   }
   if(!idx.length)list.innerHTML='<div class="empty-note">Ninguna biblioteca cumple estos filtros'+(F.wifi?' (el wifi solo figura donde está confirmado)':'')+'.</div>';
+  var total=idx.length, LIM=120;
+  if(total>LIM){idx=idx.slice(0,LIM);}
   idx.forEach(function(i){
     var b=BIBLIOTECAS[i];
     var abierto=estadoBib(b);
@@ -2142,17 +2182,21 @@ function buildList(){
       distTxt=" · 📍"+(dm<1000?Math.round(dm)+"m":(dm/1000).toFixed(1)+"km");
     }
     var card=document.createElement("div");card.className="card";card.dataset.i=i;
-    card.innerHTML='<h3>'+escapeHTML(cortoNombre(b.nombre))+'</h3><div class="row"><span class="dot '+(abierto?"open":"closed")+'"></span>'+escapeHTML(estadoTexto(b).txt)+escapeHTML(distTxt)+(b.rating!=null?'<span class="rate">★ '+b.rating.toFixed(1)+'</span>':'')+'</div>'+occStatusHTML(i,true);
+    card.innerHTML='<h3>'+escapeHTML(cortoNombre(b.nombre))+'</h3><div class="row"><span class="dot '+(b.sinHorario?"unk":(abierto?"open":"closed"))+'"></span>'+escapeHTML(estadoTexto(b).txt+(b.ciudad?" · "+b.ciudad:""))+escapeHTML(distTxt)+(b.rating!=null?'<span class="rate">★ '+b.rating.toFixed(1)+'</span>':'')+'</div>'+occStatusHTML(i,true);
     card.addEventListener("click",function(){window.__selBib(i);});
     list.appendChild(card);
   });
   var activos=Object.keys(F).some(function(k){return F[k];});
+  if(total>LIM){var more=document.createElement("div");more.className="empty-note";more.textContent="Mostrando "+LIM+" de "+total+". Busca por nombre o ciudad, o usa «Más cercanas».";list.appendChild(more);}
   renderNowCard();
-  $("panelCount").textContent=activos?(idx.length+" de "+BIBLIOTECAS.length+" bibliotecas"):(BIBLIOTECAS.length+" bibliotecas en Navarra");
+  activos=activos||!!q;
+  $("panelCount").textContent=activos?(total+" de "+BIBLIOTECAS.length+" bibliotecas"):(BIBLIOTECAS.length+" bibliotecas en España");
 }
+function normTxt(t){return String(t||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");}
 // Filtros de la lista (se recuerdan en este navegador). "Más cercanas" pide la ubicación si aún no la hay.
 // "Abiertas ahora" depende de la hora: se recalcula cada minuto aunque no lleguen datos nuevos.
 setInterval(function(){if(!window.__listReady)return; if(LIST_FILTERS.abiertas)buildList(); else renderNowCard();},60000);
+(function(){var ls=$("listSearch");if(!ls)return;var tmo;ls.addEventListener("input",function(){clearTimeout(tmo);tmo=setTimeout(buildList,200);});})();
 var LIST_FILTERS=Object.assign({abiertas:false,cerca:false,libre:false,wifi:false},loadJSON("bpna_list_filters",{}));
 function syncListFilterButtons(){
   document.querySelectorAll("#listFilters button").forEach(function(btn){btn.classList.toggle("on",!!LIST_FILTERS[btn.dataset.f]);});
@@ -2173,7 +2217,7 @@ function chinchetaIcon(i){
   var occClass="";
   if(abierto){var o=occSummary(i); if(o)occClass=" occ-"+o.level;}
   var libroSvg='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5c2-1.5 5-2 7-1v14c-2-1-5-.5-7 1V5z"/><path d="M22 5c-2-1.5-5-2-7-1v14c2-1 5-.5 7 1V5z"/></svg>';
-  return L.divIcon({className:"",html:'<div class="chincheta'+(abierto?"":" closed")+occClass+'"><div class="cuerpo">'+libroSvg+'</div><div class="punta"></div></div>',iconSize:[34,44],iconAnchor:[17,44],popupAnchor:[0,-44]});
+  return L.divIcon({className:"",html:'<div class="chincheta'+(b.sinHorario?" unk":(abierto?"":" closed"))+occClass+'"><div class="cuerpo">'+libroSvg+'</div><div class="punta"></div></div>',iconSize:[34,44],iconAnchor:[17,44],popupAnchor:[0,-44]});
 }
 // "Mi ubicación": la pinta en el propio mapa, nunca abre Google Maps ni ninguna app externa.
 window.__userPos=null;
@@ -2202,7 +2246,7 @@ function locateMe(){
 function initMap(){
   if(typeof L==="undefined"){if((initMap._n=(initMap._n||0)+1)<40)setTimeout(initMap,250);return;}
   window.__mapReady=true;
-  var map=L.map("map",{zoomControl:false,scrollWheelZoom:true,minZoom:7,maxZoom:18}).setView([42.812,-1.652],13.5);
+  var map=L.map("map",{zoomControl:false,scrollWheelZoom:true,minZoom:5,maxZoom:18}).setView([42.812,-1.652],13.5);
   window.__map=map;
   L.control.zoom({position:"bottomright"}).addTo(map);
   document.getElementById("map").style.background="#eef2f7";
@@ -2280,12 +2324,16 @@ function initMap(){
     });
   });
   markers=[];
+  // Con cientos de bibliotecas, las cercanas se agrupan en un círculo con el número (si carga el plugin).
+  var capaBibs=(L.markerClusterGroup?L.markerClusterGroup({showCoverageOnHover:false,maxClusterRadius:45,disableClusteringAtZoom:14,spiderfyOnMaxZoom:false}):L.layerGroup()).addTo(map);
+  window.__capaBibs=capaBibs;
+  map.attributionControl.addAttribution("Bibliotecas: &copy; Overture Maps Foundation");
   BIBLIOTECAS.forEach(function(b,i){
-    var mk=L.marker([b.lat,b.lon],{icon:chinchetaIcon(i)}).addTo(map).bindPopup(popupHTML(b,i),{maxWidth:280,offset:[0,4]});
+    var mk=L.marker([b.lat,b.lon],{icon:chinchetaIcon(i)}).addTo(capaBibs).bindPopup(popupHTML(b,i),{maxWidth:280,offset:[0,4]});
     mk.on("click",function(){window.__selBib(i);});
     markers.push(mk);
   });
-  var grupo=L.featureGroup(markers);map.fitBounds(grupo.getBounds().pad(0.18));
+  var grupo=L.featureGroup(markers.slice(0,N_NAVARRA));map.fitBounds(grupo.getBounds().pad(0.18));
   socialRenderFriendMarkers();
 }
 
@@ -2340,7 +2388,7 @@ function startStudyCurrent(){
     if(pos){
       var best=-1,bd=1e9;
       BIBLIOTECAS.forEach(function(b,i){var d=distMetros(pos.lat,pos.lon,b.lat,b.lon);if(d<bd){bd=d;best=i;}});
-      if(best>=0&&bd<=400&&minutosHastaCierre(BIBLIOTECAS[best])>0){showToast("📍 Estás en "+cortoNombre(BIBLIOTECAS[best].nombre));startStudyAt(best);return;}
+      if(best>=0&&bd<=400&&(minutosHastaCierre(BIBLIOTECAS[best])>0||BIBLIOTECAS[best].sinHorario)){showToast("📍 Estás en "+cortoNombre(BIBLIOTECAS[best].nombre));startStudyAt(best);return;}
     }
     elegirLugarEstudio();
   }
@@ -2352,7 +2400,10 @@ function elegirLugarEstudio(){
   var ops=[],vistos={};
   function add(i,etq){if(i==null||i<0||vistos[i])return;vistos[i]=1;ops.push({i:i,etq:etq});}
   var hab=bibHabitual(); if(hab>=0)add(hab,"⭐ Tu habitual");
-  recomendarBiblioteca().slice(0,4).forEach(function(c){add(c.i,c.dist!=null?"📍 "+fmtDist(c.dist):"Abierta");});
+  recomendarBiblioteca().slice(0,4).forEach(function(c){if(c.dist==null||c.dist<25000)add(c.i,c.dist!=null?"📍 "+fmtDist(c.dist):"Abierta");});
+  if(window.__userPos){var up=window.__userPos;
+    BIBLIOTECAS.map(function(b,i){return {i:i,d:distMetros(up.lat,up.lon,b.lat,b.lon)};}).filter(function(o){return BIBLIOTECAS[o.i].sinHorario&&o.d<25000;})
+      .sort(function(a,b){return a.d-b.d;}).slice(0,4).forEach(function(o){add(o.i,"📍 "+fmtDist(o.d)+" · horario sin confirmar");});}
   var html='<h3>¿Dónde estudias?</h3><div class="sub">No estás junto a ninguna biblioteca. Elige dónde, o estudia en casa.</div><div class="pick-list">'+
     ops.map(function(o){return '<button data-i="'+o.i+'"><b>'+escapeHTML(cortoNombre(BIBLIOTECAS[o.i].nombre))+'</b><small>'+escapeHTML(o.etq)+'</small></button>';}).join("")+
     '<button data-i="-1"><b>🏠 En casa u otro sitio</b><small>Cuenta para tus horas, sin biblioteca</small></button></div>';
@@ -2388,14 +2439,14 @@ function cierreTrasInicio(b,startTs){
 function revisarCronoOlvidado(){
   if(!studyTimer.running)return false;
   var ahora=Date.now();
-  if(studyTimer.bibIndex>=0){
+  if(studyTimer.bibIndex>=0&&!BIBLIOTECAS[studyTimer.bibIndex].sinHorario){
     var b=BIBLIOTECAS[studyTimer.bibIndex], fin=cierreTrasInicio(b,studyTimer.start);
     if(fin&&ahora-fin>15*60000){
       stopStudy(true,fin);
       notificar("⏹ Tu sesión en "+cortoNombre(b.nombre)+" se guardó hasta la hora de cierre ("+fmtHoras(new Date(fin).getHours()*60+new Date(fin).getMinutes())+")");
       return true;
     }
-  }else if(ahora-studyTimer.start>12*3600000&&!revisarCronoOlvidado.preguntado){
+  }else if(ahora-studyTimer.start>12*3600000&&!revisarCronoOlvidado.preguntado&&(studyTimer.bibIndex<0||BIBLIOTECAS[studyTimer.bibIndex].sinHorario)){
     revisarCronoOlvidado.preguntado=true;
     var h=parseFloat((prompt("Llevas más de 12 h con el cronómetro en marcha. ¿Cuántas horas estudiaste de verdad?","2")||"").replace(",","."));
     if(h>0&&h<16){stopStudy(true,studyTimer.start+h*3600000);showToast("Sesión guardada: "+h+" h");return true;}
@@ -3144,6 +3195,7 @@ function proximaApertura(b){
   return null;
 }
 function estadoTexto(b){
+  if(b.sinHorario)return {abierta:false,desconocido:true,txt:"Horario sin confirmar"};
   var c=minutosHastaCierre(b);
   if(c>0){var now=new Date(),fin=now.getHours()*60+now.getMinutes()+c;return {abierta:true,txt:"Abierta · cierra a las "+fmtHoras(fin),cierre:c};}
   var p=proximaApertura(b);
@@ -3179,14 +3231,29 @@ function recomendarBiblioteca(){
 }
 function cortoNombre(n){
   n=n.replace(/^Biblioteca Pública (de la |del |de )?/,"");
-  if(n.indexOf("Biblioteca ")===0&&n!=="Biblioteca de Navarra")n=n.slice(11);
+  if(n.indexOf("Biblioteca ")===0&&n!=="Biblioteca de Navarra"&&n!=="Biblioteca Nacional de España"){
+    n=n.slice(11).replace(/^(de la |del |de |d'|da |do )/i,"");
+    n=n.charAt(0).toUpperCase()+n.slice(1);
+  }
   return n;
 }
 function renderNowCard(){
   var el=$("nowCard"); if(!el)return;
   if(!$("libPanel").classList.contains("hidden")){el.classList.add("hidden");return;}
   el.classList.remove("hidden");
-  var cands=recomendarBiblioteca(), html;
+  var cands=recomendarBiblioteca(), html, up=window.__userPos;
+  // Lejos de Navarra (sin horarios verificados cerca): recomendar la más cercana, avisando del horario.
+  if(up&&(!cands.length||cands[0].dist>25000)){
+    var cerca=-1,cd=1e12;
+    BIBLIOTECAS.forEach(function(b,i){if(!b.sinHorario)return;var d=distMetros(up.lat,up.lon,b.lat,b.lon);if(d<cd){cd=d;cerca=i;}});
+    if(cerca>=0&&cd<25000){
+      var bc=BIBLIOTECAS[cerca];
+      el.innerHTML='<div class="nc-kicker">La más cercana</div><div class="nc-title" onclick="window.__selBib('+cerca+')">'+escapeHTML(cortoNombre(bc.nombre))+'</div>'+
+        '<div class="nc-why">📍 '+fmtDist(cd)+' · horario sin confirmar'+(bc.web?', míralo en su web':'')+'</div>'+
+        '<div class="nc-actions"><button class="btn sm" onclick="startStudyAt('+cerca+')">▶ Estudiar aquí</button><button class="btn sm ghost" onclick="window.__selBib('+cerca+')">Ver</button><button class="btn sm ghost" onclick="abrirLista(false)">Otras</button></div>';
+      return;
+    }
+  }
   if(!cands.length){
     // abiertas pero cerrando en menos de 30 min: avisar, no decir "todas cerradas"
     var pronto=[];BIBLIOTECAS.forEach(function(b,i){var c=minutosHastaCierre(b);if(c>0)pronto.push({i:i,c:c});});
