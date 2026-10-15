@@ -683,6 +683,8 @@
         <button data-f="cerca">📍 Más cercanas</button>
         <button data-f="libre">🎫 Acceso libre</button>
         <button data-f="wifi">📶 Wifi</button>
+        <button data-f="horario">🕐 Con horario</button>
+        <button data-f="uni">🎓 Universitarias</button>
       </div>
       <div class="list" id="list"></div>
     </div>
@@ -2199,6 +2201,8 @@ function buildList(){
     if(F.abiertas&&!estadoBib(b))return;
     if(F.libre&&!(b.acceso&&b.acceso.tipo==="libre"))return;
     if(F.wifi&&!(b.recursos&&b.recursos.indexOf("wifi")!==-1))return;
+    if(F.horario&&b.sinHorario)return;
+    if(F.uni&&!(b.tipoBib==="universidad"||/universi|UPNA|campus|CRAI/i.test(b.nombre)))return;
     if(q&&normTxt(b.nombre+" "+(b.ciudad||"")+" "+(b.provincia||"")+" "+(b.dir||"")).indexOf(q)===-1)return;
     idx.push(i);
   });
@@ -2233,7 +2237,7 @@ function normTxt(t){return String(t||"").toLowerCase().normalize("NFD").replace(
 // "Abiertas ahora" depende de la hora: se recalcula cada minuto aunque no lleguen datos nuevos.
 setInterval(function(){if(!window.__listReady)return; if(LIST_FILTERS.abiertas)buildList(); else renderNowCard();},60000);
 (function(){var ls=$("listSearch");if(!ls)return;var tmo;ls.addEventListener("input",function(){clearTimeout(tmo);tmo=setTimeout(buildList,200);});})();
-var LIST_FILTERS=Object.assign({abiertas:false,cerca:false,libre:false,wifi:false},loadJSON("bpna_list_filters",{}));
+var LIST_FILTERS=Object.assign({abiertas:false,cerca:false,libre:false,wifi:false,horario:false,uni:false},loadJSON("bpna_list_filters",{}));
 function syncListFilterButtons(){
   document.querySelectorAll("#listFilters button").forEach(function(btn){btn.classList.toggle("on",!!LIST_FILTERS[btn.dataset.f]);});
 }
