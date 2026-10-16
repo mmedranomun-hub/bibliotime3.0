@@ -3326,10 +3326,12 @@ function renderNowCard(){
   el.classList.remove("hidden");
   var cands=recomendarBiblioteca(), html, up=window.__userPos;
   // Lejos de Navarra (sin horarios verificados cerca): recomendar la más cercana, avisando del horario.
-  if(up&&(!cands.length||cands[0].dist>25000)){
+  // Solo si en tu zona no hay bibliotecas con horario conocido (fuera de las zonas con datos):
+  var hayHorarioEnZona=BIBLIOTECAS.some(function(b,i){return !b.sinHorario&&enMiZona(i);});
+  if(up&&!hayHorarioEnZona){
     var cerca=-1,cd=1e12;
     BIBLIOTECAS.forEach(function(b,i){if(!b.sinHorario)return;var d=distMetros(up.lat,up.lon,b.lat,b.lon);if(d<cd){cd=d;cerca=i;}});
-    if(cerca>=0&&cd<25000){
+    if(cerca>=0&&cd<50000){
       var bc=BIBLIOTECAS[cerca];
       el.innerHTML='<div class="nc-kicker">La más cercana</div><div class="nc-title" onclick="window.__selBib('+cerca+')">'+escapeHTML(cortoNombre(bc.nombre))+'</div>'+
         '<div class="nc-why">📍 '+fmtDist(cd)+' · horario sin confirmar'+(bc.web?', míralo en su web':'')+'</div>'+
