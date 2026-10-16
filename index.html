@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bibliotecas de Navarra</title>
+<title>Bibliotecas de Navarra y España</title>
 <meta name="description" content="Mapa de las bibliotecas públicas y universitarias de Navarra: horarios en tiempo real, cómo llegar, afluencia compartida, modo estudio con cronómetro, sesiones en grupo, calendario de exámenes y agenda de eventos académicos.">
 <link rel="canonical" href="https://mmedranomun-hub.github.io/bibliotime3.0/">
 <meta property="og:type" content="website">
@@ -22,8 +22,13 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Bibliotime">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"
+      onerror="this.onerror=null;this.href='https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.css';" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"
+      onerror="this.onerror=null;this.href='https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css';" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
       onerror="this.onerror=null;this.href='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css';" />
+<script>try{var t=localStorage.getItem("bpna_theme");if(t==="dark"||t==="light")document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
 <style>
   :root{
     --acento:#6c5ce7; --acento2:#00d2d3;
@@ -33,7 +38,20 @@
     --glass-fuerte:rgba(255,255,255,.85);
     --borde:rgba(255,255,255,.55);
     --sombra:0 8px 32px rgba(2,6,23,.18);
-    --bg:#dbeafe;
+    --bg:#dbeafe; --blanco:255,255,255; --bg-grad:linear-gradient(160deg,#dbeafe,#ede9fe);
+  }
+  /* Modo oscuro: sigue al sistema salvo que se elija tema en Ajustes */
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --texto:#e5e7eb; --suave:#a3b0c2; --glass:rgba(30,41,59,.72); --glass-fuerte:rgba(30,41,59,.94);
+      --borde:rgba(148,163,184,.22); --sombra:0 8px 32px rgba(0,0,0,.45); --bg:#0b1220; --blanco:30,41,59;
+      --bg-grad:linear-gradient(160deg,#0b1220,#1a1440); color-scheme:dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --texto:#e5e7eb; --suave:#a3b0c2; --glass:rgba(30,41,59,.72); --glass-fuerte:rgba(30,41,59,.94);
+    --borde:rgba(148,163,184,.22); --sombra:0 8px 32px rgba(0,0,0,.45); --bg:#0b1220; --blanco:30,41,59;
+    --bg-grad:linear-gradient(160deg,#0b1220,#1a1440); color-scheme:dark;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%}
@@ -50,7 +68,7 @@
   /* ===== TOPBAR ===== */
   .topbar{position:fixed;top:0;left:0;right:0;z-index:1000;padding:14px 18px;
     display:flex;align-items:center;gap:16px;
-    background:linear-gradient(180deg,rgba(255,255,255,.78),rgba(255,255,255,.45));
+    background:linear-gradient(180deg,rgba(var(--blanco),.78),rgba(var(--blanco),.45));
     backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);
     border-bottom:1px solid var(--borde);box-shadow:0 4px 24px rgba(2,6,23,.10)}
   .brand{display:flex;flex-direction:column;line-height:1;flex-shrink:0}
@@ -76,7 +94,7 @@
   .view{position:fixed;inset:0;z-index:1}
   #map{position:fixed;inset:0;z-index:1;background:#cbd5e1}
   .scrollview{position:fixed;top:70px;left:0;right:0;bottom:78px;z-index:5;overflow-y:auto;padding:22px;
-    background:linear-gradient(160deg,#dbeafe,#ede9fe)}
+    background:var(--bg-grad)}
   .container{max-width:920px;margin:0 auto}
   .page-title{font-size:26px;font-weight:800;letter-spacing:-.02em;margin-bottom:4px}
   .page-sub{font-size:13.5px;color:var(--suave);margin-bottom:22px}
@@ -101,7 +119,7 @@
   .focus-toggle{display:flex;align-items:center;gap:6px;text-transform:none;letter-spacing:0;font-size:12.5px;cursor:pointer}
   .subj-chips{display:flex;flex-wrap:wrap;gap:6px}
   .subj-chips button{font:inherit;font-size:12.5px;font-weight:600;padding:6px 11px;border-radius:999px;cursor:pointer;
-    border:1px solid rgba(148,163,184,.4);background:rgba(255,255,255,.5);color:var(--suave)}
+    border:1px solid rgba(148,163,184,.4);background:rgba(var(--blanco),.5);color:var(--suave)}
   .subj-chips button.on{background:linear-gradient(135deg,var(--acento),#8b7bef);color:#fff;border-color:transparent}
   .subj-chips button .x{margin-left:6px;opacity:.7}
   .focus-plant{margin-top:12px;text-align:center;font-size:13px;color:var(--suave)}
@@ -111,9 +129,11 @@
   .subj-row .bar{flex:1;height:8px;border-radius:99px;background:rgba(148,163,184,.25);overflow:hidden}
   .subj-row .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--acento),#00d2d3)}
   .subj-row .tm{width:62px;text-align:right;font-variant-numeric:tabular-nums;color:var(--suave)}
+  .list-search{padding:8px 8px 0}
+  .list-search input{width:100%;padding:9px 12px;border-radius:12px;border:1px solid rgba(148,163,184,.4);font:inherit;font-size:13.5px;background:rgba(var(--blanco),.8)}
   .list-filters{display:flex;flex-wrap:wrap;gap:6px;padding:8px 8px 0}
   .list-filters button{font:inherit;font-size:11.5px;font-weight:600;padding:5px 10px;border-radius:999px;cursor:pointer;
-    border:1px solid rgba(148,163,184,.4);background:rgba(255,255,255,.5);color:var(--suave)}
+    border:1px solid rgba(148,163,184,.4);background:rgba(var(--blanco),.5);color:var(--suave)}
   .list-filters button.on{background:linear-gradient(135deg,var(--acento),#8b7bef);color:#fff;border-color:transparent}
   .season{display:inline-block;margin-top:6px;font-size:10.5px;font-weight:700;text-transform:uppercase;
     letter-spacing:.08em;padding:3px 9px;border-radius:99px;
@@ -122,8 +142,8 @@
   .list::-webkit-scrollbar,.scrollview::-webkit-scrollbar{width:8px}
   .list::-webkit-scrollbar-thumb,.scrollview::-webkit-scrollbar-thumb{background:rgba(148,163,184,.5);border-radius:99px}
   .card{padding:12px 13px;border-radius:14px;cursor:pointer;margin-bottom:6px;border:1px solid transparent;transition:background .14s,border-color .14s}
-  .card:hover{background:rgba(255,255,255,.5)}
-  .card.active{background:rgba(255,255,255,.85);border-color:rgba(108,92,231,.4)}
+  .card:hover{background:rgba(var(--blanco),.5)}
+  .card.active{background:rgba(var(--blanco),.85);border-color:rgba(108,92,231,.4)}
   .card h3{font-size:14.5px;font-weight:700;line-height:1.2;margin-bottom:5px}
   .card .row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--suave)}
   .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
@@ -137,6 +157,9 @@
   .chincheta.sel{transform:scale(1.22) translateY(-3px)}
   .chincheta .cuerpo{position:absolute;top:0;left:0;width:34px;height:34px;border-radius:50%;
     background:linear-gradient(140deg,var(--acento),#8b7bef);border:3px solid #fff;display:flex;align-items:center;justify-content:center}
+  .chincheta.unk .cuerpo{background:linear-gradient(140deg,#a3adc2,#7c879c)}
+  .dot.unk{background:#94a3b8}
+  .estado.unk{background:rgba(148,163,184,.2);color:var(--suave)}
   .chincheta.closed .cuerpo{background:linear-gradient(140deg,#4f7ed6,#2f5bb8)}
   .chincheta .cuerpo svg{width:17px;height:17px;color:#fff;stroke-width:2.1}
   .chincheta.occ-libre .cuerpo{background:linear-gradient(140deg,#22c55e,#16a34a)}
@@ -154,7 +177,7 @@
   .chincheta.sel .punta::after{border-top-color:var(--acento2)}
 
   /* ===== POPUP ===== */
-  .leaflet-popup-content-wrapper{border-radius:18px;background:var(--glass-fuerte);
+  .leaflet-popup-content-wrapper{color:var(--texto);border-radius:18px;background:var(--glass-fuerte);
     backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);
     border:1px solid var(--borde);box-shadow:var(--sombra)}
   .leaflet-popup-tip{background:var(--glass-fuerte)}
@@ -199,7 +222,7 @@
   .pop .btnstudy{margin-top:12px;width:100%;border:none;border-radius:12px;padding:10px;
     background:linear-gradient(135deg,var(--acento),#8b7bef);color:#fff;font-weight:700;font-size:13px;cursor:pointer}
   .closed-day{color:var(--cerrado)}
-  .leaflet-control-attribution{font-size:9px;background:rgba(255,255,255,.6)!important}
+  .leaflet-control-attribution{font-size:9px;background:rgba(var(--blanco),.6)!important}
 
   /* ===== DOCK INFERIOR ===== */
   .dock{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:1100;
@@ -238,7 +261,7 @@
   .field{margin-bottom:14px}
   .field label{display:block;font-size:12px;font-weight:700;color:var(--suave);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em}
   .field input,.field select{width:100%;padding:11px 13px;border-radius:12px;border:1px solid rgba(148,163,184,.4);
-    background:rgba(255,255,255,.7);font-size:14px;font-family:inherit;color:var(--texto)}
+    background:rgba(var(--blanco),.7);font-size:14px;font-family:inherit;color:var(--texto)}
   .field input:focus,.field select:focus{outline:none;border-color:var(--acento);box-shadow:0 0 0 3px rgba(108,92,231,.15)}
   .btn{border:none;border-radius:13px;padding:12px 18px;font-weight:700;font-size:14px;cursor:pointer;
     background:linear-gradient(135deg,var(--acento),#8b7bef);color:#fff;transition:transform .12s,box-shadow .12s;width:100%}
@@ -251,7 +274,7 @@
 
   /* ===== LOGIN ===== */
   .authwrap{position:fixed;inset:0;z-index:2000;display:flex;align-items:center;justify-content:center;
-    padding:20px;background:linear-gradient(160deg,#dbeafe,#ede9fe)}
+    padding:20px;background:var(--bg-grad)}
   .authbox{width:100%;max-width:380px}
   .authbox .logo{text-align:center;margin-bottom:24px}
   .authbox .logo .kicker{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--acento);font-weight:700}
@@ -304,7 +327,7 @@
   .book-post .bp-icon svg{width:12px;height:12px;color:#fff}
   .book-post .bp-comment{font-size:13px;color:var(--suave);line-height:1.55}
   .badges-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:10px}
-  .badge-tile{background:rgba(255,255,255,.5);border:1px solid rgba(148,163,184,.3);border-radius:14px;padding:12px 8px;text-align:center;
+  .badge-tile{background:rgba(var(--blanco),.5);border:1px solid rgba(148,163,184,.3);border-radius:14px;padding:12px 8px;text-align:center;
     opacity:.42;filter:grayscale(1);transition:opacity .2s,filter .2s,transform .15s}
   .badge-tile.on{opacity:1;filter:none;background:var(--glass-fuerte);box-shadow:var(--sombra)}
   .badge-tile.on:hover{transform:translateY(-2px)}
@@ -322,7 +345,7 @@
   .ohb-track{width:100%;height:40px;background:rgba(148,163,184,.2);border-radius:6px;display:flex;align-items:flex-end;overflow:hidden}
   .ohb-fill{width:100%;border-radius:6px 6px 0 0}
   .occ-hist-bar small{font-size:9.5px;color:var(--suave);font-weight:700}
-  .kudos-btn{margin-top:12px;border:1px solid rgba(148,163,184,.4);background:rgba(255,255,255,.5);border-radius:99px;
+  .kudos-btn{margin-top:12px;border:1px solid rgba(148,163,184,.4);background:rgba(var(--blanco),.5);border-radius:99px;
     padding:7px 14px;font-weight:800;font-size:12.5px;cursor:pointer;color:var(--suave)}
   .kudos-btn:hover{border-color:#f59e0b;color:#b45309}
   .kudos-btn.on{background:linear-gradient(135deg,#f59e0b,#f7b955);border-color:transparent;color:#fff;cursor:default}
@@ -334,9 +357,9 @@
   .cal-nav button{width:38px;height:38px;border-radius:12px;border:1px solid var(--borde);background:var(--glass);cursor:pointer;font-size:18px;font-weight:700;color:var(--acento)}
   .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:minmax(58px,auto);gap:7px}
   .cal-dow{text-align:center;font-size:11px;font-weight:700;color:var(--suave);text-transform:uppercase;padding-bottom:4px}
-  .cal-cell{border-radius:13px;border:1px solid rgba(148,163,184,.25);background:rgba(255,255,255,.45);
+  .cal-cell{border-radius:13px;border:1px solid rgba(148,163,184,.25);background:rgba(var(--blanco),.45);
     padding:6px;cursor:pointer;position:relative;transition:background .12s,border-color .12s;overflow:hidden}
-  .cal-cell:hover{background:rgba(255,255,255,.8);border-color:var(--acento)}
+  .cal-cell:hover{background:rgba(var(--blanco),.8);border-color:var(--acento)}
   .cal-cell.empty{background:transparent;border:none;cursor:default}
   .cal-cell.today{border-color:var(--acento);border-width:2px}
   .cal-cell .dnum{font-size:13px;font-weight:700}
@@ -348,7 +371,7 @@
   .evtxt.ev-tarea-txt{background:rgba(59,130,246,.85)}
   .evtxt.ev-otro-txt{background:rgba(245,158,11,.85)}
   .cal-cell .more{font-size:9px;color:var(--suave);position:absolute;bottom:4px;right:6px}
-  .pray-row{display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:13px;background:rgba(255,255,255,.55);margin-bottom:8px}
+  .pray-row{display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:13px;background:rgba(var(--blanco),.55);margin-bottom:8px}
   .pray-row .pi{flex:1;min-width:0}.pray-row .pi b{font-size:13.5px;display:block}.pray-row .pi small{font-size:11.5px;color:var(--suave)}
   .pray-row button{border:none;border-radius:10px;padding:8px 12px;font-weight:800;font-size:12.5px;cursor:pointer;background:rgba(108,92,231,.14);color:var(--acento);white-space:nowrap}
   .pray-row button:disabled{opacity:.55;cursor:default}
@@ -363,14 +386,14 @@
     border:1px solid var(--borde);border-radius:22px;box-shadow:var(--sombra);padding:24px;max-height:88vh;overflow-y:auto}
   .modal h3{font-size:19px;font-weight:800;margin-bottom:4px}
   .modal .sub{font-size:13px;color:var(--suave);margin-bottom:18px}
-  .ev-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.55);margin-bottom:8px}
+  .ev-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:rgba(var(--blanco),.55);margin-bottom:8px}
   .ev-item .tag{width:9px;height:9px;border-radius:50%;flex-shrink:0}
   .ev-item .et{flex:1;min-width:0}
   .ev-item .et b{font-size:13.5px;display:block}
   .ev-item .et small{font-size:11px;color:var(--suave);text-transform:capitalize}
   .ev-item .del{border:none;background:none;color:var(--cerrado);cursor:pointer;font-size:16px;font-weight:700}
   .seg{display:flex;gap:6px;margin-bottom:14px}
-  .seg button{flex:1;padding:9px;border-radius:11px;border:1px solid rgba(148,163,184,.4);background:rgba(255,255,255,.5);
+  .seg button{flex:1;padding:9px;border-radius:11px;border:1px solid rgba(148,163,184,.4);background:rgba(var(--blanco),.5);
     font-weight:700;font-size:12.5px;cursor:pointer;color:var(--suave)}
   .seg button.on{background:linear-gradient(135deg,var(--acento),#8b7bef);color:#fff;border-color:transparent}
   .seg button.on[data-t=examen]{background:#ef4444}
@@ -385,8 +408,8 @@
   .prof-head .pi p{font-size:13px;color:var(--suave)}
   .section-title{font-size:15px;font-weight:800;margin:24px 0 12px;display:flex;align-items:center;gap:8px}
   .loan-row,.evt-row,.friend-row,.friend-event,.notif-item,.ev-item{transition:background .14s}
-  .loan-row:hover,.evt-row:hover,.friend-row:hover,.friend-event:hover,.notif-item:hover,.ev-item:hover{background:rgba(255,255,255,.85)}
-  .loan-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.55);margin-bottom:8px}
+  .loan-row:hover,.evt-row:hover,.friend-row:hover,.friend-event:hover,.notif-item:hover,.ev-item:hover{background:rgba(var(--blanco),.85)}
+  .loan-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;background:rgba(var(--blanco),.55);margin-bottom:8px}
   .loan-row .li{flex:1;min-width:0}
   .loan-row .li b{font-size:14px;display:block}
   .loan-row .li small{font-size:11.5px;color:var(--suave)}
@@ -402,7 +425,7 @@
   .week-bars .wb .d{font-size:10px;color:var(--suave);font-weight:700}
   .empty-note{font-size:13px;color:var(--suave);text-align:center;padding:24px 18px;line-height:1.5}
 
-  .source-row{display:flex;align-items:center;gap:13px;padding:13px 14px;border-radius:14px;background:rgba(255,255,255,.55);
+  .source-row{display:flex;align-items:center;gap:13px;padding:13px 14px;border-radius:14px;background:rgba(var(--blanco),.55);
     margin-bottom:9px;text-decoration:none;color:var(--texto);transition:transform .12s,box-shadow .12s,background .12s}
   .source-row:hover{transform:translateY(-2px);box-shadow:var(--sombra);background:var(--glass-fuerte)}
   .source-row .sicon{width:42px;height:42px;border-radius:12px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
@@ -411,7 +434,7 @@
   .source-row .si b{font-size:14.5px;display:block}
   .source-row .si small{font-size:12px;color:var(--suave)}
   .source-row .arrow{color:var(--acento);flex-shrink:0}
-  .evt-row{display:flex;align-items:flex-start;gap:11px;padding:12px 13px;border-radius:13px;background:rgba(255,255,255,.55);margin-bottom:8px}
+  .evt-row{display:flex;align-items:flex-start;gap:11px;padding:12px 13px;border-radius:13px;background:rgba(var(--blanco),.55);margin-bottom:8px}
   .evt-row .etag{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-top:5px}
   .evt-charla{background:#6c5ce7}.evt-ponencia{background:#00b894}.evt-debate{background:#e17055}.evt-jornada{background:#0984e3}.evt-otro{background:#f59e0b}.evt-examen{background:#ef4444}.evt-tarea{background:#3b82f6}
   .evt-row .ei{flex:1;min-width:0}
@@ -469,9 +492,10 @@
   .nowhead b{font-size:15px}
   .nowsub{font-size:11.5px;color:var(--suave);margin-top:2px}
   .nowcard{position:fixed;left:50%;transform:translateX(-50%);bottom:96px;z-index:950;width:420px;max-width:calc(100vw - 20px);
-    padding:14px 16px;border-radius:20px;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    padding:14px 16px;border-radius:20px;background:rgba(var(--blanco),.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
     box-shadow:0 12px 34px rgba(15,23,42,.18);border:1px solid rgba(148,163,184,.3)}
   .nowcard.hidden{display:none}
+  .leaflet-popup-tip{background:var(--glass-fuerte)}
   #libPanel:not(.hidden) ~ .locate-btn{display:none}
   .nc-kicker{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--acento)}
   .nc-exam{color:#b45309}
@@ -483,25 +507,25 @@
   .ob-step{font-size:11px;font-weight:800;color:var(--acento);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
   .feed-edit{display:block;margin:8px 0 0 auto;font-size:12px}
   .pick-list{display:flex;flex-direction:column;gap:8px;margin-top:12px}
-  .pick-list button{font:inherit;text-align:left;padding:12px 14px;border-radius:14px;cursor:pointer;border:1px solid rgba(148,163,184,.35);background:rgba(255,255,255,.7);color:var(--texto)}
+  .pick-list button{font:inherit;text-align:left;padding:12px 14px;border-radius:14px;cursor:pointer;border:1px solid rgba(148,163,184,.35);background:rgba(var(--blanco),.7);color:var(--texto)}
   .pick-list button b{display:block;font-size:14.5px}
   .pick-list button small{color:var(--suave);font-size:12px}
   .pick-list button.on{border-color:var(--acento);background:rgba(108,92,231,.14)}
   .occ-quick{display:flex;gap:6px;margin-top:6px}
   .occ-quick button{flex:1;font:inherit;font-size:12.5px;font-weight:700;padding:9px 4px;border-radius:12px;cursor:pointer;
-    border:1px solid rgba(148,163,184,.4);background:rgba(255,255,255,.6);color:var(--texto)}
+    border:1px solid rgba(148,163,184,.4);background:rgba(var(--blanco),.6);color:var(--texto)}
   .occ-quick button.on{border-color:var(--acento);background:rgba(108,92,231,.14)}
   .bib-actions{display:flex;gap:8px;margin:10px 0 4px}
   .bib-actions .btn{flex:1;width:auto;margin:0;text-align:center;text-decoration:none;padding:9px 6px;font-size:13px}
   body.no-extras .extra{display:none!important}
   .more-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
   .more-grid button{font:inherit;font-weight:700;font-size:13px;padding:14px 6px;border-radius:14px;cursor:pointer;
-    border:1px solid rgba(148,163,184,.35);background:rgba(255,255,255,.6);color:var(--texto)}
+    border:1px solid rgba(148,163,184,.35);background:rgba(var(--blanco),.6);color:var(--texto)}
   .more-grid button span{display:block;font-size:22px;margin-bottom:4px}
   .nowclose{border:none;background:none;font-size:22px;color:var(--suave);cursor:pointer;line-height:1;padding:0 2px}
   .nowlist{overflow-y:auto;padding:8px}
   .nowrow{display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:13px;cursor:pointer;transition:background .12s}
-  .nowrow:hover{background:rgba(255,255,255,.6)}
+  .nowrow:hover{background:rgba(var(--blanco),.6)}
   .nowrow .rank{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--acento),#8b7bef);
     color:#fff;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
   .nowrow .ni{flex:1;min-width:0}
@@ -514,7 +538,7 @@
   /* ===== OCUPACIÓN ===== */
   .occ{display:flex;gap:6px;margin-top:10px;border-top:1px solid rgba(148,163,184,.3);padding-top:10px}
   .occ button{flex:1;padding:7px 4px;border-radius:10px;border:1px solid rgba(148,163,184,.4);
-    background:rgba(255,255,255,.5);font-size:11px;font-weight:700;cursor:pointer;color:var(--suave)}
+    background:rgba(var(--blanco),.5);font-size:11px;font-weight:700;cursor:pointer;color:var(--suave)}
   .occ button:hover{border-color:var(--acento);color:var(--acento)}
   .occ-report{font-size:11.5px;margin-top:8px;display:flex;align-items:center;gap:6px}
   .occ-report .od{width:9px;height:9px;border-radius:50%}
@@ -533,16 +557,16 @@
 
   /* ===== AMIGOS / SOCIAL ===== */
   .social-note{font-size:12px;color:var(--suave);background:rgba(108,92,231,.08);border:1px solid rgba(108,92,231,.2);border-radius:12px;padding:11px 12px;margin-bottom:14px;line-height:1.45}
-  .codebox{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.55);border:1px solid rgba(148,163,184,.3);border-radius:14px;padding:11px 12px;margin-bottom:14px}
+  .codebox{display:flex;align-items:center;gap:8px;background:rgba(var(--blanco),.55);border:1px solid rgba(148,163,184,.3);border-radius:14px;padding:11px 12px;margin-bottom:14px}
   .codebox code{font-size:17px;font-weight:900;letter-spacing:.08em;color:var(--acento);flex:1}
-  .friend-row{display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:13px;background:rgba(255,255,255,.55);margin-bottom:8px}
+  .friend-row{display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:13px;background:rgba(var(--blanco),.55);margin-bottom:8px}
   .friend-row .fav{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--acento),var(--acento2));color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
   .friend-row .fi{flex:1;min-width:0}.friend-row .fi b{font-size:13.5px;display:block}.friend-row .fi small{font-size:11.5px;color:var(--suave);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .friend-row .factions{display:flex;gap:6px;flex-shrink:0}.friend-row .factions button{border:none;border-radius:10px;padding:7px 9px;font-weight:800;font-size:11.5px;cursor:pointer}
   .friend-row .okbtn{background:rgba(34,197,94,.16);color:#15803d}.friend-row .nobtn{background:rgba(239,68,68,.14);color:#b91c1c}.friend-row .mapbtn{background:rgba(108,92,231,.14);color:var(--acento)}
   .friendpin{position:relative;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#00d2d3,#6c5ce7);border:3px solid #fff;color:#fff;font-weight:900;box-shadow:0 7px 18px rgba(2,6,23,.32)}
   .friendpin:after{content:"";position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);border-left:6px solid transparent;border-right:6px solid transparent;border-top:9px solid #6c5ce7}
-  .friend-event{display:flex;align-items:flex-start;gap:10px;padding:11px 12px;border-radius:13px;background:rgba(255,255,255,.55);margin-bottom:8px}
+  .friend-event{display:flex;align-items:flex-start;gap:10px;padding:11px 12px;border-radius:13px;background:rgba(var(--blanco),.55);margin-bottom:8px}
   .friend-event .who{font-size:11px;font-weight:800;color:var(--acento);text-transform:uppercase;letter-spacing:.04em}.friend-event b{font-size:13.5px;display:block}.friend-event small{font-size:11.5px;color:var(--suave)}
 
   /* ===== PRODUCTIVIDAD / CHECK-IN ===== */
@@ -557,7 +581,7 @@
   .badge-warn{color:#b45309;font-weight:700}
 
   /* ===== AVISOS LISTA ===== */
-  .notif-item{display:flex;gap:11px;padding:12px 13px;border-radius:13px;background:rgba(255,255,255,.55);margin-bottom:8px;align-items:flex-start}
+  .notif-item{display:flex;gap:11px;padding:12px 13px;border-radius:13px;background:rgba(var(--blanco),.55);margin-bottom:8px;align-items:flex-start}
   .notif-item .nicon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:17px}
   .notif-item.examen .nicon{background:rgba(239,68,68,.15)}
   .notif-item.tarea .nicon{background:rgba(59,130,246,.15)}
@@ -569,7 +593,7 @@
 
   /* ===== COMPARTIR ===== */
   .sharelink{display:flex;gap:8px;margin-top:6px}
-  .sharelink input{flex:1;font-size:12px;padding:10px;border-radius:11px;border:1px solid rgba(148,163,184,.4);background:rgba(255,255,255,.7);font-family:monospace}
+  .sharelink input{flex:1;font-size:12px;padding:10px;border-radius:11px;border:1px solid rgba(148,163,184,.4);background:rgba(var(--blanco),.7);font-family:monospace}
   .friend-banner{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:16px;margin-bottom:16px;
     background:linear-gradient(135deg,rgba(108,92,231,.14),rgba(0,210,211,.14));border:1px solid rgba(108,92,231,.25)}
   .friend-banner .fav{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--acento),var(--acento2));
@@ -602,7 +626,7 @@
 <div class="authwrap" id="authView">
   <div class="authbox">
     <div class="logo">
-      <div class="kicker">Iruña · Navarra</div>
+      <div class="kicker">Navarra · España</div>
       <h1>Bibliotecas de <span>Navarra</span></h1>
     </div>
     <div class="glasscard">
@@ -635,7 +659,7 @@
 
   <div class="topbar">
     <div class="brand">
-      <div class="kicker">Iruña · Navarra</div>
+      <div class="kicker">Navarra · España</div>
       <h1>Bibliotecas de <span>Navarra</span></h1>
     </div>
     <button class="bell" id="bellBtn" title="Avisos">
@@ -656,11 +680,14 @@
         </div>
         <span class="season" id="seasonTag"></span>
       </div>
+      <div class="list-search"><input type="search" id="listSearch" placeholder="Buscar biblioteca o ciudad…" autocomplete="off"></div>
       <div class="list-filters" id="listFilters">
         <button data-f="abiertas">● Abiertas ahora</button>
         <button data-f="cerca">📍 Más cercanas</button>
         <button data-f="libre">🎫 Acceso libre</button>
         <button data-f="wifi">📶 Wifi</button>
+        <button data-f="horario">🕐 Con horario</button>
+        <button data-f="uni">🎓 Universitarias</button>
       </div>
       <div class="list" id="list"></div>
     </div>
@@ -694,7 +721,7 @@
       </div>
       <div id="studyOfferPanel" class="hidden glasscard" style="margin-bottom:18px">
         <div class="page-sub" style="margin-bottom:12px">Dedica este tiempo de estudio a alguien o algo. Se guardará junto a tu próxima sesión.</div>
-        <div class="field"><label>¿Por quién o qué ofreces tu estudio?</label><textarea id="offerText" rows="4" placeholder="Ej: Por mi abuela, que se recupere pronto…" style="width:100%;padding:11px 13px;border-radius:12px;border:1px solid rgba(148,163,184,.4);background:rgba(255,255,255,.7);font-size:14px;font-family:inherit;color:var(--texto);resize:vertical"></textarea></div>
+        <div class="field"><label>¿Por quién o qué ofreces tu estudio?</label><textarea id="offerText" rows="4" placeholder="Ej: Por mi abuela, que se recupere pronto…" style="width:100%;padding:11px 13px;border-radius:12px;border:1px solid rgba(148,163,184,.4);background:rgba(var(--blanco),.7);font-size:14px;font-family:inherit;color:var(--texto);resize:vertical"></textarea></div>
         <button class="btn sm" id="btnSaveOffer">Guardar</button>
       </div>
       <div id="pomodoroPanel" class="hidden glasscard studyhero" style="margin-bottom:18px">
@@ -808,7 +835,7 @@
       <div class="social-note hidden" id="blogNote"></div>
       <div class="glasscard" style="margin-bottom:18px">
         <div class="field"><label>Libro</label><input type="text" id="blogBook" placeholder="Ej: Cien años de soledad"></div>
-        <div class="field"><label>Tu comentario</label><textarea id="blogComment" rows="3" placeholder="¿Qué te ha parecido?" style="width:100%;padding:11px 13px;border-radius:12px;border:1px solid rgba(148,163,184,.4);background:rgba(255,255,255,.7);font-size:14px;font-family:inherit;color:var(--texto);resize:vertical"></textarea></div>
+        <div class="field"><label>Tu comentario</label><textarea id="blogComment" rows="3" placeholder="¿Qué te ha parecido?" style="width:100%;padding:11px 13px;border-radius:12px;border:1px solid rgba(148,163,184,.4);background:rgba(var(--blanco),.7);font-size:14px;font-family:inherit;color:var(--texto);resize:vertical"></textarea></div>
         <button class="btn sm" id="btnPostBlog">Publicar</button>
       </div>
       <div id="blogList"></div>
@@ -830,7 +857,7 @@
         <div class="codebox"><span style="font-size:12px;color:var(--suave);font-weight:800">Tu código</span><code id="friendCode">—</code><button class="btn sm ghost" id="btnCopyFriendCode" style="width:auto">Copiar</button></div>
         <div class="field"><label>Añadir amigo por código</label><input type="text" id="friendCodeInput" placeholder="Ej: A1B2C3D4" style="text-transform:uppercase"></div>
         <button class="btn sm" id="btnAddFriend" style="margin-bottom:14px">+ Enviar solicitud</button>
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;padding:11px 12px;border-radius:13px;background:rgba(255,255,255,.55)">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;padding:11px 12px;border-radius:13px;background:rgba(var(--blanco),.55)">
           <div><b style="font-size:14px">Compartir tu actividad</b><div style="font-size:12px;color:var(--suave)">Tus amigos verán la biblioteca donde estudias y tus sesiones terminadas (duración, nota, valoración). Nunca tus coordenadas GPS exactas.</div></div>
           <label class="switch"><input type="checkbox" id="chkSharePresence"><span class="slider"></span></label>
         </div>
@@ -901,6 +928,10 @@
           <div><b style="font-size:14px">Rezar y ofrecer estudio</b><div style="font-size:12px;color:var(--suave)">Rezar por los exámenes de tus amigos y dedicar tus horas de estudio</div></div>
           <label class="switch"><input type="checkbox" id="chkExtras"><span class="slider"></span></label>
         </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px">
+          <div><b style="font-size:14px">Tema</b><div style="font-size:12px;color:var(--suave)">El oscuro cansa menos la vista de noche</div></div>
+          <select id="selTheme" style="padding:8px 10px;border-radius:10px;border:1px solid rgba(148,163,184,.4);font:inherit;background:rgba(var(--blanco),.8);color:var(--texto)"><option value="auto">Automático</option><option value="light">Claro</option><option value="dark">Oscuro</option></select>
+        </div>
         <button class="btn sm ghost" id="btnRename" style="margin-bottom:12px">✏️ Cambiar mi nombre</button>
         <button class="btn sm ghost" id="btnFeedback" style="margin-bottom:12px">💬 Enviar una sugerencia o un error</button>
         <button class="btn danger" id="btnLogout">Cerrar sesión</button>
@@ -925,6 +956,10 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js';document.head.appendChild(s);"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" defer
+        onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js';document.head.appendChild(s);"></script>
+<!-- Bibliotecas del resto de España (datos abiertos de Overture Maps; ver el propio archivo) -->
+<script src="bibliotecas-espana.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ===================== DATOS BIBLIOTECAS ===================== */
@@ -932,7 +967,14 @@ function h(hh,mm){return hh*60+mm}
 const DIAS=["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
 function esVerano(d){const m=d.getMonth(),dia=d.getDate();
   if(m>5&&m<8)return true; if(m===5&&dia>=15)return true; if(m===8&&dia<=14)return true; return false;}
-function horarioVigente(b){const v=esVerano(new Date());
+const SIN_HORARIO=[[],[],[],[],[],[],[]];
+// Verano propio de la biblioteca (MM-DD a MM-DD) o, si no tiene, el de la red de Navarra.
+function esVeranoDe(b,d){
+  if(!b.veranoDesde||!b.veranoHasta)return esVerano(d);
+  var k=String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  return b.veranoDesde<=b.veranoHasta?(k>=b.veranoDesde&&k<=b.veranoHasta):(k>=b.veranoDesde||k<=b.veranoHasta);
+}
+function horarioVigente(b){if(b.sinHorario)return SIN_HORARIO;const v=esVeranoDe(b,new Date());
   if(v&&b.horasVerano)return b.horasVerano; if(!v&&b.horasInvierno)return b.horasInvierno;
   return b.horas||b.horasInvierno||b.horasVerano;}
 const HM=[[h(8,30),h(14,30)]], HT=[[h(14,0),h(20,0)]];
@@ -1065,12 +1107,44 @@ var ACCESO_INFO={
   "Biblioteca Universidad de Navarra · Facultades Eclesiásticas":{acceso:{tipo:"restringido",detalle:"Pensada principalmente para alumnado y profesorado de Teología, Derecho Canónico y Filosofía Eclesiástica, aunque no parece haber barrera estricta de entrada para el resto de la comunidad UNAV."},accesibilidad:{sillaRuedas:null,turistas:false,gratisDias:null,notas:"Conocida coloquialmente como \"Biblioteca de Teología\". Fondo especializado (~8.300 libros, +200 revistas). Horario detallado y accesibilidad física sin confirmar; coordenadas aproximadas (sin verificar con precisión)."}},
   "Biblioteca UPNA · Campus de Arrosadía":{acceso:{tipo:"libre",detalle:"Sala de lectura abierta al público general, EXCEPTO en época de exámenes (solo comunidad universitaria). El préstamo es solo para comunidad universitaria o convenios."},accesibilidad:{sillaRuedas:true,turistas:true,gratisDias:null,notas:"Entrada y aparcamiento accesibles. En época de exámenes se restringen los puestos de estudio a la comunidad universitaria."}}
 };
+// Nombres repetidos en los datos (p. ej. "Biblioteca Municipal Central" en 3 ciudades): se añade la ciudad,
+// porque las sesiones guardan la biblioteca por nombre.
+(function(){var c={};(window.BIBLIOTECAS_ES||[]).forEach(function(r){c[r.n]=(c[r.n]||0)+1;});
+  var vistos={};(window.BIBLIOTECAS_ES||[]).forEach(function(r){if(c[r.n]>1&&r.c&&r.n.indexOf(r.c)===-1)r.n=r.n+" · "+r.c;
+    if(vistos[r.n]){vistos[r.n]++;r.n=r.n+" ("+vistos[r.n]+")";}else vistos[r.n]=1;});})();
+// Bibliotecas del resto de España: se añaden AL FINAL para no cambiar los índices de las de Navarra
+// (los reportes de afluencia y la presencia de amigos guardan el índice). Sin horario verificado.
+const N_NAVARRA=BIBLIOTECAS.length;
+// Horario compacto del archivo de datos: {"L":[["09:00","21:00"]],...} -> formato interno semana(...)
+function horarioDeDatos(o){
+  if(!o)return null;
+  function tr(lst){return (lst||[]).map(function(r){var a=r[0].split(":"),b=r[1].split(":");return [h(+a[0],+a[1]),h(+b[0],+b[1])];});}
+  return semana(tr(o.L),tr(o.M),tr(o.X),tr(o.J),tr(o.V),tr(o.S),tr(o.D));
+}
+(window.BIBLIOTECAS_ES||[]).forEach(function(r){
+  var b={nombre:r.n,lat:r.lat,lon:r.lon,dir:r.dir||"",tel:r.tel||"",web:r.web||"",rating:null,reviews:null,
+    sinHorario:true,ciudad:r.c||"",provincia:r.p||"",tipoBib:r.t||"otra",
+    tz:(r.p==="Las Palmas"||r.p==="Santa Cruz de Tenerife"||r.lat<30)?"Atlantic/Canary":null};
+  if(r.h&&r.h.inv){
+    b.sinHorario=false;b.horasInvierno=horarioDeDatos(r.h.inv);b.horasVerano=horarioDeDatos(r.h.ver)||b.horasInvierno;
+    b.veranoDesde=r.h.vd||null;b.veranoHasta=r.h.vh||null;b.fuenteHorario=r.h.f||"";b.notaHorario=r.h.nota||"";
+  }
+  BIBLIOTECAS.push(b);
+});
 BIBLIOTECAS.forEach(function(b){
   var info=ACCESO_INFO[b.nombre];
   if(info){b.acceso=info.acceso;b.accesibilidad=info.accesibilidad;return;}
   // Red de Bibliotecas Públicas de Navarra: la Ley Foral 32/2002 establece acceso libre en toda la red.
   // Se aplica por defecto a las bibliotecas municipales sin ficha investigada individualmente; el resto de
   // datos de accesibilidad física sí quedan como "sin confirmar" al no haberse verificado edificio por edificio.
+  if(b.sinHorario){
+    // Ley 10/2007 de la lectura, art. 13: acceso libre y gratuito a los servicios básicos de las bibliotecas públicas.
+    if(b.tipoBib==="publica")b.acceso={tipo:"libre",detalle:"Biblioteca pública: acceso libre y gratuito a los servicios básicos (Ley 10/2007 de la lectura). Sin ficha individual verificada."};
+    else if(b.tipoBib==="universidad")b.acceso={tipo:"desconocido",detalle:"Biblioteca universitaria: el acceso suele estar limitado a su comunidad, sobre todo en exámenes. Consulta su web."};
+    else b.acceso={tipo:"desconocido",detalle:"Sin confirmar"};
+    b.accesibilidad={sillaRuedas:null,turistas:null,gratisDias:null,notas:"Sin confirmar"};
+    return;
+  }
   if(/^Biblioteca Pública/.test(b.nombre)){
     b.acceso={tipo:"libre",detalle:"Acceso libre y gratuito, como el resto de la red pública de Navarra (Ley Foral 32/2002). Sin ficha individual investigada para esta biblioteca."};
     b.accesibilidad={sillaRuedas:null,turistas:true,gratisDias:null,notas:"Sin confirmar accesibilidad física — dato no investigado individualmente para esta biblioteca."};
@@ -1113,7 +1187,19 @@ BIBLIOTECAS.forEach(function(b){
   b.recursos=extra&&extra.recursos?extra.recursos:[];
 });
 function fmtHoras(min){const hh=Math.floor(min/60),mm=min%60;return hh+":"+String(mm).padStart(2,"0");}
-function estadoBib(b){const now=new Date(),d=now.getDay(),m=now.getHours()*60+now.getMinutes();
+// Hora "de reloj" en la biblioteca: las de Canarias van una hora por detrás de la península.
+// Devuelve un Date cuyos getHours()/getDay() son la hora local de la biblioteca.
+var _deltaTz={};
+function deltaTz(tz){
+  if(!tz)return 0;
+  var k=tz+"|"+Math.floor(Date.now()/600000); if(_deltaTz[k]!=null)return _deltaTz[k];
+  var v=0;
+  try{var now=new Date(),p={};new Intl.DateTimeFormat("en-US",{timeZone:tz,hourCycle:"h23",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}).formatToParts(now).forEach(function(x){p[x.type]=x.value;});
+    var wall=new Date(+p.year,+p.month-1,+p.day,+p.hour,+p.minute); v=Math.round((wall-now)/60000)*60000;}catch(e){}
+  _deltaTz[k]=v; return v;
+}
+function ahoraEn(b){return new Date(Date.now()+deltaTz(b&&b.tz));}
+function estadoBib(b){const now=ahoraEn(b),d=now.getDay(),m=now.getHours()*60+now.getMinutes();
   const tr=horarioVigente(b)[d]||[];for(var k=0;k<tr.length;k++){if(m>=tr[k][0]&&m<tr[k][1])return true;}return false;}
 
 /* ===================== ALMACENAMIENTO ===================== */
@@ -1793,7 +1879,7 @@ function onboarding(){
     var opts=idx.map(function(i){return '<option value="'+i+'">'+escapeHTML(cortoNombre(BIBLIOTECAS[i].nombre))+'</option>';}).join("");
     var todas=BIBLIOTECAS.map(function(b,i){return idx.indexOf(i)===-1?'<option value="'+i+'">'+escapeHTML(cortoNombre(b.nombre))+'</option>':'';}).join("");
     openModal('<div class="ob-step">2 de 3</div><h3>¿Dónde sueles estudiar?</h3><div class="sub">La tendremos en cuenta al recomendarte y al empezar a estudiar.</div>'+
-      '<div class="field"><select id="obBib" style="width:100%;padding:11px;border-radius:12px;border:1px solid rgba(148,163,184,.4);font:inherit"><option value="-1">Aún no lo sé</option><optgroup label="Pamplona y cercanías">'+opts+'</optgroup><optgroup label="Resto de Navarra">'+todas+'</optgroup></select></div>'+
+      '<div class="field"><select id="obBib" style="width:100%;padding:11px;border-radius:12px;border:1px solid rgba(148,163,184,.4);font:inherit"><option value="-1">Aún no lo sé</option><optgroup label="Pamplona y cercanías">'+opts+'</optgroup><optgroup label="Resto de Navarra y España">'+todas+'</optgroup></select></div>'+
       '<button class="btn" id="obNext">Siguiente</button>',function(){
       $("obNext").addEventListener("click",function(){var v=+$("obBib").value;DATA.habitualIdx=v>=0?v:null;saveUserData();paso3();});
     });
@@ -1821,9 +1907,9 @@ function applyExtras(){
   if(!on&&$("studyOfferPanel")&&!$("studyOfferPanel").classList.contains("hidden")){var b=document.querySelector('#studyTab button[data-t="crono"]');if(b)b.click();}
 }
 // Borra la cuenta en la nube (función delete_my_account del SQL) y todos los datos de este dispositivo.
-function enviarSugerencia(){
+function enviarSugerencia(sobre){
   openModal('<h3>¿Qué mejorarías?</h3><div class="sub">Cuéntanos un error, una idea o una biblioteca con datos mal. Lo leemos todo.</div>'+
-    '<div class="field"><textarea id="fbText" rows="5" maxlength="2000" style="width:100%;padding:11px 13px;border-radius:12px;border:1px solid rgba(148,163,184,.4);font:inherit" placeholder="Ej: el horario de Iturrama ha cambiado…"></textarea></div>'+
+    '<div class="field"><textarea id="fbText" rows="5" maxlength="2000" style="width:100%;padding:11px 13px;border-radius:12px;border:1px solid rgba(148,163,184,.4);font:inherit" placeholder="Ej: el horario de Iturrama ha cambiado…">'+(sobre?escapeHTML("Sobre «"+sobre+"»: "):"")+'</textarea></div>'+
     '<button class="btn" id="fbSend">Enviar</button>',function(){
     $("fbSend").addEventListener("click",async function(){
       var t=$("fbText").value.trim(); if(!t){showToast("Escribe algo primero");return;}
@@ -2034,7 +2120,7 @@ function popupHTML(b,i){
     distTxt=dm<1000?Math.round(dm)+" m":(dm/1000).toFixed(1)+" km";
   }
   var s='<div class="pop pop-compact"><h2>'+escapeHTML(b.nombre)+'</h2>';
-  s+='<div class="pop-meta"><span class="estado '+(abierto?"open":"closed")+'">'+(abierto?"● Abierta":"● Cerrada")+'</span>'+(distTxt?'<span class="pop-dist">📍 '+distTxt+'</span>':'')+'</div>';
+  s+='<div class="pop-meta"><span class="estado '+(b.sinHorario?"unk":(abierto?"open":"closed"))+'">'+(b.sinHorario?"● Horario sin confirmar":(abierto?"● Abierta":"● Cerrada"))+'</span>'+(distTxt?'<span class="pop-dist">📍 '+distTxt+'</span>':'')+'</div>';
   s+='<div class="pop-today">'+escapeHTML(estadoTexto(b).txt)+'</div>';
   s+=popIconRow(b);
   if(epocaExamenes()&&esUPNA(b))s+='<div class="pop-today" style="color:#b45309">⚠️ En exámenes la sala suele reservarse a la comunidad UPNA</div>';
@@ -2060,24 +2146,31 @@ function recursosHTML(b){
   return s;
 }
 function openBibDetailModal(i){
-  var b=BIBLIOTECAS[i], verano=esVerano(new Date()), abierto=estadoBib(b);
+  var b=BIBLIOTECAS[i], verano=esVeranoDe(b,new Date()), abierto=estadoBib(b);
   var s='<div class="pop" style="padding:0"><h2>'+escapeHTML(b.nombre)+'</h2>';
-  s+='<div class="estado '+(abierto?"open":"closed")+'">'+(abierto?"● Abierto ahora":"● Cerrado ahora")+'</div>';
+  s+='<div class="estado '+(b.sinHorario?"unk":(abierto?"open":"closed"))+'">'+(b.sinHorario?"● Horario sin confirmar":(abierto?"● Abierto ahora":"● Cerrado ahora"))+'</div>';
   if(b.rating!=null)s+='<div class="rate-line"><b>★ '+b.rating.toFixed(1)+'</b> · '+b.reviews+' reseñas</div>';
   s+='<div class="dir"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6c5ce7" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span>'+escapeHTML(b.dir)+'</span></div>';
   s+='<div class="bib-actions"><a class="btn sm" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination='+b.lat+','+b.lon+'">🧭 Cómo llegar</a>'+
     (b.tel?'<a class="btn sm ghost" href="tel:'+escapeHTML(b.tel.replace(/\s/g,""))+'">📞 Llamar</a>':'')+
     (b.web&&/^https?:\/\//.test(b.web)?'<a class="btn sm ghost" target="_blank" rel="noopener" href="'+escapeHTML(b.web)+'">🌐 Web</a>':'')+'</div>';
   var cal=horarioVigente(b),hoy=new Date().getDay();
+  if(b.sinHorario){
+    s+='<div class="hours"><h4>Horario</h4><div style="font-size:12.5px;color:var(--suave)">Sin confirmar todavía'+(b.web?': consúltalo en su web.':'.')+
+      ' <button class="linkbtn" onclick="closeModal();enviarSugerencia('+jsArg("Horario de "+b.nombre)+')">¿Lo sabes? Cuéntanoslo</button></div></div>';
+  }else{
   s+='<div class="hours"><h4>'+(verano?"Horario de verano":"Horario de invierno")+'</h4><table>';
   for(var d=1;d<=7;d++){var di=d%7,tr=cal[di]||[];
     var txt=tr.length?tr.map(function(t){return fmtHoras(t[0])+"–"+fmtHoras(t[1]);}).join(", "):'<span class="closed-day">Cerrado</span>';
     s+='<tr class="'+(di===hoy?"today":"")+'"><td>'+DIAS[di]+'</td><td>'+txt+'</td></tr>';}
-  s+='</table></div>';
+  s+='</table>'+(b.notaHorario?'<div style="font-size:11.5px;color:var(--suave);margin-top:6px">'+escapeHTML(b.notaHorario)+'</div>':'')+
+    (b.fuenteHorario&&/^https?:\/\//.test(b.fuenteHorario)?'<div style="font-size:11px;margin-top:4px"><a target="_blank" rel="noopener" href="'+escapeHTML(b.fuenteHorario)+'">Fuente del horario</a> · puede cambiar en festivos</div>':'')+'</div>';
+  }
   s+=accesoAccesibilidadHTML(b);
   s+=recursosHTML(b);
   s+=occControlsHTML(i);
   s+='<button class="btnstudy" onclick="closeModal();startStudyAt('+i+')">▶ Estudiar aquí</button>';
+  s+='<button class="linkbtn" style="display:block;margin:10px auto 0;font-size:12px" onclick="closeModal();enviarSugerencia('+jsArg(b.nombre)+')">Avisar de un error en esta ficha</button>';
   s+='</div>';
   openModal(s);
 }
@@ -2112,7 +2205,12 @@ window.__selBib=function(i){
   markers.forEach(function(mk,j){var el=mk&&mk.getElement&&mk.getElement();
     if(el){var ch=el.querySelector(".chincheta");if(ch)ch.classList.toggle("sel",j===i);}});
   document.querySelectorAll("#list .card").forEach(function(c){c.classList.toggle("active",+c.dataset.i===i);});
-  if(window.__map&&markers[i]){window.__map.flyTo([b.lat,b.lon],16,{duration:.6});markers[i].openPopup();}
+  if(window.__map&&markers[i]){
+    var mk=markers[i], cap=window.__capaBibs;
+    if(cap&&cap.zoomToShowLayer){window.__map.setView([b.lat,b.lon],16,{animate:false});cap.zoomToShowLayer(mk,function(){
+      var el=mk.getElement&&mk.getElement();if(el){var ch=el.querySelector(".chincheta");if(ch)ch.classList.add("sel");}mk.openPopup();});}
+    else{window.__map.flyTo([b.lat,b.lon],16,{duration:.6});mk.openPopup();}
+  }
 };
 // La lista lateral se construye SIEMPRE (no depende de Leaflet)
 function buildList(){
@@ -2121,11 +2219,14 @@ function buildList(){
   $("seasonTag").textContent=verano?"Horario de verano":"Horario de invierno";
   var list=$("list");list.innerHTML="";
   syncListFilterButtons();
-  var F=LIST_FILTERS, idx=[];
+  var F=LIST_FILTERS, idx=[], q=normTxt(($("listSearch")||{}).value||"").trim();
   BIBLIOTECAS.forEach(function(b,i){
     if(F.abiertas&&!estadoBib(b))return;
     if(F.libre&&!(b.acceso&&b.acceso.tipo==="libre"))return;
     if(F.wifi&&!(b.recursos&&b.recursos.indexOf("wifi")!==-1))return;
+    if(F.horario&&b.sinHorario)return;
+    if(F.uni&&!(b.tipoBib==="universidad"||/universi|UPNA|campus|CRAI/i.test(b.nombre)))return;
+    if(q&&normTxt(b.nombre+" "+(b.ciudad||"")+" "+(b.provincia||"")+" "+(b.dir||"")).indexOf(q)===-1)return;
     idx.push(i);
   });
   if(F.cerca&&window.__userPos){
@@ -2133,6 +2234,8 @@ function buildList(){
     idx.sort(function(a,c){return distMetros(up.lat,up.lon,BIBLIOTECAS[a].lat,BIBLIOTECAS[a].lon)-distMetros(up.lat,up.lon,BIBLIOTECAS[c].lat,BIBLIOTECAS[c].lon);});
   }
   if(!idx.length)list.innerHTML='<div class="empty-note">Ninguna biblioteca cumple estos filtros'+(F.wifi?' (el wifi solo figura donde está confirmado)':'')+'.</div>';
+  var total=idx.length, LIM=120;
+  if(total>LIM){idx=idx.slice(0,LIM);}
   idx.forEach(function(i){
     var b=BIBLIOTECAS[i];
     var abierto=estadoBib(b);
@@ -2142,18 +2245,22 @@ function buildList(){
       distTxt=" · 📍"+(dm<1000?Math.round(dm)+"m":(dm/1000).toFixed(1)+"km");
     }
     var card=document.createElement("div");card.className="card";card.dataset.i=i;
-    card.innerHTML='<h3>'+escapeHTML(cortoNombre(b.nombre))+'</h3><div class="row"><span class="dot '+(abierto?"open":"closed")+'"></span>'+escapeHTML(estadoTexto(b).txt)+escapeHTML(distTxt)+(b.rating!=null?'<span class="rate">★ '+b.rating.toFixed(1)+'</span>':'')+'</div>'+occStatusHTML(i,true);
+    card.innerHTML='<h3>'+escapeHTML(cortoNombre(b.nombre))+'</h3><div class="row"><span class="dot '+(b.sinHorario?"unk":(abierto?"open":"closed"))+'"></span>'+escapeHTML(estadoTexto(b).txt+(b.ciudad?" · "+b.ciudad:""))+escapeHTML(distTxt)+(b.rating!=null?'<span class="rate">★ '+b.rating.toFixed(1)+'</span>':'')+'</div>'+occStatusHTML(i,true);
     card.addEventListener("click",function(){window.__selBib(i);});
     list.appendChild(card);
   });
   var activos=Object.keys(F).some(function(k){return F[k];});
+  if(total>LIM){var more=document.createElement("div");more.className="empty-note";more.textContent="Mostrando "+LIM+" de "+total+". Busca por nombre o ciudad, o usa «Más cercanas».";list.appendChild(more);}
   renderNowCard();
-  $("panelCount").textContent=activos?(idx.length+" de "+BIBLIOTECAS.length+" bibliotecas"):(BIBLIOTECAS.length+" bibliotecas en Navarra");
+  activos=activos||!!q;
+  $("panelCount").textContent=activos?(total+" de "+BIBLIOTECAS.length+" bibliotecas"):(BIBLIOTECAS.length+" bibliotecas en España");
 }
+function normTxt(t){return String(t||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");}
 // Filtros de la lista (se recuerdan en este navegador). "Más cercanas" pide la ubicación si aún no la hay.
 // "Abiertas ahora" depende de la hora: se recalcula cada minuto aunque no lleguen datos nuevos.
 setInterval(function(){if(!window.__listReady)return; if(LIST_FILTERS.abiertas)buildList(); else renderNowCard();},60000);
-var LIST_FILTERS=Object.assign({abiertas:false,cerca:false,libre:false,wifi:false},loadJSON("bpna_list_filters",{}));
+(function(){var ls=$("listSearch");if(!ls)return;var tmo;ls.addEventListener("input",function(){clearTimeout(tmo);tmo=setTimeout(buildList,200);});})();
+var LIST_FILTERS=Object.assign({abiertas:false,cerca:false,libre:false,wifi:false,horario:false,uni:false},loadJSON("bpna_list_filters",{}));
 function syncListFilterButtons(){
   document.querySelectorAll("#listFilters button").forEach(function(btn){btn.classList.toggle("on",!!LIST_FILTERS[btn.dataset.f]);});
 }
@@ -2173,7 +2280,7 @@ function chinchetaIcon(i){
   var occClass="";
   if(abierto){var o=occSummary(i); if(o)occClass=" occ-"+o.level;}
   var libroSvg='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5c2-1.5 5-2 7-1v14c-2-1-5-.5-7 1V5z"/><path d="M22 5c-2-1.5-5-2-7-1v14c2-1 5-.5 7 1V5z"/></svg>';
-  return L.divIcon({className:"",html:'<div class="chincheta'+(abierto?"":" closed")+occClass+'"><div class="cuerpo">'+libroSvg+'</div><div class="punta"></div></div>',iconSize:[34,44],iconAnchor:[17,44],popupAnchor:[0,-44]});
+  return L.divIcon({className:"",html:'<div class="chincheta'+(b.sinHorario?" unk":(abierto?"":" closed"))+occClass+'"><div class="cuerpo">'+libroSvg+'</div><div class="punta"></div></div>',iconSize:[34,44],iconAnchor:[17,44],popupAnchor:[0,-44]});
 }
 // "Mi ubicación": la pinta en el propio mapa, nunca abre Google Maps ni ninguna app externa.
 window.__userPos=null;
@@ -2202,7 +2309,7 @@ function locateMe(){
 function initMap(){
   if(typeof L==="undefined"){if((initMap._n=(initMap._n||0)+1)<40)setTimeout(initMap,250);return;}
   window.__mapReady=true;
-  var map=L.map("map",{zoomControl:false,scrollWheelZoom:true,minZoom:7,maxZoom:18}).setView([42.812,-1.652],13.5);
+  var map=L.map("map",{zoomControl:false,scrollWheelZoom:true,minZoom:5,maxZoom:18}).setView([42.812,-1.652],13.5);
   window.__map=map;
   L.control.zoom({position:"bottomright"}).addTo(map);
   document.getElementById("map").style.background="#eef2f7";
@@ -2280,12 +2387,16 @@ function initMap(){
     });
   });
   markers=[];
+  // Con cientos de bibliotecas, las cercanas se agrupan en un círculo con el número (si carga el plugin).
+  var capaBibs=(L.markerClusterGroup?L.markerClusterGroup({showCoverageOnHover:false,maxClusterRadius:45,disableClusteringAtZoom:14,spiderfyOnMaxZoom:false}):L.layerGroup()).addTo(map);
+  window.__capaBibs=capaBibs;
+  map.attributionControl.addAttribution("Bibliotecas: &copy; Overture Maps Foundation");
   BIBLIOTECAS.forEach(function(b,i){
-    var mk=L.marker([b.lat,b.lon],{icon:chinchetaIcon(i)}).addTo(map).bindPopup(popupHTML(b,i),{maxWidth:280,offset:[0,4]});
+    var mk=L.marker([b.lat,b.lon],{icon:chinchetaIcon(i)}).addTo(capaBibs).bindPopup(popupHTML(b,i),{maxWidth:280,offset:[0,4]});
     mk.on("click",function(){window.__selBib(i);});
     markers.push(mk);
   });
-  var grupo=L.featureGroup(markers);map.fitBounds(grupo.getBounds().pad(0.18));
+  var grupo=L.featureGroup(markers.slice(0,N_NAVARRA));map.fitBounds(grupo.getBounds().pad(0.18));
   socialRenderFriendMarkers();
 }
 
@@ -2340,7 +2451,7 @@ function startStudyCurrent(){
     if(pos){
       var best=-1,bd=1e9;
       BIBLIOTECAS.forEach(function(b,i){var d=distMetros(pos.lat,pos.lon,b.lat,b.lon);if(d<bd){bd=d;best=i;}});
-      if(best>=0&&bd<=400&&minutosHastaCierre(BIBLIOTECAS[best])>0){showToast("📍 Estás en "+cortoNombre(BIBLIOTECAS[best].nombre));startStudyAt(best);return;}
+      if(best>=0&&bd<=400&&(minutosHastaCierre(BIBLIOTECAS[best])>0||BIBLIOTECAS[best].sinHorario)){showToast("📍 Estás en "+cortoNombre(BIBLIOTECAS[best].nombre));startStudyAt(best);return;}
     }
     elegirLugarEstudio();
   }
@@ -2352,7 +2463,10 @@ function elegirLugarEstudio(){
   var ops=[],vistos={};
   function add(i,etq){if(i==null||i<0||vistos[i])return;vistos[i]=1;ops.push({i:i,etq:etq});}
   var hab=bibHabitual(); if(hab>=0)add(hab,"⭐ Tu habitual");
-  recomendarBiblioteca().slice(0,4).forEach(function(c){add(c.i,c.dist!=null?"📍 "+fmtDist(c.dist):"Abierta");});
+  recomendarBiblioteca().slice(0,4).forEach(function(c){if(c.dist==null||c.dist<25000)add(c.i,c.dist!=null?"📍 "+fmtDist(c.dist):"Abierta");});
+  if(window.__userPos){var up=window.__userPos;
+    BIBLIOTECAS.map(function(b,i){return {i:i,d:distMetros(up.lat,up.lon,b.lat,b.lon)};}).filter(function(o){return BIBLIOTECAS[o.i].sinHorario&&o.d<25000;})
+      .sort(function(a,b){return a.d-b.d;}).slice(0,4).forEach(function(o){add(o.i,"📍 "+fmtDist(o.d)+" · horario sin confirmar");});}
   var html='<h3>¿Dónde estudias?</h3><div class="sub">No estás junto a ninguna biblioteca. Elige dónde, o estudia en casa.</div><div class="pick-list">'+
     ops.map(function(o){return '<button data-i="'+o.i+'"><b>'+escapeHTML(cortoNombre(BIBLIOTECAS[o.i].nombre))+'</b><small>'+escapeHTML(o.etq)+'</small></button>';}).join("")+
     '<button data-i="-1"><b>🏠 En casa u otro sitio</b><small>Cuenta para tus horas, sin biblioteca</small></button></div>';
@@ -2376,11 +2490,14 @@ function fmtClock(sec){var hh=Math.floor(sec/3600),mm=Math.floor((sec%3600)/60),
   return String(hh).padStart(2,"0")+":"+String(mm).padStart(2,"0")+":"+String(ss).padStart(2,"0");}
 // Hora (ms) en que cerró la biblioteca por primera vez después de empezar la sesión.
 function cierreTrasInicio(b,startTs){
-  var cal=horarioVigente(b), d0=new Date(startTs); d0.setHours(0,0,0,0);
+  if(es24h(b))return null; // nunca cierra: no hay "olvido" que detectar por horario
+  var dl=deltaTz(b.tz), st=startTs+dl, cal=horarioVigente(b), d0=new Date(st); d0.setHours(0,0,0,0);
   for(var off=0;off<8;off++){
     var dia=new Date(d0); dia.setDate(d0.getDate()+off);
     var tr=cal[dia.getDay()]||[];
-    for(var k=0;k<tr.length;k++){var fin=dia.getTime()+tr[k][1]*60000; if(fin>startTs)return fin;}
+    for(var k=0;k<tr.length;k++){
+      if(tr[k][1]>=1440){var sig=cal[(dia.getDay()+1)%7]||[];if(sig.length&&sig[0][0]===0)continue;} // sigue abierta tras medianoche
+      var fin=dia.getTime()+tr[k][1]*60000; if(fin>st)return fin-dl;}
   }
   return null;
 }
@@ -2388,14 +2505,14 @@ function cierreTrasInicio(b,startTs){
 function revisarCronoOlvidado(){
   if(!studyTimer.running)return false;
   var ahora=Date.now();
-  if(studyTimer.bibIndex>=0){
+  if(studyTimer.bibIndex>=0&&!BIBLIOTECAS[studyTimer.bibIndex].sinHorario){
     var b=BIBLIOTECAS[studyTimer.bibIndex], fin=cierreTrasInicio(b,studyTimer.start);
     if(fin&&ahora-fin>15*60000){
       stopStudy(true,fin);
       notificar("⏹ Tu sesión en "+cortoNombre(b.nombre)+" se guardó hasta la hora de cierre ("+fmtHoras(new Date(fin).getHours()*60+new Date(fin).getMinutes())+")");
       return true;
     }
-  }else if(ahora-studyTimer.start>12*3600000&&!revisarCronoOlvidado.preguntado){
+  }else if(ahora-studyTimer.start>12*3600000&&!revisarCronoOlvidado.preguntado&&(studyTimer.bibIndex<0||BIBLIOTECAS[studyTimer.bibIndex].sinHorario)){
     revisarCronoOlvidado.preguntado=true;
     var h=parseFloat((prompt("Llevas más de 12 h con el cronómetro en marcha. ¿Cuántas horas estudiaste de verdad?","2")||"").replace(",","."));
     if(h>0&&h<16){stopStudy(true,studyTimer.start+h*3600000);showToast("Sesión guardada: "+h+" h");return true;}
@@ -2421,7 +2538,7 @@ function notificar(txt){
 function updateTimers(){
   if(studyTimer.running&&(updateTimers._n=(updateTimers._n||0)+1)%30===0&&revisarCronoOlvidado())return;
   var sec=elapsedSec();
-  if(studyTimer.running&&studyTimer.bibIndex>=0&&!studyTimer.avisoCierre){
+  if(studyTimer.running&&studyTimer.bibIndex>=0&&!studyTimer.avisoCierre&&!es24h(BIBLIOTECAS[studyTimer.bibIndex])){
     var mc=minutosHastaCierre(BIBLIOTECAS[studyTimer.bibIndex]);
     if(mc>0&&mc<=30){studyTimer.avisoCierre=true;notificar("⏰ "+cortoNombre(BIBLIOTECAS[studyTimer.bibIndex].nombre)+" cierra en "+mc+" min");}
   }
@@ -3129,14 +3246,19 @@ function quitarEventoCalendario(ev){
 
 
 function minutosHastaCierre(b){
-  var now=new Date(),d=now.getDay(),m=now.getHours()*60+now.getMinutes();
-  var tr=horarioVigente(b)[d]||[];
-  for(var k=0;k<tr.length;k++){ if(m>=tr[k][0]&&m<tr[k][1]) return tr[k][1]-m; }
+  var now=ahoraEn(b),d=now.getDay(),m=now.getHours()*60+now.getMinutes(),cal=horarioVigente(b);
+  var tr=cal[d]||[];
+  for(var k=0;k<tr.length;k++){ if(m>=tr[k][0]&&m<tr[k][1]){
+    var c=tr[k][1]-m;
+    // abierta a medianoche: suma los días siguientes que empiezan a las 00:00 (bibliotecas 24 h)
+    for(var dd=1;dd<=7&&tr[k][1]>=1440;dd++){var t2=cal[(d+dd)%7]||[];if(t2.length&&t2[0][0]===0){c+=Math.min(t2[0][1],1440);if(t2[0][1]<1440)break;}else break;}
+    return c; } }
   return -1; // cerrada
 }
+function es24h(b){var cal=horarioVigente(b);return cal.every(function(tr){return tr&&tr.length===1&&tr[0][0]===0&&tr[0][1]>=1440;});}
 // "Abierta · cierra a las 21:00" / "Cerrada · abre mañana a las 8:30"
 function proximaApertura(b){
-  var now=new Date(),m=now.getHours()*60+now.getMinutes(),cal=horarioVigente(b);
+  var now=ahoraEn(b),m=now.getHours()*60+now.getMinutes(),cal=horarioVigente(b);
   for(var dd=0;dd<7;dd++){
     var day=(now.getDay()+dd)%7,tr=cal[day]||[];
     for(var k=0;k<tr.length;k++){if(dd>0||tr[k][0]>m)return {dias:dd,min:tr[k][0],day:day};}
@@ -3144,8 +3266,12 @@ function proximaApertura(b){
   return null;
 }
 function estadoTexto(b){
+  if(b.sinHorario)return {abierta:false,desconocido:true,txt:"Horario sin confirmar"};
   var c=minutosHastaCierre(b);
-  if(c>0){var now=new Date(),fin=now.getHours()*60+now.getMinutes()+c;return {abierta:true,txt:"Abierta · cierra a las "+fmtHoras(fin),cierre:c};}
+  if(c>0){var now=ahoraEn(b),fin=now.getHours()*60+now.getMinutes()+c;
+    if(es24h(b))return {abierta:true,txt:"Abierta 24 h",cierre:c};
+    if(fin>=1440)return {abierta:true,txt:"Abierta · cierra "+(fin>=2880?"en "+Math.round(c/60)+" h":"mañana a las "+fmtHoras(fin-1440)),cierre:c};
+    return {abierta:true,txt:"Abierta · cierra a las "+fmtHoras(fin),cierre:c};}
   var p=proximaApertura(b);
   if(!p)return {abierta:false,txt:"Cerrada"};
   var cuando=p.dias===0?"hoy":(p.dias===1?"mañana":"el "+["domingo","lunes","martes","miércoles","jueves","viernes","sábado"][p.day]);
@@ -3158,11 +3284,20 @@ function epocaExamenes(d){d=d||new Date();var m=d.getMonth(),dd=d.getDate();
   return (m===11&&dd>=15)||m===0||(m===1&&dd<=10)||(m===4&&dd>=10)||m===5||(m===6&&dd<=5);}
 function esUNAV(b){return b.nombre.indexOf("Universidad de Navarra")!==-1;}
 function esUPNA(b){return b.nombre.indexOf("UPNA")!==-1;}
+// Zona del usuario: a menos de 50 km de su ubicación; sin ubicación, de su biblioteca habitual;
+// sin ninguna de las dos, Navarra. Evita recomendar Gran Canaria a alguien de Pamplona.
+function enMiZona(i){
+  var b=BIBLIOTECAS[i], up=window.__userPos;
+  if(up)return distMetros(up.lat,up.lon,b.lat,b.lon)<50000;
+  var hi=bibHabitual(); if(hi>=0){var h0=BIBLIOTECAS[hi];return distMetros(h0.lat,h0.lon,b.lat,b.lon)<50000;}
+  return i<N_NAVARRA;
+}
 function recomendarBiblioteca(){
   var up=window.__userPos, hi=bibHabitual(), habitual=hi>=0?BIBLIOTECAS[hi].nombre:null;
   var perfil=DATA&&DATA.perfil, examenes=epocaExamenes();
   var cands=[];
   BIBLIOTECAS.forEach(function(b,i){
+    if(!enMiZona(i))return;
     var c=minutosHastaCierre(b); if(c<30)return;
     var o=occSummary(i), dist=up?distMetros(up.lat,up.lon,b.lat,b.lon):null;
     var score=(dist!=null?dist/1000:0);
@@ -3179,26 +3314,43 @@ function recomendarBiblioteca(){
 }
 function cortoNombre(n){
   n=n.replace(/^Biblioteca Pública (de la |del |de )?/,"");
-  if(n.indexOf("Biblioteca ")===0&&n!=="Biblioteca de Navarra")n=n.slice(11);
+  if(n.indexOf("Biblioteca ")===0&&n!=="Biblioteca de Navarra"&&n!=="Biblioteca Nacional de España"){
+    n=n.slice(11).replace(/^(de la |del |de |d'|da |do )/i,"");
+    n=n.charAt(0).toUpperCase()+n.slice(1);
+  }
   return n;
 }
 function renderNowCard(){
   var el=$("nowCard"); if(!el)return;
   if(!$("libPanel").classList.contains("hidden")){el.classList.add("hidden");return;}
   el.classList.remove("hidden");
-  var cands=recomendarBiblioteca(), html;
+  var cands=recomendarBiblioteca(), html, up=window.__userPos;
+  // Lejos de Navarra (sin horarios verificados cerca): recomendar la más cercana, avisando del horario.
+  // Solo si en tu zona no hay bibliotecas con horario conocido (fuera de las zonas con datos):
+  var hayHorarioEnZona=BIBLIOTECAS.some(function(b,i){return !b.sinHorario&&enMiZona(i);});
+  if(up&&!hayHorarioEnZona){
+    var cerca=-1,cd=1e12;
+    BIBLIOTECAS.forEach(function(b,i){if(!b.sinHorario)return;var d=distMetros(up.lat,up.lon,b.lat,b.lon);if(d<cd){cd=d;cerca=i;}});
+    if(cerca>=0&&cd<50000){
+      var bc=BIBLIOTECAS[cerca];
+      el.innerHTML='<div class="nc-kicker">La más cercana</div><div class="nc-title" onclick="window.__selBib('+cerca+')">'+escapeHTML(cortoNombre(bc.nombre))+'</div>'+
+        '<div class="nc-why">📍 '+fmtDist(cd)+' · horario sin confirmar'+(bc.web?', míralo en su web':'')+'</div>'+
+        '<div class="nc-actions"><button class="btn sm" onclick="startStudyAt('+cerca+')">▶ Estudiar aquí</button><button class="btn sm ghost" onclick="window.__selBib('+cerca+')">Ver</button><button class="btn sm ghost" onclick="abrirLista(false)">Otras</button></div>';
+      return;
+    }
+  }
   if(!cands.length){
     // abiertas pero cerrando en menos de 30 min: avisar, no decir "todas cerradas"
-    var pronto=[];BIBLIOTECAS.forEach(function(b,i){var c=minutosHastaCierre(b);if(c>0)pronto.push({i:i,c:c});});
+    var pronto=[];BIBLIOTECAS.forEach(function(b,i){if(!enMiZona(i))return;var c=minutosHastaCierre(b);if(c>0)pronto.push({i:i,c:c});});
     if(pronto.length){
       pronto.sort(function(a,b){return b.c-a.c;});var u=BIBLIOTECAS[pronto[0].i];
-      el.innerHTML='<div class="nc-kicker">Ahora mismo</div><div class="nc-title">Todas cierran en menos de 30 min</div>'+
+      el.innerHTML='<div class="nc-kicker">Ahora mismo</div><div class="nc-title">En tu zona todas cierran en menos de 30 min</div>'+
         '<div class="nc-why">La que más tarde cierra: <b>'+escapeHTML(cortoNombre(u.nombre))+'</b> · '+escapeHTML(estadoTexto(u).txt.replace("Abierta · ",""))+'</div>'+
         '<div class="nc-actions"><button class="btn sm ghost" onclick="window.__selBib('+pronto[0].i+')">Ver en el mapa</button><button class="btn sm ghost" onclick="abrirLista(false)">Ver todas</button></div>';
       return;
     }
-    var prox=null;BIBLIOTECAS.forEach(function(b,i){var p=proximaApertura(b);if(p&&(!prox||p.dias*1440+p.min<prox.p.dias*1440+prox.p.min))prox={i:i,p:p};});
-    html='<div class="nc-kicker">Ahora mismo</div><div class="nc-title">Todas las bibliotecas están cerradas</div>';
+    var prox=null;BIBLIOTECAS.forEach(function(b,i){if(!enMiZona(i))return;var p=proximaApertura(b);if(p&&(!prox||p.dias*1440+p.min<prox.p.dias*1440+prox.p.min))prox={i:i,p:p};});
+    html='<div class="nc-kicker">Ahora mismo</div><div class="nc-title">Todas las bibliotecas de tu zona están cerradas</div>';
     if(prox){var t=estadoTexto(BIBLIOTECAS[prox.i]);html+='<div class="nc-why">La primera en abrir: <b>'+escapeHTML(cortoNombre(BIBLIOTECAS[prox.i].nombre))+'</b> · '+escapeHTML(t.txt.replace("Cerrada · ",""))+'</div>'+
       '<div class="nc-actions"><button class="btn sm ghost" onclick="window.__selBib('+prox.i+')">Ver en el mapa</button><button class="btn sm ghost" onclick="abrirLista(false)">Ver todas</button></div>';}
     el.innerHTML=html;return;
@@ -3290,7 +3442,7 @@ function calcularAvisos(){
       var bib=BIBLIOTECAS.filter(function(b){return b.nombre===l.bib;})[0];
       var abierta=bib?estadoBib(bib):false;
       avisos.push({type:"loan",icon:"📚",title:"Devolver: "+l.title,
-        sub:(dias<0?"Vencido hace "+(-dias)+" d":(dias===0?"Vence hoy":"Vence en "+dias+" d"))+" · "+l.bib.replace("Biblioteca ","")+(abierta?" (abierta)":" (cerrada)"),dias:dias});
+        sub:(dias<0?"Vencido hace "+(-dias)+" d":(dias===0?"Vence hoy":"Vence en "+dias+" d"))+" · "+l.bib.replace("Biblioteca ","")+(bib&&bib.sinHorario?" (horario sin confirmar)":(abierta?" (abierta)":" (cerrada)")),dias:dias});
     }
   });
   // solicitudes de amistad pendientes
@@ -3300,7 +3452,7 @@ function calcularAvisos(){
     });
   }
   // bibliotecas que cierran pronto (solo si tienes sesión activa)
-  if(studyTimer.running&&studyTimer.bibIndex>=0){
+  if(studyTimer.running&&studyTimer.bibIndex>=0&&!es24h(BIBLIOTECAS[studyTimer.bibIndex])){
     var cierre=minutosHastaCierre(BIBLIOTECAS[studyTimer.bibIndex]);
     if(cierre>0&&cierre<=30){
       avisos.push({type:"close",icon:"⏰",title:BIBLIOTECAS[studyTimer.bibIndex].nombre.replace("Biblioteca ","")+" cierra pronto",sub:"En "+cierre+" min",dias:0});
@@ -3482,7 +3634,10 @@ window.addEventListener("DOMContentLoaded",function(){
   $("btnLogout").addEventListener("click",logout);
   $("btnDeleteAccount").addEventListener("click",deleteAccount);
   $("btnRename").addEventListener("click",cambiarNombre);
-  $("btnFeedback").addEventListener("click",enviarSugerencia);
+  (function(){var sel=$("selTheme");try{sel.value=localStorage.getItem("bpna_theme")||"auto";}catch(e){}
+    sel.addEventListener("change",function(){var v=sel.value;try{localStorage.setItem("bpna_theme",v);}catch(e){}
+      if(v==="auto")document.documentElement.removeAttribute("data-theme");else document.documentElement.setAttribute("data-theme",v);});})();
+  $("btnFeedback").addEventListener("click",function(){enviarSugerencia();});
   $("btnShareWeek").addEventListener("click",compartirSemana);
 
   // nuevas funciones
