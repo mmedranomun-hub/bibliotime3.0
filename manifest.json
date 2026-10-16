@@ -2,7 +2,7 @@
   "id": "./",
   "name": "Bibliotecas de Navarra",
   "short_name": "Bibliotime",
-  "description": "Mapa de más de 2.400 bibliotecas de Navarra y España: horarios, afluencia compartida, modo estudio y sesiones en grupo.",
+  "description": "Mapa de más de 2.600 bibliotecas de Navarra y España: horarios, afluencia compartida, modo estudio y sesiones en grupo.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
