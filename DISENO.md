@@ -10,3 +10,4 @@ Criterios que sigue la rutina diaria de diseño (una mejora pequeña por día).
 
 ## Registro
 - 2026-10-17 · Agenda: los eventos pasan de etiquetas saturadas con texto blanco (ámbar con contraste ~2:1) a tonos tenues con texto oscuro del mismo matiz y borde izquierdo; "Otro" pasa de ámbar a verde azulado (calma); el día de hoy lleva un fondo índigo muy suave. Variables `--ev-*` con versión para modo oscuro.
+- 2026-10-17 · Agenda en el móvil: la cuadrícula ya no corta los títulos ("E…"); cada día muestra puntos de color por evento y debajo hay una lista "Próximos" (dos semanas, hasta 6) con fecha, título completo, tipo y "en N días", en los mismos tonos suaves (contraste 6-8.8:1). Celdas algo más bajas para que se vea más calendario sin hacer scroll.

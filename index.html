@@ -384,6 +384,22 @@
   .evtxt.ev-tarea-txt{background:var(--ev-ta-bg);color:var(--ev-ta-tx)}
   .evtxt.ev-otro-txt{background:var(--ev-ot-bg);color:var(--ev-ot-tx)}
   .cal-cell .more{font-size:9px;color:var(--suave);position:absolute;bottom:4px;right:6px}
+  /* En el móvil el título no cabe ("E…"): la celda muestra puntos de color y la lista "Próximos" da el detalle */
+  .cal-cell .evdots{display:none;gap:3px;margin-top:6px;flex-wrap:wrap}
+  .cal-cell .evdots i{width:7px;height:7px;border-radius:50%}
+  @media (max-width:520px){
+    .cal-grid{grid-auto-rows:minmax(48px,auto);gap:6px}
+    .cal-cell .evlist,.cal-cell .more{display:none}
+    .cal-cell .evdots{display:flex}
+  }
+  .prox-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:13px;cursor:pointer;margin-bottom:8px;border-left:4px solid currentColor}
+  .prox-item.ev-examen-txt{background:var(--ev-ex-bg);color:var(--ev-ex-tx)}
+  .prox-item.ev-tarea-txt{background:var(--ev-ta-bg);color:var(--ev-ta-tx)}
+  .prox-item.ev-otro-txt{background:var(--ev-ot-bg);color:var(--ev-ot-tx)}
+  .prox-item .pd{min-width:44px;text-align:center;line-height:1.1}
+  .prox-item .pd b{display:block;font-size:18px}.prox-item .pd small{font-size:10.5px;text-transform:uppercase;font-weight:700}
+  .prox-item .pt{flex:1;min-width:0}.prox-item .pt b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .prox-item .pt small{font-size:12px;opacity:.85}
   .pray-row{display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:13px;background:rgba(var(--blanco),.55);margin-bottom:8px}
   .pray-row .pi{flex:1;min-width:0}.pray-row .pi b{font-size:13.5px;display:block}.pray-row .pi small{font-size:11.5px;color:var(--suave)}
   .pray-row button{border:none;border-radius:10px;padding:8px 12px;font-weight:800;font-size:12.5px;cursor:pointer;background:rgba(108,92,231,.14);color:var(--acento);white-space:nowrap}
@@ -801,6 +817,9 @@
           <span><i class="ev-otro"></i> Otro</span>
         </div>
       </div>
+
+      <div class="section-title">Próximos</div>
+      <div class="glasscard" id="calProxCard"><div id="calProx"></div></div>
 
       <div class="section-title hidden extra" id="prayTitle">🙏 Exámenes de tus amigos</div>
       <div class="glasscard hidden extra" id="prayCard">
@@ -2967,12 +2986,32 @@ function renderCal(){
     var evs=DATA.events[key]||[];
     var shown=evs.slice(0,2);
     var txts=shown.map(function(ev){return '<div class="evtxt ev-'+ev.type+'-txt" title="'+escapeHTML(ev.title)+'">'+escapeHTML(ev.title)+'</div>';}).join("");
-    cell.innerHTML='<div class="dnum">'+dn+'</div><div class="evlist">'+txts+'</div>'+(evs.length>2?'<span class="more">+'+(evs.length-2)+'</span>':'');
+    var dots=evs.slice(0,4).map(function(ev){return '<i class="ev-'+ev.type+'"></i>';}).join("");
+    cell.innerHTML='<div class="dnum">'+dn+'</div><div class="evlist">'+txts+'</div>'+(evs.length>2?'<span class="more">+'+(evs.length-2)+'</span>':'')+
+      (evs.length?'<div class="evdots" aria-label="'+evs.length+' evento'+(evs.length>1?'s':'')+'">'+dots+'</div>':'');
     (function(k){cell.addEventListener("click",function(){openDayModal(k);});})(key);
     grid.appendChild(cell);
   }
   if(typeof actualizarBadge==="function")actualizarBadge();
+  renderCalProx();
   renderCalFriendExams();
+}
+// Lista de los eventos de las próximas dos semanas, con el título completo (en la cuadrícula del móvil solo caben puntos)
+function renderCalProx(){
+  var el=$("calProx");if(!el)return;
+  var hoy=new Date();hoy.setHours(0,0,0,0);var items=[];
+  for(var d=0;d<14&&items.length<6;d++){
+    var f=new Date(hoy);f.setDate(hoy.getDate()+d);var k=ymd(f);
+    (DATA.events[k]||[]).forEach(function(ev){items.push({k:k,f:new Date(f),d:d,ev:ev});});
+  }
+  if(!items.length){el.innerHTML='<div class="empty-note">Nada en las próximas dos semanas. Pincha un día para añadir un examen o una tarea.</div>';return;}
+  var DS=["dom","lun","mar","mié","jue","vie","sáb"],TIPO={examen:"Examen",tarea:"Tarea",otro:"Otro"};
+  el.innerHTML=items.slice(0,6).map(function(it){
+    var cuando=it.d===0?"Hoy":it.d===1?"Mañana":"En "+it.d+" días";
+    return '<div class="prox-item ev-'+it.ev.type+'-txt" data-k="'+it.k+'"><div class="pd"><b>'+it.f.getDate()+'</b><small>'+DS[it.f.getDay()]+'</small></div>'+
+      '<div class="pt"><b>'+escapeHTML(it.ev.title)+'</b><small>'+(TIPO[it.ev.type]||"")+' · '+cuando+'</small></div></div>';
+  }).join("");
+  el.querySelectorAll(".prox-item").forEach(function(x){x.addEventListener("click",function(){openDayModal(x.dataset.k);});});
 }
 function openDayModal(key){
   var parts=key.split("-");
