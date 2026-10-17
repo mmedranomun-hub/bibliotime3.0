@@ -1,0 +1,12 @@
+# Diseño de Bibliotime
+
+Criterios que sigue la rutina diaria de diseño (una mejora pequeña por día).
+
+## Paleta y teoría del color
+- **Base calmada:** azules y verdes suaves para la concentración; fondos con poca saturación.
+- **Acento:** índigo/violeta moderado (`--acento: #6c5ce7`) para acciones y estado activo.
+- **Evitar:** rojos grandes y colores muy saturados (activan alerta y fatigan); el rojo queda para avisos puntuales.
+- **Contraste:** texto WCAG AA (≥ 4.5:1) en modo claro y oscuro. Los colores se definen como variables en `:root` y se redefinen en el bloque de modo oscuro.
+
+## Registro
+- 2026-10-17 · Agenda: los eventos pasan de etiquetas saturadas con texto blanco (ámbar con contraste ~2:1) a tonos tenues con texto oscuro del mismo matiz y borde izquierdo; "Otro" pasa de ámbar a verde azulado (calma); el día de hoy lleva un fondo índigo muy suave. Variables `--ev-*` con versión para modo oscuro.
