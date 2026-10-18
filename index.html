@@ -334,6 +334,24 @@
   .badge-tile .bt-icon{font-size:26px;margin-bottom:4px}
   .badge-tile .bt-label{font-size:10.5px;font-weight:700;color:var(--suave)}
   .badge-tile.on .bt-label{color:var(--texto)}
+  .challenge{padding:2px 0 14px;margin-bottom:12px;border-bottom:1px solid rgba(148,163,184,.25)}
+  .challenge .ch-top{display:flex;align-items:center;gap:10px}
+  .challenge .ch-icon{font-size:24px;flex-shrink:0}
+  .challenge .ch-txt{flex:1;min-width:0}
+  .challenge .ch-txt b{font-size:14px;display:block}
+  .challenge .ch-txt small{font-size:11.5px;color:var(--suave)}
+  .challenge .ch-pct{font-size:13px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--acento);white-space:nowrap}
+  .challenge.done .ch-pct{color:var(--abierto)}
+  .ch-track{height:8px;border-radius:99px;background:rgba(148,163,184,.25);overflow:hidden;margin-top:9px}
+  .ch-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--acento),var(--acento2));transition:width .4s}
+  .challenge.done .ch-fill{background:linear-gradient(90deg,#22c55e,#4ade80)}
+  .trophy-head{font-size:12px;font-weight:800;color:var(--suave);text-transform:uppercase;letter-spacing:.06em;margin:4px 0 10px}
+  .trophy-case{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px}
+  .trophy{background:var(--glass-fuerte);border:1px solid rgba(148,163,184,.3);border-radius:14px;padding:12px 8px;text-align:center;box-shadow:var(--sombra)}
+  .trophy .tr-icon{font-size:26px;margin-bottom:4px}
+  .trophy .tr-label{font-size:11px;font-weight:800}
+  .trophy .tr-date{font-size:10px;color:var(--suave);margin-top:2px}
+  .trophy-case .empty-note{grid-column:1/-1;padding:10px 6px}
   .bookshelf-card{background:var(--glass-fuerte);border:1px solid var(--borde);border-radius:16px;padding:16px 18px 4px;box-shadow:var(--sombra)}
   .bookshelf-label{font-size:12px;color:var(--suave);font-weight:700;margin-bottom:10px}
   .bookshelf-row{display:flex;align-items:flex-end;gap:3px;flex-wrap:wrap;border-bottom:6px solid #8b6f47;padding-bottom:8px;min-height:52px}
@@ -910,6 +928,13 @@
       <div class="section-title">🏅 Tus récords</div>
       <div class="stat-grid" id="recordsGrid"></div>
 
+      <div class="section-title">🎯 Retos del mes</div>
+      <div class="glasscard" id="challengesCard">
+        <div id="challengesList"></div>
+        <div class="trophy-head">Vitrina de trofeos</div>
+        <div class="trophy-case" id="trophyCase"></div>
+      </div>
+
       <div class="section-title">🏆 Insignias</div>
       <div class="glasscard"><div class="badges-grid" id="badgesGrid"></div></div>
 
@@ -1275,7 +1300,7 @@ function loadUserData(){DATA=Brain.getUserData(CURRENT);
   if(!DATA.goalMin)DATA.goalMin=240; if(typeof DATA.geoCheck!=="boolean")DATA.geoCheck=false; if(typeof DATA.sharePresence!=="boolean")DATA.sharePresence=false; if(!DATA.occ)DATA.occ={}; if(!DATA.acadEvents)DATA.acadEvents=[];
   if(DATA.goalPeriod!=="day"&&DATA.goalPeriod!=="week")DATA.goalPeriod="day"; if(typeof DATA.offeringText!=="string")DATA.offeringText="";
   if(typeof DATA.streakFreezes!=="number")DATA.streakFreezes=0; if(!DATA.usedFreezeDates)DATA.usedFreezeDates=[];
-  if(typeof DATA.lastFreezeEarnedAtStreak!=="number")DATA.lastFreezeEarnedAtStreak=0; if(!DATA.badges)DATA.badges={};}
+  if(typeof DATA.lastFreezeEarnedAtStreak!=="number")DATA.lastFreezeEarnedAtStreak=0; if(!DATA.badges||typeof DATA.badges!=="object"||Array.isArray(DATA.badges))DATA.badges={};}
 function saveUserData(){Brain.saveUserData(CURRENT,DATA);}
 
 
@@ -1375,7 +1400,7 @@ async function prayForExam(localId,ownerId,title){
     return;
   }
   showToast("🙏 Has rezado por el examen de "+title);
-  if(DATA&&!DATA.badges.first_prayer){DATA.badges.first_prayer=true;saveUserData();}
+  if(DATA&&!DATA.badges.first_prayer){DATA.badges.first_prayer=new Date().toISOString();saveUserData();}
   await socialLoadPrayerCounts();
   renderCalFriendExams();socialRenderFriendEvents();
 }
@@ -1442,7 +1467,7 @@ async function postBlog(){
   var ins=await sb.from("book_posts").insert({user_id:SOCIAL.user.id,author_name:name,book_title:book,comment:comment});
   if(ins.error){showToast("No se pudo publicar: "+ins.error.message);return;}
   $("blogBook").value="";$("blogComment").value="";
-  if(DATA&&!DATA.badges.first_post){DATA.badges.first_post=true;saveUserData();}
+  if(DATA&&!DATA.badges.first_post){DATA.badges.first_post=new Date().toISOString();saveUserData();}
   showToast("Publicado");renderBlog();
 }
 async function socialLoadFriends(){
@@ -1517,7 +1542,7 @@ async function createStudyRoom(name){
   var ins=await sb.from("study_rooms").insert({owner_id:SOCIAL.user.id,name:(name||"").trim()||"Sala de estudio"}).select("*").single();
   if(ins.error){showToast("No se pudo crear la sala: "+ins.error.message);return;}
   SOCIAL.room={code:ins.data.code,name:ins.data.name};
-  if(DATA&&!DATA.badges.first_room){DATA.badges.first_room=true;saveUserData();}
+  if(DATA&&!DATA.badges.first_room){DATA.badges.first_room=new Date().toISOString();saveUserData();}
   await socialHeartbeat();
   await loadRoomMembers();
   renderStudyRoom();
@@ -1532,7 +1557,7 @@ async function joinStudyRoom(code){
   else{r={data:(r.data&&r.data[0])||null};}
   if(r.error||!r.data){showToast("No encuentro esa sala");return;}
   SOCIAL.room={code:r.data.code,name:r.data.name};
-  if(DATA&&!DATA.badges.first_room){DATA.badges.first_room=true;saveUserData();}
+  if(DATA&&!DATA.badges.first_room){DATA.badges.first_room=new Date().toISOString();saveUserData();}
   await socialHeartbeat();
   await loadRoomMembers();
   renderStudyRoom();
@@ -3134,6 +3159,7 @@ function renderProfile(){
   // semana
   renderWeekBars();
   renderRecords();
+  renderChallenges();
   renderBadges();
   if(socialClient()&&SOCIAL.user){socialLoadLeaderboard().then(renderLeaderboard);}else{renderLeaderboard();}
   renderLoans();
@@ -3196,7 +3222,7 @@ const BADGE_DEFS=[
 function renderBadges(){
   var el=$("badgesGrid"); if(!el||!DATA)return;
   var changed=false;
-  function grant(id){if(!DATA.badges[id]){DATA.badges[id]=true;changed=true;}}
+  function grant(id){if(!DATA.badges[id]){DATA.badges[id]=new Date().toISOString();changed=true;}}
   var totalMin=0;DATA.sessions.forEach(function(s){totalMin+=s.min;});
   if(DATA.sessions.length>=1)grant("first_session");
   if(totalMin>=600)grant("ten_hours");
@@ -3205,9 +3231,82 @@ function renderBadges(){
   if(socialClient()&&SOCIAL.friends&&SOCIAL.friends.length>=1)grant("first_friend");
   if(changed)saveUserData();
   el.innerHTML=BADGE_DEFS.map(function(b){
-    var on=!!DATA.badges[b.id];
-    return '<div class="badge-tile'+(on?" on":"")+'" title="'+escapeHTML(b.desc)+'"><div class="bt-icon">'+b.icon+'</div><div class="bt-label">'+escapeHTML(b.label)+'</div></div>';
+    var on=!!DATA.badges[b.id], cuando=badgeDateISO(DATA.badges[b.id]);
+    var tip=b.desc+(cuando?" · Lograda el "+fmtTrophyDate(cuando):"");
+    return '<div class="badge-tile'+(on?" on":"")+'" title="'+escapeHTML(tip)+'"><div class="bt-icon">'+b.icon+'</div><div class="bt-label">'+escapeHTML(b.label)+'</div></div>';
   }).join("");
+}
+/* ===== RETOS MENSUALES + VITRINA DE TROFEOS (estilo Strava Challenges / Trophy Case) =====
+   Cada mes hay dos retos calculados desde DATA.sessions (date, min). Al completarlos se guarda
+   DATA.badges["ch_YYYY-MM_hours"|"ch_YYYY-MM_days"] con la fecha ISO del logro.
+   Compatibilidad: un valor true (formato antiguo) significa "logrado, fecha desconocida". */
+const CHALLENGE_DEFS=[
+  {kind:"hours",icon:"⏱️",target:1800,title:function(mes){return "30 h en "+mes;},short:"30 h"},
+  {kind:"days",icon:"📅",target:15,title:function(mes){return "15 días activos en "+mes;},short:"15 días"}
+];
+function badgeDateISO(v){return (typeof v==="string"&&!isNaN(Date.parse(v)))?v:null;}
+function fmtTrophyDate(iso){var d=new Date(iso);return d.getDate()+" "+MESES[d.getMonth()].slice(0,3)+" "+d.getFullYear();}
+function challengeKey(ym,kind){return "ch_"+ym+"_"+kind;}
+function currentYM(){var n=new Date();return n.getFullYear()+"-"+String(n.getMonth()+1).padStart(2,"0");}
+function ymLabel(ym){return MESES[parseInt(ym.slice(5,7),10)-1];}
+// progreso de un mes y momento (ISO) en que se cruzó cada objetivo, recorriendo las sesiones en orden
+function monthChallengeStats(ym){
+  var ses=DATA.sessions.filter(function(s){return typeof s.date==="string"&&s.date.slice(0,7)===ym;})
+    .slice().sort(function(a,b){return (a.ts||Date.parse(a.date))-(b.ts||Date.parse(b.date));});
+  var min=0,days={},nDays=0,at={hours:null,days:null};
+  ses.forEach(function(s){
+    min+=(s.min||0);
+    if(!days[s.date]){days[s.date]=true;nDays++;}
+    var when=s.ts?new Date(s.ts+(s.min||0)*60000).toISOString():new Date(s.date+"T00:00:00").toISOString();
+    if(!at.hours&&min>=CHALLENGE_DEFS[0].target)at.hours=when;
+    if(!at.days&&nDays>=CHALLENGE_DEFS[1].target)at.days=when;
+  });
+  return {hours:min,days:nDays,at:at};
+}
+// concede (sin sobrescribir) los retos de cualquier mes con sesiones; devuelve los recién logrados
+function checkChallenges(){
+  var meses={},nuevos=[];
+  DATA.sessions.forEach(function(s){if(typeof s.date==="string"&&/^\d{4}-\d{2}/.test(s.date))meses[s.date.slice(0,7)]=true;});
+  Object.keys(meses).forEach(function(ym){
+    var st=monthChallengeStats(ym);
+    CHALLENGE_DEFS.forEach(function(c){
+      var k=challengeKey(ym,c.kind);
+      if(st.at[c.kind]&&!DATA.badges[k]){DATA.badges[k]=st.at[c.kind];nuevos.push({ym:ym,c:c});}
+    });
+  });
+  if(nuevos.length)saveUserData();
+  return nuevos;
+}
+function renderChallenges(){
+  var el=$("challengesList"), tc=$("trophyCase"); if(!el||!tc||!DATA)return;
+  var nuevos=checkChallenges();
+  var ym=currentYM(), mes=ymLabel(ym), st=monthChallengeStats(ym);
+  var now=new Date(), finMes=new Date(now.getFullYear(),now.getMonth()+1,0).getDate(), quedan=finMes-now.getDate();
+  el.innerHTML=CHALLENGE_DEFS.map(function(c){
+    var val=c.kind==="hours"?st.hours:st.days, pct=Math.min(100,Math.floor(val*100/c.target));
+    var logro=DATA.badges[challengeKey(ym,c.kind)], done=!!logro, cuando=badgeDateISO(logro);
+    var prog=c.kind==="hours"?(hMin(val)+" de 30 h"):(val+" de 15 días");
+    var sub=done?("✓ Conseguido"+(cuando?" el "+fmtTrophyDate(cuando):"")):(prog+" · "+(quedan===0?"último día":"quedan "+quedan+" día"+(quedan===1?"":"s")));
+    return '<div class="challenge'+(done?" done":"")+'"><div class="ch-top"><div class="ch-icon">'+c.icon+'</div><div class="ch-txt"><b>'+escapeHTML(c.title(mes))+'</b><small>'+escapeHTML(sub)+'</small></div><div class="ch-pct">'+pct+'%</div></div>'+
+      '<div class="ch-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+pct+'" aria-label="'+escapeHTML(c.title(mes))+'"><div class="ch-fill" style="width:'+pct+'%"></div></div></div>';
+  }).join("");
+  // vitrina: trofeos de retos, del más reciente al más antiguo; los de fecha desconocida al final
+  var trofeos=[];
+  Object.keys(DATA.badges).forEach(function(k){
+    var m=/^ch_(\d{4}-\d{2})_(hours|days)$/.exec(k); if(!m||!DATA.badges[k])return;
+    var def=CHALLENGE_DEFS.filter(function(c){return c.kind===m[2];})[0];
+    trofeos.push({ym:m[1],def:def,iso:badgeDateISO(DATA.badges[k])});
+  });
+  trofeos.sort(function(a,b){
+    if(a.iso&&b.iso)return Date.parse(b.iso)-Date.parse(a.iso);
+    if(a.iso!==b.iso)return a.iso?-1:1;
+    return a.ym<b.ym?1:(a.ym>b.ym?-1:0);
+  });
+  tc.innerHTML=trofeos.length?trofeos.map(function(t){
+    return '<div class="trophy" title="'+escapeHTML(t.def.title(ymLabel(t.ym)+" "+t.ym.slice(0,4)))+'"><div class="tr-icon">🏆</div><div class="tr-label">'+t.def.icon+' '+escapeHTML(t.def.short)+'</div>'+
+      '<div class="tr-date">'+escapeHTML(ymLabel(t.ym)+" "+t.ym.slice(0,4))+'</div><div class="tr-date">'+(t.iso?escapeHTML(fmtTrophyDate(t.iso)):"Fecha desconocida")+'</div></div>';
+  }).join(""):'<div class="empty-note">Completa un reto mensual para ganar tu primer trofeo</div>';
+  nuevos.filter(function(n){return n.ym===ym;}).forEach(function(n){showToast("🏆 ¡Reto conseguido: "+n.c.title(mes)+"!");});
 }
 function renderLoans(){
   var el=$("loanList");el.innerHTML="";
