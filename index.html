@@ -46,6 +46,8 @@
     --ev-ex-bg:rgba(225,29,72,.12); --ev-ex-tx:#9f1239;
     --ev-ta-bg:rgba(37,99,235,.12); --ev-ta-tx:#1e40af;
     --ev-ot-bg:rgba(13,148,136,.14); --ev-ot-tx:#115e59; --bg-grad:linear-gradient(160deg,#dbeafe,#ede9fe);
+    /* Texto en color de acento: en oscuro, índigo más claro para mantener contraste AA */
+    --acento-tx:#5b4bd6; --aviso-tx:#b45309;
   }
   /* Modo oscuro: sigue al sistema salvo que se elija tema en Ajustes */
   @media (prefers-color-scheme: dark){
@@ -56,6 +58,7 @@
       --ev-ex-bg:rgba(251,113,133,.20); --ev-ex-tx:#fecdd3;
       --ev-ta-bg:rgba(96,165,250,.20); --ev-ta-tx:#dbeafe;
       --ev-ot-bg:rgba(45,212,191,.18); --ev-ot-tx:#ccfbf1;
+      --acento-tx:#b4abff; --aviso-tx:#fcd34d;
     }
   }
   :root[data-theme="dark"]{
@@ -65,6 +68,7 @@
       --ev-ex-bg:rgba(251,113,133,.20); --ev-ex-tx:#fecdd3;
       --ev-ta-bg:rgba(96,165,250,.20); --ev-ta-tx:#dbeafe;
       --ev-ot-bg:rgba(45,212,191,.18); --ev-ot-tx:#ccfbf1;
+      --acento-tx:#b4abff; --aviso-tx:#fcd34d;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%}
@@ -526,12 +530,14 @@
   .nowcard.hidden{display:none}
   .leaflet-popup-tip{background:var(--glass-fuerte)}
   #libPanel:not(.hidden) ~ .locate-btn{display:none}
-  .nc-kicker{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--acento)}
-  .nc-exam{color:#b45309}
+  .nc-kicker{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--acento-tx)}
+  .nc-exam{color:var(--aviso-tx)}
+  .nowcard .btn.ghost,.nowcard .nc-loc{color:var(--acento-tx)}
   .nc-title{font-size:18px;font-weight:800;margin:2px 0 4px;cursor:pointer}
   .nc-why{font-size:12.5px;color:var(--suave);line-height:1.45}
   .nc-actions{display:flex;gap:8px;margin-top:12px}
-  .nc-actions .btn{flex:1;width:auto;margin:0;padding:9px 6px;font-size:13px}
+  .nc-actions .btn{flex:1;width:auto;margin:0;padding:9px 6px;font-size:13px;white-space:nowrap}
+  .nc-actions .btn:not(.ghost){flex:1.5}
   .nc-loc{display:block;margin:10px auto 0;font-size:12px}
   .ob-step{font-size:11px;font-weight:800;color:var(--acento);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
   .feed-edit{display:block;margin:8px 0 0 auto;font-size:12px}
