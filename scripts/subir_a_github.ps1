@@ -23,7 +23,9 @@ try {
         if ($LASTEXITCODE -ne 0) { git merge --abort; Log "Conflicto con repo3/main: resolver a mano"; exit 1 }
         Log "Integrados $detras commits de repo3/main"
     }
+    $env:GIT_TERMINAL_PROMPT = "0"
     git push -q repo3 main:main
+    if ($LASTEXITCODE -ne 0) { Log "Push a repo3 FALLIDO (¿credenciales de GitHub sin guardar?)"; exit 1 }
     Log "Push a repo3 OK"
 } catch {
     Log "ERROR: $_"
