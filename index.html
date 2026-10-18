@@ -719,6 +719,8 @@
       <div class="list-search"><input type="search" id="listSearch" placeholder="Buscar biblioteca o ciudad…" autocomplete="off"></div>
       <div class="list-filters" id="listFilters">
         <button data-f="abiertas">● Abiertas ahora</button>
+        <button data-f="pronto">⏰ Abren pronto</button>
+        <button data-f="tarde">🌙 Hasta tarde</button>
         <button data-f="cerca">📍 Más cercanas</button>
         <button data-f="libre">🎫 Acceso libre</button>
         <button data-f="wifi">📶 Wifi</button>
@@ -1017,7 +1019,8 @@ function esVeranoDe(b,d){
   var k=String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
   return b.veranoDesde<=b.veranoHasta?(k>=b.veranoDesde&&k<=b.veranoHasta):(k>=b.veranoDesde||k<=b.veranoHasta);
 }
-function horarioVigente(b){if(b.sinHorario)return SIN_HORARIO;const v=esVeranoDe(b,new Date());
+// Horario de la temporada (invierno/verano) que rige en "fecha" (por defecto, hoy).
+function horarioVigente(b,fecha){if(b.sinHorario)return SIN_HORARIO;const v=esVeranoDe(b,fecha||new Date());
   if(v&&b.horasVerano)return b.horasVerano; if(!v&&b.horasInvierno)return b.horasInvierno;
   return b.horas||b.horasInvierno||b.horasVerano;}
 const HM=[[h(8,30),h(14,30)]], HT=[[h(14,0),h(20,0)]];
@@ -2352,6 +2355,8 @@ function buildList(){
   var F=LIST_FILTERS, idx=[], q=normTxt(($("listSearch")||{}).value||"").trim();
   BIBLIOTECAS.forEach(function(b,i){
     if(F.abiertas&&!estadoBib(b))return;
+    if(F.pronto&&!abrePronto(b))return;
+    if(F.tarde&&!abiertaHastaTarde(b))return;
     if(F.libre&&!(b.acceso&&b.acceso.tipo==="libre"))return;
     if(F.wifi&&!(b.recursos&&b.recursos.indexOf("wifi")!==-1))return;
     if(F.horario&&b.sinHorario)return;
@@ -2362,20 +2367,24 @@ function buildList(){
   if(F.cerca&&window.__userPos){
     var up=window.__userPos;
     idx.sort(function(a,c){return distMetros(up.lat,up.lon,BIBLIOTECAS[a].lat,BIBLIOTECAS[a].lon)-distMetros(up.lat,up.lon,BIBLIOTECAS[c].lat,BIBLIOTECAS[c].lon);});
+  }else if(F.pronto){
+    idx.sort(function(a,c){return abrePronto(BIBLIOTECAS[a]).enMin-abrePronto(BIBLIOTECAS[c]).enMin;});
+  }else if(F.tarde){
+    idx.sort(function(a,c){return horaCierre(BIBLIOTECAS[c])-horaCierre(BIBLIOTECAS[a]);});
   }
-  if(!idx.length)list.innerHTML='<div class="empty-note">Ninguna biblioteca cumple estos filtros'+(F.wifi?' (el wifi solo figura donde está confirmado)':'')+'.</div>';
+  if(!idx.length)list.innerHTML='<div class="empty-note">Ninguna biblioteca cumple estos filtros'+(F.wifi?' (el wifi solo figura donde está confirmado)':'')+(F.pronto?' (ninguna cerrada abre en los próximos '+PRONTO_MIN+' min)':'')+(F.tarde?' (ninguna abierta cierra a las 21:00 o más tarde)':'')+'.</div>';
   var total=idx.length, LIM=120;
   if(total>LIM){idx=idx.slice(0,LIM);}
   idx.forEach(function(i){
     var b=BIBLIOTECAS[i];
-    var abierto=estadoBib(b);
+    var abierto=estadoBib(b), pr=F.pronto?abrePronto(b):null;
     var distTxt="";
     if(window.__userPos){
       var dm=distMetros(window.__userPos.lat,window.__userPos.lon,b.lat,b.lon);
       distTxt=" · 📍"+(dm<1000?Math.round(dm)+"m":(dm/1000).toFixed(1)+"km");
     }
     var card=document.createElement("div");card.className="card";card.dataset.i=i;
-    card.innerHTML='<h3>'+escapeHTML(cortoNombre(b.nombre))+'</h3><div class="row"><span class="dot '+(b.sinHorario?"unk":(abierto?"open":"closed"))+'"></span>'+escapeHTML(estadoTexto(b).txt+(b.ciudad?" · "+b.ciudad:""))+escapeHTML(distTxt)+(b.rating!=null?'<span class="rate">★ '+b.rating.toFixed(1)+'</span>':'')+'</div>'+occStatusHTML(i,true);
+    card.innerHTML='<h3>'+escapeHTML(cortoNombre(b.nombre))+'</h3><div class="row"><span class="dot '+(b.sinHorario?"unk":(abierto?"open":"closed"))+'"></span>'+escapeHTML(estadoTexto(b).txt+(pr?" (en "+(pr.enMin<60?pr.enMin+" min":Math.floor(pr.enMin/60)+" h "+(pr.enMin%60)+" min")+")":"")+(b.ciudad?" · "+b.ciudad:""))+escapeHTML(distTxt)+(b.rating!=null?'<span class="rate">★ '+b.rating.toFixed(1)+'</span>':'')+'</div>'+occStatusHTML(i,true);
     card.addEventListener("click",function(){window.__selBib(i);});
     list.appendChild(card);
   });
@@ -2388,9 +2397,9 @@ function buildList(){
 function normTxt(t){return String(t||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");}
 // Filtros de la lista (se recuerdan en este navegador). "Más cercanas" pide la ubicación si aún no la hay.
 // "Abiertas ahora" depende de la hora: se recalcula cada minuto aunque no lleguen datos nuevos.
-setInterval(function(){if(!window.__listReady)return; if(LIST_FILTERS.abiertas)buildList(); else renderNowCard();},60000);
+setInterval(function(){if(!window.__listReady)return; if(LIST_FILTERS.abiertas||LIST_FILTERS.pronto||LIST_FILTERS.tarde)buildList(); else renderNowCard();},60000);
 (function(){var ls=$("listSearch");if(!ls)return;var tmo;ls.addEventListener("input",function(){clearTimeout(tmo);tmo=setTimeout(buildList,200);});})();
-var LIST_FILTERS=Object.assign({abiertas:false,cerca:false,libre:false,wifi:false,horario:false,uni:false},loadJSON("bpna_list_filters",{}));
+var LIST_FILTERS=Object.assign({abiertas:false,pronto:false,tarde:false,cerca:false,libre:false,wifi:false,horario:false,uni:false},loadJSON("bpna_list_filters",{}));
 function syncListFilterButtons(){
   document.querySelectorAll("#listFilters button").forEach(function(btn){btn.classList.toggle("on",!!LIST_FILTERS[btn.dataset.f]);});
 }
@@ -2399,6 +2408,8 @@ document.querySelectorAll("#listFilters button").forEach(function(btn){
     e.stopPropagation();
     var f=btn.dataset.f;
     LIST_FILTERS[f]=!LIST_FILTERS[f];
+    // "Abren pronto" (cerradas) no se puede combinar con "Abiertas ahora" ni con "Hasta tarde"
+    if(LIST_FILTERS[f]){if(f==="pronto"){LIST_FILTERS.abiertas=false;LIST_FILTERS.tarde=false;}else if(f==="abiertas"||f==="tarde")LIST_FILTERS.pronto=false;}
     saveJSON("bpna_list_filters",LIST_FILTERS);
     if(f==="cerca"&&LIST_FILTERS.cerca&&!window.__userPos){locateMe();}
     buildList();
@@ -3475,14 +3486,25 @@ function minutosHastaCierre(b){
 }
 function es24h(b){var cal=horarioVigente(b);return cal.every(function(tr){return tr&&tr.length===1&&tr[0][0]===0&&tr[0][1]>=1440;});}
 // "Abierta · cierra a las 21:00" / "Cerrada · abre mañana a las 8:30"
+// Siguiente apertura (hora local de la biblioteca) mirando hoy y los 7 días siguientes. Cada día usa
+// el horario de la temporada que le toca, así que acierta también en el cambio invierno/verano.
+// Devuelve {dias:0 hoy/1 mañana/..., min:minuto del día en que abre, day:día de la semana, enMin:minutos que faltan} o null.
 function proximaApertura(b){
-  var now=ahoraEn(b),m=now.getHours()*60+now.getMinutes(),cal=horarioVigente(b);
-  for(var dd=0;dd<7;dd++){
-    var day=(now.getDay()+dd)%7,tr=cal[day]||[];
-    for(var k=0;k<tr.length;k++){if(dd>0||tr[k][0]>m)return {dias:dd,min:tr[k][0],day:day};}
+  if(b.sinHorario)return null;
+  var now=ahoraEn(b),m=now.getHours()*60+now.getMinutes();
+  for(var dd=0;dd<=7;dd++){
+    var dia=new Date(now.getFullYear(),now.getMonth(),now.getDate()+dd);
+    var tr=(horarioVigente(b,dia)[dia.getDay()]||[]).slice().sort(function(a,c){return a[0]-c[0];});
+    for(var k=0;k<tr.length;k++){if(dd>0||tr[k][0]>m)return {dias:dd,min:tr[k][0],day:dia.getDay(),enMin:dd*1440+tr[k][0]-m};}
   }
   return null;
 }
+// Filtros de la lista que dependen de la hora: "Abren pronto" (cerradas que abren en ≤90 min)
+// y "Hasta tarde" (abiertas que cierran a las 21:00 o más tarde, incluidas las 24 h).
+const PRONTO_MIN=90, TARDE_MIN=h(21,0);
+function abrePronto(b){if(b.sinHorario||estadoBib(b))return null;var p=proximaApertura(b);return p&&p.enMin<=PRONTO_MIN?p:null;}
+function horaCierre(b){var c=minutosHastaCierre(b);if(c<=0)return -1;var now=ahoraEn(b);return now.getHours()*60+now.getMinutes()+c;}
+function abiertaHastaTarde(b){return !b.sinHorario&&horaCierre(b)>=TARDE_MIN;}
 function estadoTexto(b){
   if(b.sinHorario)return {abierta:false,desconocido:true,txt:"Horario sin confirmar"};
   var c=minutosHastaCierre(b);
@@ -3590,6 +3612,7 @@ function renderNowCard(){
 function abrirLista(soloAbiertas){
   // "Otras" abre la lista ya filtrada; con todo cerrado (soloAbiertas=false) se ven todas
   LIST_FILTERS.abiertas=soloAbiertas!==false;
+  if(LIST_FILTERS.abiertas)LIST_FILTERS.pronto=false;
   if(window.__userPos)LIST_FILTERS.cerca=true;
   saveJSON("bpna_list_filters",LIST_FILTERS);
   $("libPanel").classList.remove("hidden");$("libPanel").classList.remove("collapsed");
