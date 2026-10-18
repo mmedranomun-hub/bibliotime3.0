@@ -278,3 +278,30 @@ create table if not exists feedback (
 alter table feedback enable row level security;
 drop policy if exists "feedback insert own" on feedback;
 create policy "feedback insert own" on feedback for insert with check (auth.uid() = user_id);
+
+-- ===== COMENTARIOS EN SESIONES (estilo comentarios de actividad de Strava) =====
+-- Mismo criterio de privacidad que los kudos: solo los ven quien comenta, el dueño de la
+-- sesión y sus amigos; solo puedes comentar en tus sesiones o en las de un amigo.
+create table if not exists session_comments (
+  id uuid primary key default gen_random_uuid(),
+  session_local_id text not null,
+  session_owner_id uuid references profiles(id) on delete cascade,
+  author_id uuid references profiles(id) on delete cascade,
+  author_name text,
+  body text not null check (char_length(body) between 1 and 500),
+  created_at timestamptz default now()
+);
+create index if not exists session_comments_session_idx on session_comments(session_local_id);
+alter table session_comments enable row level security;
+drop policy if exists "session_comments select involved" on session_comments;
+create policy "session_comments select involved" on session_comments for select using (
+  auth.uid() = author_id or auth.uid() = session_owner_id or public.are_friends(auth.uid(), session_owner_id)
+);
+drop policy if exists "session_comments insert own" on session_comments;
+create policy "session_comments insert own" on session_comments for insert with check (
+  auth.uid() = author_id and (auth.uid() = session_owner_id or public.are_friends(auth.uid(), session_owner_id))
+);
+drop policy if exists "session_comments delete author or owner" on session_comments;
+create policy "session_comments delete author or owner" on session_comments for delete using (
+  auth.uid() = author_id or auth.uid() = session_owner_id
+);

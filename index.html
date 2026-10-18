@@ -349,6 +349,24 @@
     padding:7px 14px;font-weight:800;font-size:12.5px;cursor:pointer;color:var(--suave)}
   .kudos-btn:hover{border-color:#f59e0b;color:#b45309}
   .kudos-btn.on{background:linear-gradient(135deg,#f59e0b,#f7b955);border-color:transparent;color:#fff;cursor:default}
+  .feed-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
+  .feed-actions .kudos-btn{margin-top:0}
+  .cmt-btn:hover{border-color:var(--acento);color:var(--acento)}
+  .cmt-btn.on{border-color:var(--acento);color:var(--acento);background:rgba(108,92,231,.12);cursor:pointer}
+  .cmt-thread{margin-top:10px;border-top:1px solid rgba(148,163,184,.25);padding-top:10px}
+  .cmt{display:flex;gap:9px;align-items:flex-start;margin-bottom:9px}
+  .cmt-av{width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+    font-size:11.5px;font-weight:800;color:#fff;background:linear-gradient(140deg,var(--acento),#8b7bef)}
+  .cmt-body{flex:1;min-width:0;font-size:13px;line-height:1.45;overflow-wrap:anywhere}
+  .cmt-body b{font-size:12.5px}
+  .cmt-body small{font-size:11px;color:var(--suave);margin-left:6px}
+  .cmt-body p{white-space:pre-wrap;margin:0}
+  .cmt-del{border:none;background:none;color:var(--suave);cursor:pointer;font-size:17px;line-height:1;padding:2px 4px}
+  .cmt-del:hover{color:var(--cerrado)}
+  .cmt-form{display:flex;gap:8px;margin-top:4px}
+  .cmt-form input{flex:1;min-width:0;border:1px solid rgba(148,163,184,.4);border-radius:11px;padding:8px 11px;
+    font-size:13px;font-family:inherit;background:rgba(var(--blanco),.7);color:var(--texto)}
+  .cmt-empty{font-size:12px;color:var(--suave);margin-bottom:8px}
 
   /* ===== CALENDARIO ===== */
   .cal-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
@@ -1218,7 +1236,8 @@ const OCC_TTL_MIN=60;
 const SUPABASE_URL="https://jmqqfugqoeqihjgjcbhu.supabase.co";
 const SUPABASE_ANON_KEY="sb_publishable_1iosUmxRfDEWl-KjHm4F1Q_aceAX01t";
 let SB=null;
-let SOCIAL={user:null,profile:null,friends:[],requests:[],sent:[],events:[],presence:[],friendMarkers:[],timer:null,prayerCounts:{},prayedByMe:{},room:null,roomMembers:[],friendSessions:[],kudosCounts:{},kudosByMe:{},leaderboard:[]};
+let SOCIAL={user:null,profile:null,friends:[],requests:[],sent:[],events:[],presence:[],friendMarkers:[],timer:null,prayerCounts:{},prayedByMe:{},room:null,roomMembers:[],friendSessions:[],kudosCounts:{},kudosByMe:{},leaderboard:[],
+  comments:{},commentsOpen:{},commentDrafts:{},commentsOk:true,myCommentsAt:0};
 var feedTab="mia";
 function socialConfigured(){return SUPABASE_URL.indexOf("https://")===0 && SUPABASE_ANON_KEY && SUPABASE_ANON_KEY.indexOf("PEGA_AQUI")===-1 && typeof window.supabase!=="undefined";}
 function socialClient(){if(!socialConfigured())return null;if(!SB)SB=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);return SB;}
@@ -1301,7 +1320,8 @@ async function socialInitAfterLogin(){
     SOCIAL.timer=setInterval(function(){
       socialHeartbeat();socialRefreshAll();socialCheckNewPrayers();
       if(SOCIAL.room){loadRoomMembers().then(renderStudyRoom);}
-      if(feedTab==="amigos"){socialLoadFriendSessions().then(socialLoadKudos).then(renderSessionFeed);}
+      if(feedTab==="amigos"){socialLoadFriendSessions().then(socialLoadKudos).then(socialLoadFriendComments).then(renderSessionFeed);}
+      else{SOCIAL.myCommentsAt=0;renderSessionFeed();}
       loadOccupancyCloud().then(function(){refreshOccUI();});
     },45000);
   }catch(e){console.warn(e);socialRenderPanel("No he podido cargar Supabase: "+(e.message||e));}
@@ -1611,6 +1631,90 @@ async function giveKudos(localId,ownerId){
   if(ins.error&&ins.error.code!=="23505"){showToast("No se pudo dar kudos");return;}
   await socialLoadKudos();
   renderSessionFeed();
+}
+/* ===== COMENTARIOS EN SESIONES (estilo comentarios de actividad de Strava) =====
+   Tabla session_comments (ver supabase_social.sql). Si aún no existe en Supabase,
+   se marca SOCIAL.commentsOk=false y la UI de comentarios se oculta en silencio. */
+var COMMENT_MAX=500;
+function commentsAvailable(){return !!(socialClient()&&SOCIAL.user&&SOCIAL.commentsOk);}
+function commentTableMissing(res){
+  var e=res&&res.error; if(!e)return false;
+  return res.status===404||e.code==="42P01"||e.code==="PGRST205"||(/session_comments/.test(e.message||"")&&/(does not exist|schema cache)/.test(e.message||""));
+}
+async function socialLoadComments(ids){
+  var sb=socialClient(); if(!sb||!SOCIAL.user||!SOCIAL.commentsOk||!ids.length)return;
+  var res=await sb.from("session_comments").select("*").in("session_local_id",ids).order("created_at",{ascending:true});
+  if(res.error){if(commentTableMissing(res))SOCIAL.commentsOk=false;return;}
+  ids.forEach(function(id){SOCIAL.comments[id]=[];});
+  (res.data||[]).forEach(function(r){(SOCIAL.comments[r.session_local_id]=SOCIAL.comments[r.session_local_id]||[]).push(r);});
+}
+async function socialLoadFriendComments(){
+  await socialLoadComments(SOCIAL.friendSessions.map(function(s){return s.local_id;}));
+}
+async function socialLoadMyComments(){
+  if(!DATA||!commentsAvailable())return;
+  SOCIAL.myCommentsAt=Date.now();
+  await socialLoadComments(DATA.sessions.slice(-20).map(function(s){return s.id;}).filter(Boolean));
+}
+function commentsFor(localId,ownerId){
+  return (SOCIAL.comments[localId]||[]).filter(function(c){return c.session_owner_id===ownerId;});
+}
+function commentButtonHTML(localId,ownerId){
+  if(!commentsAvailable())return "";
+  var n=commentsFor(localId,ownerId).length, open=!!SOCIAL.commentsOpen[localId];
+  return '<button class="kudos-btn cmt-btn'+(open?" on":"")+'" data-cmt-toggle="'+escapeHTML(localId)+'" aria-expanded="'+open+'">💬 '+(n?n:"Comentar")+'</button>';
+}
+function commentThreadHTML(localId,ownerId){
+  if(!commentsAvailable()||!SOCIAL.commentsOpen[localId])return "";
+  var me=SOCIAL.user.id, list=commentsFor(localId,ownerId);
+  var html='<div class="cmt-thread">';
+  if(!list.length)html+='<div class="cmt-empty">Aún no hay comentarios. ¡Sé el primero en animar!</div>';
+  list.forEach(function(c){
+    var puede=c.author_id===me||c.session_owner_id===me;
+    html+='<div class="cmt"><div class="cmt-av">'+socialInitial(c.author_name)+'</div><div class="cmt-body"><b>'+escapeHTML(c.author_name||"Alguien")+'</b><small>'+escapeHTML(timeAgo(c.created_at))+'</small><p>'+escapeHTML(c.body)+'</p></div>'+
+      (puede?'<button class="cmt-del" title="Borrar comentario" aria-label="Borrar comentario" data-cmt-del="'+escapeHTML(c.id)+'" data-cmt-sid="'+escapeHTML(localId)+'">×</button>':'')+'</div>';
+  });
+  html+='<div class="cmt-form"><input type="text" maxlength="'+COMMENT_MAX+'" placeholder="Escribe un comentario…" aria-label="Escribe un comentario" data-cmt-input="'+escapeHTML(localId)+'" value="'+escapeHTML(SOCIAL.commentDrafts[localId]||"")+'">'+
+    '<button class="btn sm" data-cmt-send="'+escapeHTML(localId)+'" data-cmt-owner="'+escapeHTML(ownerId)+'">Enviar</button></div></div>';
+  return html;
+}
+async function postComment(localId,ownerId){
+  var sb=socialClient(); if(!sb||!SOCIAL.user){showToast("Necesitas Supabase configurado e iniciar sesión");return;}
+  var body=String(SOCIAL.commentDrafts[localId]||"").trim();
+  if(!body){showToast("Escribe algo antes de enviar");return;}
+  if(body.length>COMMENT_MAX){showToast("Máximo "+COMMENT_MAX+" caracteres");return;}
+  var name=(SOCIAL.profile&&SOCIAL.profile.name)||"Alguien";
+  var ins=await sb.from("session_comments").insert({session_local_id:localId,session_owner_id:ownerId,author_id:SOCIAL.user.id,author_name:name,body:body});
+  if(ins.error){
+    if(commentTableMissing(ins)){SOCIAL.commentsOk=false;renderSessionFeed(true);return;}
+    showToast("No se pudo enviar el comentario");return;
+  }
+  SOCIAL.commentDrafts[localId]="";
+  await socialLoadComments([localId]);
+  renderSessionFeed(true);
+}
+async function deleteComment(id,localId){
+  var sb=socialClient(); if(!sb||!SOCIAL.user)return;
+  if(!confirm("¿Borrar este comentario?"))return;
+  var del=await sb.from("session_comments").delete().eq("id",id);
+  if(del.error){showToast("No se pudo borrar el comentario");return;}
+  await socialLoadComments([localId]);
+  renderSessionFeed(true);
+}
+function initCommentEvents(){
+  var el=$("sessionFeed"); if(!el)return;
+  el.addEventListener("click",function(e){
+    var t=e.target.closest("[data-cmt-toggle],[data-cmt-send],[data-cmt-del]"); if(!t)return;
+    if(t.dataset.cmtToggle!=null){var id=t.dataset.cmtToggle;SOCIAL.commentsOpen[id]=!SOCIAL.commentsOpen[id];renderSessionFeed(true);
+      if(SOCIAL.commentsOpen[id]){var inp=el.querySelector('[data-cmt-input="'+CSS.escape(id)+'"]');if(inp)inp.focus();}}
+    else if(t.dataset.cmtSend!=null){postComment(t.dataset.cmtSend,t.dataset.cmtOwner);}
+    else if(t.dataset.cmtDel!=null){deleteComment(t.dataset.cmtDel,t.dataset.cmtSid);}
+  });
+  el.addEventListener("input",function(e){if(e.target.dataset&&e.target.dataset.cmtInput!=null)SOCIAL.commentDrafts[e.target.dataset.cmtInput]=e.target.value;});
+  el.addEventListener("keydown",function(e){
+    if(e.key!=="Enter"||!e.target.dataset||e.target.dataset.cmtInput==null)return;
+    e.preventDefault();var b=e.target.parentNode.querySelector("[data-cmt-send]");if(b)b.click();
+  });
 }
 async function socialLoadLeaderboard(){
   var sb=socialClient(); if(!sb||!SOCIAL.user)return;
@@ -1951,6 +2055,7 @@ function logout(){
   pomoReset();closeModal();releaseWakeLock();
   if(socialClient())socialClient().auth.signOut();
   if(SOCIAL.timer)clearInterval(SOCIAL.timer);
+  SOCIAL.comments={};SOCIAL.commentsOpen={};SOCIAL.commentDrafts={};SOCIAL.myCommentsAt=0;
   Brain.clearSession();
   CURRENT=null;DATA=null;
   $("app").classList.add("hidden");
@@ -2823,8 +2928,11 @@ function fmtFeedDate(dateStr){
   if(same(d,ayer))return "Ayer";
   return String(d.getDate()).padStart(2,"0")+" "+MESES[d.getMonth()].slice(0,3);
 }
-function renderSessionFeed(){
+function renderSessionFeed(force){
   var el=$("sessionFeed"); if(!el||!DATA)return;
+  // no repintar mientras el usuario escribe un comentario (salvo que se fuerce tras enviar/abrir)
+  var act=document.activeElement;
+  if(force!==true&&act&&act.dataset&&act.dataset.cmtInput!=null&&el.contains(act))return;
   if(feedTab==="amigos"){
     if(!socialClient()){el.innerHTML='<div class="empty-note">Configura Supabase para ver la actividad de tus amigos</div>';return;}
     if(!SOCIAL.friendSessions.length){el.innerHTML='<div class="empty-note">Tus amigos no tienen sesiones compartidas todavía</div>';return;}
@@ -2839,7 +2947,9 @@ function renderSessionFeed(){
         '<div class="fmeta">'+stars+'</div>'+
         (s.note?'<div class="fnote">"'+escapeHTML(s.note)+'"</div>':'')+
         (s.offering?'<div class="foffer">🙏 Ofrecido por '+escapeHTML(s.offering)+'</div>':'')+
-        '<button class="kudos-btn'+(ya?" on":"")+'" '+(ya?"disabled":"")+' onclick="giveKudos('+jsArg(s.local_id)+','+jsArg(s.owner_id)+')">👏 '+(n?n:"Dar kudos")+'</button>'+
+        '<div class="feed-actions"><button class="kudos-btn'+(ya?" on":"")+'" '+(ya?"disabled":"")+' onclick="giveKudos('+jsArg(s.local_id)+','+jsArg(s.owner_id)+')">👏 '+(n?n:"Dar kudos")+'</button>'+
+        commentButtonHTML(s.local_id,s.owner_id)+'</div>'+
+        commentThreadHTML(s.local_id,s.owner_id)+
         '</div>';
     }).join("");
     return;
@@ -2851,6 +2961,14 @@ function renderSessionFeed(){
     if(s.min>runningMax){prAt[idx]=runningMax>0?(s.min-runningMax):null;runningMax=s.min;}
   });
   var lista=DATA.sessions.map(function(s,idx){return {s:s,idx:idx};}).reverse().slice(0,20);
+  // comentarios que tus amigos han dejado en tus sesiones (solo con Supabase y la tabla creada)
+  var myId=commentsAvailable()?SOCIAL.user.id:null;
+  if(myId&&Date.now()-SOCIAL.myCommentsAt>45000){socialLoadMyComments().then(function(){renderSessionFeed();});}
+  function ownCmt(s){
+    if(!myId||!s.id)return "";
+    if(!DATA.sharePresence&&!commentsFor(s.id,myId).length)return "";
+    return '<div class="feed-actions">'+commentButtonHTML(s.id,myId)+'</div>'+commentThreadHTML(s.id,myId);
+  }
   el.innerHTML=lista.map(function(item){
     var s=item.s,idx=item.idx;
     var lugar=s.bib.replace("Biblioteca ","").replace("Pública ","");
@@ -2863,6 +2981,7 @@ function renderSessionFeed(){
       '<button class="linkbtn feed-edit" onclick="editarSesion('+idx+')">Editar</button>'+
       (s.note?'<div class="fnote">"'+escapeHTML(s.note)+'"</div>':'')+
       (s.offering?'<div class="foffer">🙏 Ofrecido por '+escapeHTML(s.offering)+'</div>':'')+
+      ownCmt(s)+
       '</div>';
   }).join("");
 }
@@ -3618,11 +3737,12 @@ window.addEventListener("DOMContentLoaded",function(){
   });
   $("btnPomoToggle").addEventListener("click",pomoToggle);
   $("btnPomoReset").addEventListener("click",pomoReset);
+  initCommentEvents();
   document.querySelectorAll("#feedTabSeg button").forEach(function(b){b.addEventListener("click",function(){
     document.querySelectorAll("#feedTabSeg button").forEach(function(x){x.classList.remove("on");});
     b.classList.add("on");
     feedTab=b.dataset.t;
-    if(feedTab==="amigos"){socialLoadFriendSessions().then(socialLoadKudos).then(renderSessionFeed);}
+    if(feedTab==="amigos"){socialLoadFriendSessions().then(socialLoadKudos).then(socialLoadFriendComments).then(renderSessionFeed);}
     else renderSessionFeed();
   });});
   $("calPrev").addEventListener("click",function(){calRef.setMonth(calRef.getMonth()-1);renderCal();});
