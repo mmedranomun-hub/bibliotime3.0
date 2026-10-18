@@ -2266,7 +2266,8 @@ function buildList(){
     if(F.wifi&&!(b.recursos&&b.recursos.indexOf("wifi")!==-1))return;
     if(F.horario&&b.sinHorario)return;
     if(F.uni&&!(b.tipoBib==="universidad"||/universi|UPNA|campus|CRAI/i.test(b.nombre)))return;
-    if(q&&normTxt(b.nombre+" "+(b.ciudad||"")+" "+(b.provincia||"")+" "+(b.dir||"")).indexOf(q)===-1)return;
+    // texto de búsqueda normalizado una sola vez por biblioteca (antes se recalculaba en cada tecla)
+    if(q&&(b._q||(b._q=normTxt(b.nombre+" "+(b.ciudad||"")+" "+(b.provincia||"")+" "+(b.dir||"")))).indexOf(q)===-1)return;
     idx.push(i);
   });
   if(F.cerca&&window.__userPos){
