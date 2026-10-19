@@ -48,6 +48,8 @@
     --ev-ot-bg:rgba(13,148,136,.14); --ev-ot-tx:#115e59; --bg-grad:linear-gradient(160deg,#dbeafe,#ede9fe);
     /* Texto en color de acento: en oscuro, índigo más claro para mantener contraste AA */
     --acento-tx:#5b4bd6; --aviso-tx:#b45309;
+    /* Degradado del nombre de la app: índigo → verde azulado con contraste AA en ambos extremos */
+    --marca-a:#5b4bd6; --marca-b:#0e7490; --barra-a:.9; --barra-b:.72;
   }
   /* Modo oscuro: sigue al sistema salvo que se elija tema en Ajustes */
   @media (prefers-color-scheme: dark){
@@ -59,6 +61,7 @@
       --ev-ta-bg:rgba(96,165,250,.20); --ev-ta-tx:#dbeafe;
       --ev-ot-bg:rgba(45,212,191,.18); --ev-ot-tx:#ccfbf1;
       --acento-tx:#b4abff; --aviso-tx:#fcd34d;
+      --marca-a:#b4abff; --marca-b:#5eead4; --barra-a:.94; --barra-b:.86;
     }
   }
   :root[data-theme="dark"]{
@@ -69,6 +72,7 @@
       --ev-ta-bg:rgba(96,165,250,.20); --ev-ta-tx:#dbeafe;
       --ev-ot-bg:rgba(45,212,191,.18); --ev-ot-tx:#ccfbf1;
       --acento-tx:#b4abff; --aviso-tx:#fcd34d;
+      --marca-a:#b4abff; --marca-b:#5eead4; --barra-a:.94; --barra-b:.86;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%}
@@ -85,13 +89,13 @@
   /* ===== TOPBAR ===== */
   .topbar{position:fixed;top:0;left:0;right:0;z-index:1000;padding:14px 18px;
     display:flex;align-items:center;gap:16px;
-    background:linear-gradient(180deg,rgba(var(--blanco),.78),rgba(var(--blanco),.45));
+    background:linear-gradient(180deg,rgba(var(--blanco),var(--barra-a)),rgba(var(--blanco),var(--barra-b)));
     backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);
     border-bottom:1px solid var(--borde);box-shadow:0 4px 24px rgba(2,6,23,.10)}
   .brand{display:flex;flex-direction:column;line-height:1;flex-shrink:0}
-  .brand .kicker{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--acento);font-weight:700;margin-bottom:3px}
+  .brand .kicker{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--acento-tx);font-weight:700;margin-bottom:3px}
   .brand h1{font-size:19px;font-weight:800;letter-spacing:-.02em}
-  .brand h1 span{background:linear-gradient(90deg,var(--acento),var(--acento2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .brand h1 span{background:linear-gradient(90deg,var(--marca-a),var(--marca-b));-webkit-background-clip:text;background-clip:text;color:transparent}
   .actionwrap{margin-left:auto;display:flex;align-items:center;gap:14px;min-width:0}
   .selected{display:flex;flex-direction:column;align-items:flex-end;min-width:0;max-width:230px;text-align:right}
   .selected .lbl{font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:var(--suave)}
@@ -294,9 +298,9 @@
     padding:20px;background:var(--bg-grad)}
   .authbox{width:100%;max-width:380px}
   .authbox .logo{text-align:center;margin-bottom:24px}
-  .authbox .logo .kicker{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--acento);font-weight:700}
+  .authbox .logo .kicker{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--acento-tx);font-weight:700}
   .authbox .logo h1{font-size:30px;font-weight:800;letter-spacing:-.02em}
-  .authbox .logo h1 span{background:linear-gradient(90deg,var(--acento),var(--acento2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .authbox .logo h1 span{background:linear-gradient(90deg,var(--marca-a),var(--marca-b));-webkit-background-clip:text;background-clip:text;color:transparent}
 
   /* ===== ESTUDIO ===== */
   .studyhero{text-align:center;padding:30px 22px}
