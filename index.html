@@ -2130,12 +2130,12 @@ function reportOcc(i,level){addOccReport(i,level,false);}
 function refreshOccUI(i){
   buildList();
   if(markers&&markers.length){
+    // Los popups se generan al abrirse: solo hay que refrescar el que esté abierto.
     if(typeof i==="number"&&markers[i]){
-      markers[i].setPopupContent(popupHTML(BIBLIOTECAS[i],i));
       if(markers[i].setIcon)markers[i].setIcon(chinchetaIcon(i));
-      if(window.__map&&window.__map.hasLayer(markers[i]))markers[i].openPopup();
+      if(window.__map&&window.__map.hasLayer(markers[i])){if(markers[i].isPopupOpen())markers[i].getPopup().update();else markers[i].openPopup();}
     }else{
-      markers.forEach(function(mk,j){mk.setPopupContent(popupHTML(BIBLIOTECAS[j],j));if(mk.setIcon)mk.setIcon(chinchetaIcon(j));});
+      markers.forEach(function(mk,j){if(mk.setIcon)mk.setIcon(chinchetaIcon(j));if(mk.isPopupOpen())mk.getPopup().update();});
     }
   }
 }
@@ -2342,7 +2342,7 @@ function locateMe(){
       window.__map.flyTo([window.__userPos.lat,window.__userPos.lon],15,{duration:.6});
     }
     buildList();
-    if(markers&&markers.length)markers.forEach(function(mk,j){if(mk.getPopup()&&mk.isPopupOpen())mk.setPopupContent(popupHTML(BIBLIOTECAS[j],j));});
+    if(markers&&markers.length)markers.forEach(function(mk,j){if(mk.getPopup()&&mk.isPopupOpen())mk.getPopup().update();});
     showToast("Ubicación encontrada");
   },function(err){
     if(btn)btn.classList.remove("active");
@@ -2436,11 +2436,14 @@ function initMap(){
   var capaBibs=(L.markerClusterGroup?L.markerClusterGroup({showCoverageOnHover:false,maxClusterRadius:45,disableClusteringAtZoom:14,spiderfyOnMaxZoom:false}):L.layerGroup()).addTo(map);
   window.__capaBibs=capaBibs;
   map.attributionControl.addAttribution("Bibliotecas: &copy; Overture Maps Foundation");
+  // El contenido del popup se genera al abrirlo (función), no para las 2616 de golpe,
+  // y las chinchetas se añaden al grupo en un solo lote (addLayers) en vez de una a una.
   BIBLIOTECAS.forEach(function(b,i){
-    var mk=L.marker([b.lat,b.lon],{icon:chinchetaIcon(i)}).addTo(capaBibs).bindPopup(popupHTML(b,i),{maxWidth:280,offset:[0,4]});
+    var mk=L.marker([b.lat,b.lon],{icon:chinchetaIcon(i)}).bindPopup(function(){return popupHTML(BIBLIOTECAS[i],i);},{maxWidth:280,offset:[0,4]});
     mk.on("click",function(){window.__selBib(i);});
     markers.push(mk);
   });
+  if(capaBibs.addLayers)capaBibs.addLayers(markers);else markers.forEach(function(mk){capaBibs.addLayer(mk);});
   var grupo=L.featureGroup(markers.slice(0,N_NAVARRA));map.fitBounds(grupo.getBounds().pad(0.18));
   socialRenderFriendMarkers();
 }
