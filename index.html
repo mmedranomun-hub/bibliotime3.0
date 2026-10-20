@@ -944,7 +944,7 @@
         <div class="field"><label>Añadir amigo por código</label><input type="text" id="friendCodeInput" placeholder="Ej: A1B2C3D4" style="text-transform:uppercase"></div>
         <button class="btn sm" id="btnAddFriend" style="margin-bottom:14px">+ Enviar solicitud</button>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;padding:11px 12px;border-radius:13px;background:rgba(var(--blanco),.55)">
-          <div><b style="font-size:14px">Compartir tu actividad</b><div style="font-size:12px;color:var(--suave)">Tus amigos verán la biblioteca donde estudias y tus sesiones terminadas (duración, nota, valoración). Nunca tus coordenadas GPS exactas.</div></div>
+          <div><b style="font-size:14px">Compartir tu actividad</b><div style="font-size:12px;color:var(--suave)">Desactivado por defecto. Tus amigos aceptados verán en qué biblioteca estás (nunca tu ubicación exacta) y tus sesiones terminadas. Se apaga sola a las 4 h o cuando cierra la biblioteca.</div></div>
           <label class="switch"><input type="checkbox" id="chkSharePresence"><span class="slider"></span></label>
         </div>
         <div class="section-title" style="margin-top:10px">Solicitudes</div>
@@ -1020,6 +1020,10 @@
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px">
           <div><b style="font-size:14px">Check-in con ubicación</b><div style="font-size:12px;color:var(--suave)">Solo cuenta la sesión si estás en la biblioteca</div></div>
           <label class="switch"><input type="checkbox" id="chkGeo"><span class="slider"></span></label>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px">
+          <div><b style="font-size:14px">Modo invisible</b><div style="font-size:12px;color:var(--suave)">Tus amigos dejan de ver en qué biblioteca estás, al momento</div></div>
+          <label class="switch"><input type="checkbox" id="chkInvisible" aria-label="Modo invisible"><span class="slider"></span></label>
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px">
           <div><b style="font-size:14px">Rezar y ofrecer estudio</b><div style="font-size:12px;color:var(--suave)">Rezar por los exámenes de tus amigos y dedicar tus horas de estudio</div></div>
@@ -1354,7 +1358,7 @@ function loadJSON(k,def){try{var v=localStorage.getItem(k);return v?JSON.parse(v
 function saveJSON(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
 function hashPass(s){var hsh=5381;for(var i=0;i<s.length;i++){hsh=((hsh<<5)+hsh)+s.charCodeAt(i);hsh=hsh&hsh;}return String(hsh);}
 function userKey(email){return "bpna_data_"+email.toLowerCase();}
-function dataDefault(){return {sessions:[],events:{},loans:[],goalMin:240,goalPeriod:"day",fav:[],geoCheck:false,sharePresence:false,occ:{},acadEvents:[],offeringText:"",
+function dataDefault(){return {sessions:[],events:{},loans:[],goalMin:240,goalPeriod:"day",fav:[],geoCheck:false,sharePresence:false,invisible:false,occ:{},acadEvents:[],offeringText:"",
   streakFreezes:0,usedFreezeDates:[],lastFreezeEarnedAtStreak:0,badges:{}};}
 function genId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
 
@@ -1381,7 +1385,7 @@ let CURRENT=null;   // email
 let DATA=null;      // datos del usuario actual
 function loadUserData(){DATA=Brain.getUserData(CURRENT);
   if(!DATA.events)DATA.events={}; if(!DATA.sessions)DATA.sessions=[]; if(!DATA.loans)DATA.loans=[];
-  if(!DATA.goalMin)DATA.goalMin=240; if(typeof DATA.geoCheck!=="boolean")DATA.geoCheck=false; if(typeof DATA.sharePresence!=="boolean")DATA.sharePresence=false; if(!DATA.occ)DATA.occ={}; if(!DATA.acadEvents)DATA.acadEvents=[];
+  if(!DATA.goalMin)DATA.goalMin=240; if(typeof DATA.geoCheck!=="boolean")DATA.geoCheck=false; if(typeof DATA.sharePresence!=="boolean")DATA.sharePresence=false; if(typeof DATA.invisible!=="boolean")DATA.invisible=false; if(!DATA.occ)DATA.occ={}; if(!DATA.acadEvents)DATA.acadEvents=[];
   if(DATA.goalPeriod!=="day"&&DATA.goalPeriod!=="week")DATA.goalPeriod="day"; if(typeof DATA.offeringText!=="string")DATA.offeringText="";
   if(typeof DATA.streakFreezes!=="number")DATA.streakFreezes=0; if(!DATA.usedFreezeDates)DATA.usedFreezeDates=[];
   if(typeof DATA.lastFreezeEarnedAtStreak!=="number")DATA.lastFreezeEarnedAtStreak=0; if(!DATA.badges||typeof DATA.badges!=="object"||Array.isArray(DATA.badges))DATA.badges={};
@@ -1566,7 +1570,7 @@ async function socialLoadBlocks(){
 // Vuelve a pintar todo lo social con el filtro de bloqueos actual (sin pedir nada a la red).
 function applyBlocks(){
   SOCIAL.events=filterBlocked(SOCIAL.eventsAll,"owner_id");
-  SOCIAL.presence=filterBlocked(SOCIAL.presenceAll,"user_id");
+  SOCIAL.presence=presenciasVisibles(SOCIAL.presenceAll);
   renderBlogList();
   try{socialRenderPanel();}catch(e){}
   socialRenderFriendEvents();socialRenderFriendMarkers();
@@ -1755,16 +1759,52 @@ async function socialHeartbeat(){
   var sb=socialClient(); if(!sb||!SOCIAL.user||!DATA)return;
   // started_at/bib_index se envían siempre: el upsert solo toca las columnas enviadas y, si no, quedaba
   // el valor viejo y la sala seguía mostrando a alguien que ya había terminado.
+  // Privacidad: solo se envía el índice de la biblioteca de la lista, nunca coordenadas.
   var payload={user_id:SOCIAL.user.id,sharing:false,room_code:SOCIAL.room?SOCIAL.room.code:null,updated_at:new Date().toISOString(),started_at:null,bib_index:null};
-  if(DATA.sharePresence&&studyTimer.running&&studyTimer.bibIndex>=0){
+  var comparte=presenciaPermitida();
+  if(comparte){
     payload.sharing=true;payload.bib_index=studyTimer.bibIndex;payload.started_at=new Date(studyTimer.start).toISOString();
   }
   if(SOCIAL.room&&studyTimer.running){
     payload.started_at=new Date(studyTimer.start).toISOString();
-    if(studyTimer.bibIndex>=0)payload.bib_index=studyTimer.bibIndex;
+    // en la sala solo se ve tu biblioteca si compartes presencia (la sala puede tener desconocidos con el código)
+    if(comparte)payload.bib_index=studyTimer.bibIndex;
   }
   await sb.from("presence").upsert(payload,{onConflict:"user_id"});
 }
+// Presencia de amigos: caduca a las 4 h o cuando cierra la biblioteca (también lo filtra la política RLS en SQL).
+var PRESENCIA_MAX_MS=4*60*60*1000;
+function bibCerradaAhora(b){return !!b&&!b.sinHorario&&!estadoBib(b);}
+// ¿Puedo compartir ahora mi biblioteca? Opción activada, sin modo invisible, cronómetro en marcha
+// en una biblioteca de la lista, menos de 4 h de sesión y biblioteca abierta.
+function presenciaPermitida(){
+  if(!DATA||!DATA.sharePresence||DATA.invisible)return false;
+  if(!studyTimer.running||!(studyTimer.bibIndex>=0))return false;
+  if(Date.now()-studyTimer.start>PRESENCIA_MAX_MS)return false;
+  return !bibCerradaAhora(BIBLIOTECAS[studyTimer.bibIndex]);
+}
+// Qué presencias de amigos se muestran: solo recientes (<4 h) y en bibliotecas que no estén cerradas ahora.
+function presenciaVigente(p,ahora){
+  if(!p||!p.sharing||!(p.bib_index>=0))return false;
+  var b=BIBLIOTECAS[p.bib_index]; if(!b)return false;
+  var t=new Date(p.updated_at).getTime(); if(!(t>0))return false;
+  if((ahora||Date.now())-t>PRESENCIA_MAX_MS)return false;
+  return !bibCerradaAhora(b);
+}
+function presenciasVisibles(rows){return filterBlocked((rows||[]).filter(function(p){return presenciaVigente(p);}),"user_id");}
+// Al cerrar la app: apaga la presencia con una petición keepalive (supabase-js no garantiza terminar al cerrar).
+function socialClearPresenceOnExit(){
+  try{
+    if(!SOCIAL.user||!socialKeysOk())return;
+    var ref=(SUPABASE_URL.match(/^https:\/\/([^.]+)\./)||[])[1];
+    var raw=ref&&localStorage.getItem("sb-"+ref+"-auth-token"); if(!raw)return;
+    var tok=(JSON.parse(raw)||{}).access_token; if(!tok)return;
+    fetch(SUPABASE_URL+"/rest/v1/presence?on_conflict=user_id",{method:"POST",keepalive:true,
+      headers:{"apikey":SUPABASE_ANON_KEY,"Authorization":"Bearer "+tok,"Content-Type":"application/json","Prefer":"resolution=merge-duplicates,return=minimal"},
+      body:JSON.stringify({user_id:SOCIAL.user.id,sharing:false,started_at:null,bib_index:null,room_code:null,updated_at:new Date().toISOString()})});
+  }catch(e){}
+}
+window.addEventListener("pagehide",socialClearPresenceOnExit);
 async function socialClearPresence(){
   if(!socialClient()||!SOCIAL.user)return;
   await socialClient().from("presence").upsert({user_id:SOCIAL.user.id,sharing:false,started_at:null,bib_index:null,updated_at:new Date().toISOString()},{onConflict:"user_id"});
@@ -1773,11 +1813,11 @@ async function socialLoadPresence(){
   var sb=socialClient(); if(!sb||!SOCIAL.user)return;
   var ids=SOCIAL.friends.map(function(f){return f.profile.id;});
   if(!ids.length){SOCIAL.presence=[];SOCIAL.presenceAll=[];return;}
-  var cutoff=new Date(Date.now()-3*60*60*1000).toISOString();
+  var cutoff=new Date(Date.now()-PRESENCIA_MAX_MS).toISOString();
   var res=await sb.from("presence").select("user_id,bib_index,sharing,updated_at,started_at").in("user_id",ids).eq("sharing",true).gte("updated_at",cutoff);
   if(res.error){console.warn(res.error);SOCIAL.presence=[];SOCIAL.presenceAll=[];return;}
   SOCIAL.presenceAll=res.data||[];
-  SOCIAL.presence=filterBlocked(SOCIAL.presenceAll,"user_id");
+  SOCIAL.presence=presenciasVisibles(SOCIAL.presenceAll);
 }
 /* ===== SESIONES DE ESTUDIO EN GRUPO ===== */
 async function createStudyRoom(name){
@@ -2099,11 +2139,12 @@ function socialRenderFriendEvents(){
 function socialRenderFriendMarkers(){
   if(!window.__map||typeof L==="undefined")return;
   SOCIAL.friendMarkers.forEach(function(m){try{window.__map.removeLayer(m);}catch(e){}});SOCIAL.friendMarkers=[];
+  SOCIAL.presence=presenciasVisibles(SOCIAL.presenceAll);
   SOCIAL.presence.forEach(function(p){
     var b=BIBLIOTECAS[p.bib_index]; if(!b)return;
     var name=socialNameById(p.user_id), age=Math.round((Date.now()-new Date(p.updated_at).getTime())/60000);
     var icon=L.divIcon({className:"",html:'<div class="friendpin">'+socialInitial(name)+'</div>',iconSize:[38,46],iconAnchor:[19,46],popupAnchor:[0,-46]});
-    var mk=L.marker([b.lat,b.lon],{icon:icon}).addTo(window.__map).bindPopup('<div class="pop"><h2>'+escapeHTML(name)+'</h2><div class="estado open">👥 Amigo compartiendo ubicación</div><div class="dir"><span>Está en '+escapeHTML(b.nombre)+' · actualizado hace '+Math.max(0,age)+' min</span></div></div>',{maxWidth:280});
+    var mk=L.marker([b.lat,b.lon],{icon:icon}).addTo(window.__map).bindPopup('<div class="pop"><h2>'+escapeHTML(name)+'</h2><div class="estado open">👥 Amigo estudiando aquí</div><div class="dir"><span>Está en '+escapeHTML(b.nombre)+' · actualizado hace '+Math.max(0,age)+' min</span></div></div>',{maxWidth:280});
     SOCIAL.friendMarkers.push(mk);
   });
 }
@@ -2346,7 +2387,7 @@ async function logout(){
   // stopStudy(true): sin el diálogo de valoración, que se quedaba encima del login sin usuario.
   if(studyTimer.running){stopStudy(true);showToast("Sesión de estudio guardada");}
   pomoReset();closeModal();releaseWakeLock();
-  if(socialClient()){try{await socialClient().auth.signOut();}catch(e){}}
+  if(socialClient()){try{await socialClearPresence();}catch(e){}try{await socialClient().auth.signOut();}catch(e){}}
   if(SOCIAL.timer)clearInterval(SOCIAL.timer);
   SOCIAL.comments={};SOCIAL.commentsOpen={};SOCIAL.commentDrafts={};SOCIAL.myCommentsAt=0;
   // limpia lo social de la cuenta anterior antes de seguir como invitado
@@ -3543,6 +3584,7 @@ function renderProfile(){
   renderSugerencia();
   var chk=$("chkGeo"); if(chk)chk.checked=!!DATA.geoCheck;
   var sh=$("chkSharePresence"); if(sh)sh.checked=!!DATA.sharePresence;
+  var inv=$("chkInvisible"); if(inv)inv.checked=!!DATA.invisible;
   socialRenderPanel();
   var pb=$("btnNotifPerm");
   if(pb){ if("Notification" in window && Notification.permission==="granted"){pb.textContent="Activadas ✓";pb.disabled=true;} else {pb.textContent="Activar";pb.disabled=false;} }
@@ -4237,7 +4279,15 @@ window.addEventListener("DOMContentLoaded",function(){
   $("chkGeo").addEventListener("change",function(){DATA.geoCheck=this.checked;saveUserData();showToast(this.checked?"Check-in con ubicación activado":"Check-in desactivado");});
   $("btnAddFriend").addEventListener("click",socialAddFriendFromInput);
   $("btnCopyFriendCode").addEventListener("click",function(){var c=$("friendCode").textContent;if(c&&c!=="—"&&c!=="SIN CONFIG"){navigator.clipboard.writeText(c);showToast("Código copiado");}});
-  $("chkSharePresence").addEventListener("change",function(){DATA.sharePresence=this.checked;saveUserData();socialHeartbeat();showToast(this.checked?"Tus amigos verán la biblioteca donde estudias":"Has dejado de compartir tu biblioteca");});
+  $("chkSharePresence").addEventListener("change",function(){
+    if(this.checked&&!confirm("Tus amigos verán en qué biblioteca estás, nunca tu ubicación exacta. Se apaga sola a las 4 horas o cuando cierre la biblioteca.\n\nTambién verán tus sesiones terminadas. ¿Activar?")){this.checked=false;return;}
+    DATA.sharePresence=this.checked;saveUserData();socialHeartbeat();
+    showToast(this.checked?(DATA.invisible?"Activado, pero tienes el modo invisible puesto":"Tus amigos verán la biblioteca donde estudias"):"Has dejado de compartir tu biblioteca");});
+  $("chkInvisible").addEventListener("change",function(){
+    DATA.invisible=this.checked;saveUserData();
+    // corta al momento: no espera al siguiente latido de 45 s
+    if(this.checked)socialClearPresence(); else socialHeartbeat();
+    showToast(this.checked?"Modo invisible: nadie ve dónde estudias":"Modo invisible desactivado");});
   window.addEventListener("hashchange",comprobarEnlaceCompartido);
 
   // sesión recordada

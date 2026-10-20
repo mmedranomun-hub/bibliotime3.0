@@ -375,3 +375,39 @@ drop policy if exists "user_blocks insert own" on user_blocks;
 create policy "user_blocks insert own" on user_blocks for insert with check (auth.uid() = blocker_id);
 drop policy if exists "user_blocks delete own" on user_blocks;
 create policy "user_blocks delete own" on user_blocks for delete using (auth.uid() = blocker_id);
+
+-- ===== PRIVACIDAD DE LA PRESENCIA (2026-10-20) =====
+-- La presencia solo guarda el índice de la biblioteca de la lista (nunca coordenadas) y caduca a las 4 h
+-- sin necesidad de cron: la política de lectura ignora las filas con updated_at de más de 4 horas.
+-- Idempotente: se puede ejecutar varias veces.
+
+-- updated_at lo pone siempre el servidor, para que nadie alargue su presencia con una fecha futura.
+create or replace function public.presence_touch_updated_at() returns trigger
+language plpgsql set search_path = public as $$
+begin
+  new.updated_at := now();
+  return new;
+end;
+$$;
+drop trigger if exists presence_touch_updated_at on presence;
+create trigger presence_touch_updated_at before insert or update on presence
+  for each row execute function public.presence_touch_updated_at();
+
+-- Tu fila siempre; la de un amigo aceptado solo si comparte y es de las últimas 4 h;
+-- la de quien está en tu misma sala, también solo de las últimas 4 h.
+drop policy if exists "presence select all" on presence;
+drop policy if exists "presence select own friends room" on presence;
+create policy "presence select own friends room" on presence for select using (
+  auth.uid() = user_id
+  or (updated_at > now() - interval '4 hours' and (
+        (sharing and public.are_friends(auth.uid(), user_id))
+     or (room_code is not null and room_code = public.my_room_code())
+  ))
+);
+
+-- Poder borrar tu propia presencia (antes solo se podía poner sharing = false).
+drop policy if exists "presence delete own" on presence;
+create policy "presence delete own" on presence for delete using (auth.uid() = user_id);
+
+-- Por defecto no se comparte (ya lo era; se reafirma por si la tabla se creó a mano).
+alter table presence alter column sharing set default false;
