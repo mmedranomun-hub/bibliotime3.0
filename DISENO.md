@@ -1,0 +1,17 @@
+# Diseño de Bibliotime
+
+Criterios que sigue la rutina diaria de diseño (una mejora pequeña por día).
+
+## Paleta y teoría del color
+- **Base calmada:** azules y verdes suaves para la concentración; fondos con poca saturación.
+- **Acento:** índigo/violeta moderado (`--acento: #6c5ce7`) para acciones y estado activo.
+- **Evitar:** rojos grandes y colores muy saturados (activan alerta y fatigan); el rojo queda para avisos puntuales.
+- **Contraste:** texto WCAG AA (≥ 4.5:1) en modo claro y oscuro. Los colores se definen como variables en `:root` y se redefinen en el bloque de modo oscuro.
+
+## Registro
+- 2026-10-17 · Agenda: los eventos pasan de etiquetas saturadas con texto blanco (ámbar con contraste ~2:1) a tonos tenues con texto oscuro del mismo matiz y borde izquierdo; "Otro" pasa de ámbar a verde azulado (calma); el día de hoy lleva un fondo índigo muy suave. Variables `--ev-*` con versión para modo oscuro.
+- 2026-10-17 · Agenda en el móvil: la cuadrícula ya no corta los títulos ("E…"); cada día muestra puntos de color por evento y debajo hay una lista "Próximos" (dos semanas, hasta 6) con fecha, título completo, tipo y "en N días", en los mismos tonos suaves (contraste 6-8.8:1). Celdas algo más bajas para que se vea más calendario sin hacer scroll.
+- 2026-10-18 · Tarjeta "Te recomiendo ahora" (#nowCard): nuevo token `--acento-tx` para texto en color de acento (claro #5b4bd6, 6.1:1; oscuro #b4abff, 7.1:1, antes #6c5ce7 a 3.0:1 sobre la tarjeta oscura, por debajo de AA) en el titular, botones secundarios y enlace de ubicación; `--aviso-tx` para "época de exámenes" en oscuro. "▶ Estudiar aquí" ya no se parte en dos líneas: el botón principal es algo más ancho que los secundarios.
+- 2026-10-19 · Cabecera y pantalla de entrada: el nombre "Navarra" usaba un degradado índigo → cian #00d2d3 (1.9:1 sobre blanco) y en oscuro el índigo quedaba a 3.0:1. Nuevos tokens `--marca-a/--marca-b` (claro #5b4bd6 → #0e7490, 6.1 y 5.4:1; oscuro #b4abff → #5eead4, 7.1 y 9.9:1); "Navarra · España" usa `--acento-tx`. La barra superior es más opaca (`--barra-a/-b`) para que en modo oscuro no se vuelva gris al pasar sobre las teselas claras del mapa.
+- 2026-10-19 · Mapa sin selector de capas (Calles/Relieve/Plano/Satélite tapaba la tarjeta y no aportaba); los grupos de bibliotecas cercanas se dibujan como chinchetas con el número en una etiqueta blanca, y desde el zoom 11 cada biblioteca tiene la suya. Agenda: sección "Calendario de tus amigos" siempre visible y eventos de amigos marcados con un anillo índigo en la cuadrícula.
+- 2026-10-20 · Botones (modo estudio y resto de la app): "Terminar sesión" y "Cerrar sesión" dejan el rojo saturado con texto blanco (2.8-3.8:1, y el rojo grande activa alerta en plena sesión) por un rosa tenue con texto oscuro del mismo matiz (6.6:1 claro, 7.7:1 oscuro, tokens `--ev-ex-*`). El botón principal pasa de índigo → lila #8b7bef (texto blanco 3.4:1 en el extremo claro) a #5b4bd6 → #6c5ce7 (≥ 4.9:1). Los botones secundarios usan `--acento-tx` (7.1:1 en oscuro).
