@@ -2,3 +2,7 @@ scripts/subir_a_github.log
 scripts/sincronizacion.log
 .tarea.lock
 data/
+.vercel
+
+.vercel
+.env*

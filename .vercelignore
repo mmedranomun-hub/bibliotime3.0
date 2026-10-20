@@ -1,0 +1,14 @@
+.claude
+data
+scripts
+screenshots
+play
+serve.ps1
+BACKLOG.md
+DISENO.md
+RENDIMIENTO.md
+PUBLICAR_EN_GOOGLE_PLAY.md
+supabase_social.sql
+.tarea.lock
+.env*
+.vercel
