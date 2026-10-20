@@ -1005,9 +1005,8 @@
         onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js';document.head.appendChild(s);"></script>
 <!-- Bibliotecas del resto de España (datos abiertos de Overture Maps; ver el propio archivo) -->
 <script src="bibliotecas-espana.js"></script>
-<!-- defer: Leaflet y Supabase no bloquean el primer pintado; se ejecutan antes de DOMContentLoaded,
-     que es cuando la app inicia sesión y monta el mapa (initMap además reintenta si L aún no está). -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+<!-- defer: Leaflet no bloquea el primer pintado (initMap reintenta si L aún no está). Supabase ya no se carga
+     al inicio: solo si hay una sesión en la nube o al iniciar sesión / usar algo que lo necesite (cargarSupabase). -->
 <script>
 /* ===================== DATOS BIBLIOTECAS ===================== */
 function h(hh,mm){return hh*60+mm}
@@ -1276,6 +1275,22 @@ const SUPABASE_ANON_KEY="sb_publishable_1iosUmxRfDEWl-KjHm4F1Q_aceAX01t";
 let SB=null;
 let SOCIAL={user:null,profile:null,friends:[],requests:[],sent:[],events:[],presence:[],friendMarkers:[],timer:null,prayerCounts:{},prayedByMe:{},room:null,roomMembers:[],friendSessions:[],kudosCounts:{},kudosByMe:{},leaderboard:[]};
 var feedTab="mia";
+// Claves puestas (la librería puede no estar cargada todavía)
+function socialKeysOk(){return SUPABASE_URL.indexOf("https://")===0 && !!SUPABASE_ANON_KEY && SUPABASE_ANON_KEY.indexOf("PEGA_AQUI")===-1;}
+// Supabase (~45 KB comprimido) se descarga solo cuando hace falta: la mayoría entra sin cuenta.
+var _sbCarga=null;
+function cargarSupabase(){
+  if(typeof window.supabase!=="undefined")return Promise.resolve(true);
+  if(!socialKeysOk())return Promise.resolve(false);
+  if(_sbCarga)return _sbCarga;
+  _sbCarga=new Promise(function(res){
+    var s=document.createElement("script");s.src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
+    s.onload=function(){res(true);};s.onerror=function(){_sbCarga=null;res(false);};document.head.appendChild(s);
+  });
+  return _sbCarga;
+}
+// ¿Quedó guardada una sesión de Supabase en este navegador? (clave sb-<proyecto>-auth-token)
+function haySesionNube(){try{for(var i=0;i<localStorage.length;i++){if(/^sb-.+-auth-token$/.test(localStorage.key(i)||""))return true;}}catch(e){}return false;}
 function socialConfigured(){return SUPABASE_URL.indexOf("https://")===0 && SUPABASE_ANON_KEY && SUPABASE_ANON_KEY.indexOf("PEGA_AQUI")===-1 && typeof window.supabase!=="undefined";}
 function socialClient(){if(!socialConfigured())return null;if(!SB)SB=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);return SB;}
 function loadJSON(k,def){try{var v=localStorage.getItem(k);return v?JSON.parse(v):def;}catch(e){return def;}}
@@ -1431,8 +1446,8 @@ async function socialCheckNewPrayers(){
 function renderCalFriendExams(){
   var list=$("friendCalList"); if(!list)return;
   if(!SOCIAL.user){
-    list.innerHTML='<div class="empty-note" style="margin-bottom:10px">Aquí verás los exámenes y entregas que compartan tus amigos.'+(socialConfigured()?' Necesitas una cuenta (gratis y opcional) para añadir amigos.':'')+'</div>'+
-      (socialConfigured()?'<button class="btn sm" onclick="abrirLogin(\'reg\')">Crear cuenta</button>':'');
+    list.innerHTML='<div class="empty-note" style="margin-bottom:10px">Aquí verás los exámenes y entregas que compartan tus amigos.'+(socialKeysOk()?' Necesitas una cuenta (gratis y opcional) para añadir amigos.':'')+'</div>'+
+      (socialKeysOk()?'<button class="btn sm" onclick="abrirLogin(\'reg\')">Crear cuenta</button>':'');
     return;
   }
   if(!SOCIAL.friends.length){
@@ -1466,6 +1481,7 @@ function timeAgo(iso){
 }
 async function renderBlog(){
   var note=$("blogNote"),list=$("blogList"); if(!note||!list)return;
+  await cargarSupabase();
   var sb=socialClient();
   if(!sb){
     note.classList.remove("hidden");
@@ -1618,8 +1634,8 @@ function elapsedSince(iso){
 function renderStudyRoom(){
   var card=$("roomCard"); if(!card)return;
   var sb=socialClient();
-  if(!sb){
-    card.innerHTML='<div class="section-title" style="margin-top:0">👥 Sesión en grupo</div><div class="empty-note">Configura Supabase para estudiar en grupo con tus amigos.</div>';
+  if(!sb||!SOCIAL.user){
+    card.innerHTML='<div class="section-title" style="margin-top:0">👥 Sesión en grupo</div><div class="empty-note">'+(socialKeysOk()?'Crea una cuenta (gratis y opcional) para estudiar en grupo con tus amigos.':'Configura Supabase para estudiar en grupo con tus amigos.')+'</div>';
     return;
   }
   if(!SOCIAL.room){
@@ -1706,7 +1722,7 @@ function computeLeaderboard(){
 }
 function renderLeaderboard(){
   var el=$("leaderboardList"); if(!el)return;
-  if(!socialClient()){el.innerHTML='<div class="empty-note">Configura Supabase para ver el ranking con amigos</div>';return;}
+  if(!socialClient()||!SOCIAL.user){el.innerHTML='<div class="empty-note">'+(socialKeysOk()?'Con una cuenta (opcional) y amigos verás aquí el ranking':'Configura Supabase para ver el ranking con amigos')+'</div>';return;}
   if(!SOCIAL.leaderboard.length){el.innerHTML='<div class="empty-note">Sin datos '+(lbPeriod==="day"?"de hoy":"de esta semana")+' todavía (necesitas amigos y sesiones compartidas)</div>';return;}
   el.innerHTML=SOCIAL.leaderboard.map(function(p,i){
     return '<div class="nowrow" style="cursor:default"><div class="rank">'+(i+1)+'</div><div class="ni"><b>'+escapeHTML(p.name)+'</b><small>'+hMin(p.min)+(lbPeriod==="day"?' hoy':' esta semana')+'</small></div></div>';
@@ -1735,7 +1751,7 @@ function socialPresenceFor(id){return SOCIAL.presence.filter(function(p){return 
 function socialRenderPanel(err){
   var note=$("socialNote"); if(!note)return;
   var chk=$("chkSharePresence"); if(chk)chk.checked=!!(DATA&&DATA.sharePresence);
-  if(!socialClient()){
+  if(!socialKeysOk()){
     note.innerHTML='Modo local: pega tus claves de <b>Supabase</b> en <code>SUPABASE_URL</code> y <code>SUPABASE_ANON_KEY</code> para que amigos, ubicación y eventos se sincronicen entre móviles.';
     $("friendCode").textContent="SIN CONFIG";
     return;
@@ -1827,6 +1843,7 @@ async function doAuth(){
   if(!email||!/.+@.+\..+/.test(email)){showAuthErr("Introduce un correo válido.");return;}
   if(pass.length<4){showAuthErr("La contraseña debe tener al menos 4 caracteres.");return;}
   var users=Brain.getUsers();
+  await cargarSupabase();
   var sb=socialClient();
   if(sb){
     try{
@@ -1879,7 +1896,7 @@ function entrarComoInvitado(){
   var users=Brain.getUsers();if(!users[GUEST]){users[GUEST]={name:"Invitado",pass:""};Brain.saveUsers(users);}
   CURRENT=GUEST;Brain.setSession(GUEST);enterApp();
 }
-function abrirLogin(m){setAuthMode(m||"login");$("authView").classList.remove("hidden");}
+function abrirLogin(m){setAuthMode(m||"login");$("authView").classList.remove("hidden");cargarSupabase();}
 async function enterApp(){
   var users=Brain.getUsers();
   var u=users[CURRENT]||{name:CURRENT};
@@ -2090,9 +2107,9 @@ async function loadOccupancyCloud(){
   });
   OCC_CACHE=grouped;
 }
-function occAll(){return socialClient()?OCC_CACHE:Brain.getOccupancy();}
+function occAll(){return (socialClient()&&SOCIAL.user)?OCC_CACHE:Brain.getOccupancy();}
 function occPrune(all){
-  if(socialClient())return all; // los reportes de Supabase ya llegan filtrados por antigüedad
+  if(socialClient()&&SOCIAL.user)return all; // los reportes de Supabase ya llegan filtrados por antigüedad
   var cutoff=Date.now()-OCC_TTL_MIN*60000, changed=false;
   for(var k in all){
     var oldLen=(all[k]||[]).length;
@@ -2135,6 +2152,7 @@ function occControlsHTML(i){
 async function showOccHistory(i){
   var wrap=document.getElementById("occHist"+i); if(!wrap)return;
   wrap.innerHTML='<div class="occ-empty">Cargando tendencia…</div>';
+  await cargarSupabase();
   var sb=socialClient();
   if(!sb){wrap.innerHTML='<div class="occ-empty">Configura Supabase para ver la tendencia histórica</div>';return;}
   var res=await sb.from("occupancy_reports").select("level,created_at").eq("bib_index",i).limit(500);
@@ -2876,7 +2894,7 @@ function fmtFeedDate(dateStr){
 function renderSessionFeed(){
   var el=$("sessionFeed"); if(!el||!DATA)return;
   if(feedTab==="amigos"){
-    if(!socialClient()){el.innerHTML='<div class="empty-note">Configura Supabase para ver la actividad de tus amigos</div>';return;}
+    if(!socialClient()||!SOCIAL.user){el.innerHTML='<div class="empty-note">'+(socialKeysOk()?'Con una cuenta (opcional) y amigos verás aquí su actividad':'Configura Supabase para ver la actividad de tus amigos')+'</div>';return;}
     if(!SOCIAL.friendSessions.length){el.innerHTML='<div class="empty-note">Tus amigos no tienen sesiones compartidas todavía</div>';return;}
     el.innerHTML=SOCIAL.friendSessions.map(function(s){
       var lugar=(s.bib_name||"").replace("Biblioteca ","").replace("Pública ","");
@@ -3656,7 +3674,7 @@ function renderSugerencia(){
 
 window.addEventListener("DOMContentLoaded",function(){
   setAuthMode("login");
-  $("authPrivacyNote").textContent=socialConfigured()
+  $("authPrivacyNote").textContent=socialKeysOk()
     ?"Tu cuenta se guarda de forma segura en la nube (Supabase), para que puedas entrar desde cualquier dispositivo."
     :"Tu cuenta y tus datos se guardan en este dispositivo. No se envía nada a internet.";
   $("tabLogin").addEventListener("click",function(){setAuthMode("login");});
@@ -3729,6 +3747,7 @@ window.addEventListener("DOMContentLoaded",function(){
 
   // sesión recordada
   (async function(){
+    if(haySesionNube())await cargarSupabase();
     var sb=socialClient();
     if(sb){
       try{
