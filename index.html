@@ -293,10 +293,11 @@
     background:rgba(var(--blanco),.7);font-size:14px;font-family:inherit;color:var(--texto)}
   .field input:focus,.field select:focus{outline:none;border-color:var(--acento);box-shadow:0 0 0 3px rgba(108,92,231,.15)}
   .btn{border:none;border-radius:13px;padding:12px 18px;font-weight:700;font-size:14px;cursor:pointer;
-    background:linear-gradient(135deg,var(--acento),#8b7bef);color:#fff;transition:transform .12s,box-shadow .12s;width:100%}
+    background:linear-gradient(135deg,#5b4bd6,var(--acento));color:#fff;transition:transform .12s,box-shadow .12s;width:100%}
   .btn:hover{transform:translateY(-2px);box-shadow:var(--sombra)}
-  .btn.ghost{background:transparent;color:var(--acento);border:1px solid rgba(108,92,231,.4)}
-  .btn.danger{background:linear-gradient(135deg,#ef4444,#f87171)}
+  .btn.ghost{background:transparent;color:var(--acento-tx);border:1px solid rgba(108,92,231,.4)}
+  /* Parar / cerrar sesión: tono rosado suave con texto oscuro (antes rojo saturado con texto blanco, 2.8-3.8:1) */
+  .btn.danger{background:var(--ev-ex-bg);color:var(--ev-ex-tx);border:1px solid rgba(225,29,72,.25)}
   .btn.sm{width:auto;padding:8px 14px;font-size:13px;border-radius:11px}
   .err{color:var(--cerrado);font-size:12.5px;margin-top:-6px;margin-bottom:10px;font-weight:600}
   .linkbtn{background:none;border:none;color:var(--acento);font-weight:700;cursor:pointer;font-size:13px;text-decoration:underline}
