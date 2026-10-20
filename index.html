@@ -227,6 +227,13 @@
   .pop .dir{font-size:12.5px;color:var(--suave);margin-top:10px;line-height:1.4;display:flex;gap:7px}
   .pop .dir svg{flex-shrink:0;margin-top:1px}
   .pop .hours{margin-top:12px;border-top:1px solid rgba(148,163,184,.3);padding-top:10px}
+  /* Verificación del horario y reportes (idea de MassTimes.org) */
+  .hr-verif{font-size:11.5px;color:var(--suave);margin-top:6px;line-height:1.45}
+  .hr-viejo{display:block;color:var(--aviso-tx);font-weight:700;margin-top:2px}
+  .hr-acciones{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .hr-acciones .btn{width:auto;flex:1 1 150px}
+  .hr-conf{font-size:11.5px;color:var(--suave);margin-top:6px}
+  .hr-conf:empty{display:none}
   .pop .hours h4{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--acento);margin-bottom:8px}
   .pop .hours table{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
   .pop .hours td{padding:5px 0;border-bottom:1px solid rgba(148,163,184,.14)}
@@ -1214,7 +1221,7 @@ function horarioDeDatos(o){
     tz:(r.p==="Las Palmas"||r.p==="Santa Cruz de Tenerife"||r.lat<30)?"Atlantic/Canary":null};
   if(r.h&&r.h.inv){
     b.sinHorario=false;b.horasInvierno=horarioDeDatos(r.h.inv);b.horasVerano=horarioDeDatos(r.h.ver)||b.horasInvierno;
-    b.veranoDesde=r.h.vd||null;b.veranoHasta=r.h.vh||null;b.fuenteHorario=r.h.f||"";b.notaHorario=r.h.nota||"";
+    b.veranoDesde=r.h.vd||null;b.veranoHasta=r.h.vh||null;b.fuenteHorario=r.h.f||"";b.notaHorario=r.h.nota||"";b.verificadoHorario=r.h.fv||null;
   }
   BIBLIOTECAS.push(b);
 });
@@ -2431,7 +2438,10 @@ function openBibDetailModal(i){
     var txt=tr.length?tr.map(function(t){return fmtHoras(t[0])+"–"+fmtHoras(t[1]);}).join(", "):'<span class="closed-day">Cerrado</span>';
     s+='<tr class="'+(di===hoy?"today":"")+'"><td>'+DIAS[di]+'</td><td>'+txt+'</td></tr>';}
   s+='</table>'+(b.notaHorario?'<div style="font-size:11.5px;color:var(--suave);margin-top:6px">'+escapeHTML(b.notaHorario)+'</div>':'')+
-    (b.fuenteHorario&&/^https?:\/\//.test(b.fuenteHorario)?'<div style="font-size:11px;margin-top:4px"><a target="_blank" rel="noopener" href="'+escapeHTML(b.fuenteHorario)+'">Fuente del horario</a> · puede cambiar en festivos</div>':'')+'</div>';
+    verificacionHorarioHTML(b)+
+    '<div class="hr-acciones"><button class="btn sm ghost" onclick="confirmarHorario('+i+')">✓ Sigue siendo correcto</button>'+
+    '<button class="btn sm ghost" onclick="reportarHorario('+i+')">⚠ Reportar horario incorrecto</button></div>'+
+    '<div class="hr-conf" id="hrConf"></div></div>';
   }
   s+=accesoAccesibilidadHTML(b);
   s+=recursosHTML(b);
@@ -2439,7 +2449,94 @@ function openBibDetailModal(i){
   s+='<button class="btnstudy" onclick="closeModal();startStudyAt('+i+')">▶ Estudiar aquí</button>';
   s+='<button class="linkbtn" style="display:block;margin:10px auto 0;font-size:12px" onclick="closeModal();enviarSugerencia('+jsArg(b.nombre)+')">Avisar de un error en esta ficha</button>';
   s+='</div>';
-  openModal(s);
+  openModal(s,function(){if(!b.sinHorario)pintarConfirmaciones(b.nombre);});
+}
+/* ===== Verificación del horario y reportes (idea de MassTimes.org) =====
+   La fecha oficial sale solo de los datos (h.fv en bibliotecas-espana.js); nunca se inventa.
+   Las confirmaciones de usuarios se muestran aparte y no sustituyen a esa verificación. */
+const HR_DIAS_VIEJO=180;
+const HR_DIAS_LARGOS=["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
+function fmtFechaLarga(iso){var p=String(iso).split("-");return (+p[2])+" de "+MESES[+p[1]-1]+" de "+p[0];}
+function verificacionHorarioHTML(b){
+  var fuente=b.fuenteHorario&&/^https?:\/\//.test(b.fuenteHorario)?'<a target="_blank" rel="noopener" href="'+escapeHTML(b.fuenteHorario)+'">fuente</a>':'';
+  var s='<div class="hr-verif">', aviso='';
+  if(b.verificadoHorario&&/^\d{4}-\d{2}-\d{2}$/.test(b.verificadoHorario)){
+    var dias=Math.floor((Date.now()-new Date(b.verificadoHorario+"T00:00:00").getTime())/86400000);
+    s+='Horario verificado el '+fmtFechaLarga(b.verificadoHorario)+(fuente?' · '+fuente:'');
+    if(dias>HR_DIAS_VIEJO)aviso='<span class="hr-viejo">⚠ Hace más de '+HR_DIAS_VIEJO+' días: puede estar desactualizado</span>';
+  }else{
+    s+='Horario sin fecha de verificación'+(fuente?' · '+fuente:'');
+  }
+  return s+' · puede cambiar en festivos'+aviso+'</div>';
+}
+// Recuento agregado (función horario_confirmaciones del SQL: no expone user_id). Sin la librería de
+// Supabase cargada se usa fetch directo para no descargarla solo por abrir una ficha. Si la función
+// aún no existe en Supabase, no se muestra nada y no se vuelve a pedir en esta visita.
+var HR_RPC_OFF=false;
+function pedirConfirmaciones(nombre){
+  if(HR_RPC_OFF||!socialKeysOk())return Promise.resolve(null);
+  var sb=socialClient();
+  var p=sb?sb.rpc("horario_confirmaciones",{p_bib:nombre}).then(function(r){if(r.error)throw r.error;return r.data;})
+    :fetch(SUPABASE_URL+"/rest/v1/rpc/horario_confirmaciones",{method:"POST",
+      headers:{apikey:SUPABASE_ANON_KEY,"Content-Type":"application/json"},body:JSON.stringify({p_bib:nombre})})
+      .then(function(r){if(!r.ok)throw new Error(r.status);return r.json();});
+  return p.then(function(d){return (d&&d[0])||null;}).catch(function(){HR_RPC_OFF=true;return null;});
+}
+function pintarConfirmaciones(nombre){
+  pedirConfirmaciones(nombre).then(function(d){
+    var el=$("hrConf"); if(!el||!d)return;
+    var n=+d.confirmaciones||0; if(!n){el.textContent="";return;}
+    el.textContent="👍 "+(n===1?"1 persona lo confirmó":n+" personas lo confirmaron")+" en los últimos 90 días (no sustituye a la verificación oficial)";
+  });
+}
+function invitarSesionHorario(){
+  openModal('<h3>Inicia sesión para avisar</h3><div class="sub">Para confirmar o reportar un horario necesitas una cuenta (gratis y opcional). Así evitamos avisos falsos.</div>'+
+    '<div style="display:flex;gap:8px"><button class="btn sm" style="flex:1" onclick="closeModal();abrirLogin(\'login\')">Iniciar sesión</button>'+
+    '<button class="btn sm ghost" style="flex:1" onclick="closeModal();abrirLogin(\'reg\')">Crear cuenta</button></div>');
+}
+// ¿La tabla aún no existe en Supabase? (SQL sin ejecutar). Entonces el aviso va al buzón feedback.
+function hrSinTabla(err){var m=String((err&&(err.message||err.code))||"");return /horario_reportes|42P01|PGRST205|does not exist|schema cache/i.test(m);}
+const HR_TIPOS={horario_distinto:"El horario es distinto",cerrado_temporal:"Cerrada temporalmente",festivo:"Festivo (cierra o cambia ese día)",otro:"Otro"};
+async function guardarReporteHorario(b,tipo,dia,comentario){
+  var sb=socialClient(); if(!sb||!SOCIAL.user)return {error:{message:"Sin sesión"}};
+  var row={bib_nombre:b.nombre.slice(0,200),tipo:tipo,user_id:SOCIAL.user.id};
+  if(dia!=null)row.dia=dia; if(comentario)row.comentario=comentario.slice(0,500);
+  var r=await sb.from("horario_reportes").insert(row);
+  if(r.error&&hrSinTabla(r.error)){
+    var msg="[Horario] "+b.nombre+" · "+(tipo==="correcto"?"Sigue siendo correcto":HR_TIPOS[tipo]||tipo)+
+      (dia!=null?" · "+HR_DIAS_LARGOS[dia]:"")+(comentario?" · "+comentario.slice(0,500):"");
+    r=await sb.from("feedback").insert({user_id:SOCIAL.user.id,message:msg.slice(0,2000),context:"horario_reportes"});
+  }
+  return r;
+}
+async function confirmarHorario(i){
+  var b=BIBLIOTECAS[i]; if(!SOCIAL.user||!socialClient()){invitarSesionHorario();return;}
+  var hechas=loadJSON("bpna_hr_conf",{}), ya=hechas[b.nombre];
+  if(ya&&Date.now()-ya<90*86400000){showToast("Ya lo confirmaste hace poco. ¡Gracias!");return;}
+  var r=await guardarReporteHorario(b,"correcto",null,"");
+  if(r.error){showToast("No se pudo guardar: "+r.error.message);return;}
+  hechas[b.nombre]=Date.now();saveJSON("bpna_hr_conf",hechas);
+  showToast("¡Gracias! Confirmación guardada");pintarConfirmaciones(b.nombre);
+}
+function reportarHorario(i){
+  var b=BIBLIOTECAS[i]; if(!SOCIAL.user||!socialClient()){invitarSesionHorario();return;}
+  var tipos=Object.keys(HR_TIPOS).map(function(k){return '<option value="'+k+'">'+escapeHTML(HR_TIPOS[k])+'</option>';}).join("");
+  var dias='<option value="">Cualquier día / no aplica</option>'+[1,2,3,4,5,6,0].map(function(d){return '<option value="'+d+'">'+HR_DIAS_LARGOS[d]+'</option>';}).join("");
+  openModal('<h3>Reportar horario incorrecto</h3><div class="sub">'+escapeHTML(b.nombre)+'</div>'+
+    '<div class="field"><label for="hrTipo">¿Qué pasa?</label><select id="hrTipo">'+tipos+'</select></div>'+
+    '<div class="field"><label for="hrDia">Día (opcional)</label><select id="hrDia">'+dias+'</select></div>'+
+    '<div class="field"><label for="hrCom">Comentario (opcional)</label><textarea id="hrCom" rows="3" maxlength="500" style="width:100%;padding:11px 13px;border-radius:12px;border:1px solid rgba(148,163,184,.4);font:inherit;background:rgba(var(--blanco),.7);color:var(--texto)" placeholder="Ej: los sábados ya abre de 10:00 a 14:00"></textarea>'+
+    '<div style="font-size:11px;color:var(--suave);text-align:right" id="hrCnt">0/500</div></div>'+
+    '<button class="btn" id="hrSend">Enviar reporte</button>',function(){
+    $("hrCom").addEventListener("input",function(){$("hrCnt").textContent=this.value.length+"/500";});
+    $("hrSend").addEventListener("click",async function(){
+      var btn=this; btn.disabled=true;
+      var dv=$("hrDia").value, r=await guardarReporteHorario(b,$("hrTipo").value,dv===""?null:+dv,$("hrCom").value.trim());
+      btn.disabled=false;
+      if(r.error){showToast("No se pudo enviar: "+r.error.message);return;}
+      closeModal();showToast("¡Gracias! Lo revisaremos");
+    });
+  });
 }
 function accesoAccesibilidadHTML(b){
   var ac=b.acceso||{tipo:"desconocido"}, ax=b.accesibilidad||{};

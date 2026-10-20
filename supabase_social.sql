@@ -305,3 +305,34 @@ drop policy if exists "session_comments delete author or owner" on session_comme
 create policy "session_comments delete author or owner" on session_comments for delete using (
   auth.uid() = author_id or auth.uid() = session_owner_id
 );
+
+-- ===== REPORTES DE HORARIO (estilo MassTimes.org: "sigue siendo correcto" / "horario incorrecto") =====
+-- tipo 'correcto' es la confirmación de un usuario; el resto, avisos de error para revisar a mano
+-- (Table editor → horario_reportes). Cada usuario solo puede insertar y ver sus propios reportes.
+create table if not exists horario_reportes (
+  id uuid primary key default gen_random_uuid(),
+  bib_nombre text not null check (char_length(bib_nombre) between 1 and 200),
+  tipo text not null check (tipo in ('correcto','horario_distinto','cerrado_temporal','festivo','otro')),
+  dia smallint check (dia between 0 and 6),
+  comentario text check (char_length(comentario) <= 500),
+  user_id uuid not null default auth.uid() references profiles(id) on delete cascade,
+  estado text not null default 'pendiente',
+  created_at timestamptz not null default now()
+);
+create index if not exists horario_reportes_bib_idx on horario_reportes(bib_nombre, tipo, created_at);
+alter table horario_reportes enable row level security;
+drop policy if exists "horario_reportes insert own" on horario_reportes;
+create policy "horario_reportes insert own" on horario_reportes for insert with check (auth.uid() = user_id);
+drop policy if exists "horario_reportes select own" on horario_reportes;
+create policy "horario_reportes select own" on horario_reportes for select using (auth.uid() = user_id);
+-- Agregado público: cuántas personas distintas confirmaron el horario en los últimos 90 días y cuándo
+-- fue la última confirmación. No devuelve user_id ni comentarios.
+create or replace function public.horario_confirmaciones(p_bib text)
+returns table(confirmaciones integer, ultima timestamptz)
+language sql stable security definer set search_path = public as $$
+  select count(distinct user_id)::integer, max(created_at)
+  from horario_reportes
+  where bib_nombre = p_bib and tipo = 'correcto' and created_at > now() - interval '90 days';
+$$;
+revoke all on function public.horario_confirmaciones(text) from public;
+grant execute on function public.horario_confirmaciones(text) to anon, authenticated;

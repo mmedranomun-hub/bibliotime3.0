@@ -1,5 +1,5 @@
 // Sube este número cada vez que quieras forzar a los usuarios a coger la versión nueva.
-const CACHE_NAME = "bibliotime-v32";
+const CACHE_NAME = "bibliotime-v33";
 const APP_SHELL = [
   "./",
   "./index.html",
