@@ -13,14 +13,22 @@ Fuentes de las ideas: informes de investigación del 2026-10-08 (Strava, y Catho
 MassTimes.org / misas.org).
 
 ## Siguientes
-- [ ] Misas · Selector "¿qué estará abierta el sábado a las 17:00?" en la lista (`estadoBib(b, fecha)`), complementando los chips ya existentes
+Orden revisado el 2026-10-20 con el estudio de mercado (`Bibliotime - Documentacion\estudio_de_mercado.md`).
+- [ ] Privacidad · Revisar la presencia de amigos en el mapa: desactivada por defecto, solo a nivel de biblioteca (nunca coordenadas), caducidad automática (p. ej. a las 4 h o al cerrar la biblioteca) y aviso de edad mínima de 14 años (RGPD/LOPDGDD). Comprobar primero qué hace ya el código y las políticas RLS de `presence`
+- [ ] Exámenes · Capa o chip «Temporada de exámenes»: aperturas extraordinarias y salas 24 h de diciembre-enero, SOLO con fuente oficial y fechas (usar el mecanismo de `horario_excepciones` si hace falta, o un campo con fuente y periodo en los datos). Tenerlo antes del 15 de diciembre. Si no hay fuentes publicadas todavía, dejar la estructura lista y apuntar en el backlog qué webs revisar
+- [ ] Misas · Selector "¿qué estará abierta el sábado a las 17:00?" en la lista (`estadoBib(b, fecha)`) + chip «Fin de semana», complementando los chips ya existentes
+- [ ] Strava · Clubs persistentes de clase o carrera con ranking semanal (tablas `clubs`, `club_members`). Antes de los exámenes de enero
+- [ ] Afluencia · Semáforo (verde/ámbar/rojo, como la ULL), caducidad visible de los reportes («hace 20 min») y horas punta propias a partir de los reportes históricos
+- [ ] Ficha · Enchufes y wifi como recursos de la ficha (comprobar qué recursos existen ya); solo con fuente o «sin confirmar»
+- [ ] Compartir · Tarjeta de sesión para stories (imagen con `<canvas>`; reutilizar la imagen semanal que ya existe)
+- [ ] Strava · "Tu año en Bibliotime" (resumen anual exportable como imagen). Tenerlo listo antes del 15 de diciembre
+- [ ] Opositores · Ranking de horas por oposición (entre quienes lo compartan), usando el perfil opositor que ya existe
+- [ ] Analítica · Medir usuarios activos y retención sin cookies de terceros ni datos personales (contadores agregados en Supabase o una herramienta sin cookies); actualizar la política de privacidad
 - [ ] Strava · "Leyenda de la biblioteca" (Local Legends: más días distintos en 90 días, según sesiones compartidas entre amigos) en el popup. Respetar la privacidad actual de `shared_sessions` (solo amigos)
 - [ ] Strava · Mapa de calor personal (capa de círculos por horas estudiadas en cada biblioteca) + calendario de 12 semanas en el perfil
 - [ ] Misas · Cierres excepcionales y festivos (tabla `horario_excepciones`, solo con fuente oficial; sin política de escritura pública)
 - [ ] Misas · Compartir una biblioteca con enlace `#bib=<slug>` y `navigator.share`
 - [ ] Misas · Atajos de PWA en `manifest.json` ("Te recomiendo ahora", "Abren pronto")
-- [ ] Strava · "Tu año en Bibliotime" (resumen anual exportable como imagen). Tenerlo listo antes del 15 de diciembre
-- [ ] Strava · Clubs persistentes de clase o carrera con ranking semanal (tablas `clubs`, `club_members`)
 
 ## Datos (por lotes pequeños, siempre con fuente oficial)
 - [ ] España · Horarios verificados: seguir añadiendo 10 bibliotecas por tarea (hay 44 con horario). Priorizar capitales de provincia sin ninguna. Como pista para buscar la fuente oficial puede usarse el campo `oh` de `data/bibliotecas_espana.json` (OpenStreetMap, ODbL), pero nunca publicarlo como verificado. Cada horario nuevo lleva `h.fv` con la fecha (AAAA-MM-DD) en que se comprobó la fuente
@@ -29,6 +37,8 @@ MassTimes.org / misas.org).
 ## Pendiente del usuario (no lo puede hacer la tarea automática)
 - Ejecutar en Supabase (SQL Editor) el bloque «COMENTARIOS EN SESIONES» del final de `supabase_social.sql`
 - Ejecutar en Supabase (SQL Editor) el bloque «REPORTES DE HORARIO» del final de `supabase_social.sql` (tabla `horario_reportes` y función `horario_confirmaciones`). Mientras no exista, los reportes van al buzón `feedback` y no se muestra el recuento de confirmaciones
+
+- Salida al mercado (del estudio de mercado): abrir ya la prueba cerrada de Google Play (pide 14 días con testers), preparar el piloto en Pamplona para los exámenes de enero de 2027 y proponer un piloto B2B gratuito a las bibliotecas de Navarra o al Ayuntamiento de Pamplona
 
 ## Hecho
 - [x] 2026-10-20 · Misas · Fecha de verificación del horario en la ficha (campo `h.fv` en las 44 de España, con la fecha del commit de cada lote; aviso a los 180 días; las de Navarra: «sin fecha de verificación») + botones «✓ Sigue siendo correcto» / «⚠ Reportar horario incorrecto» con sesión, recuento de confirmaciones de 90 días y SQL `horario_reportes` (`6bdf51c`). Falta ejecutar el SQL
