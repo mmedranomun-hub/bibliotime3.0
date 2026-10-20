@@ -13,8 +13,6 @@ Fuentes de las ideas: informes de investigación del 2026-10-08 (Strava, y Catho
 MassTimes.org / misas.org).
 
 ## Siguientes
-- [ ] Limpieza · Quitar `abrirComparador` y el código muerto del comparador antiguo (comprobar antes que no se llama desde ningún sitio)
-- [ ] Misas · Fecha de última verificación del horario en la ficha ("Horario sin fecha de verificación" / aviso si tiene más de 180 días) + botones "✓ Sigue siendo correcto" y "⚠ Reportar horario incorrecto" (tabla `horario_reportes`, con una vista o función agregada que NO exponga `user_id`). Revisar antes cómo funciona hoy el enlace "avisar de errores" de la ficha y el buzón `feedback`, y reutilizarlos
 - [ ] Misas · Selector "¿qué estará abierta el sábado a las 17:00?" en la lista (`estadoBib(b, fecha)`), complementando los chips ya existentes
 - [ ] Strava · "Leyenda de la biblioteca" (Local Legends: más días distintos en 90 días, según sesiones compartidas entre amigos) en el popup. Respetar la privacidad actual de `shared_sessions` (solo amigos)
 - [ ] Strava · Mapa de calor personal (capa de círculos por horas estudiadas en cada biblioteca) + calendario de 12 semanas en el perfil
@@ -25,13 +23,16 @@ MassTimes.org / misas.org).
 - [ ] Strava · Clubs persistentes de clase o carrera con ranking semanal (tablas `clubs`, `club_members`)
 
 ## Datos (por lotes pequeños, siempre con fuente oficial)
-- [ ] España · Horarios verificados: seguir añadiendo 10 bibliotecas por tarea (hay 44 con horario). Priorizar capitales de provincia sin ninguna. Como pista para buscar la fuente oficial puede usarse el campo `oh` de `data/bibliotecas_espana.json` (OpenStreetMap, ODbL), pero nunca publicarlo como verificado
+- [ ] España · Horarios verificados: seguir añadiendo 10 bibliotecas por tarea (hay 44 con horario). Priorizar capitales de provincia sin ninguna. Como pista para buscar la fuente oficial puede usarse el campo `oh` de `data/bibliotecas_espana.json` (OpenStreetMap, ODbL), pero nunca publicarlo como verificado. Cada horario nuevo lleva `h.fv` con la fecha (AAAA-MM-DD) en que se comprobó la fuente
 - [ ] Navarra · verificar horario/aforo/recursos de 10 bibliotecas con la web oficial; repetir hasta cubrir las 104
 
 ## Pendiente del usuario (no lo puede hacer la tarea automática)
 - Ejecutar en Supabase (SQL Editor) el bloque «COMENTARIOS EN SESIONES» del final de `supabase_social.sql`
+- Ejecutar en Supabase (SQL Editor) el bloque «REPORTES DE HORARIO» del final de `supabase_social.sql` (tabla `horario_reportes` y función `horario_confirmaciones`). Mientras no exista, los reportes van al buzón `feedback` y no se muestra el recuento de confirmaciones
 
 ## Hecho
+- [x] 2026-10-20 · Misas · Fecha de verificación del horario en la ficha (campo `h.fv` en las 44 de España, con la fecha del commit de cada lote; aviso a los 180 días; las de Navarra: «sin fecha de verificación») + botones «✓ Sigue siendo correcto» / «⚠ Reportar horario incorrecto» con sesión, recuento de confirmaciones de 90 días y SQL `horario_reportes` (`6bdf51c`). Falta ejecutar el SQL
+- [x] 2026-10-20 · Limpieza · Quitado `abrirComparador` y el CSS del comparador antiguo (no se llamaba desde ningún sitio) (`58062e0`)
 - [x] 2026-10-20 · Integrado el PR #4 de la nube (rendimiento, contraste AA, agenda, calendario de amigos; quita el selector de capas, así que la tarea del selector que tapaba la lista ya no aplica) con las funciones locales (`f143adb`)
 - [x] 2026-10-18 · Carpeta local igualada con `repo3` (bibliotecas de toda España de Overture, rediseño del mapa, modo oscuro, buscador y filtros hechos en la nube). El trabajo local antiguo queda en la rama `respaldo-local-octubre` y en `git stash` (capa OSM descartada)
 - [x] 2026-10-18 · Strava · Comentarios en sesiones del feed (`852b445`). Falta ejecutar el SQL en Supabase y probarlo con sesión real
