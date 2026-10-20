@@ -37,6 +37,9 @@ empiezan el 1 de diciembre y los de la UPNA el 15), así que la producción debe
 - [ ] España · Horarios verificados: seguir añadiendo 10 bibliotecas por tarea (hay 44 con horario). Priorizar capitales de provincia sin ninguna. Como pista para buscar la fuente oficial puede usarse el campo `oh` de `data/bibliotecas_espana.json` (OpenStreetMap, ODbL), pero nunca publicarlo como verificado. Cada horario nuevo lleva `h.fv` con la fecha (AAAA-MM-DD) en que se comprobó la fuente
 - [ ] Navarra · verificar horario/aforo/recursos de 10 bibliotecas con la web oficial; repetir hasta cubrir las 104
 
+## Web pública
+- Producción en Vercel: https://bibliotime-ten.vercel.app (proyecto `juan-f396/bibliotime`; `.vercelignore` deja fuera scripts, backlog, SQL y `.env*`). Se actualiza a mano con `npx vercel deploy` (prueba) y `npx vercel promote <url>`; todavía no está conectado a GitHub para desplegar solo. La TWA de Google Play y `assetlinks.json` deberán apuntar a este dominio (o a uno propio)
+
 ## Pendiente del usuario (no lo puede hacer la tarea automática)
 - Ejecutar en Supabase (SQL Editor) el bloque «COMENTARIOS EN SESIONES» del final de `supabase_social.sql`
 - Ejecutar en Supabase (SQL Editor) el bloque «REPORTES DE HORARIO» del final de `supabase_social.sql` (tabla `horario_reportes` y función `horario_confirmaciones`). Mientras no exista, los reportes van al buzón `feedback` y no se muestra el recuento de confirmaciones
