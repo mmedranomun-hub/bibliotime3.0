@@ -336,3 +336,42 @@ language sql stable security definer set search_path = public as $$
 $$;
 revoke all on function public.horario_confirmaciones(text) from public;
 grant execute on function public.horario_confirmaciones(text) to anon, authenticated;
+
+-- ===== DENUNCIAS Y BLOQUEOS (política de contenido generado por usuarios de Google Play) =====
+-- content_reports: cada usuario puede denunciar una publicación, un comentario, una sesión o un perfil.
+-- Solo puede insertar y ver sus propias denuncias; se revisan a mano (Table editor → content_reports,
+-- columna estado: 'pendiente' → 'revisada' / 'retirada' / 'descartada').
+create table if not exists content_reports (
+  id uuid primary key default gen_random_uuid(),
+  reporter_id uuid not null default auth.uid() references profiles(id) on delete cascade,
+  target_type text not null check (target_type in ('book_post','session_comment','shared_session','profile','otro')),
+  target_id text not null check (char_length(target_id) between 1 and 200),
+  target_owner_id uuid,
+  reason text not null check (reason in ('spam','acoso','sexual','odio','datos_personales','otro')),
+  comment text check (char_length(comment) <= 500),
+  estado text not null default 'pendiente',
+  created_at timestamptz not null default now()
+);
+create index if not exists content_reports_estado_idx on content_reports(estado, created_at);
+alter table content_reports enable row level security;
+drop policy if exists "content_reports insert own" on content_reports;
+create policy "content_reports insert own" on content_reports for insert with check (auth.uid() = reporter_id);
+drop policy if exists "content_reports select own" on content_reports;
+create policy "content_reports select own" on content_reports for select using (auth.uid() = reporter_id);
+
+-- user_blocks: lista de usuarios que cada uno ha bloqueado. La app oculta en el cliente todo su
+-- contenido (blog, comentarios, feed, ranking, presencia) para quien bloquea.
+create table if not exists user_blocks (
+  blocker_id uuid not null default auth.uid() references profiles(id) on delete cascade,
+  blocked_id uuid not null references profiles(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (blocker_id, blocked_id),
+  check (blocker_id <> blocked_id)
+);
+alter table user_blocks enable row level security;
+drop policy if exists "user_blocks select own" on user_blocks;
+create policy "user_blocks select own" on user_blocks for select using (auth.uid() = blocker_id);
+drop policy if exists "user_blocks insert own" on user_blocks;
+create policy "user_blocks insert own" on user_blocks for insert with check (auth.uid() = blocker_id);
+drop policy if exists "user_blocks delete own" on user_blocks;
+create policy "user_blocks delete own" on user_blocks for delete using (auth.uid() = blocker_id);

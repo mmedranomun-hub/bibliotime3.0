@@ -424,6 +424,11 @@
   .cmt-body p{white-space:pre-wrap;margin:0}
   .cmt-del{border:none;background:none;color:var(--suave);cursor:pointer;font-size:17px;line-height:1;padding:2px 4px}
   .cmt-del:hover{color:var(--cerrado)}
+  .ugc-more{border:none;background:none;color:var(--suave);cursor:pointer;font-size:17px;font-weight:800;line-height:1;padding:2px 6px;border-radius:8px;flex-shrink:0;opacity:.75}
+  .ugc-more:hover,.ugc-more:focus-visible{opacity:1;color:var(--texto);background:rgba(148,163,184,.18)}
+  .rep-opts{display:flex;flex-direction:column;gap:6px;margin:4px 0 14px}
+  .rep-opt{display:flex;align-items:center;gap:9px;font-size:13.5px;padding:9px 12px;border:1px solid rgba(148,163,184,.35);border-radius:12px;cursor:pointer}
+  .rep-opt input{accent-color:var(--acento);margin:0}
   .cmt-form{display:flex;gap:8px;margin-top:4px}
   .cmt-form input{flex:1;min-width:0;border:1px solid rgba(148,163,184,.4);border-radius:11px;padding:8px 11px;
     font-size:13px;font-family:inherit;background:rgba(var(--blanco),.7);color:var(--texto)}
@@ -722,6 +727,7 @@
         <input type="password" id="inPass" placeholder="••••••••" autocomplete="current-password">
       </div>
       <div class="err hidden" id="authErr"></div>
+      <p class="hidden" id="authTerms" style="font-size:11.5px;color:var(--suave);margin:0 0 10px;text-align:center;line-height:1.5">Al crear la cuenta aceptas las <a href="condiciones.html" target="_blank" rel="noopener" style="color:var(--acento-tx);font-weight:700">condiciones de uso</a> y la <a href="privacidad.html" target="_blank" rel="noopener" style="color:var(--acento-tx);font-weight:700">política de privacidad</a>. Debes tener al menos 14 años.</p>
       <button class="btn" id="authBtn">Entrar</button>
       <p style="font-size:11.5px;color:var(--suave);margin-top:14px;text-align:center;line-height:1.5" id="authPrivacyNote">
         Tu cuenta y tus datos se guardan en este dispositivo. No se envía nada a internet.</p>
@@ -1025,9 +1031,10 @@
         </div>
         <button class="btn sm ghost" id="btnRename" style="margin-bottom:12px">✏️ Cambiar mi nombre</button>
         <button class="btn sm ghost" id="btnFeedback" style="margin-bottom:12px">💬 Enviar una sugerencia o un error</button>
+        <button class="btn sm ghost" id="btnBlocked" style="margin-bottom:12px">🚫 Usuarios bloqueados</button>
         <button class="btn danger" id="btnLogout">Cerrar sesión</button>
         <button class="linkbtn" id="btnDeleteAccount" style="display:block;margin:14px auto 0;color:var(--cerrado)">Eliminar mi cuenta y mis datos</button>
-        <a class="linkbtn" href="privacidad.html" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:10px">Política de privacidad</a>
+        <div style="display:flex;justify-content:center;gap:16px;flex-wrap:wrap;margin-top:10px"><a class="linkbtn" href="privacidad.html" target="_blank" rel="noopener">Política de privacidad</a><a class="linkbtn" href="condiciones.html" target="_blank" rel="noopener">Condiciones de uso</a></div>
       </div>
     </div>
   </div>
@@ -1322,7 +1329,8 @@ const SUPABASE_URL="https://jmqqfugqoeqihjgjcbhu.supabase.co";
 const SUPABASE_ANON_KEY="sb_publishable_1iosUmxRfDEWl-KjHm4F1Q_aceAX01t";
 let SB=null;
 let SOCIAL={user:null,profile:null,friends:[],requests:[],sent:[],events:[],presence:[],friendMarkers:[],timer:null,prayerCounts:{},prayedByMe:{},room:null,roomMembers:[],friendSessions:[],kudosCounts:{},kudosByMe:{},leaderboard:[],
-  comments:{},commentsOpen:{},commentDrafts:{},commentsOk:true,myCommentsAt:0};
+  comments:{},commentsOpen:{},commentDrafts:{},commentsOk:true,myCommentsAt:0,
+  blocked:{},blogPosts:[],eventsAll:[],presenceAll:[]};
 var feedTab="mia";
 // Claves puestas (la librería puede no estar cargada todavía)
 function socialKeysOk(){return SUPABASE_URL.indexOf("https://")===0 && !!SUPABASE_ANON_KEY && SUPABASE_ANON_KEY.indexOf("PEGA_AQUI")===-1;}
@@ -1417,6 +1425,7 @@ async function socialInitAfterLogin(){
     if(!user){socialRenderPanel();return;}
     var users=Brain.getUsers(), name=(users[CURRENT]&&users[CURRENT].name)||(user.user_metadata&&user.user_metadata.name)||user.email.split("@")[0];
     await socialEnsureProfile(user,name,user.email);
+    await socialLoadBlocks();
     await socialRefreshAll();
     await socialCheckNewPrayers();
     await loadOccupancyCloud();refreshOccUI();
@@ -1524,6 +1533,134 @@ function renderCalFriendExams(){
   }).join("");
 }
 function eventosAmigosDe(key){return (SOCIAL.events||[]).filter(function(e){return e.date===key;});}
+/* ===== DENUNCIAR Y BLOQUEAR (política de contenido generado por usuarios de Google Play) =====
+   Tablas content_reports y user_blocks (ver supabase_social.sql). Si content_reports aún no existe,
+   la denuncia se guarda en el buzón feedback para no perderla. Los bloqueos se guardan en user_blocks
+   y en caché local (bpna_blocks_<id>); si la tabla falta, se quedan en local y se reintentan al entrar. */
+var REPORT_REASONS=[["spam","Spam o publicidad"],["acoso","Acoso o insultos"],["sexual","Contenido sexual"],["odio","Odio o discriminación"],["datos_personales","Datos personales de otra persona"],["otro","Otro motivo"]];
+var REPORT_LABEL={book_post:"esta publicación",session_comment:"este comentario",shared_session:"esta sesión",profile:"este usuario",otro:"este contenido"};
+function isBlocked(id){return !!(id&&SOCIAL.blocked&&SOCIAL.blocked[id]);}
+function filterBlocked(arr,key){return (arr||[]).filter(function(x){return !isBlocked(x&&x[key]);});}
+function blocksKey(){return "bpna_blocks_"+(SOCIAL.user?SOCIAL.user.id:"");}
+function blocksSave(){if(SOCIAL.user)saveJSON(blocksKey(),SOCIAL.blocked);}
+function tableMissing(res,name){
+  var e=res&&res.error; if(!e)return false;
+  return res.status===404||e.code==="42P01"||e.code==="PGRST205"||(new RegExp(name).test(e.message||"")&&/(does not exist|schema cache)/.test(e.message||""));
+}
+async function socialLoadBlocks(){
+  SOCIAL.blocked=SOCIAL.user?(loadJSON(blocksKey(),{})||{}):{};
+  var sb=socialClient(); if(!sb||!SOCIAL.user)return;
+  var res=await sb.from("user_blocks").select("blocked_id").eq("blocker_id",SOCIAL.user.id);
+  if(res.error)return; // tabla sin crear o sin red: nos quedamos con la caché local
+  var antes=SOCIAL.blocked, nuevo={}, faltan=[];
+  (res.data||[]).forEach(function(r){nuevo[r.blocked_id]={name:(antes[r.blocked_id]&&antes[r.blocked_id].name)||""};if(!nuevo[r.blocked_id].name)faltan.push(r.blocked_id);});
+  // bloqueos hechos sin conexión o antes de crear la tabla: se suben ahora
+  Object.keys(antes).forEach(function(id){
+    if(nuevo[id]||!antes[id].pend)return;
+    nuevo[id]=antes[id];
+    sb.from("user_blocks").insert({blocker_id:SOCIAL.user.id,blocked_id:id}).then(function(r){if(!r.error||r.error.code==="23505"){if(SOCIAL.blocked[id]){delete SOCIAL.blocked[id].pend;blocksSave();}}});
+  });
+  if(faltan.length){var pr=await sb.from("profiles").select("id,name").in("id",faltan);if(!pr.error)(pr.data||[]).forEach(function(p){if(nuevo[p.id])nuevo[p.id].name=p.name||"";});}
+  SOCIAL.blocked=nuevo;blocksSave();
+}
+// Vuelve a pintar todo lo social con el filtro de bloqueos actual (sin pedir nada a la red).
+function applyBlocks(){
+  SOCIAL.events=filterBlocked(SOCIAL.eventsAll,"owner_id");
+  SOCIAL.presence=filterBlocked(SOCIAL.presenceAll,"user_id");
+  renderBlogList();
+  try{socialRenderPanel();}catch(e){}
+  socialRenderFriendEvents();socialRenderFriendMarkers();
+  computeLeaderboard();renderLeaderboard();
+  renderStudyRoom();
+  if(DATA){renderCal();renderSessionFeed(true);}else renderCalFriendExams();
+}
+function ugcMoreBtn(type,id,ownerId,name){
+  if(!ownerId)return "";
+  return '<button class="ugc-more" title="Más opciones" aria-label="Más opciones" onclick="event.stopPropagation();ugcMenu('+jsArg(type)+','+jsArg(id)+','+jsArg(ownerId)+','+jsArg(name||"")+')">⋯</button>';
+}
+function ugcNeedLogin(){
+  if(SOCIAL.user&&socialClient())return false;
+  showToast("Inicia sesión para denunciar o bloquear");
+  if(socialKeysOk()&&typeof abrirLogin==="function")abrirLogin("login");
+  return true;
+}
+function ugcMenu(type,id,ownerId,name){
+  if(ugcNeedLogin())return;
+  var quien=name||"este usuario";
+  var html='<h3>Opciones</h3><div class="sub">'+escapeHTML(quien)+'</div>'+
+    (type!=="profile"?'<button class="btn ghost" id="ugcRep" style="margin-bottom:10px">🚩 Denunciar '+REPORT_LABEL[type]+'</button>':'')+
+    '<button class="btn ghost" id="ugcRepUser" style="margin-bottom:10px">🚩 Denunciar al usuario</button>'+
+    '<button class="btn danger" id="ugcBlk" style="margin-bottom:10px">🚫 Bloquear a '+escapeHTML(quien)+'</button>'+
+    '<button class="linkbtn" style="display:block;margin:4px auto 0" onclick="closeModal()">Cancelar</button>';
+  openModal(html,function(){
+    if($("ugcRep"))$("ugcRep").addEventListener("click",function(){abrirDenuncia(type,id,ownerId,name);});
+    $("ugcRepUser").addEventListener("click",function(){abrirDenuncia("profile",ownerId,ownerId,name);});
+    $("ugcBlk").addEventListener("click",function(){bloquearUsuario(ownerId,name);});
+  });
+}
+function abrirDenuncia(type,id,ownerId,name){
+  if(ugcNeedLogin())return;
+  var opts=REPORT_REASONS.map(function(r,i){return '<label class="rep-opt"><input type="radio" name="repReason" value="'+r[0]+'"'+(i===0?' checked':'')+'> '+r[1]+'</label>';}).join("");
+  openModal('<h3>Denunciar '+REPORT_LABEL[type]+'</h3><div class="sub">Lo revisaremos y, si incumple las <a href="condiciones.html" target="_blank" rel="noopener">condiciones de uso</a>, lo retiraremos. La otra persona no sabrá quién lo ha denunciado.</div>'+
+    '<div class="rep-opts">'+opts+'</div>'+
+    '<div class="field"><label>Comentario (opcional)</label><textarea id="repText" rows="3" maxlength="500" style="width:100%;padding:11px 13px;border-radius:12px;border:1px solid rgba(148,163,184,.4);font:inherit;background:rgba(var(--blanco),.7);color:var(--texto)" placeholder="Cuéntanos qué pasa"></textarea><small id="repCount" style="font-size:11px;color:var(--suave)">0/500</small></div>'+
+    '<button class="btn" id="repSend">Enviar denuncia</button>',function(){
+    $("repText").addEventListener("input",function(){$("repCount").textContent=$("repText").value.length+"/500";});
+    $("repSend").addEventListener("click",function(){
+      var r=document.querySelector('input[name="repReason"]:checked');
+      enviarDenuncia(type,id,ownerId,name,r?r.value:"otro",$("repText").value.trim().slice(0,500));
+    });
+  });
+}
+async function enviarDenuncia(type,id,ownerId,name,reason,comment){
+  var sb=socialClient(); if(!sb||!SOCIAL.user){ugcNeedLogin();return;}
+  var btn=$("repSend"); if(btn){btn.disabled=true;btn.textContent="Enviando…";}
+  var row={reporter_id:SOCIAL.user.id,target_type:type,target_id:String(id).slice(0,200),target_owner_id:ownerId||null,reason:reason,comment:comment||null};
+  var r=await sb.from("content_reports").insert(row);
+  if(r.error){
+    // sin la tabla (SQL pendiente) o con otro fallo: al buzón de sugerencias para no perder la denuncia
+    var msg="[DENUNCIA] tipo="+type+" id="+row.target_id+" autor="+(ownerId||"")+" motivo="+reason+(comment?" comentario: "+comment:"");
+    var f=await sb.from("feedback").insert({user_id:SOCIAL.user.id,message:msg.slice(0,2000),context:"content_report"});
+    if(f.error){if(btn){btn.disabled=false;btn.textContent="Enviar denuncia";}showToast("No se pudo enviar la denuncia. Inténtalo de nuevo");return;}
+  }
+  openModal('<h3>Gracias, lo revisaremos</h3><div class="sub">Hemos recibido tu denuncia. Si no quieres seguir viendo lo que publica '+escapeHTML(name||"esta persona")+', también puedes bloquear su cuenta.</div>'+
+    (isBlocked(ownerId)?'':'<button class="btn danger" id="repBlk" style="margin-bottom:10px">🚫 Bloquear a '+escapeHTML(name||"este usuario")+'</button>')+
+    '<button class="btn ghost" onclick="closeModal()">Cerrar</button>',function(){
+    if($("repBlk"))$("repBlk").addEventListener("click",function(){bloquearUsuario(ownerId,name);});
+  });
+}
+async function bloquearUsuario(id,name){
+  if(ugcNeedLogin()||!id)return;
+  if(id===SOCIAL.user.id){showToast("No puedes bloquearte a ti");return;}
+  if(!confirm("¿Bloquear a "+(name||"este usuario")+"? Dejarás de ver sus publicaciones, comentarios, sesiones, ranking y ubicación. Puedes desbloquearlo en Ajustes."))return;
+  SOCIAL.blocked[id]={name:name||"",pend:true};blocksSave();
+  closeModal();applyBlocks();
+  showToast("Has bloqueado a "+(name||"este usuario"));
+  var sb=socialClient(); if(!sb)return;
+  var r=await sb.from("user_blocks").insert({blocker_id:SOCIAL.user.id,blocked_id:id});
+  if((!r.error||r.error.code==="23505")&&SOCIAL.blocked[id]){delete SOCIAL.blocked[id].pend;blocksSave();}
+}
+async function desbloquearUsuario(id){
+  if(!SOCIAL.user||!SOCIAL.blocked[id])return;
+  var sb=socialClient();
+  if(sb){
+    var r=await sb.from("user_blocks").delete().eq("blocker_id",SOCIAL.user.id).eq("blocked_id",id);
+    if(r.error&&!tableMissing(r,"user_blocks")&&!SOCIAL.blocked[id].pend){showToast("No se pudo desbloquear");return;}
+  }
+  var n=SOCIAL.blocked[id].name;
+  delete SOCIAL.blocked[id];blocksSave();
+  applyBlocks();abrirBloqueados();
+  showToast("Has desbloqueado a "+(n||"este usuario"));
+}
+function abrirBloqueados(){
+  if(!SOCIAL.user){showToast("Inicia sesión con la cuenta en la nube para gestionar bloqueos");return;}
+  var ids=Object.keys(SOCIAL.blocked||{});
+  var lista=ids.length?ids.map(function(id){var n=SOCIAL.blocked[id].name||"Usuario";
+      return '<div class="friend-row"><div class="fav">'+socialInitial(n)+'</div><div class="fi"><b>'+escapeHTML(n)+'</b><small>Bloqueado</small></div><div class="factions"><button class="okbtn" onclick="desbloquearUsuario('+jsArg(id)+')">Desbloquear</button></div></div>';}).join("")
+    :'<div class="empty-note">No has bloqueado a nadie</div>';
+  openModal('<h3>Usuarios bloqueados</h3><div class="sub">No ves su contenido (blog, comentarios, sesiones, ranking ni ubicación). Para bloquear a alguien usa el botón ⋯ junto a lo que publica.</div><div id="blockedList">'+lista+'</div>'+
+    '<button class="btn ghost" style="margin-top:12px" onclick="closeModal()">Cerrar</button>');
+}
 /* ===== BLOG DE LECTURAS (público entre usuarios de la app) ===== */
 function timeAgo(iso){
   var s=Math.max(1,Math.round((Date.now()-new Date(iso).getTime())/1000));
@@ -1546,13 +1683,20 @@ async function renderBlog(){
   list.innerHTML='<div class="empty-note">Cargando…</div>';
   var res=await sb.from("book_posts").select("*").order("created_at",{ascending:false}).limit(50);
   if(res.error){list.innerHTML='<div class="empty-note">No se pudo cargar el blog</div>';return;}
-  var posts=res.data||[];
-  if(!posts.length){list.innerHTML='<div class="empty-note">Nadie ha publicado todavía. ¡Sé el primero!</div>';return;}
+  SOCIAL.blogPosts=res.data||[];
+  renderBlogList();
+}
+function renderBlogList(){
+  var list=$("blogList"); if(!list)return;
+  var posts=filterBlocked(SOCIAL.blogPosts,"user_id");
+  if(!posts.length){list.innerHTML='<div class="empty-note">'+(SOCIAL.blogPosts.length?'No hay publicaciones que mostrar (las de usuarios bloqueados están ocultas)':'Nadie ha publicado todavía. ¡Sé el primero!')+'</div>';return;}
+  var me=SOCIAL.user&&SOCIAL.user.id;
   var bookSvg='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5c2-1.5 5-2 7-1v14c-2-1-5-.5-7 1V5z"/><path d="M22 5c-2-1.5-5-2-7-1v14c2-1 5-.5 7 1V5z"/></svg>';
   list.innerHTML=posts.map(function(p){
     return '<div class="book-post">'+
       '<div class="bp-head"><div class="avatar" style="width:34px;height:34px;font-size:14px;flex-shrink:0">'+socialInitial(p.author_name)+'</div>'+
-      '<div class="bp-who"><b>'+escapeHTML(p.author_name||"Alguien")+'</b><small>'+timeAgo(p.created_at)+'</small></div></div>'+
+      '<div class="bp-who"><b>'+escapeHTML(p.author_name||"Alguien")+'</b><small>'+timeAgo(p.created_at)+'</small></div>'+
+      (p.user_id!==me?ugcMoreBtn("book_post",p.id,p.user_id,p.author_name):'')+'</div>'+
       '<div class="bp-title"><span class="bp-icon">'+bookSvg+'</span>'+escapeHTML(p.book_title)+'</div>'+
       '<div class="bp-comment">'+escapeHTML(p.comment)+'</div></div>';
   }).join("");
@@ -1628,11 +1772,12 @@ async function socialClearPresence(){
 async function socialLoadPresence(){
   var sb=socialClient(); if(!sb||!SOCIAL.user)return;
   var ids=SOCIAL.friends.map(function(f){return f.profile.id;});
-  if(!ids.length){SOCIAL.presence=[];return;}
+  if(!ids.length){SOCIAL.presence=[];SOCIAL.presenceAll=[];return;}
   var cutoff=new Date(Date.now()-3*60*60*1000).toISOString();
   var res=await sb.from("presence").select("user_id,bib_index,sharing,updated_at,started_at").in("user_id",ids).eq("sharing",true).gte("updated_at",cutoff);
-  if(res.error){console.warn(res.error);SOCIAL.presence=[];return;}
-  SOCIAL.presence=res.data||[];
+  if(res.error){console.warn(res.error);SOCIAL.presence=[];SOCIAL.presenceAll=[];return;}
+  SOCIAL.presenceAll=res.data||[];
+  SOCIAL.presence=filterBlocked(SOCIAL.presenceAll,"user_id");
 }
 /* ===== SESIONES DE ESTUDIO EN GRUPO ===== */
 async function createStudyRoom(name){
@@ -1702,8 +1847,9 @@ function renderStudyRoom(){
     $("btnJoinRoom").addEventListener("click",function(){joinStudyRoom($("roomCodeInput").value);});
     return;
   }
-  var membersHTML=SOCIAL.roomMembers.length
-    ? SOCIAL.roomMembers.map(function(m){
+  var miembros=filterBlocked(SOCIAL.roomMembers,"id");
+  var membersHTML=miembros.length
+    ? miembros.map(function(m){
         var lugar=BIBLIOTECAS[m.bib_index]?BIBLIOTECAS[m.bib_index].nombre.replace("Biblioteca ","").replace("Pública ",""):"—";
         return '<div class="pray-row"><div class="pi"><b>'+escapeHTML(m.name)+'</b><small>'+escapeHTML(lugar)+'</small></div><span class="tabular" style="font-family:var(--mono,monospace);font-weight:800;color:var(--acento)">'+elapsedSince(m.started_at)+'</span></div>';
       }).join("")
@@ -1780,7 +1926,7 @@ async function socialLoadMyComments(){
   await socialLoadComments(DATA.sessions.slice(-20).map(function(s){return s.id;}).filter(Boolean));
 }
 function commentsFor(localId,ownerId){
-  return (SOCIAL.comments[localId]||[]).filter(function(c){return c.session_owner_id===ownerId;});
+  return (SOCIAL.comments[localId]||[]).filter(function(c){return c.session_owner_id===ownerId&&!isBlocked(c.author_id);});
 }
 function commentButtonHTML(localId,ownerId){
   if(!commentsAvailable())return "";
@@ -1795,6 +1941,7 @@ function commentThreadHTML(localId,ownerId){
   list.forEach(function(c){
     var puede=c.author_id===me||c.session_owner_id===me;
     html+='<div class="cmt"><div class="cmt-av">'+socialInitial(c.author_name)+'</div><div class="cmt-body"><b>'+escapeHTML(c.author_name||"Alguien")+'</b><small>'+escapeHTML(timeAgo(c.created_at))+'</small><p>'+escapeHTML(c.body)+'</p></div>'+
+      (c.author_id!==me?ugcMoreBtn("session_comment",c.id,c.author_id,c.author_name):'')+
       (puede?'<button class="cmt-del" title="Borrar comentario" aria-label="Borrar comentario" data-cmt-del="'+escapeHTML(c.id)+'" data-cmt-sid="'+escapeHTML(localId)+'">×</button>':'')+'</div>';
   });
   html+='<div class="cmt-form"><input type="text" maxlength="'+COMMENT_MAX+'" placeholder="Escribe un comentario…" aria-label="Escribe un comentario" data-cmt-input="'+escapeHTML(localId)+'" value="'+escapeHTML(SOCIAL.commentDrafts[localId]||"")+'">'+
@@ -1852,7 +1999,7 @@ var lbPeriod="week";
 function computeLeaderboard(){
   if(!SOCIAL.user)return;
   var hoy=ymd(), totals={};
-  (SOCIAL.lbRows||[]).forEach(function(r){if(lbPeriod==="day"&&r.date!==hoy)return;totals[r.owner_id]=(totals[r.owner_id]||0)+r.minutes;});
+  (SOCIAL.lbRows||[]).forEach(function(r){if(lbPeriod==="day"&&r.date!==hoy)return;if(isBlocked(r.owner_id))return;totals[r.owner_id]=(totals[r.owner_id]||0)+r.minutes;});
   var arr=Object.keys(totals).map(function(id){return {id:id,min:totals[id],name:id===SOCIAL.user.id?"Tú":socialNameById(id)};});
   arr.sort(function(a,b){return b.min-a.min;});
   SOCIAL.leaderboard=arr;
@@ -1881,8 +2028,9 @@ async function socialLoadFriendEvents(){
   if(!ids.length){SOCIAL.events=[];return;}
   var today=ymd();
   var res=await sb.from("shared_events").select("*").in("owner_id",ids).gte("date",today).order("date",{ascending:true}).limit(30);
-  if(res.error){console.warn(res.error);SOCIAL.events=[];return;}
-  SOCIAL.events=res.data||[];
+  if(res.error){console.warn(res.error);SOCIAL.events=[];SOCIAL.eventsAll=[];return;}
+  SOCIAL.eventsAll=res.data||[];
+  SOCIAL.events=filterBlocked(SOCIAL.eventsAll,"owner_id");
 }
 function socialPresenceFor(id){return SOCIAL.presence.filter(function(p){return p.user_id===id;})[0]||null;}
 function socialRenderPanel(err){
@@ -1904,19 +2052,20 @@ function socialRenderPanel(err){
     if(!SOCIAL.requests.length&&!SOCIAL.sent.length){req.innerHTML='<div class="empty-note">Sin solicitudes pendientes</div>';}
     else{
       var html="";
-      SOCIAL.requests.forEach(function(x){html+='<div class="friend-row"><div class="fav">'+socialInitial(x.profile.name)+'</div><div class="fi"><b>'+escapeHTML(x.profile.name||"Amigo")+'</b><small>Quiere añadirte</small></div><div class="factions"><button class="okbtn" onclick="socialAcceptFriend('+jsArg(x.row.id)+')">Aceptar</button><button class="nobtn" onclick="socialRejectFriend('+jsArg(x.row.id)+')">Borrar</button></div></div>';});
+      SOCIAL.requests.filter(function(x){return !isBlocked(x.profile.id);}).forEach(function(x){html+='<div class="friend-row"><div class="fav">'+socialInitial(x.profile.name)+'</div><div class="fi"><b>'+escapeHTML(x.profile.name||"Amigo")+'</b><small>Quiere añadirte</small></div><div class="factions"><button class="okbtn" onclick="socialAcceptFriend('+jsArg(x.row.id)+')">Aceptar</button><button class="nobtn" onclick="socialRejectFriend('+jsArg(x.row.id)+')">Borrar</button></div></div>';});
       SOCIAL.sent.forEach(function(x){html+='<div class="friend-row"><div class="fav">'+socialInitial(x.profile.name)+'</div><div class="fi"><b>'+escapeHTML(x.profile.name||"Amigo")+'</b><small>Solicitud enviada, pendiente de aceptar</small></div><div class="factions"><button class="nobtn" onclick="socialRejectFriend('+jsArg(x.row.id)+')">Cancelar</button></div></div>';});
       req.innerHTML=html;
     }
   }
   var fl=$("friendsList"); if(fl){
-    if(!SOCIAL.friends.length){fl.innerHTML='<div class="empty-note">Aún no has añadido amigos</div>';}
+    var amigosVis=SOCIAL.friends.filter(function(f){return !isBlocked(f.profile.id);});
+    if(!amigosVis.length){fl.innerHTML='<div class="empty-note">'+(SOCIAL.friends.length?'Los amigos que has bloqueado no aparecen aquí (Ajustes → Usuarios bloqueados)':'Aún no has añadido amigos')+'</div>';}
     else{
-      fl.innerHTML=SOCIAL.friends.map(function(f){
+      fl.innerHTML=amigosVis.map(function(f){
         var p=socialPresenceFor(f.profile.id), loc='No está compartiendo ubicación ahora';
         var mapbtn='';
         if(p&&BIBLIOTECAS[p.bib_index]){var age=Math.round((Date.now()-new Date(p.updated_at).getTime())/60000);loc='Está en '+BIBLIOTECAS[p.bib_index].nombre.replace("Biblioteca ","").replace("Pública ","")+' · hace '+Math.max(0,age)+' min';mapbtn='<button class="mapbtn" onclick="socialGoFriend('+jsArg(f.profile.id)+')">Mapa</button>';}
-        return '<div class="friend-row"><div class="fav">'+socialInitial(f.profile.name)+'</div><div class="fi"><b>'+escapeHTML(f.profile.name||"Amigo")+'</b><small>'+escapeHTML(loc)+'</small></div><div class="factions">'+mapbtn+'<button class="nobtn" title="Quitar de amigos" onclick="socialRemoveFriend('+jsArg(f.row.id)+','+jsArg(f.profile.name||"este amigo")+')">✕</button></div></div>';
+        return '<div class="friend-row"><div class="fav">'+socialInitial(f.profile.name)+'</div><div class="fi"><b>'+escapeHTML(f.profile.name||"Amigo")+'</b><small>'+escapeHTML(loc)+'</small></div><div class="factions">'+mapbtn+ugcMoreBtn("profile",f.profile.id,f.profile.id,f.profile.name||"Amigo")+'<button class="nobtn" title="Quitar de amigos" onclick="socialRemoveFriend('+jsArg(f.row.id)+','+jsArg(f.profile.name||"este amigo")+')">✕</button></div></div>';
       }).join("");
     }
   }
@@ -1967,6 +2116,7 @@ function setAuthMode(m){
   $("tabLogin").classList.toggle("on",m==="login");
   $("tabReg").classList.toggle("on",m==="reg");
   $("fName").classList.toggle("hidden",m!=="reg");
+  $("authTerms").classList.toggle("hidden",m!=="reg");
   $("authBtn").textContent = m==="login"?"Entrar":"Crear cuenta";
   $("authErr").classList.add("hidden");
 }
@@ -2203,6 +2353,7 @@ async function logout(){
   if(window.__map)SOCIAL.friendMarkers.forEach(function(m){try{window.__map.removeLayer(m);}catch(e){}});
   SOCIAL.user=null;SOCIAL.profile=null;SOCIAL.friends=[];SOCIAL.requests=[];SOCIAL.sent=[];SOCIAL.events=[];SOCIAL.presence=[];SOCIAL.friendMarkers=[];SOCIAL.timer=null;
   SOCIAL.friendSessions=[];SOCIAL.leaderboard=[];SOCIAL.room=null;SOCIAL.roomMembers=[];
+  SOCIAL.blocked={};SOCIAL.eventsAll=[];SOCIAL.presenceAll=[];
   Brain.clearSession();
   CURRENT=null;DATA=null;
   entrarComoInvitado();
@@ -3161,14 +3312,15 @@ function renderSessionFeed(force){
   if(force!==true&&act&&act.dataset&&act.dataset.cmtInput!=null&&el.contains(act))return;
   if(feedTab==="amigos"){
     if(!socialClient()||!SOCIAL.user){el.innerHTML='<div class="empty-note">'+(socialKeysOk()?'Con una cuenta (opcional) y amigos verás aquí su actividad':'Configura Supabase para ver la actividad de tus amigos')+'</div>';return;}
-    if(!SOCIAL.friendSessions.length){el.innerHTML='<div class="empty-note">Tus amigos no tienen sesiones compartidas todavía</div>';return;}
-    el.innerHTML=SOCIAL.friendSessions.map(function(s){
+    var fses=filterBlocked(SOCIAL.friendSessions,"owner_id");
+    if(!fses.length){el.innerHTML='<div class="empty-note">Tus amigos no tienen sesiones compartidas todavía</div>';return;}
+    el.innerHTML=fses.map(function(s){
       var lugar=(s.bib_name||"").replace("Biblioteca ","").replace("Pública ","");
       var who=socialNameById(s.owner_id);
       var stars=s.prod?'<span class="fstars">'+"★".repeat(s.prod)+"☆".repeat(5-s.prod)+'</span>':'';
       var n=SOCIAL.kudosCounts[s.local_id]||0, ya=!!SOCIAL.kudosByMe[s.local_id];
       var extra=(s.subject?' · '+escapeHTML(s.subject):'')+(s.focus==="ok"?' <span title="Sesión de foco completada">🌳</span>':(s.focus==="withered"?' <span title="Salió de la app durante el modo foco">🥀</span>':''));
-      return '<div class="feed-item"><div class="fhead"><div class="fplace">'+escapeHTML(who)+' · '+escapeHTML(lugar)+extra+(s.verif?' <span class="fverif" title="Check-in verificado">✓</span>':'')+'</div><div class="fdate">'+fmtFeedDate(s.date)+'</div></div>'+
+      return '<div class="feed-item"><div class="fhead"><div class="fplace">'+escapeHTML(who)+' · '+escapeHTML(lugar)+extra+(s.verif?' <span class="fverif" title="Check-in verificado">✓</span>':'')+'</div><div style="display:flex;align-items:center;gap:2px"><div class="fdate">'+fmtFeedDate(s.date)+'</div>'+ugcMoreBtn("shared_session",s.owner_id+":"+s.local_id,s.owner_id,who)+'</div></div>'+
         '<div class="fdur">'+hMin(s.minutes)+'</div>'+
         '<div class="fmeta">'+stars+'</div>'+
         (s.note?'<div class="fnote">"'+escapeHTML(s.note)+'"</div>':'')+
@@ -4073,6 +4225,7 @@ window.addEventListener("DOMContentLoaded",function(){
     sel.addEventListener("change",function(){var v=sel.value;try{localStorage.setItem("bpna_theme",v);}catch(e){}
       if(v==="auto")document.documentElement.removeAttribute("data-theme");else document.documentElement.setAttribute("data-theme",v);});})();
   $("btnFeedback").addEventListener("click",function(){enviarSugerencia();});
+  $("btnBlocked").addEventListener("click",abrirBloqueados);
   $("btnShareWeek").addEventListener("click",compartirSemana);
 
   // nuevas funciones
