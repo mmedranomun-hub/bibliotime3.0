@@ -562,13 +562,6 @@
   .fab svg{width:19px;height:19px}
   .fab:hover{transform:translateY(-3px) scale(1.02);box-shadow:0 12px 34px rgba(108,92,231,.55)}
 
-  .nowpanel{position:fixed;bottom:150px;left:18px;z-index:960;width:330px;max-width:calc(100vw - 36px);
-    max-height:60vh;display:flex;flex-direction:column;background:var(--glass-fuerte);
-    backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);
-    border:1px solid var(--borde);border-radius:20px;box-shadow:var(--sombra);overflow:hidden}
-  .nowhead{display:flex;align-items:flex-start;justify-content:space-between;padding:15px 16px 11px;border-bottom:1px solid rgba(148,163,184,.25)}
-  .nowhead b{font-size:15px}
-  .nowsub{font-size:11.5px;color:var(--suave);margin-top:2px}
   .nowcard{position:fixed;left:50%;transform:translateX(-50%);bottom:96px;z-index:950;width:420px;max-width:calc(100vw - 20px);
     padding:14px 16px;border-radius:20px;background:rgba(var(--blanco),.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
     box-shadow:0 12px 34px rgba(15,23,42,.18);border:1px solid rgba(148,163,184,.3)}
@@ -603,7 +596,6 @@
     border:1px solid rgba(148,163,184,.35);background:rgba(var(--blanco),.6);color:var(--texto)}
   .more-grid button span{display:block;font-size:22px;margin-bottom:4px}
   .nowclose{border:none;background:none;font-size:22px;color:var(--suave);cursor:pointer;line-height:1;padding:0 2px}
-  .nowlist{overflow-y:auto;padding:8px}
   .nowrow{display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:13px;cursor:pointer;transition:background .12s}
   .nowrow:hover{background:rgba(var(--blanco),.6)}
   .nowrow .rank{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--acento),#8b7bef);
@@ -611,9 +603,6 @@
   .nowrow .ni{flex:1;min-width:0}
   .nowrow .ni b{font-size:13.5px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .nowrow .ni small{font-size:11.5px;color:var(--suave)}
-  .nowrow .nclose{font-size:11px;font-weight:700;padding:3px 8px;border-radius:99px;white-space:nowrap}
-  .nowrow .nclose.ok{background:rgba(34,197,94,.16);color:#15803d}
-  .nowrow .nclose.soon{background:rgba(245,158,11,.18);color:#b45309}
 
   /* ===== OCUPACIÓN ===== */
   .occ{display:flex;gap:6px;margin-top:10px;border-top:1px solid rgba(148,163,184,.3);padding-top:10px}
@@ -695,7 +684,6 @@
     .scrollview{top:64px;bottom:84px;padding:16px}
     .ministudy{bottom:220px}
     .fab{bottom:90px;left:10px;padding:11px 15px;font-size:13px}
-    .nowpanel{bottom:150px;left:10px;right:10px;width:auto;max-width:none}
     .locate-btn{bottom:auto;top:78px;right:10px}
   }
 </style>
@@ -3748,45 +3736,6 @@ function abrirLista(soloAbiertas){
   buildList();
 }
 function cerrarLista(){$("libPanel").classList.add("hidden");renderNowCard();}
-function abrirComparador(){
-  var panel=$("nowPanel");
-  panel.classList.remove("hidden");
-  var sub=$("nowSub"), list=$("nowList");
-  list.innerHTML='<div class="empty-note">Buscando tu ubicación…</div>';
-  function pintar(coords){
-    var abiertas=[];
-    BIBLIOTECAS.forEach(function(b,i){
-      var cierre=minutosHastaCierre(b);
-      if(cierre>0){
-        var dist=coords?distMetros(coords.latitude,coords.longitude,b.lat,b.lon):null;
-        abiertas.push({i:i,b:b,cierre:cierre,dist:dist});
-      }
-    });
-    if(!abiertas.length){ list.innerHTML='<div class="empty-note">Ahora mismo no hay ninguna biblioteca abierta.</div>'; return; }
-    if(coords){abiertas.sort(function(a,b){return a.dist-b.dist;});sub.textContent="Ordenadas por cercanía a ti";}
-    else{abiertas.sort(function(a,b){return b.cierre-a.cierre;});sub.textContent="Ordenadas por tiempo hasta cerrar";}
-    list.innerHTML="";
-    abiertas.forEach(function(o,rank){
-      var cierraEn=o.cierre, ch=Math.floor(cierraEn/60), cm=cierraEn%60;
-      var ctxt=(ch>0?ch+"h ":"")+cm+"m para cerrar";
-      var ccls=cierraEn<=45?"soon":"ok";
-      var dtxt=o.dist!=null?(o.dist<1000?Math.round(o.dist)+" m":(o.dist/1000).toFixed(1)+" km"):"";
-      var row=document.createElement("div");row.className="nowrow";
-      var oc=occSummary(o.i), octxt=oc?(" · "+oc.info.emoji+" "+oc.info.label.toLowerCase()):(" · ⚪ sin afluencia");
-      row.innerHTML='<div class="rank">'+(rank+1)+'</div><div class="ni"><b>'+o.b.nombre.replace("Biblioteca ","")+'</b><small>'+(dtxt?dtxt+" · ":"")+'abierta'+octxt+'</small></div><span class="nclose '+ccls+'">'+ctxt+'</span>';
-      row.addEventListener("click",function(){panel.classList.add("hidden");window.__selBib(o.i);});
-      list.appendChild(row);
-    });
-  }
-  if(window.__userPos){
-    pintar({latitude:window.__userPos.lat,longitude:window.__userPos.lon});
-  }else if(navigator.geolocation){
-    navigator.geolocation.getCurrentPosition(
-      function(pos){pintar(pos.coords);},
-      function(){pintar(null);},
-      {timeout:7000});
-  }else{ pintar(null); }
-}
 
 /* ===================== AVISOS ===================== */
 function calcularAvisos(){
