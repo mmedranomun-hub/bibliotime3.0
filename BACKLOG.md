@@ -13,7 +13,6 @@ Fuentes de las ideas: informes de investigación del 2026-10-08 (Strava, y Catho
 MassTimes.org / misas.org).
 
 ## Siguientes
-- [ ] Arreglo · A 375 px, el selector de capas del mapa (Calles/Relieve/Plano/Satélite) desplegado tapa la lista de bibliotecas
 - [ ] Limpieza · Quitar `abrirComparador` y el código muerto del comparador antiguo (comprobar antes que no se llama desde ningún sitio)
 - [ ] Misas · Fecha de última verificación del horario en la ficha ("Horario sin fecha de verificación" / aviso si tiene más de 180 días) + botones "✓ Sigue siendo correcto" y "⚠ Reportar horario incorrecto" (tabla `horario_reportes`, con una vista o función agregada que NO exponga `user_id`). Revisar antes cómo funciona hoy el enlace "avisar de errores" de la ficha y el buzón `feedback`, y reutilizarlos
 - [ ] Misas · Selector "¿qué estará abierta el sábado a las 17:00?" en la lista (`estadoBib(b, fecha)`), complementando los chips ya existentes
@@ -33,6 +32,7 @@ MassTimes.org / misas.org).
 - Ejecutar en Supabase (SQL Editor) el bloque «COMENTARIOS EN SESIONES» del final de `supabase_social.sql`
 
 ## Hecho
+- [x] 2026-10-20 · Integrado el PR #4 de la nube (rendimiento, contraste AA, agenda, calendario de amigos; quita el selector de capas, así que la tarea del selector que tapaba la lista ya no aplica) con las funciones locales (`f143adb`)
 - [x] 2026-10-18 · Carpeta local igualada con `repo3` (bibliotecas de toda España de Overture, rediseño del mapa, modo oscuro, buscador y filtros hechos en la nube). El trabajo local antiguo queda en la rama `respaldo-local-octubre` y en `git stash` (capa OSM descartada)
 - [x] 2026-10-18 · Strava · Comentarios en sesiones del feed (`852b445`). Falta ejecutar el SQL en Supabase y probarlo con sesión real
 - [x] 2026-10-18 · Strava · Retos mensuales + vitrina de trofeos (`3cd0929`)
