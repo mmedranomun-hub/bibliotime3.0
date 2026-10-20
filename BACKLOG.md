@@ -13,9 +13,12 @@ Fuentes de las ideas: informes de investigación del 2026-10-08 (Strava, y Catho
 MassTimes.org / misas.org).
 
 ## Siguientes
-Orden revisado el 2026-10-20 con el estudio de mercado (`Bibliotime - Documentacion\estudio_de_mercado.md`).
+Orden revisado el 2026-10-20 con el estudio de mercado (`Bibliotime - Documentacion\estudio_de_mercado.md`)
+y `salida_al_mercado\`. Fecha límite clave: estar en Google Play antes del 1 de diciembre (los exámenes de la UNAV
+empiezan el 1 de diciembre y los de la UPNA el 15), así que la producción debe solicitarse hacia el 17 de noviembre.
+- [ ] Google Play (bloqueante) · Contenido generado por usuarios (blog de lecturas, comentarios, feed): botón «Denunciar» en cada publicación y comentario (tabla `content_reports` con RLS, insert propio), «Bloquear usuario» (oculta su contenido para quien bloquea; tabla `user_blocks`) y página de condiciones de uso (`condiciones.html`, enlazada desde Ajustes y el registro). Lo exige la política de UGC de Google Play
 - [ ] Privacidad · Revisar la presencia de amigos en el mapa: desactivada por defecto, solo a nivel de biblioteca (nunca coordenadas), caducidad automática (p. ej. a las 4 h o al cerrar la biblioteca) y aviso de edad mínima de 14 años (RGPD/LOPDGDD). Comprobar primero qué hace ya el código y las políticas RLS de `presence`
-- [ ] Exámenes · Capa o chip «Temporada de exámenes»: aperturas extraordinarias y salas 24 h de diciembre-enero, SOLO con fuente oficial y fechas (usar el mecanismo de `horario_excepciones` si hace falta, o un campo con fuente y periodo en los datos). Tenerlo antes del 15 de diciembre. Si no hay fuentes publicadas todavía, dejar la estructura lista y apuntar en el backlog qué webs revisar
+- [ ] Exámenes · Capa o chip «Temporada de exámenes»: aperturas extraordinarias y salas 24 h de diciembre-enero, SOLO con fuente oficial y fechas (usar el mecanismo de `horario_excepciones` si hace falta, o un campo con fuente y periodo en los datos). Tenerlo antes del 1 de diciembre (empiezan los exámenes de la UNAV). Si no hay fuentes publicadas todavía, dejar la estructura lista y apuntar en el backlog qué webs revisar
 - [ ] Misas · Selector "¿qué estará abierta el sábado a las 17:00?" en la lista (`estadoBib(b, fecha)`) + chip «Fin de semana», complementando los chips ya existentes
 - [ ] Strava · Clubs persistentes de clase o carrera con ranking semanal (tablas `clubs`, `club_members`). Antes de los exámenes de enero
 - [ ] Afluencia · Semáforo (verde/ámbar/rojo, como la ULL), caducidad visible de los reportes («hace 20 min») y horas punta propias a partir de los reportes históricos
@@ -38,6 +41,7 @@ Orden revisado el 2026-10-20 con el estudio de mercado (`Bibliotime - Documentac
 - Ejecutar en Supabase (SQL Editor) el bloque «COMENTARIOS EN SESIONES» del final de `supabase_social.sql`
 - Ejecutar en Supabase (SQL Editor) el bloque «REPORTES DE HORARIO» del final de `supabase_social.sql` (tabla `horario_reportes` y función `horario_confirmaciones`). Mientras no exista, los reportes van al buzón `feedback` y no se muestra el recuento de confirmaciones
 
+- Google Play (bloqueante): rellenar en `privacidad.html` los marcadores `[NOMBRE DEL RESPONSABLE]`, `[EMAIL DE CONTACTO]` y `[REGIÓN DEL PROYECTO SUPABASE]`, y elegir el nombre de paquete definitivo (`assetlinks.json` dice `es.bibliotecasnavarra.app` y la guía `io.github.mmedranomunhub.bibliotime`; no se puede cambiar después). Pasos completos en `Bibliotime - Documentacion\salida_al_mercado\`
 - Salida al mercado (del estudio de mercado): abrir ya la prueba cerrada de Google Play (pide 14 días con testers), preparar el piloto en Pamplona para los exámenes de enero de 2027 y proponer un piloto B2B gratuito a las bibliotecas de Navarra o al Ayuntamiento de Pamplona
 
 ## Hecho
