@@ -1330,7 +1330,7 @@ const OCC_TTL_MIN=60;
 
 // ===== CONFIGURACIÓN SUPABASE PARA AMIGOS / EVENTOS COMPARTIDOS =====
 // 1) Crea un proyecto en Supabase.
-// 2) Ejecuta el archivo supabase_social.sql que te paso junto a este index.
+// 2) Ejecuta el archivo supabase/supabase_social.sql que te paso junto a este index.
 // 3) Pega aquí tu Project URL y tu anon/publishable key.
 // Con estos valores de ejemplo, la app seguirá funcionando, pero la parte social no sincronizará entre dispositivos.
 const SUPABASE_URL="https://jmqqfugqoeqihjgjcbhu.supabase.co";
@@ -1542,7 +1542,7 @@ function renderCalFriendExams(){
 }
 function eventosAmigosDe(key){return (SOCIAL.events||[]).filter(function(e){return e.date===key;});}
 /* ===== DENUNCIAR Y BLOQUEAR (política de contenido generado por usuarios de Google Play) =====
-   Tablas content_reports y user_blocks (ver supabase_social.sql). Si content_reports aún no existe,
+   Tablas content_reports y user_blocks (ver supabase/supabase_social.sql). Si content_reports aún no existe,
    la denuncia se guarda en el buzón feedback para no perderla. Los bloqueos se guardan en user_blocks
    y en caché local (bpna_blocks_<id>); si la tabla falta, se quedan en local y se reintentan al entrar. */
 var REPORT_REASONS=[["spam","Spam o publicidad"],["acoso","Acoso o insultos"],["sexual","Contenido sexual"],["odio","Odio o discriminación"],["datos_personales","Datos personales de otra persona"],["otro","Otro motivo"]];
@@ -1946,7 +1946,7 @@ async function giveKudos(localId,ownerId){
   renderSessionFeed();
 }
 /* ===== COMENTARIOS EN SESIONES (estilo comentarios de actividad de Strava) =====
-   Tabla session_comments (ver supabase_social.sql). Si aún no existe en Supabase,
+   Tabla session_comments (ver supabase/supabase_social.sql). Si aún no existe en Supabase,
    se marca SOCIAL.commentsOk=false y la UI de comentarios se oculta en silencio. */
 var COMMENT_MAX=500;
 function commentsAvailable(){return !!(socialClient()&&SOCIAL.user&&SOCIAL.commentsOk);}
