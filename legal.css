@@ -1,0 +1,37 @@
+/* Estilo común de las páginas legales (privacidad, condiciones). Mismos valores que los tokens
+   de index.html (docs/SISTEMA_DE_DISENO.md); el tema lo pone el script de cada página en data-theme. */
+:root{
+  --bg:#f6f7fb; --card:#ffffff; --texto:#0f172a; --suave:#475569; --linea:#e3e6ee;
+  --acento-tx:#5b4bd6; --acento-suave:#efedff; --code:#f1f3f8;
+  --fs-s:12px; --fs-m:13px; --fs-base:14px; --fs-l:16px; --fs-xl:18px; --fs-3xl:24px;
+  --r-xs:6px; --r-l:16px;
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0b1220; --card:#1e293b; --texto:#e5e7eb; --suave:#a3b0c2; --linea:#334155;
+  --acento-tx:#b4abff; --acento-suave:#262342; --code:#273449;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--texto);
+  font:var(--fs-l)/1.6 "Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+main{max-width:760px;margin:0 auto;padding:24px 16px 48px}
+header{margin-bottom:20px}
+h1{font-size:var(--fs-3xl);line-height:1.25;margin:0 0 6px}
+.sub{color:var(--suave);margin:0}
+.date{display:inline-block;margin-top:10px;font-size:var(--fs-base);color:var(--suave)}
+section{background:var(--card);border:1px solid var(--linea);border-radius:var(--r-l);padding:18px 18px 8px;margin:14px 0}
+h2{font-size:var(--fs-xl);margin:0 0 10px;color:var(--acento-tx)}
+h3{font-size:var(--fs-l);margin:16px 0 6px}
+p,li{overflow-wrap:anywhere}
+ul{padding-left:1.2em;margin:8px 0 12px}
+li{margin:4px 0}
+.summary{background:var(--acento-suave);border-color:transparent}
+.summary li{margin:6px 0}
+.table-wrap{overflow-x:auto;margin:8px 0 14px}
+table{width:100%;border-collapse:collapse;font-size:var(--fs-base)}
+th,td{border-bottom:1px solid var(--linea);padding:8px 6px;text-align:left;vertical-align:top}
+th{color:var(--suave);font-weight:600}
+code{background:var(--code);padding:1px 5px;border-radius:var(--r-xs);font-size:var(--fs-m)}
+a{color:var(--acento-tx)}
+footer{color:var(--suave);font-size:var(--fs-m);text-align:center;margin-top:24px}

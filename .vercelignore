@@ -1,5 +1,5 @@
 # Lo que NO se publica en la web (Vercel). Se publica: index.html, sw.js, manifest.json,
-# bibliotecas-espana.js, privacidad.html, condiciones.html, icons/ y screenshots/
+# bibliotecas-espana.js, privacidad.html, condiciones.html, legal.css, icons/ y screenshots/
 # (manifest.json usa screenshots/ en la ventana de instalación de la app).
 .claude
 data

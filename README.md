@@ -12,7 +12,7 @@ Web pública: https://bibliotime-ten.vercel.app
 | `bibliotecas-espana.js` | Datos de las bibliotecas de fuera de Navarra (Overture Maps) | Sí |
 | `sw.js` | Service worker: caché y uso sin conexión. Sube `CACHE_NAME` en cada cambio publicado | Sí |
 | `manifest.json` | Nombre, iconos y capturas de la app instalable | Sí |
-| `privacidad.html`, `condiciones.html` | Textos legales (Google Play) | Sí |
+| `privacidad.html`, `condiciones.html`, `legal.css` | Textos legales (Google Play) y su estilo común | Sí |
 | `icons/` | Iconos de la app | Sí |
 | `screenshots/` | Capturas que muestra la instalación y la ficha de Google Play | Sí |
 | `docs/` | Documentación: sistema de diseño, plantilla para nuevas apps, registros, Google Play | No |
