@@ -50,6 +50,7 @@
     --acento-tx:#5b4bd6; --aviso-tx:#b45309;
     /* Degradado del nombre de la app: índigo → verde azulado con contraste AA en ambos extremos */
     --marca-a:#5b4bd6; --marca-b:#0e7490; --barra-a:.9; --barra-b:.72;
+    --ok-tx:#166534;
   }
   /* Modo oscuro: sigue al sistema salvo que se elija tema en Ajustes */
   @media (prefers-color-scheme: dark){
@@ -62,6 +63,7 @@
       --ev-ot-bg:rgba(45,212,191,.18); --ev-ot-tx:#ccfbf1;
       --acento-tx:#b4abff; --aviso-tx:#fcd34d;
       --marca-a:#b4abff; --marca-b:#5eead4; --barra-a:.94; --barra-b:.86;
+      --ok-tx:#86efac;
     }
   }
   :root[data-theme="dark"]{
@@ -73,6 +75,7 @@
       --ev-ot-bg:rgba(45,212,191,.18); --ev-ot-tx:#ccfbf1;
       --acento-tx:#b4abff; --aviso-tx:#fcd34d;
       --marca-a:#b4abff; --marca-b:#5eead4; --barra-a:.94; --barra-b:.86;
+      --ok-tx:#86efac;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%}
@@ -220,8 +223,9 @@
   .pop{padding:15px 16px}
   .pop h2{font-size:16.5px;font-weight:800;line-height:1.15;padding-right:6px}
   .pop .estado{display:inline-flex;align-items:center;gap:6px;margin-top:8px;font-size:12px;font-weight:700;padding:4px 10px;border-radius:99px}
-  .pop .estado.open{background:rgba(34,197,94,.16);color:#15803d}
-  .pop .estado.closed{background:rgba(239,68,68,.14);color:#b91c1c}
+  /* Ficha: "Abierta" en verde legible en ambos temas; "Cerrada" en azul calmado (como su chincheta), no en rojo */
+  .pop .estado.open{background:rgba(34,197,94,.16);color:var(--ok-tx)}
+  .pop .estado.closed{background:var(--ev-ta-bg);color:var(--ev-ta-tx)}
   .pop .rate-line{font-size:12px;color:var(--suave);margin-top:8px}
   .pop .rate-line b{color:#f59e0b}
   .pop .dir{font-size:12.5px;color:var(--suave);margin-top:10px;line-height:1.4;display:flex;gap:7px}
@@ -234,7 +238,7 @@
   .hr-acciones .btn{width:auto;flex:1 1 150px}
   .hr-conf{font-size:11.5px;color:var(--suave);margin-top:6px}
   .hr-conf:empty{display:none}
-  .pop .hours h4{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--acento);margin-bottom:8px}
+  .pop .hours h4{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--acento-tx);margin-bottom:8px}
   .pop .hours table{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
   .pop .hours td{padding:5px 0;border-bottom:1px solid rgba(148,163,184,.14)}
   .pop .hours tr:last-child td{border-bottom:none}
@@ -242,7 +246,7 @@
   .pop .hours td:last-child{text-align:right;color:var(--texto)}
   .pop .hours tr.today{background:rgba(108,92,231,.1)}
   .pop .hours tr.today td{font-weight:800;color:var(--texto);border-radius:8px}
-  .pop .hours tr.today td:first-child{color:var(--acento);padding-left:6px;border-radius:8px 0 0 8px}
+  .pop .hours tr.today td:first-child{color:var(--acento-tx);padding-left:6px;border-radius:8px 0 0 8px}
   .pop .hours tr.today td:last-child{padding-right:6px;border-radius:0 8px 8px 0}
   .pop.pop-compact{text-align:center}
   .pop-compact h2{font-size:15.5px}
@@ -250,7 +254,7 @@
   .pop-dist{font-size:11.5px;font-weight:700;color:var(--suave);background:rgba(148,163,184,.16);padding:4px 9px;border-radius:99px}
   .pop-today{font-size:12px;color:var(--suave);margin-top:8px}
   .pop-chips{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;margin-top:10px}
-  .pop-chip{font-size:11px;font-weight:700;background:rgba(108,92,231,.1);color:var(--acento);padding:4px 9px;border-radius:99px;white-space:nowrap}
+  .pop-chip{font-size:11px;font-weight:700;background:rgba(108,92,231,.1);color:var(--acento-tx);padding:4px 9px;border-radius:99px;white-space:nowrap}
   .locate-btn{position:fixed;z-index:900;background:var(--glass-fuerte);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
     border:1px solid var(--borde);border-radius:12px;width:42px;height:42px;display:flex;align-items:center;justify-content:center;
     box-shadow:var(--sombra);cursor:pointer;color:var(--acento);bottom:186px;right:18px;transition:transform .12s,background .12s}
@@ -262,7 +266,7 @@
   .user-dot{width:16px;height:16px;border-radius:50%;background:#3b82f6;border:3px solid #fff;box-shadow:0 2px 8px rgba(2,6,23,.35);position:absolute;top:2px;left:2px}
   @keyframes userpulse{0%{box-shadow:0 0 0 0 rgba(59,130,246,.45)}70%{box-shadow:0 0 0 14px rgba(59,130,246,0)}100%{box-shadow:0 0 0 0 rgba(59,130,246,0)}}
   .pop .btnstudy{margin-top:12px;width:100%;border:none;border-radius:12px;padding:10px;
-    background:linear-gradient(135deg,var(--acento),#8b7bef);color:#fff;font-weight:700;font-size:13px;cursor:pointer}
+    background:linear-gradient(135deg,#5b4bd6,var(--acento));color:#fff;font-weight:700;font-size:13px;cursor:pointer}
   .closed-day{color:var(--cerrado)}
   .leaflet-control-attribution{font-size:9px;background:rgba(var(--blanco),.6)!important}
 
@@ -313,7 +317,7 @@
   .btn.danger{background:var(--ev-ex-bg);color:var(--ev-ex-tx);border:1px solid rgba(225,29,72,.25)}
   .btn.sm{width:auto;padding:8px 14px;font-size:13px;border-radius:11px}
   .err{color:var(--cerrado);font-size:12.5px;margin-top:-6px;margin-bottom:10px;font-weight:600}
-  .linkbtn{background:none;border:none;color:var(--acento);font-weight:700;cursor:pointer;font-size:13px;text-decoration:underline}
+  .linkbtn{background:none;border:none;color:var(--acento-tx);font-weight:700;cursor:pointer;font-size:13px;text-decoration:underline}
 
   /* ===== LOGIN ===== */
   .authwrap{position:fixed;inset:0;z-index:2000;display:flex;align-items:center;justify-content:center;
@@ -2468,7 +2472,7 @@ function occSummary(i){
 function occStatusHTML(i,compact){
   var o=occSummary(i);
   if(!o){return '<div class="occ-empty">⚪ Sin datos recientes de afluencia</div>';}
-  return '<div class="occ-report"><span class="od '+o.info.className+'"></span><span><b>'+o.info.emoji+' '+o.info.label+'</b> · '+o.count+' reporte'+(o.count===1?'':'s')+' · hace '+o.age+' min</span></div>'+(compact?'':'<div class="occ-source">Caduca a los '+OCC_TTL_MIN+' min. Basado en reportes de usuarios de la app.</div>');
+  return '<div class="occ-report"><span class="od '+o.info.className+'"></span><span><b>'+o.info.label+'</b> · '+o.count+' reporte'+(o.count===1?'':'s')+' · hace '+o.age+' min</span></div>'+(compact?'':'<div class="occ-source">Caduca a los '+OCC_TTL_MIN+' min. Basado en reportes de usuarios de la app.</div>');
 }
 function occControlsHTML(i){
   return '<div class="occ-title">Afluencia ahora</div>'+occStatusHTML(i,false)+
@@ -2591,7 +2595,7 @@ function popupHTML(b,i){
   s+=popIconRow(b);
   if(epocaExamenes()&&esUPNA(b))s+='<div class="pop-today" style="color:#b45309">⚠️ En exámenes la sala suele reservarse a la comunidad UPNA</div>';
   var o=occSummary(i);
-  s+='<div style="margin-top:10px">'+(o?('<div class="occ-report" style="justify-content:center"><span class="od '+o.info.className+'"></span><span><b>'+o.info.emoji+' '+o.info.label+'</b></span></div>'):'<div class="occ-empty">⚪ Sin datos recientes de afluencia</div>')+'</div>';
+  s+='<div style="margin-top:10px">'+(o?('<div class="occ-report" style="justify-content:center"><span class="od '+o.info.className+'"></span><span><b>'+o.info.label+'</b></span></div>'):'<div class="occ-empty">⚪ Sin datos recientes de afluencia</div>')+'</div>';
   s+='<button class="btnstudy" onclick="startStudyAt('+i+')">▶ Estudiar aquí</button>';
   s+='<button class="linkbtn" style="display:block;margin:8px auto 0" onclick="openBibDetailModal('+i+')">Horario, acceso y cómo llegar →</button>';
   s+='</div>';
