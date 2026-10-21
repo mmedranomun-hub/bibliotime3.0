@@ -2775,6 +2775,9 @@ window.__selBib=function(i){
 // La lista lateral se construye SIEMPRE (no depende de Leaflet)
 function buildList(){
   window.__listReady=true;
+  // Con el panel cerrado no se ve la lista: solo hace falta la tarjeta "Te recomiendo". Las 120 fichas
+  // se construyen al abrirlo (abrirLista llama otra vez a buildList), no al arrancar ni en cada refresco.
+  if($("libPanel").classList.contains("hidden")){renderNowCard();return;}
   var verano=esVerano(new Date());
   $("seasonTag").textContent=verano?"Horario de verano":"Horario de invierno";
   var list=$("list");list.innerHTML="";
