@@ -388,7 +388,10 @@
   .book-post .bp-comment{font-size:var(--fs-m);color:var(--suave);line-height:1.55}
   .badges-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:10px}
   .badge-tile{background:rgba(var(--blanco),.5);border:1px solid rgba(148,163,184,.3);border-radius:var(--r-m);padding:12px 8px;text-align:center;
-    opacity:.42;filter:grayscale(1);transition:opacity .2s,filter .2s,transform .15s}
+    transition:opacity .2s,filter .2s,transform .15s}
+  /* Insignia bloqueada: solo se apaga el icono; el nombre sigue legible (antes toda la tarjeta al 42 %, ~2:1) */
+  .badge-tile:not(.on) .bt-icon{opacity:.4;filter:grayscale(1)}
+  .badge-tile:not(.on){border-style:dashed}
   .badge-tile.on{opacity:1;filter:none;background:var(--glass-fuerte);box-shadow:var(--sombra)}
   .badge-tile.on:hover{transform:translateY(-2px)}
   .badge-tile .bt-icon{font-size:var(--fs-4xl);margin-bottom:4px}
@@ -1055,7 +1058,7 @@
         <button class="btn sm ghost" id="btnFeedback" style="margin-bottom:12px">💬 Enviar una sugerencia o un error</button>
         <button class="btn sm ghost" id="btnBlocked" style="margin-bottom:12px">🚫 Usuarios bloqueados</button>
         <button class="btn danger" id="btnLogout">Cerrar sesión</button>
-        <button class="linkbtn" id="btnDeleteAccount" style="display:block;margin:14px auto 0;color:var(--cerrado)">Eliminar mi cuenta y mis datos</button>
+        <button class="linkbtn" id="btnDeleteAccount" style="display:block;margin:14px auto 0;color:var(--peligro-tx)">Eliminar mi cuenta y mis datos</button>
         <div style="display:flex;justify-content:center;gap:16px;flex-wrap:wrap;margin-top:10px"><a class="linkbtn" href="privacidad.html" target="_blank" rel="noopener">Política de privacidad</a><a class="linkbtn" href="condiciones.html" target="_blank" rel="noopener">Condiciones de uso</a></div>
       </div>
     </div>
