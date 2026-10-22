@@ -2927,6 +2927,9 @@ function initMap(){
     if(++fallos===8&&map.hasLayer(capaCalles)){map.removeLayer(capaCalles);capaPlano.addTo(map);}
   });
   markers=[];
+  // Vista inicial (Navarra) fijada ANTES de añadir las chinchetas: si se encuadra después, el cambio de
+  // zoom hace que markercluster reagrupe con animación las chinchetas ya puestas (_forceLayout).
+  map.fitBounds(L.latLngBounds(BIBLIOTECAS.slice(0,N_NAVARRA).map(function(b){return [b.lat,b.lon];})).pad(0.18),{animate:false});
   // Con miles de bibliotecas, las muy próximas se agrupan, pero el grupo también es una chincheta
   // (con el número encima) y a partir del zoom 11 cada biblioteca tiene la suya.
   var capaBibs=(L.markerClusterGroup?L.markerClusterGroup({showCoverageOnHover:false,maxClusterRadius:28,disableClusteringAtZoom:11,spiderfyOnMaxZoom:false,
@@ -2943,7 +2946,6 @@ function initMap(){
     markers.push(mk);
   });
   if(capaBibs.addLayers)capaBibs.addLayers(markers);else markers.forEach(function(mk){capaBibs.addLayer(mk);});
-  var grupo=L.featureGroup(markers.slice(0,N_NAVARRA));map.fitBounds(grupo.getBounds().pad(0.18));
   socialRenderFriendMarkers();
 }
 
