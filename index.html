@@ -3599,8 +3599,9 @@ function renderProfile(){
   // favorita
   var counts={};DATA.sessions.forEach(function(s){if(s.bib!==NO_BIB)counts[s.bib]=(counts[s.bib]||0)+s.min;});
   var fav="—",best=0;for(var k in counts){if(counts[k]>best){best=counts[k];fav=k;}}
-  $("pFav").textContent=fav==="—"?"—":fav.replace("Biblioteca ","").replace("Pública ","").split("·")[0].trim();
-  $("pFav").style.fontSize=fav==="—"?"28px":"15px";
+  // mismo nombre corto que en el resto de la app ("Biblioteca de Navarra" no se queda en "de Navarra")
+  $("pFav").textContent=fav==="—"?"—":cortoNombre(fav.split("·")[0].trim());
+  $("pFav").style.fontSize=fav==="—"?"var(--fs-4xl)":"var(--fs-l)";
   // semana
   renderWeekBars();
   renderRecords();
