@@ -39,8 +39,9 @@ y `-tx` (texto sobre fondo tenue, con contraste AA en ambos temas).
 | `--peligro` | #ef4444 | #dc2626 | #b91c1c / #fca5a5 | llena, error (solo puntual) |
 | `--info` | #3b82f6 | — | — | tu ubicación |
 
-Alias: `--abierto` = `--ok`, `--cerrado` = `--peligro` (solo para puntos). Un local **cerrado** se pinta en
-azul calmado (`--pin-cerrada`, `--ev-ta-*`), no en rojo: cerrado no es una alarma.
+Alias: `--abierto` = `--ok` (punto de «abierta»). Un local **cerrado** se pinta en azul calmado (punto `--ev-ta`,
+chincheta `--pin-cerrada`, etiqueta `--ev-ta-*`), no en rojo: cerrado no es una alarma. Para texto rojo (errores,
+borrar) se usa siempre `--peligro-tx`; para contadores con número blanco, `--peligro-osc` (4,8:1).
 
 ### Superficies y texto
 | Token | Claro | Oscuro |
