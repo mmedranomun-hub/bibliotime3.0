@@ -1,12 +1,7 @@
-# Diseño de Bibliotime
+# Registro de diseño
 
-Criterios que sigue la rutina diaria de diseño (una mejora pequeña por día).
-
-## Paleta y teoría del color
-- **Base calmada:** azules y verdes suaves para la concentración; fondos con poca saturación.
-- **Acento:** índigo/violeta moderado (`--acento: #6c5ce7`) para acciones y estado activo.
-- **Evitar:** rojos grandes y colores muy saturados (activan alerta y fatigan); el rojo queda para avisos puntuales.
-- **Contraste:** texto WCAG AA (≥ 4.5:1) en modo claro y oscuro. Los colores se definen como variables en `:root` y se redefinen en el bloque de modo oscuro.
+Mejoras de diseño, una por día, con el porqué y las cifras de contraste. Los criterios, la paleta y los
+componentes están en [`SISTEMA_DE_DISENO.md`](SISTEMA_DE_DISENO.md).
 
 ## Registro
 - 2026-10-17 · Agenda: los eventos pasan de etiquetas saturadas con texto blanco (ámbar con contraste ~2:1) a tonos tenues con texto oscuro del mismo matiz y borde izquierdo; "Otro" pasa de ámbar a verde azulado (calma); el día de hoy lleva un fondo índigo muy suave. Variables `--ev-*` con versión para modo oscuro.
@@ -15,3 +10,7 @@ Criterios que sigue la rutina diaria de diseño (una mejora pequeña por día).
 - 2026-10-19 · Cabecera y pantalla de entrada: el nombre "Navarra" usaba un degradado índigo → cian #00d2d3 (1.9:1 sobre blanco) y en oscuro el índigo quedaba a 3.0:1. Nuevos tokens `--marca-a/--marca-b` (claro #5b4bd6 → #0e7490, 6.1 y 5.4:1; oscuro #b4abff → #5eead4, 7.1 y 9.9:1); "Navarra · España" usa `--acento-tx`. La barra superior es más opaca (`--barra-a/-b`) para que en modo oscuro no se vuelva gris al pasar sobre las teselas claras del mapa.
 - 2026-10-19 · Mapa sin selector de capas (Calles/Relieve/Plano/Satélite tapaba la tarjeta y no aportaba); los grupos de bibliotecas cercanas se dibujan como chinchetas con el número en una etiqueta blanca, y desde el zoom 11 cada biblioteca tiene la suya. Agenda: sección "Calendario de tus amigos" siempre visible y eventos de amigos marcados con un anillo índigo en la cuadrícula.
 - 2026-10-20 · Botones (modo estudio y resto de la app): "Terminar sesión" y "Cerrar sesión" dejan el rojo saturado con texto blanco (2.8-3.8:1, y el rojo grande activa alerta en plena sesión) por un rosa tenue con texto oscuro del mismo matiz (6.6:1 claro, 7.7:1 oscuro, tokens `--ev-ex-*`). El botón principal pasa de índigo → lila #8b7bef (texto blanco 3.4:1 en el extremo claro) a #5b4bd6 → #6c5ce7 (≥ 4.9:1). Los botones secundarios usan `--acento-tx` (7.1:1 en oscuro).
+- 2026-10-21 · Ficha de la biblioteca (popup del mapa): en oscuro la etiqueta "Abierta" (#15803d, 2.2:1), los chips de acceso/gratis/wifi (2.7:1) y el enlace "Horario, acceso y cómo llegar" (3.0:1) apenas se leían. Nuevo token `--ok-tx` (claro #166534, 6.2:1; oscuro #86efac, 7.8:1); chips, enlaces (`.linkbtn` en toda la app) y cabecera de horario con `--acento-tx` (5.4-7.1:1). "Cerrada" pasa de rojo a azul calmado como su chincheta (7.4-8.4:1). La afluencia ya no repite el círculo de color (punto + emoji).
+- 2026-10-21 · Sistema de diseño unificado: bloque de tokens único en `index.html` (marca, estados con variantes `-osc`/`-tx`, superficies, agenda, chinchetas, 11 tamaños de letra y 6 radios); 218 tamaños y 94 radios sueltos pasan a la escala, el degradado de marca (14 copias) a `--grad-acento` y el modo oscuro se define una sola vez. Selector de tipo de evento con los tonos de la Agenda. Páginas legales con `legal.css` y el mismo tema que Ajustes. Documentado en `SISTEMA_DE_DISENO.md` y `PLANTILLA_NUEVA_APP.md`.
+- 2026-10-22 · Perfil: las insignias bloqueadas tenían toda la tarjeta al 42 % de opacidad y su nombre no se leía (~2:1). Ahora solo se apaga el icono (gris, 40 %) y la tarjeta lleva borde discontinuo; el nombre queda en `--suave` (7:1 claro, 6,7:1 oscuro), para que se sepa qué hay que conseguir. «Borrar mis datos» pasa de `--cerrado` (rojo, 3,5:1 en claro) a `--peligro-tx` (6:1 claro, 7,7:1 oscuro).
+- 2026-10-23 · Rojo solo donde es aviso y siempre legible: en la lista, «Cerrada» pasa del punto rojo al azul calmado de su chincheta y su ficha; «Cerrado» en el horario, a `--suave`. Los textos rojos (error, × de borrar eventos, «Borrar esta sesión», borrar comentario) pasan de #ef4444 (3,8:1) a `--peligro-tx` (6,5:1 claro, 7,7:1 oscuro); los contadores con número blanco (campana, barra inferior) a `--peligro-osc` (4,8:1); el botón «Parar» del minicronómetro, de rojo con texto blanco al tono rosa tenue de los demás botones de parar.
