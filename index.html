@@ -64,6 +64,7 @@
     --ev-ot-bg:rgba(13,148,136,.14); --ev-ot-tx:#115e59;
     /* Neutros y chinchetas del mapa */
     --neutro:#94a3b8; --neutro-claro:#cbd5e1;
+    --acento-tenue:rgba(108,92,231,.06);                   /* tinte muy suave (fines de semana en la agenda) */
     --pin-abierta:var(--grad-acento); --pin-abierta-punta:var(--acento);
     --pin-cerrada:linear-gradient(140deg,#4f7ed6,#2f5bb8); --pin-cerrada-punta:#64748b;
     --pin-sin-horario:linear-gradient(140deg,#a3adc2,#7c879c);
@@ -466,6 +467,12 @@
     padding:6px;cursor:pointer;position:relative;transition:background .12s,border-color .12s;overflow:hidden}
   .cal-cell:hover{background:rgba(var(--blanco),.8);border-color:var(--acento)}
   .cal-cell.empty{background:transparent;border:none;cursor:default}
+  /* Fin de semana (columnas S y D) con un tinte índigo muy suave, y días ya pasados atenuados:
+     la vista va a lo que viene. La rejilla empieza por las 7 cabeceras, así que la columna sale de nth-child. */
+  .cal-grid>:nth-child(7n+6):not(.empty),.cal-grid>:nth-child(7n):not(.empty){background:var(--acento-tenue)}
+  .cal-grid>.cal-dow:nth-child(7n+6),.cal-grid>.cal-dow:nth-child(7n){background:none;color:var(--acento-tx)}
+  .cal-cell.pasado{background:transparent;border-style:dashed}
+  .cal-cell.pasado .dnum{color:var(--suave);font-weight:600}
   .cal-cell.today{border-color:var(--acento);border-width:2px;background:rgba(108,92,231,.08)}
   .cal-cell .dnum{font-size:var(--fs-m);font-weight:700}
   .cal-cell.today .dnum{color:var(--acento-tx)}
@@ -3513,7 +3520,7 @@ function renderCal(){
   for(var i=0;i<startDow;i++){var c=document.createElement("div");c.className="cal-cell empty";grid.appendChild(c);}
   for(var dn=1;dn<=daysInMonth;dn++){
     var key=y+"-"+String(m+1).padStart(2,"0")+"-"+String(dn).padStart(2,"0");
-    var cell=document.createElement("div");cell.className="cal-cell"+(key===todayStr?" today":"");
+    var cell=document.createElement("div");cell.className="cal-cell"+(key===todayStr?" today":(key<todayStr?" pasado":""));
     var evs=DATA.events[key]||[], fevs=eventosAmigosDe(key);
     var shown=evs.slice(0,2);
     var txts=shown.map(function(ev){return '<div class="evtxt ev-'+ev.type+'-txt" title="'+escapeHTML(ev.title)+'">'+escapeHTML(ev.title)+'</div>';}).join("")+

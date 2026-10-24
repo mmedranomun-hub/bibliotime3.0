@@ -26,6 +26,7 @@ valor, se añade un token aquí y en `:root`, nunca un número suelto en el comp
 | `--acento-tx` | #5b4bd6 (6,1:1) | #b4abff (7,1:1) | **texto** en color de acento, enlaces |
 | `--grad-acento` | #5b4bd6 → #6c5ce7 | igual | fondo de botones principales y elementos activos (texto blanco ≥ 4,9:1) |
 | `--acento2` | #00d2d3 | igual | segundo color de marca (progreso, selección en el mapa) |
+| `--acento-tenue` | índigo al 6 % | igual | tinte de fondo muy suave (fines de semana en la agenda) |
 | `--marca-a` / `--marca-b` | #5b4bd6 → #0e7490 | #b4abff → #5eead4 | degradado del nombre de la app |
 
 ### Estados
