@@ -316,7 +316,10 @@
   @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(34,197,94,.5)}70%{box-shadow:0 0 0 8px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
   .ministudy .t{font-variant-numeric:tabular-nums;font-weight:800;font-size:var(--fs-xl);letter-spacing:.02em}
   .ministudy .lbl{font-size:var(--fs-xs);color:var(--suave)}
-  .ministudy button{border:none;border-radius:var(--r-m);padding:7px 12px;font-weight:700;font-size:var(--fs-s);cursor:pointer;background:var(--ev-ex-bg);color:var(--ev-ex-tx)}
+  .ministudy button{border:none;border-radius:var(--r-m);padding:7px 12px;font-weight:700;font-size:var(--fs-s);cursor:pointer}
+  /* Compartir: botón principal (blanco sobre degradado). Parar: tono suave de parar, como .btn.danger */
+  .ministudy #miniShare{background:var(--grad-acento);color:#fff}
+  .ministudy #miniStop{background:var(--ev-ex-bg);color:var(--ev-ex-tx)}
 
   /* ===== FORMULARIOS ===== */
   .field{margin-bottom:14px}
@@ -817,7 +820,7 @@
     <div class="ministudy hidden" id="miniStudy">
       <div class="pulse"></div>
       <div><div class="t" id="miniTime">00:00</div><div class="lbl" id="miniPlace">Estudiando</div></div>
-      <button id="miniShare" style="background:var(--grad-acento)">Compartir</button>
+      <button id="miniShare">Compartir</button>
       <button id="miniStop">Parar</button>
     </div>
   </div>
@@ -3000,7 +3003,7 @@ function arrancarSesion(i,verificada){
   DATA.active={start:studyTimer.start,bibIndex:i,verificada:!!verificada,subject:studyTimer.subject};saveUserData();
   focusStart();
   startTick();
-  $("miniStudy").classList.remove("hidden");
+  $("miniStudy").classList.remove("hidden");renderNowCard();
   $("miniPlace").textContent=i>=0?cortoNombre(BIBLIOTECAS[i].nombre):"Estudiando";
   studyTimer.avisoCierre=false;
   renderStudy();
@@ -3089,7 +3092,7 @@ function restaurarSesionActiva(){
   if(DATA.focusMode){FOCUS.withered=true;FOCUS.hiddenAt=0;}
   if(revisarCronoOlvidado())return;
   startTick();
-  $("miniStudy").classList.remove("hidden");
+  $("miniStudy").classList.remove("hidden");renderNowCard();
   $("miniPlace").textContent=a.bibIndex>=0?cortoNombre(BIBLIOTECAS[a.bibIndex].nombre):"Estudiando";
   showToast("▶ Tu sesión sigue en marcha");
 }
@@ -3141,7 +3144,7 @@ function stopStudy(silent,endTs){
   }
   studyTimer.running=false;studyTimer.bibIndex=null;studyTimer.verificada=false;studyTimer.subject=null;
   releaseWakeLock();
-  $("miniStudy").classList.add("hidden");
+  $("miniStudy").classList.add("hidden");renderNowCard();
   socialClearPresence();
   renderStudy();renderProfile();
   if(saved&&!silent){
@@ -4010,7 +4013,9 @@ function cortoNombre(n){
 }
 function renderNowCard(){
   var el=$("nowCard"); if(!el)return;
-  if(!$("libPanel").classList.contains("hidden")){el.classList.add("hidden");return;}
+  // Con la lista abierta, o con una sesión en marcha (el minicronómetro ocupa ese hueco y ya dice dónde
+  // estudias), la recomendación no se muestra.
+  if(!$("libPanel").classList.contains("hidden")||studyTimer.running){el.classList.add("hidden");return;}
   el.classList.remove("hidden");
   var cands=recomendarBiblioteca(), html, up=window.__userPos;
   // Lejos de Navarra (sin horarios verificados cerca): recomendar la más cercana, avisando del horario.
