@@ -2563,7 +2563,8 @@ function refreshOccUI(i){
       if(markers[i].setIcon)markers[i].setIcon(chinchetaIcon(i));
       if(window.__map&&window.__map.hasLayer(markers[i])){if(markers[i].isPopupOpen())markers[i].getPopup().update();else markers[i].openPopup();}
     }else{
-      markers.forEach(function(mk,j){if(mk.setIcon)mk.setIcon(chinchetaIcon(j));if(mk.isPopupOpen())mk.getPopup().update();});
+      // los iconos se reutilizan por variante: solo se repinta la chincheta cuyo estado ha cambiado
+      markers.forEach(function(mk,j){var ic=chinchetaIcon(j);if(mk.setIcon&&mk.options.icon!==ic)mk.setIcon(ic);if(mk.isPopupOpen())mk.getPopup().update();});
     }
   }
 }
@@ -2876,11 +2877,15 @@ document.querySelectorAll("#listFilters button").forEach(function(btn){
   });
 });
 // Color de la chincheta según la afluencia reportada (sin números): verde/ámbar/rojo, gris si está cerrada, morado si no hay datos.
+// Solo hay unas pocas variantes de chincheta: se reutiliza un L.divIcon por variante en vez de crear 2616.
+// Las de horario sin confirmar nunca cuentan como abiertas, así que no se calcula su estado.
+var _iconosChincheta={};
 function chinchetaIcon(i){
-  var b=BIBLIOTECAS[i], abierto=estadoBib(b);
+  var b=BIBLIOTECAS[i], abierto=!b.sinHorario&&estadoBib(b);
   var occClass="";
   if(abierto){var o=occSummary(i); if(o)occClass=" occ-"+o.level;}
-  return L.divIcon({className:"",html:'<div class="chincheta'+(b.sinHorario?" unk":(abierto?"":" closed"))+occClass+'"><div class="cuerpo"></div><div class="punta"></div></div>',iconSize:[34,44],iconAnchor:[17,44],popupAnchor:[0,-44]});
+  var cls="chincheta"+(b.sinHorario?" unk":(abierto?"":" closed"))+occClass;
+  return _iconosChincheta[cls]||(_iconosChincheta[cls]=L.divIcon({className:"",html:'<div class="'+cls+'"><div class="cuerpo"></div><div class="punta"></div></div>',iconSize:[34,44],iconAnchor:[17,44],popupAnchor:[0,-44]}));
 }
 // "Mi ubicación": la pinta en el propio mapa, nunca abre Google Maps ni ninguna app externa.
 window.__userPos=null;
