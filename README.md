@@ -30,6 +30,7 @@ Qué se publica lo decide `.vercelignore`.
 - `PLANTILLA_NUEVA_APP.md`: cómo crear otra app del mismo estilo (por ejemplo, de gimnasios) a partir de esta.
 - `DISENO.md` y `RENDIMIENTO.md`: registro diario de mejoras de diseño y de velocidad, con cifras.
 - `PUBLICAR_EN_GOOGLE_PLAY.md`: pasos para subir la app a Google Play.
+- `TRASLADAR_A_OTRO_ORDENADOR.md`: cómo empezar de cero o pasar el proyecto a otro ordenador sin perder nada.
 
 ## Scripts (`scripts/`)
 - `servir_local.ps1`: sirve la app en http://localhost:8080 para probarla en el ordenador.
