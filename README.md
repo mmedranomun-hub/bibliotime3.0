@@ -8,7 +8,8 @@ Web pública: https://bibliotime-ten.vercel.app
 
 | Ruta | Qué es | ¿Se publica? |
 |---|---|---|
-| `index.html` | Toda la app: estilos, pantallas y lógica en un solo archivo | Sí |
+| `index.html` | Estilos (con los tokens del sistema de diseño) y pantallas de la app | Sí |
+| `app.js` | Toda la lógica de la app (mapa, estudio, agenda, amigos…) | Sí |
 | `bibliotecas-espana.js` | Datos de las bibliotecas de fuera de Navarra (Overture Maps) | Sí |
 | `sw.js` | Service worker: caché y uso sin conexión. Sube `CACHE_NAME` en cada cambio publicado | Sí |
 | `manifest.json` | Nombre, iconos y capturas de la app instalable | Sí |
@@ -39,6 +40,6 @@ Qué se publica lo decide `.vercelignore`.
 
 ## Reglas que no se pueden romper
 - No reordenar ni borrar bibliotecas: la afluencia y la presencia de amigos guardan su índice
-  (las 104 de Navarra van primero en `index.html`; las de España, después, en `bibliotecas-espana.js`).
+  (las 104 de Navarra van primero en `app.js`; las de España, después, en `bibliotecas-espana.js`).
 - No inventar datos: horarios y accesos solo con fuente oficial (o «sin confirmar»).
 - Colores, tamaños y radios solo con los tokens de `docs/SISTEMA_DE_DISENO.md`.

@@ -6,7 +6,7 @@ Esta guía dice qué se reutiliza tal cual, qué se adapta y en qué orden. Ejem
 
 ## 1. Qué es genérico y qué es de bibliotecas
 
-| Módulo (sección en `index.html`) | ¿Se reutiliza? | En Gymtime |
+| Módulo (sección en `app.js`) | ¿Se reutiliza? | En Gymtime |
 |---|---|---|
 | Sistema de diseño (bloque `:root`, ver `SISTEMA_DE_DISENO.md`) | Sí, cambiando colores de marca | Acento propio (p. ej. verde), misma estructura |
 | Mapa, chinchetas, agrupación, lista y búsqueda (`MAPA Y LISTA`) | Sí | Gimnasios en lugar de bibliotecas |
@@ -72,4 +72,4 @@ Mientras solo exista Bibliotime, copiar la plantilla es lo más simple. Con una 
 - Sacar los tokens a un `tokens.css` compartido y dejar en cada app solo un pequeño bloque de marca.
 - Reunir en un objeto `CONFIG` (nombre de la app, palabra para «lugar», para «sesión» y para «tema»,
   categorías de la agenda, filtros) los textos que hoy están escritos en el código.
-- Separar los datos de Navarra de `index.html` a su propio archivo, como ya se hizo con los de España.
+- Separar los datos de Navarra de `app.js` a su propio archivo, como ya se hizo con los de España.
