@@ -14,7 +14,7 @@
  *     Overpass a qué límite administrativo de OSM pertenece cada elemento (`out ids`).
  *     Si un elemento no cae en ningún admin_level=6, se usa su addr:province.
  *  3. Marca como duplicados probables los que están a <=150 m de alguna de las
- *     bibliotecas del array BIBLIOTECAS de index.html, y en Navarra además los de
+ *     bibliotecas del array BIBLIOTECAS de app.js, y en Navarra además los de
  *     nombre genérico a <=700 m o nombre similar a <=3,5 km (se excluyen del JSON y se
  *     listan en data/duplicados_navarra.json para revisión manual).
  *  4. Escribe data/bibliotecas_espana.json (UTF-8 sin BOM, compacto) y
@@ -32,7 +32,7 @@ const DATA_DIR = path.join(ROOT, 'data');
 const OUT_JSON = path.join(DATA_DIR, 'bibliotecas_espana.json');
 const OUT_DUP = path.join(DATA_DIR, 'duplicados_navarra.json');
 const OUT_LEEME = path.join(DATA_DIR, 'LEEME.md');
-const INDEX_HTML = path.join(ROOT, 'index.html');
+const APP_JS = path.join(ROOT, 'app.js');
 
 const ENDPOINTS = [
   'https://overpass-api.de/api/interpreter',
@@ -148,7 +148,7 @@ function distM(lat1, lon1, lat2, lon2) {
 }
 
 function leerBibliotecasExistentes() {
-  const html = fs.readFileSync(INDEX_HTML, 'utf8');
+  const html = fs.readFileSync(APP_JS, 'utf8');
   const out = [];
   const re = /nombre:"([^"]*)"[^}]*?lat:([\d.-]+),lon:([\d.-]+)/g;
   let m;
@@ -171,7 +171,7 @@ const similares = (a, b) => {
   return ta.some((x) => tb.some((y) => x.slice(0, 5) === y.slice(0, 5)));
 };
 
-/* Criterios de duplicado probable respecto a BIBLIOTECAS (index.html):
+/* Criterios de duplicado probable respecto a BIBLIOTECAS (app.js):
  *  a) a <= 150 m de cualquiera de ellas;
  *  b) solo en Navarra: nombre genérico ("Biblioteca Pública", "Casa de Cultura"...) a <= 700 m;
  *  c) solo en Navarra: nombre con un token en común (p. ej. "Burlada") a <= 3,5 km.
@@ -216,7 +216,7 @@ async function main() {
   const ccaaMap = await asignarAreas(4, elementos.length);
 
   const existentes = leerBibliotecasExistentes();
-  console.log(`3) ${existentes.length} bibliotecas existentes leídas de index.html`);
+  console.log(`3) ${existentes.length} bibliotecas existentes leídas de app.js`);
 
   const registros = [], duplicados = [];
   let sinNombre = 0, sinCoord = 0;
@@ -283,7 +283,7 @@ async function main() {
 ## Archivos
 
 - \`bibliotecas_espana.json\`: ${registros.length} registros (JSON compacto, UTF-8 sin BOM, ${(Buffer.byteLength(json, "utf8") / 1024).toFixed(0)} KB; ~${(gz / 1024).toFixed(0)} KB con gzip).
-- \`duplicados_navarra.json\`: ${duplicados.length} elementos de OSM que probablemente duplican bibliotecas ya incluidas en \`BIBLIOTECAS\` (index.html). Criterios: a ≤${DUP_RADIUS_M} m (${duplicados.filter((d) => d.criterio === '<=150m').length}); en Navarra, nombre genérico a ≤700 m (${duplicados.filter((d) => d.criterio === 'nombre_generico<=700m').length}) o nombre similar a ≤3,5 km (${duplicados.filter((d) => d.criterio === 'nombre_similar<=3.5km').length}). **No se incluyen** en el JSON principal; revisar a mano (campos \`dup_de\`, \`dist_m\`, \`criterio\`).
+- \`duplicados_navarra.json\`: ${duplicados.length} elementos de OSM que probablemente duplican bibliotecas ya incluidas en \`BIBLIOTECAS\` (app.js). Criterios: a ≤${DUP_RADIUS_M} m (${duplicados.filter((d) => d.criterio === '<=150m').length}); en Navarra, nombre genérico a ≤700 m (${duplicados.filter((d) => d.criterio === 'nombre_generico<=700m').length}) o nombre similar a ≤3,5 km (${duplicados.filter((d) => d.criterio === 'nombre_similar<=3.5km').length}). **No se incluyen** en el JSON principal; revisar a mano (campos \`dup_de\`, \`dist_m\`, \`criterio\`).
 
 Este dataset es independiente del array \`BIBLIOTECAS\`: no altera los \`bib_index\` usados en Supabase.
 
