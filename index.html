@@ -142,9 +142,10 @@
 
   /* ===== PANEL LISTA (mapa) ===== */
   .panel{position:fixed;top:78px;left:18px;z-index:900;width:300px;max-height:calc(100vh - 168px);
-    display:flex;flex-direction:column;background:var(--glass);
+    display:flex;flex-direction:column;background:var(--glass-fuerte);
     backdrop-filter:blur(22px) saturate(160%);-webkit-backdrop-filter:blur(22px) saturate(160%);
     border:1px solid var(--borde);border-radius:var(--r-xl);box-shadow:var(--sombra);overflow:hidden}
+  /* el panel va sobre el mapa: con --glass (72 % en oscuro) las teselas claras lo dejaban gris (2,9:1) */
   .panel-head{padding:14px 16px;border-bottom:1px solid rgba(148,163,184,.25);cursor:pointer;user-select:none}
   .panel.collapsed .panel-head{border-bottom:none}
   .panel-head .phrow{display:flex;align-items:center;justify-content:space-between;gap:10px}
