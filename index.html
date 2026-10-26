@@ -982,6 +982,38 @@
   .sv-tap.izq{left:0}.sv-tap.der{right:0;width:60%}
   .corazon{position:fixed;z-index:6000;font-size:72px;pointer-events:none;transform:translate(-50%,-50%);animation:corazon .9s cubic-bezier(.34,1.56,.64,1) forwards}
   @keyframes corazon{0%{transform:translate(-50%,-50%) scale(0)}30%{transform:translate(-50%,-50%) scale(1.25)}60%{transform:translate(-50%,-60%) scale(1)}100%{opacity:0;transform:translate(-50%,-120%) scale(.9)}}
+
+  /* Podio del ranking */
+  .podio{display:flex;align-items:flex-end;justify-content:center;gap:10px;margin:8px 0 6px}
+  .pd-col{flex:1;max-width:110px;display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;animation:fadeUp .5s both}
+  .pd-col.pd-1{animation-delay:.25s}.pd-col.pd-2{animation-delay:.1s}.pd-col.pd-3{animation-delay:.4s}
+  .pd-med{font-size:var(--fs-3xl);line-height:1}
+  .pd-1 .pd-med{font-size:var(--fs-5xl);animation:llama 2s ease-in-out infinite}
+  .pd-av{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:var(--fs-xl);border:3px solid var(--glass-fuerte);box-shadow:var(--sombra)}
+  .pd-col.yo .pd-av{outline:3px solid var(--aviso)}
+  .pd-col b{font-size:var(--fs-m);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pd-col small{font-size:var(--fs-xs);color:var(--suave);font-weight:700}
+  .pd-bar{width:100%;height:var(--h);border-radius:var(--r-m) var(--r-m) 0 0;display:flex;align-items:flex-start;justify-content:center;padding-top:6px;
+    color:#fff;font-weight:800;font-size:var(--fs-xl);background:var(--grad-acento);transform-origin:bottom;animation:sube .8s cubic-bezier(.34,1.56,.64,1) both}
+  .pd-1 .pd-bar{background:linear-gradient(135deg,#f59e0b,#d97706)}
+  .pd-3 .pd-bar{background:linear-gradient(135deg,#c2773e,#9a5a2c)}
+  .pd-2 .pd-bar{background:linear-gradient(135deg,#94a3b8,#64748b)}
+  @keyframes sube{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+  .lb-pique{margin:10px 0 4px;padding:10px 12px;border-radius:var(--r-m);background:var(--acento-tenue);font-size:var(--fs-m);text-align:center}
+  .lb-pique.top{background:rgba(245,158,11,.14)}
+  .lb-row{display:flex;align-items:center;gap:10px;padding:8px 4px}
+  .lb-row.yo{background:var(--acento-tenue);border-radius:var(--r-m)}
+  .lb-row .ni{flex:1;min-width:0}
+  .lb-row small{font-weight:700;color:var(--suave);font-size:var(--fs-s)}
+  .lb-bar{height:6px;border-radius:var(--r-pill);background:rgba(148,163,184,.25);overflow:hidden;margin-top:4px}
+  .lb-bar i{display:block;height:100%;background:var(--grad-acento);border-radius:var(--r-pill)}
+  /* Cuenta atrás al empezar */
+  .cuenta{position:fixed;inset:0;z-index:5000;display:flex;align-items:center;justify-content:center;background:rgba(15,23,42,.55);backdrop-filter:blur(3px);animation:fadeIn .2s both}
+  .cuenta.out{animation:fadeOut .4s both}
+  .ct-n{font-size:140px;font-weight:800;color:#fff;animation:ctPop .5s cubic-bezier(.34,1.56,.64,1) both;text-shadow:0 10px 30px rgba(0,0,0,.35)}
+  .ct-txt{font-size:var(--fs-5xl);font-weight:800;color:#fff;animation:growIn .5s cubic-bezier(.34,1.56,.64,1) both}
+  @keyframes ctPop{0%{transform:scale(2.2);opacity:0}60%{opacity:1}100%{transform:scale(1)}}
+  .sv-kicker{font-size:var(--fs-s);font-weight:800;letter-spacing:.14em;opacity:.85;margin-bottom:6px}
 </style>
 </head>
 <body>
@@ -1261,6 +1293,7 @@
       </div>
 
       <div class="level-card" id="levelCard"></div>
+      <button class="btn ghost" style="margin-bottom:16px" onclick="abrirResumenSemanal(false)">🎬 Tu resumen de la semana pasada</button>
       <div class="stat-grid">
         <div class="stat"><div class="num" id="pTotalH">0h</div><div class="lab">Horas totales</div></div>
         <div class="stat"><div class="num" id="pSessions">0</div><div class="lab">Sesiones</div></div>

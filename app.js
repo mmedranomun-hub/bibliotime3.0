@@ -1019,9 +1019,19 @@ function renderLeaderboard(){
   var el=$("leaderboardList"); if(!el)return;
   if(!socialClient()||!SOCIAL.user){el.innerHTML='<div class="empty-note">'+(socialKeysOk()?'Con una cuenta (opcional) y amigos verás aquí el ranking':'Configura Supabase para ver el ranking con amigos')+'</div>';return;}
   if(!SOCIAL.leaderboard.length){el.innerHTML='<div class="empty-note">Sin datos '+(lbPeriod==="day"?"de hoy":"de esta semana")+' todavía (necesitas amigos y sesiones compartidas)</div>';return;}
-  el.innerHTML=SOCIAL.leaderboard.map(function(p,i){
-    return '<div class="nowrow" style="cursor:default"><div class="rank">'+(i+1)+'</div><div class="ni"><b>'+escapeHTML(p.name)+'</b><small>'+hMin(p.min)+(lbPeriod==="day"?' hoy':' esta semana')+'</small></div></div>';
-  }).join("");
+  // Podio (Duolingo/Strava): los tres primeros con medalla y columna proporcional; el resto, con barra.
+  var L=SOCIAL.leaderboard, max=L[0].min||1, yo=-1;L.forEach(function(p,i){if(p.id===SOCIAL.user.id)yo=i;});
+  var MED=["🥇","🥈","🥉"], orden=[1,0,2].filter(function(k){return L[k];});
+  var podio='<div class="podio">'+orden.map(function(k){var p=L[k],alt=40+Math.round(p.min/max*70);
+    return '<div class="pd-col'+(p.id===SOCIAL.user.id?' yo':'')+' pd-'+(k+1)+'"><div class="pd-med">'+MED[k]+'</div><div class="pd-av" style="background:'+colorDe(p.id)+'">'+escapeHTML(p.name.charAt(0).toUpperCase())+'</div>'+
+      '<b>'+escapeHTML(p.name.split(" ")[0])+'</b><small>'+hMin(p.min)+'</small><div class="pd-bar" style="--h:'+alt+'px">'+(k+1)+'</div></div>';}).join("")+'</div>';
+  var resto=L.slice(3).map(function(p,i){var k=i+3;
+    return '<div class="lb-row'+(p.id===SOCIAL.user.id?' yo':'')+'"><div class="rank">'+(k+1)+'</div><div class="ni"><b>'+escapeHTML(p.name)+'</b><div class="lb-bar"><i style="width:'+Math.max(4,Math.round(p.min/max*100))+'%"></i></div></div><small>'+hMin(p.min)+'</small></div>';}).join("");
+  var pique="";
+  if(yo>0){var dif=L[yo-1].min-L[yo].min+1;pique='<div class="lb-pique">⚡ Te faltan <b>'+hMin(dif)+'</b> para adelantar a <b>'+escapeHTML(L[yo-1].name)+'</b></div>';}
+  else if(yo===0&&L.length>1){pique='<div class="lb-pique top">👑 ¡Vas primero! '+escapeHTML(L[1].name)+' está a '+hMin(L[0].min-L[1].min)+'</div>';}
+  else if(yo<0)pique='<div class="lb-pique">🌱 Estudia y comparte una sesión para entrar en el ranking</div>';
+  el.innerHTML=podio+pique+resto;
 }
 async function socialShareEvent(ev){
   var sb=socialClient(); if(!sb||!SOCIAL.user)return;
@@ -1210,6 +1220,7 @@ async function enterApp(){
   if(!window.__mapReady) initMap();
   restaurarSesionActiva();
   renderStudy(); renderProfile(); renderRacha(); renderStories();
+  if(DATA.onboarded)quizasResumenSemanal();
   socialInitAfterLogin();
   if(!DATA.onboarded){
     if(DATA.sessions.length){DATA.onboarded=true;saveUserData();}
@@ -1952,7 +1963,17 @@ function startStudyAt(i){
     arrancarSesion(i,false);
   }
 }
+// Cuenta atrás de arranque (no retrasa el cronómetro: es solo el ritual de empezar).
+function cuentaAtras(){
+  if(sinMovimiento())return;
+  var o=document.createElement("div");o.className="cuenta";document.body.appendChild(o);
+  var pasos=["3","2","1","🌱"],k=0;
+  (function paso(){if(k>=pasos.length){o.innerHTML='<span class="ct-txt">¡A por ello!</span>';setTimeout(function(){o.classList.add("out");setTimeout(function(){o.remove();},400);},650);return;}
+    o.innerHTML='<span class="ct-n">'+pasos[k]+'</span>';k++;setTimeout(paso,520);})();
+  o.addEventListener("click",function(){o.remove();});
+}
 function arrancarSesion(i,verificada){
+  cuentaAtras();
   studyTimer.running=true;studyTimer.start=Date.now();studyTimer.bibIndex=i;studyTimer.verificada=!!verificada;
   studyTimer.subject=DATA.currentSubject||null;
   // Se guarda para no perderla si el móvil cierra la app en segundo plano.
@@ -2396,6 +2417,8 @@ function sesionesPeriodo(lista,periodo){
   if(periodo==="day")desde=ymd(hoy);
   else if(periodo==="week"){var l=new Date(hoy);l.setDate(hoy.getDate()-((hoy.getDay()+6)%7));desde=ymd(l);}
   else if(periodo==="month"){desde=ymd(new Date(hoy.getFullYear(),hoy.getMonth(),1));}
+  else if(periodo==="lastweek"){var l2=new Date(hoy);l2.setDate(hoy.getDate()-((hoy.getDay()+6)%7)-7);var fin=new Date(l2);fin.setDate(l2.getDate()+6);
+    var d1=ymd(l2),d2=ymd(fin);return lista.filter(function(s){return s.date>=d1&&s.date<=d2;});}
   return lista.filter(function(s){return !desde||s.date>=desde;});
 }
 // HTML del bosque para una lista de sesiones {min, date, focus, subject, id}.
@@ -3847,7 +3870,7 @@ async function compartirBosque(){
   if(!ses.length){showToast("Planta algún árbol primero 🌱");return;}
   showToast("Preparando tu imagen…");
   var L=lienzoStory(),g=L.g,W=L.W,vivos=ses.filter(function(s){return s.focus!=="withered";}).length,min=ses.reduce(function(a,s){return a+s.min;},0);
-  var P={day:"HOY",week:"ESTA SEMANA",month:"ESTE MES",all:"ESTE MES"}[FOREST_PERIOD];
+  var P={day:"HOY",week:"ESTA SEMANA",month:"ESTE MES",all:"ESTE MES",lastweek:"MI SEMANA"}[FOREST_PERIOD];
   textoC(g,"MI BOSQUE · "+P,W/2,190,"800 44px system-ui,sans-serif","rgba(255,255,255,.85)");
   textoC(g,hMin(min),W/2,370,"800 190px system-ui,sans-serif");
   var rd=streakDays();textoC(g,"🌳 "+vivos+(vivos===1?" árbol":" árboles")+"   🔥 "+rd+(rd===1?" día":" días"),W/2,470,"700 56px system-ui,sans-serif");
@@ -3874,4 +3897,40 @@ async function compartirStoryDia(){
   var hoy=ymd(),ses=DATA.sessions.filter(function(s){return s.date===hoy;});
   if(!ses.length){showToast("Estudia un poco y comparte tu día 🌱");return;}
   var prev=FOREST_PERIOD;FOREST_PERIOD="day";await compartirBosque();FOREST_PERIOD=prev;
+}
+
+/* ----- Resumen semanal tipo «Wrapped» (Strava/Spotify): el lunes, la semana pasada en historias ----- */
+function semanaClave(d){d=new Date(d||Date.now());d.setHours(0,0,0,0);d.setDate(d.getDate()-((d.getDay()+6)%7));return ymd(d);}
+function datosSemana(offset){
+  var lun=new Date();lun.setHours(0,0,0,0);lun.setDate(lun.getDate()-((lun.getDay()+6)%7)-7*offset);
+  var fin=new Date(lun);fin.setDate(lun.getDate()+6);var d1=ymd(lun),d2=ymd(fin);
+  var ses=DATA.sessions.filter(function(s){return s.date>=d1&&s.date<=d2;}),porDia={},subj={},min=0,vivos=0,secos=0,larga=0;
+  ses.forEach(function(s){min+=s.min;porDia[s.date]=(porDia[s.date]||0)+s.min;if(s.subject)subj[s.subject]=(subj[s.subject]||0)+s.min;if(s.focus==="withered")secos++;else vivos++;larga=Math.max(larga,s.min);});
+  var mejor=null;Object.keys(porDia).forEach(function(k){if(!mejor||porDia[k]>porDia[mejor])mejor=k;});
+  var top=null;Object.keys(subj).forEach(function(k){if(!top||subj[k]>subj[top])top=k;});
+  return {ses:ses,min:min,dias:Object.keys(porDia).length,mejor:mejor,mejorMin:mejor?porDia[mejor]:0,top:top,topMin:top?subj[top]:0,vivos:vivos,secos:secos,larga:larga,desde:lun};
+}
+function abrirResumenSemanal(auto){
+  var S=datosSemana(1), P=datosSemana(2);
+  if(!S.ses.length){if(!auto)showToast("La semana pasada no hubo sesiones: ¡esta semana sí! 💪");return;}
+  DATA.resumenVisto=semanaClave();saveUserData();
+  var DIAS=["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
+  var dif=P.min?Math.round((S.min-P.min)/P.min*100):null;
+  var slides=[
+    {html:'<div class="sv-kicker">TU SEMANA</div><div class="sv-min">'+hMin(S.min)+'</div><div class="sv-where">estudiadas en '+S.dias+(S.dias===1?' día':' días')+'</div>'+
+      (dif!==null?'<div class="sv-tag">'+(dif>=0?'📈 +'+dif+'% que la semana anterior':'Semana más tranquila ('+dif+'%) · ¡esta a por más! 💪')+'</div>':'<div class="sv-tag">✨ Tu primera semana con datos</div>'),ses:null},
+    {html:'<div class="sv-tree">'+arbolSVG(Math.max(S.larga,1),false,"semana",170,DATA.especie)+'</div><div class="sv-min">'+S.vivos+(S.vivos===1?' árbol':' árboles')+'</div><div class="sv-where">'+(S.secos?'y '+S.secos+' marchito'+(S.secos===1?'':'s')+' 🥀':'¡ni uno marchito! 🏆')+'</div><div class="sv-hace">Tu sesión más larga: '+hMin(S.larga)+'</div>',ses:null}
+  ];
+  if(S.mejor)slides.push({html:'<div class="sv-kicker">TU MEJOR DÍA</div><div class="sv-min">'+DIAS[new Date(S.mejor+"T00:00:00").getDay()]+'</div><div class="sv-where">'+hMin(S.mejorMin)+' de estudio 🔥</div>',ses:null});
+  if(S.top)slides.push({html:'<div class="sv-kicker">LO QUE MÁS ESTUDIASTE</div><div class="sv-min">📚 '+escapeHTML(S.top)+'</div><div class="sv-where">'+hMin(S.topMin)+' ('+Math.round(S.topMin/S.min*100)+'% de tu semana)</div>',ses:null});
+  slides.push({html:'<div class="sv-kicker">NIVEL '+(nivelDe(horasTotales())+1)+' · '+escapeHTML(NIVELES[nivelDe(horasTotales())][1].toUpperCase())+'</div><div class="sv-min">🔥 '+streakDays()+'</div><div class="sv-where">'+(streakDays()===1?'día':'días')+' de racha · 🌰 '+semillas()+' semillas</div>'+
+    '<button class="btn sm" style="margin-top:18px" onclick="compartirSemanaPasada()">📸 Compartir mi semana</button>',ses:null});
+  mostrarStory("Tu semana",null,slides,"yo");
+  if(auto)setTimeout(function(){confeti(60);},400);
+}
+async function compartirSemanaPasada(){var prev=FOREST_PERIOD;FOREST_PERIOD="lastweek";try{await compartirBosque();}finally{FOREST_PERIOD=prev;}}
+function quizasResumenSemanal(){
+  if(!DATA||DATA.resumenVisto===semanaClave())return;
+  if(!datosSemana(1).ses.length)return;
+  setTimeout(function(){if(!document.querySelector(".modal-bg")&&!$("storyViewer"))abrirResumenSemanal(true);},1500);
 }
