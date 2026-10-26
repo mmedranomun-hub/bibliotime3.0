@@ -733,6 +733,36 @@
     /* Abajo a la derecha quedaban debajo de la barra inferior: van bajo el botón de ubicación */
     .leaflet-bottom.leaflet-right .leaflet-control-zoom{position:fixed;top:134px;right:10px;margin:0}
   }
+
+  /* ===== RECOMPENSAS Y MOVIMIENTO (2026-10-26) ===== */
+  .toast{position:fixed;bottom:96px;left:50%;z-index:4000;background:var(--grad-acento);color:#fff;
+    padding:12px 20px;border-radius:var(--r-pill);font-size:var(--fs-m);font-weight:700;max-width:calc(100vw - 32px);
+    box-shadow:0 10px 30px rgba(91,75,214,.45);transform:translateX(-50%);animation:toastIn .45s cubic-bezier(.34,1.56,.64,1) both}
+  .toast.out{animation:toastOut .35s ease-in both}
+  @keyframes toastIn{from{opacity:0;transform:translate(-50%,24px) scale(.85)}to{opacity:1;transform:translate(-50%,0) scale(1)}}
+  @keyframes toastOut{to{opacity:0;transform:translate(-50%,12px) scale(.95)}}
+  .burst{position:fixed;z-index:4500;pointer-events:none;font-size:var(--fs-2xl);transform:translate(-50%,-50%);
+    animation:burst .9s cubic-bezier(.2,.8,.3,1) forwards}
+  @keyframes burst{0%{opacity:1;transform:translate(-50%,-50%) scale(.4)}
+    70%{opacity:1}100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(1.15) rotate(var(--rot))}}
+  .confeti{position:fixed;top:-12px;z-index:4500;width:9px;height:14px;border-radius:var(--r-xs);pointer-events:none;
+    animation:confeti 2s cubic-bezier(.25,.6,.4,1) forwards}
+  @keyframes confeti{to{transform:translate(var(--dx),105vh) rotate(var(--rot));opacity:.9}}
+  .pop{animation:pop .45s cubic-bezier(.34,1.56,.64,1)}
+  @keyframes pop{0%{transform:scale(1)}35%{transform:scale(1.18)}100%{transform:scale(1)}}
+
+  /* Rezar por un examen: el recuento siempre a la vista */
+  .pray-btn{display:inline-flex;align-items:center;gap:6px;border:1.5px solid rgba(108,92,231,.35);border-radius:var(--r-pill);
+    padding:6px 6px 6px 10px;font-weight:800;font-size:var(--fs-s);cursor:pointer;white-space:nowrap;
+    background:rgba(var(--blanco),.7);color:var(--acento-tx);transition:transform .15s,box-shadow .15s}
+  .pray-btn:hover:not(:disabled){transform:translateY(-1px) scale(1.03);box-shadow:0 6px 16px rgba(108,92,231,.25)}
+  .pray-btn:active:not(:disabled){transform:scale(.94)}
+  .pray-btn .pray-n{min-width:22px;padding:2px 7px;border-radius:var(--r-pill);background:var(--grad-acento);color:#fff;text-align:center;font-size:var(--fs-xs)}
+  .pray-btn.on{background:var(--grad-acento);color:#fff;border-color:transparent;cursor:default}
+  .pray-btn.on .pray-n{background:rgba(255,255,255,.25)}
+  .pray-btn.sm{padding:4px 4px 4px 8px;font-size:var(--fs-xs)}
+  .pray-mine{display:inline-block;margin-left:4px;text-transform:none;padding:2px 8px;border-radius:var(--r-pill);background:var(--acento-tenue);
+    color:var(--acento-tx);font-weight:800;font-size:var(--fs-xs);animation:pop .5s}
 </style>
 </head>
 <body>

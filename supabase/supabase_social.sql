@@ -411,3 +411,25 @@ create policy "presence delete own" on presence for delete using (auth.uid() = u
 
 -- Por defecto no se comparte (ya lo era; se reafirma por si la tabla se creó a mano).
 alter table presence alter column sharing set default false;
+
+-- ===== REZOS VISIBLES PARA AMIGOS (2026-10-26) =====
+-- Antes solo el dueño del examen veía el total de rezos: cada amigo veía 0 o 1 (el suyo), porque la
+-- política select de prayers solo deja leer a quien rezó y al dueño. Esta función devuelve SOLO el
+-- recuento (no quién rezó) de los exámenes tuyos y de tus amigos aceptados.
+create or replace function public.prayer_counts(p_owner_ids uuid[])
+returns table(event_owner_id uuid, event_local_id text, n bigint, prayed_by_me boolean)
+language sql stable security definer set search_path = public as $$
+  select p.event_owner_id, p.event_local_id, count(*)::bigint, bool_or(p.prayed_by_id = auth.uid())
+  from prayers p
+  where p.event_owner_id = any(p_owner_ids)
+    and (p.event_owner_id = auth.uid() or public.are_friends(auth.uid(), p.event_owner_id))
+  group by p.event_owner_id, p.event_local_id;
+$$;
+revoke all on function public.prayer_counts(uuid[]) from public, anon;
+grant execute on function public.prayer_counts(uuid[]) to authenticated;
+
+-- Solo se puede rezar por un examen propio o de un amigo aceptado (antes cualquiera podía insertar).
+drop policy if exists "prayers insert own" on prayers;
+create policy "prayers insert own" on prayers for insert with check (
+  auth.uid() = prayed_by_id and (auth.uid() = event_owner_id or public.are_friends(auth.uid(), event_owner_id))
+);

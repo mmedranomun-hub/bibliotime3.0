@@ -406,20 +406,48 @@ async function socialRefreshAll(){
   if(DATA)renderCal();else renderCalFriendExams();
 }
 /* ===== REZAR POR UN EXAMEN ===== */
+// Recuento de rezos de los exámenes de tus amigos y de los tuyos. La tabla prayers solo deja leer a quien
+// rezó y al dueño del examen, así que el total para los amigos sale de la función prayer_counts (SQL
+// «REZOS VISIBLES PARA AMIGOS»). Si aún no se ha ejecutado, se usa la consulta antigua (solo ves los tuyos).
+function misExamenesCompartidos(){
+  var ids=[];if(!DATA||!DATA.events)return ids;var hoy=ymd();
+  Object.keys(DATA.events).forEach(function(k){if(k<hoy)return;(DATA.events[k]||[]).forEach(function(ev){if(ev.type==="examen"&&ev.shared&&ev.id)ids.push(ev.id);});});
+  return ids;
+}
 async function socialLoadPrayerCounts(){
   var sb=socialClient(); if(!sb||!SOCIAL.user){SOCIAL.prayerCounts={};SOCIAL.prayedByMe={};return;}
-  var examIds=SOCIAL.events.filter(function(e){return e.type==="examen";}).map(function(e){return e.local_id;});
+  var examIds=SOCIAL.events.filter(function(e){return e.type==="examen";}).map(function(e){return e.local_id;}).concat(misExamenesCompartidos());
   if(!examIds.length){SOCIAL.prayerCounts={};SOCIAL.prayedByMe={};return;}
-  var res=await sb.from("prayers").select("event_local_id,prayed_by_id").in("event_local_id",examIds);
+  var owners=[SOCIAL.user.id].concat(SOCIAL.friends.map(function(f){return f.profile.id;}));
   var counts={},mine={};
-  if(!res.error&&res.data)res.data.forEach(function(r){
-    counts[r.event_local_id]=(counts[r.event_local_id]||0)+1;
-    if(r.prayed_by_id===SOCIAL.user.id)mine[r.event_local_id]=true;
-  });
+  var rpc=SOCIAL.prayerRpcMissing?null:await sb.rpc("prayer_counts",{p_owner_ids:owners});
+  if(rpc&&!rpc.error&&rpc.data){
+    rpc.data.forEach(function(r){counts[r.event_local_id]=Number(r.n)||0;if(r.prayed_by_me)mine[r.event_local_id]=true;});
+  }else{
+    if(rpc&&rpc.error)SOCIAL.prayerRpcMissing=true;
+    var res=await sb.from("prayers").select("event_local_id,prayed_by_id").in("event_local_id",examIds);
+    if(!res.error&&res.data)res.data.forEach(function(r){
+      counts[r.event_local_id]=(counts[r.event_local_id]||0)+1;
+      if(r.prayed_by_id===SOCIAL.user.id)mine[r.event_local_id]=true;
+    });
+  }
   SOCIAL.prayerCounts=counts;SOCIAL.prayedByMe=mine;
 }
-async function prayForExam(localId,ownerId,title){
+// Botón de rezar con el recuento a la vista (lo ven todos los amigos del dueño del examen).
+function prayButtonHTML(ev,cls){
+  var n=SOCIAL.prayerCounts[ev.local_id]||0, ya=!!SOCIAL.prayedByMe[ev.local_id];
+  return '<button class="extra pray-btn'+(ya?' on':'')+(cls?' '+cls:'')+'" '+(ya?'disabled ':'')+'onclick="event.stopPropagation();prayForExam('+jsArg(ev.local_id)+','+jsArg(ev.owner_id)+','+jsArg(ev.title)+',this)">'+
+    '<span class="pray-ic">🙏</span><span class="pray-lbl">'+(ya?'Rezaste':'Rezar')+'</span><span class="pray-n">'+n+'</span></button>';
+}
+// Recuento en tus propios exámenes compartidos: "3 amigos han rezado por ti".
+function prayCountMine(localId){
+  var n=SOCIAL.prayerCounts[localId]||0; if(!n)return "";
+  return ' <span class="extra pray-mine">🙏 '+n+' '+(n===1?'rezo':'rezos')+'</span>';
+}
+async function prayForExam(localId,ownerId,title,btn){
   var sb=socialClient(); if(!sb||!SOCIAL.user){showToast("Necesitas amigos y Supabase configurado");return;}
+  if(btn){btn.disabled=true;btn.classList.add("on","pop");var nEl=btn.querySelector(".pray-n");if(nEl)nEl.textContent=(SOCIAL.prayerCounts[localId]||0)+1;var l=btn.querySelector(".pray-lbl");if(l)l.textContent="Rezaste";
+    if(typeof celebrar==="function")celebrar(btn,["🙏","✨","🕯️","💜"]);}
   var name=(SOCIAL.profile&&SOCIAL.profile.name)||"Alguien";
   var ins=await sb.from("prayers").insert({event_owner_id:ownerId,event_local_id:localId,event_title:title,prayed_by_id:SOCIAL.user.id,prayed_by_name:name});
   if(ins.error){
@@ -431,6 +459,7 @@ async function prayForExam(localId,ownerId,title){
   if(DATA&&!DATA.badges.first_prayer){DATA.badges.first_prayer=new Date().toISOString();saveUserData();}
   await socialLoadPrayerCounts();
   renderCalFriendExams();socialRenderFriendEvents();
+  var dm=document.querySelector("#dayEvs");if(dm&&dm.dataset.k)refrescarDiaAmigos(dm.dataset.k);
 }
 async function socialCheckNewPrayers(){
   var sb=socialClient(); if(!sb||!SOCIAL.user||!CURRENT)return;
@@ -465,14 +494,18 @@ function renderCalFriendExams(){
   list.innerHTML=SOCIAL.events.map(function(ev){
     var t=TIPO[ev.type]?ev.type:"otro", d=new Date(ev.date+"T00:00:00"), dias=Math.round((d-hoy)/86400000);
     var cuando=dias<=0?"Hoy":dias===1?"Mañana":"En "+dias+" días";
-    var pray="";
-    if(t==="examen"){var n=SOCIAL.prayerCounts[ev.local_id]||0, ya=!!SOCIAL.prayedByMe[ev.local_id];
-      pray='<button class="extra prox-pray" '+(ya?"disabled":"")+' onclick="event.stopPropagation();prayForExam('+jsArg(ev.local_id)+','+jsArg(ev.owner_id)+','+jsArg(ev.title)+')">'+(ya?"🙏 Ya recé":"🙏 Rezar")+(n?" · "+n:"")+'</button>';}
+    var pray=t==="examen"?prayButtonHTML(ev):"";
     return '<div class="prox-item ev-'+t+'-txt" onclick="calRef=new Date('+jsArg(ev.date+"T00:00:00")+');renderCal();openDayModal('+jsArg(ev.date)+')"><div class="pd"><b>'+d.getDate()+'</b><small>'+DS[d.getDay()]+'</small></div>'+
       '<div class="pt"><b>'+escapeHTML(ev.title)+'</b><small>'+escapeHTML(socialNameById(ev.owner_id))+' · '+TIPO[t]+' · '+cuando+(ev.time?' · '+escapeHTML(ev.time):'')+'</small></div>'+pray+'</div>';
   }).join("");
 }
 function eventosAmigosDe(key){return (SOCIAL.events||[]).filter(function(e){return e.date===key;});}
+function diaAmigosHTML(key){
+  return eventosAmigosDe(key).map(function(ev){
+    return '<div class="ev-item"><span class="tag amigo"></span><div class="et"><b>'+escapeHTML(ev.title)+'</b><small>De '+escapeHTML(socialNameById(ev.owner_id))+' · '+escapeHTML(ev.type||"otro")+'</small></div>'+(ev.type==="examen"?prayButtonHTML(ev,"sm"):'')+'</div>';
+  }).join("");
+}
+function refrescarDiaAmigos(key){var el=$("dayFriendEvs");if(el)el.innerHTML=diaAmigosHTML(key);}
 /* ===== DENUNCIAR Y BLOQUEAR (política de contenido generado por usuarios de Google Play) =====
    Tablas content_reports y user_blocks (ver supabase/supabase_social.sql). Si content_reports aún no existe,
    la denuncia se guarda en el buzón feedback para no perderla. Los bloqueos se guardan en user_blocks
@@ -842,7 +875,7 @@ function renderStudyRoom(){
 var SHARE_NO_SUBJECT_FOCUS=false;
 async function socialShareSession(saved){
   var sb=socialClient(); if(!sb||!SOCIAL.user||!DATA||!DATA.sharePresence)return;
-  var payload={owner_id:SOCIAL.user.id,local_id:saved.id,bib_name:saved.bib,minutes:saved.min,date:saved.date,note:saved.note||null,offering:DATA.extras?saved.offering:null||null,verif:!!saved.verif,prod:saved.prod||null};
+  var payload={owner_id:SOCIAL.user.id,local_id:saved.id,bib_name:saved.bib,minutes:saved.min,date:saved.date,note:saved.note||null,offering:extrasOn()?saved.offering||null:null,verif:!!saved.verif,prod:saved.prod||null};
   if(!SHARE_NO_SUBJECT_FOCUS){payload.subject=saved.subject||null;payload.focus=(saved.focus==="ok"||saved.focus==="withered")?saved.focus:null;}
   var res=await sb.from("shared_sessions").upsert(payload,{onConflict:"owner_id,local_id"});
   var err=res&&res.error;
@@ -1064,11 +1097,7 @@ function socialRenderFriendEvents(){
   list.innerHTML=SOCIAL.events.map(function(ev){
     var d=new Date(ev.date+"T00:00:00"), dd=String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0");
     var who=socialNameById(ev.owner_id);
-    var prayBtn="";
-    if(ev.type==="examen"){
-      var np=SOCIAL.prayerCounts[ev.local_id]||0, yap=!!SOCIAL.prayedByMe[ev.local_id];
-      prayBtn='<button class="extra" '+(yap?"disabled":"")+' style="margin-top:6px;border:none;border-radius:var(--r-m);padding:6px 10px;font-weight:800;font-size:var(--fs-xs);cursor:pointer;background:rgba(108,92,231,.14);color:var(--acento-tx)" onclick="prayForExam('+jsArg(ev.local_id)+','+jsArg(ev.owner_id)+','+jsArg(ev.title)+')">'+(yap?"🙏 Ya recé":"🙏 Rezar")+(np?" · "+np:"")+'</button>';
-    }
+    var prayBtn=ev.type==="examen"?'<div style="margin-top:6px">'+prayButtonHTML(ev)+'</div>':"";
     return '<div class="friend-event"><span class="etag evt-'+escapeHTML(ev.type||"otro")+'"></span><div style="flex:1"><div class="who">'+escapeHTML(who)+'</div><b>'+escapeHTML(ev.title)+'</b><small>'+dd+(ev.time?' · '+escapeHTML(ev.time):'')+(ev.place?' · '+escapeHTML(ev.place):'')+'</small>'+(ev.url?'<br><a href="'+escapeHTML(ev.url)+'" target="_blank" rel="noopener" style="font-size:var(--fs-xs);color:var(--acento-tx);font-weight:700;text-decoration:none">Ver más ↗</a>':'')+prayBtn+'</div></div>';
   }).join("");
 }
@@ -1290,8 +1319,9 @@ function invitarAmigos(){
   if(navigator.share){navigator.share({title:"Bibliomapa · Bibliotecas de España",text:txt}).catch(function(){});}
   else{try{navigator.clipboard.writeText(txt);showToast("Invitación copiada: pégala en WhatsApp");}catch(e){prompt("Copia y envía este mensaje:",txt);}}
 }
+function extrasOn(){return !(DATA&&DATA.extras===false);}
 function applyExtras(){
-  var on=!!(DATA&&DATA.extras);
+  var on=extrasOn();
   document.body.classList.toggle("no-extras",!on);
   var c=$("chkExtras"); if(c)c.checked=on;
   if(!on&&$("studyOfferPanel")&&!$("studyOfferPanel").classList.contains("hidden")){var b=document.querySelector('#studyTab button[data-t="crono"]');if(b)b.click();}
@@ -2060,7 +2090,7 @@ function stopStudy(silent,endTs){
   if(studyTimer.tick)clearInterval(studyTimer.tick);
   var saved=null;
   if(sec>=20){
-    saved={id:genId(),date:ymd(new Date(ts)),min:Math.max(1,min),sec:sec,bib:bibIdx>=0?BIBLIOTECAS[bibIdx].nombre:NO_BIB,ts:ts,verif:verif,prod:null,note:"",offering:(DATA.extras&&DATA.offeringText)||"",subject:studyTimer.subject||null,focus:focusResult()};
+    saved={id:genId(),date:ymd(new Date(ts)),min:Math.max(1,min),sec:sec,bib:bibIdx>=0?BIBLIOTECAS[bibIdx].nombre:NO_BIB,ts:ts,verif:verif,prod:null,note:"",offering:(extrasOn()&&DATA.offeringText)||"",subject:studyTimer.subject||null,focus:focusResult()};
     DATA.sessions.push(saved);
     saveUserData();
     socialShareSession(saved);
@@ -2131,7 +2161,7 @@ function renderStudy(){
   var sec=elapsedSec();
   $("studyTimer").textContent=fmtClock(sec);
   if(studyTimer.running){
-    $("studyPlace").textContent=(studyTimer.bibIndex>=0?"En "+BIBLIOTECAS[studyTimer.bibIndex].nombre:"Estudiando fuera de una biblioteca")+(DATA.offeringText&&DATA.extras?" · 🙏 ofrecido por "+DATA.offeringText:"");
+    $("studyPlace").textContent=(studyTimer.bibIndex>=0?"En "+BIBLIOTECAS[studyTimer.bibIndex].nombre:"Estudiando fuera de una biblioteca")+(DATA.offeringText&&extrasOn()?" · 🙏 ofrecido por "+DATA.offeringText:"");
     $("btnStart").classList.add("hidden");$("btnStop").classList.remove("hidden");
     if(!studyTimer.tick)startTick();
   }else{
@@ -2264,7 +2294,7 @@ function pomoTick(){
       if(DATA.focusMode&&(document.visibilityState==="hidden"||(FOCUS.hiddenAt&&Date.now()-FOCUS.hiddenAt>=FOCUS_GRACE_SEC*1000)))FOCUS.withered=true;
       FOCUS.hiddenAt=0;
       var saved={id:genId(),date:ymd(),min:POMO_FOCUS_MIN,sec:POMO_FOCUS_MIN*60,
-        bib:NO_BIB,ts:Date.now()-POMO_FOCUS_MIN*60000,verif:false,prod:null,note:"Pomodoro",offering:(DATA.extras&&DATA.offeringText)||"",subject:DATA.currentSubject||null,focus:focusResult()};
+        bib:NO_BIB,ts:Date.now()-POMO_FOCUS_MIN*60000,verif:false,prod:null,note:"Pomodoro",offering:(extrasOn()&&DATA.offeringText)||"",subject:DATA.currentSubject||null,focus:focusResult()};
       DATA.sessions.push(saved);saveUserData();socialShareSession(saved);
       showToast("🍅 Pomodoro completado ("+POMO_FOCUS_MIN+" min). ¡A descansar!");
       pomo.phase="break";pomo.secondsLeft=POMO_BREAK_MIN*60;pomo.endAt=Date.now()+pomo.secondsLeft*1000;
@@ -2480,7 +2510,7 @@ function renderCalProx(){
   el.innerHTML=items.slice(0,6).map(function(it){
     var cuando=it.d===0?"Hoy":it.d===1?"Mañana":"En "+it.d+" días";
     return '<div class="prox-item ev-'+it.ev.type+'-txt" data-k="'+it.k+'"><div class="pd"><b>'+it.f.getDate()+'</b><small>'+DS[it.f.getDay()]+'</small></div>'+
-      '<div class="pt"><b>'+escapeHTML(it.ev.title)+'</b><small>'+(TIPO[it.ev.type]||"")+' · '+cuando+'</small></div></div>';
+      '<div class="pt"><b>'+escapeHTML(it.ev.title)+'</b><small>'+(TIPO[it.ev.type]||"")+' · '+cuando+(it.ev.shared?' · 👥':'')+'</small></div>'+(it.ev.type==="examen"&&it.ev.shared?prayCountMine(it.ev.id):'')+'</div>';
   }).join("");
   el.querySelectorAll(".prox-item").forEach(function(x){x.addEventListener("click",function(){openDayModal(x.dataset.k);});});
 }
@@ -2490,17 +2520,15 @@ function openDayModal(key){
   var evs=DATA.events[key]||[];
   var listHTML="";
   if(evs.length){evs.forEach(function(ev,idx){
-    listHTML+='<div class="ev-item"><span class="tag ev-'+ev.type+'"></span><div class="et"><b>'+escapeHTML(ev.title)+'</b><small>'+ev.type+(ev.shared?' · 👥 compartido con amigos':'')+'</small></div><button class="del" data-i="'+idx+'">×</button></div>';
+    listHTML+='<div class="ev-item"><span class="tag ev-'+ev.type+'"></span><div class="et"><b>'+escapeHTML(ev.title)+'</b><small>'+ev.type+(ev.shared?' · 👥 compartido con amigos':'')+(ev.type==="examen"&&ev.shared?prayCountMine(ev.id):'')+'</small></div><button class="del" data-i="'+idx+'">×</button></div>';
   });}else{listHTML='<div class="empty-note">Sin eventos este día</div>';}
-  eventosAmigosDe(key).forEach(function(ev){
-    listHTML+='<div class="ev-item"><span class="tag amigo"></span><div class="et"><b>'+escapeHTML(ev.title)+'</b><small>De '+escapeHTML(socialNameById(ev.owner_id))+' · '+escapeHTML(ev.type||"otro")+'</small></div></div>';
-  });
+  listHTML+='<div id="dayFriendEvs">'+diaAmigosHTML(key)+'</div>';
   openModal('<h3>'+titulo+'</h3><div class="sub">Exámenes, tareas y otros eventos</div>'+
-    '<div id="dayEvs">'+listHTML+'</div>'+
+    '<div id="dayEvs" data-k="'+key+'">'+listHTML+'</div>'+
     '<div style="border-top:1px solid rgba(148,163,184,.3);margin:16px 0 14px"></div>'+
     '<div class="seg" id="evType"><button data-t="examen" class="on">Examen</button><button data-t="tarea">Tarea</button><button data-t="otro">Otro</button></div>'+
     '<div class="field"><input type="text" id="evTitle" placeholder="Ej: Examen de Cálculo II"></div>'+
-    '<label id="evShareWrap" style="display:flex;align-items:center;gap:9px;margin:-2px 0 14px;font-size:var(--fs-m);color:var(--suave);font-weight:700"><input type="checkbox" id="evShareExam"> Compartir con mis amigos (lo verán en su Agenda)</label>'+
+    '<label id="evShareWrap" style="display:flex;align-items:center;gap:9px;margin:-2px 0 14px;font-size:var(--fs-m);color:var(--suave);font-weight:700"><input type="checkbox" id="evShareExam" checked> Compartir con mis amigos (lo verán en su Agenda)</label>'+
     '<button class="btn" id="evAdd">Añadir</button>',
     function(){
       var selType="examen";
@@ -2738,10 +2766,37 @@ function openModal(html,after){
 function closeModal(){$("modalRoot").innerHTML="";}
 function showToast(msg){
   var t=document.createElement("div");
-  t.textContent=msg;
-  t.style.cssText="position:fixed;bottom:90px;left:50%;transform:translateX(-50%);z-index:4000;background:rgba(15,23,42,.9);color:#fff;padding:11px 20px;border-radius:var(--r-m);font-size:var(--fs-m);font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.3)";
+  t.className="toast";t.setAttribute("role","status");t.textContent=msg;
   document.body.appendChild(t);
-  setTimeout(function(){t.style.transition="opacity .4s";t.style.opacity="0";setTimeout(function(){t.remove();},400);},2200);
+  setTimeout(function(){t.classList.add("out");setTimeout(function(){t.remove();},400);},2400);
+}
+// Recompensa visual (dopamina sin trampas): estallido de emojis desde un elemento y, si se pide, confeti.
+// No hace nada con «reducir movimiento» activado en el sistema.
+function sinMovimiento(){try{return matchMedia("(prefers-reduced-motion: reduce)").matches;}catch(e){return false;}}
+function celebrar(el,emojis,n){
+  if(sinMovimiento())return;
+  var r=el&&el.getBoundingClientRect?el.getBoundingClientRect():{left:innerWidth/2,top:innerHeight/2,width:0,height:0};
+  var cx=r.left+r.width/2, cy=r.top+r.height/2; emojis=emojis||["✨","⭐","💜"]; n=n||12;
+  for(var i=0;i<n;i++){
+    var p=document.createElement("span");p.className="burst";p.textContent=emojis[i%emojis.length];
+    var ang=(Math.PI*2*i/n)+(Math.random()-.5)*.6, dist=50+Math.random()*60;
+    p.style.left=cx+"px";p.style.top=cy+"px";
+    p.style.setProperty("--dx",Math.cos(ang)*dist+"px");p.style.setProperty("--dy",(Math.sin(ang)*dist-30)+"px");
+    p.style.setProperty("--rot",(Math.random()*120-60)+"deg");
+    document.body.appendChild(p);(function(q){setTimeout(function(){q.remove();},950);})(p);
+  }
+  if(navigator.vibrate)try{navigator.vibrate(18);}catch(e){}
+}
+function confeti(n){
+  if(sinMovimiento())return;
+  var cols=["#6c5ce7","#00d2d3","#f59e0b","#22c55e","#e84393","#fd79a8","#ffeaa7"];n=n||80;
+  for(var i=0;i<n;i++){
+    var c=document.createElement("i");c.className="confeti";
+    c.style.left=(Math.random()*100)+"vw";c.style.background=cols[i%cols.length];
+    c.style.setProperty("--dx",(Math.random()*160-80)+"px");c.style.setProperty("--rot",(Math.random()*720-360)+"deg");
+    c.style.animationDelay=(Math.random()*.35)+"s";c.style.animationDuration=(1.4+Math.random()*1.1)+"s";
+    document.body.appendChild(c);(function(q){setTimeout(function(){q.remove();},3000);})(c);
+  }
 }
 // Argumento seguro para un onclick="...": literal JS (JSON) escapado para atributo HTML.
 // escapeHTML solo no basta: el navegador decodifica &#39; antes de ejecutar el handler.
