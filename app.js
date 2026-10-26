@@ -439,7 +439,7 @@ async function socialCheckNewPrayers(){
   if(res.error||!res.data||!res.data.length)return;
   res.data.forEach(function(p){
     showToast("🙏 "+(p.prayed_by_name||"Alguien")+" ha rezado por tu examen de "+p.event_title);
-    try{ if("Notification" in window && Notification.permission==="granted") new Notification("Bibliotecas de Navarra",{body:(p.prayed_by_name||"Alguien")+" ha rezado por tu examen de "+p.event_title}); }catch(e){}
+    try{ if("Notification" in window && Notification.permission==="granted") new Notification("Bibliomapa",{body:(p.prayed_by_name||"Alguien")+" ha rezado por tu examen de "+p.event_title}); }catch(e){}
   });
   Brain.setLastPrayerCheck(CURRENT,res.data[res.data.length-1].created_at);
 }
@@ -1216,7 +1216,7 @@ function compartirSemana(){
   w.mins.forEach(function(m,k){var h=Math.max(8,m/max*alto);g.fillStyle=m?"#fff":"rgba(255,255,255,.3)";
     var x=bx+k*bw+bw*.18,ww=bw*.64;g.beginPath();if(g.roundRect)g.roundRect(x,base-h,ww,h,18);else g.rect(x,base-h,ww,h);g.fill();
     g.fillStyle="rgba(255,255,255,.9)";g.font="700 36px system-ui,sans-serif";g.textAlign="center";g.fillText(dias[k],x+ww/2,base+56);g.textAlign="left";});
-  g.fillStyle="#fff";g.font="800 40px system-ui,sans-serif";g.fillText("Bibliotecas de Navarra",80,H-80);
+  g.fillStyle="#fff";g.font="800 40px system-ui,sans-serif";g.fillText("bibliomapa.es",80,H-80);
   c.toBlob(function(blob){
     var file=new File([blob],"mi-semana.png",{type:"image/png"});
     if(navigator.canShare&&navigator.canShare({files:[file]})){navigator.share({files:[file],title:"Mi semana de estudio"}).catch(function(){});return;}
@@ -1238,7 +1238,7 @@ function instalarApp(){
 /* ===== BIENVENIDA (3 pasos) ===== */
 function onboarding(){
   DATA.onboarded=true;saveUserData(); // si cierra la ventana, no se vuelve a mostrar
-  var PERFILES=[["upna","🎓 Estudio en la UPNA"],["unav","🎓 Estudio en la Universidad de Navarra"],["opositor","📘 Preparo oposiciones"],["bach","📝 Bachillerato o FP"],["otro","🙂 Otra cosa"]];
+  var PERFILES=[["uni","🎓 Estudio en la universidad"],["opositor","📘 Preparo oposiciones"],["bach","📝 Bachillerato o FP"],["otro","🙂 Otra cosa"]];
   function paso1(){
     openModal('<div class="ob-step">1 de 3</div><h3>¿Qué estudias?</h3><div class="sub">Así te recomendamos mejor dónde ir.</div><div class="pick-list">'+
       PERFILES.map(function(p){return '<button data-p="'+p[0]+'"><b>'+p[1]+'</b></button>';}).join("")+'</div>',function(){
@@ -1248,14 +1248,30 @@ function onboarding(){
         saveUserData();paso2();});});
     });
   }
+  // Paso 2: bibliotecas cerca de ti (con tu ubicación) o, sin ella, un buscador para toda España.
   function paso2(){
-    var idx=BIBLIOTECAS.map(function(b,i){return i;}).filter(function(i){return distMetros(42.8125,-1.6458,BIBLIOTECAS[i].lat,BIBLIOTECAS[i].lon)<8000;});
-    var opts=idx.map(function(i){return '<option value="'+i+'">'+escapeHTML(cortoNombre(BIBLIOTECAS[i].nombre))+'</option>';}).join("");
-    var todas=BIBLIOTECAS.map(function(b,i){return idx.indexOf(i)===-1?'<option value="'+i+'">'+escapeHTML(cortoNombre(b.nombre))+'</option>':'';}).join("");
+    var up=window.__userPos;
+    var cerca=up?BIBLIOTECAS.map(function(b,i){return {i:i,d:distMetros(up.lat,up.lon,b.lat,b.lon)};}).filter(function(x){return x.d<15000;})
+      .sort(function(a,b){return a.d-b.d;}).slice(0,40).map(function(x){return x.i;}):[];
+    var opts=cerca.map(function(i){return '<option value="'+i+'">'+escapeHTML(cortoNombre(BIBLIOTECAS[i].nombre))+'</option>';}).join("");
+    var todas=BIBLIOTECAS.map(function(b,i){return cerca.indexOf(i)===-1?'<option value="'+i+'">'+escapeHTML(cortoNombre(b.nombre))+'</option>':'';}).join("");
     openModal('<div class="ob-step">2 de 3</div><h3>¿Dónde sueles estudiar?</h3><div class="sub">La tendremos en cuenta al recomendarte y al empezar a estudiar.</div>'+
-      '<div class="field"><select id="obBib" style="width:100%;padding:11px;border-radius:var(--r-m);border:1px solid rgba(148,163,184,.4);font:inherit"><option value="-1">Aún no lo sé</option><optgroup label="Pamplona y cercanías">'+opts+'</optgroup><optgroup label="Resto de Navarra y España">'+todas+'</optgroup></select></div>'+
+      (up?'':'<button class="btn ghost sm" id="obGeo" style="margin-bottom:10px">📍 Ver las que tengo cerca</button>')+
+      '<div class="field"><select id="obBib" style="width:100%;padding:11px;border-radius:var(--r-m);border:1px solid rgba(148,163,184,.4);font:inherit"><option value="-1">Aún no lo sé</option>'+
+      (opts?'<optgroup label="Cerca de ti">'+opts+'</optgroup><optgroup label="Resto de España">'+todas+'</optgroup>':'<optgroup label="Toda España">'+todas+'</optgroup>')+'</select></div>'+
       '<button class="btn" id="obNext">Siguiente</button>',function(){
-      $("obNext").addEventListener("click",function(){var v=+$("obBib").value;DATA.habitualIdx=v>=0?v:null;saveUserData();paso3();});
+      var g=$("obGeo");
+      if(g)g.addEventListener("click",function(){
+        if(!navigator.geolocation){showToast("Tu navegador no permite la ubicación");return;}
+        g.textContent="Buscando…";
+        navigator.geolocation.getCurrentPosition(function(p){window.__userPos={lat:p.coords.latitude,lon:p.coords.longitude};paso2();},
+          function(){g.textContent="📍 Ver las que tengo cerca";showToast("No he podido saber tu ubicación: elige en la lista");},{timeout:8000,maximumAge:300000});
+      });
+      $("obNext").addEventListener("click",function(){
+        var v=+$("obBib").value;DATA.habitualIdx=v>=0?v:null;
+        // Universitarios de la UNAV o la UPNA: se afina la recomendación como antes (acceso restringido, exámenes).
+        if(DATA.perfil==="uni"&&v>=0){if(esUNAV(BIBLIOTECAS[v]))DATA.perfil="unav";else if(esUPNA(BIBLIOTECAS[v]))DATA.perfil="upna";}
+        saveUserData();paso3();});
     });
   }
   function paso3(){
@@ -1270,8 +1286,8 @@ function onboarding(){
 function invitarAmigos(){
   var code=SOCIAL.profile&&SOCIAL.profile.friend_code;
   var url=location.origin&&location.origin!=="null"?location.origin+location.pathname:"";
-  var txt="Estoy usando Bibliotecas de Navarra para saber qué biblioteca está abierta y con sitio, y estudiar con amigos."+(code?" Añádeme con mi código: "+code+".":"")+(url?" "+url:"");
-  if(navigator.share){navigator.share({title:"Bibliotecas de Navarra",text:txt}).catch(function(){});}
+  var txt="Estoy usando Bibliomapa para saber qué biblioteca está abierta y con sitio, y estudiar con amigos."+(code?" Añádeme con mi código: "+code+".":"")+(url?" "+url:"");
+  if(navigator.share){navigator.share({title:"Bibliomapa · Bibliotecas de España",text:txt}).catch(function(){});}
   else{try{navigator.clipboard.writeText(txt);showToast("Invitación copiada: pégala en WhatsApp");}catch(e){prompt("Copia y envía este mensaje:",txt);}}
 }
 function applyExtras(){
@@ -1808,7 +1824,7 @@ function locateMe(){
       else{window.__userMarker=L.marker([window.__userPos.lat,window.__userPos.lon],{icon:icon,zIndexOffset:1000}).addTo(window.__map).bindPopup('<div class="pop" style="text-align:center"><b>📍 Estás aquí</b></div>');}
       window.__map.flyTo([window.__userPos.lat,window.__userPos.lon],15,{duration:.6});
     }
-    buildList();
+    buildList();renderNowCard();
     if(markers&&markers.length)markers.forEach(function(mk,j){if(mk.getPopup()&&mk.isPopupOpen())mk.getPopup().update();});
     showToast("Ubicación encontrada");
   },function(err){
@@ -1847,9 +1863,12 @@ function initMap(){
     if(++fallos===8&&map.hasLayer(capaCalles)){map.removeLayer(capaCalles);capaPlano.addTo(map);}
   });
   markers=[];
-  // Vista inicial (Navarra) fijada ANTES de añadir las chinchetas: si se encuadra después, el cambio de
+  // Vista inicial fijada ANTES de añadir las chinchetas: si se encuadra después, el cambio de
   // zoom hace que markercluster reagrupe con animación las chinchetas ya puestas (_forceLayout).
-  map.fitBounds(L.latLngBounds(BIBLIOTECAS.slice(0,N_NAVARRA).map(function(b){return [b.lat,b.lon];})).pad(0.18),{animate:false});
+  // Vista inicial: tu biblioteca habitual si la tienes; si no, toda España (península y Baleares).
+  var hab0=-1;try{hab0=bibHabitual();}catch(e){}
+  if(hab0>=0)map.setView([BIBLIOTECAS[hab0].lat,BIBLIOTECAS[hab0].lon],12,{animate:false});
+  else map.fitBounds(L.latLngBounds([[36.0,-9.3],[43.8,4.3]]),{animate:false});
   // Con miles de bibliotecas, las muy próximas se agrupan, pero el grupo también es una chincheta
   // (con el número encima) y a partir del zoom 11 cada biblioteca tiene la suya.
   var capaBibs=(L.markerClusterGroup?L.markerClusterGroup({showCoverageOnHover:false,maxClusterRadius:28,disableClusteringAtZoom:11,spiderfyOnMaxZoom:false,
@@ -2002,7 +2021,7 @@ function restaurarSesionActiva(){
 }
 function notificar(txt){
   showToast(txt);
-  try{if("Notification" in window&&Notification.permission==="granted"&&document.visibilityState==="hidden")new Notification("Bibliotecas de Navarra",{body:txt,icon:"icons/icon-192.png"});}catch(e){}
+  try{if("Notification" in window&&Notification.permission==="granted"&&document.visibilityState==="hidden")new Notification("Bibliomapa",{body:txt,icon:"icons/icon-192.png"});}catch(e){}
 }
 function updateTimers(){
   if(studyTimer.running&&(updateTimers._n=(updateTimers._n||0)+1)%30===0&&revisarCronoOlvidado())return;
@@ -2921,7 +2940,15 @@ function renderNowCard(){
   // estudias), la recomendación no se muestra.
   if(!$("libPanel").classList.contains("hidden")||studyTimer.running){el.classList.add("hidden");return;}
   el.classList.remove("hidden");
-  var cands=recomendarBiblioteca(), html, up=window.__userPos;
+  var cands, html, up=window.__userPos;
+  // Sin ubicación ni biblioteca habitual no sabemos tu ciudad: en vez de recomendar de una zona cualquiera, se pide.
+  if(!up&&bibHabitual()<0){
+    el.innerHTML='<div class="nc-kicker">Ahora mismo</div><div class="nc-title">¿Qué biblioteca está abierta cerca de ti?</div>'+
+      '<div class="nc-why">Más de 2.600 bibliotecas de toda España. Activa tu ubicación y te digo cuál te conviene.</div>'+
+      '<div class="nc-actions"><button class="btn sm" onclick="locateMe()">📍 Usar mi ubicación</button><button class="btn sm ghost" onclick="abrirLista(false)">Buscar ciudad</button></div>';
+    return;
+  }
+  cands=recomendarBiblioteca();
   // Lejos de Navarra (sin horarios verificados cerca): recomendar la más cercana, avisando del horario.
   // Solo si en tu zona no hay bibliotecas con horario conocido (fuera de las zonas con datos):
   var hayHorarioEnZona=BIBLIOTECAS.some(function(b,i){return !b.sinHorario&&enMiZona(i);});
@@ -3073,7 +3100,7 @@ function lanzarNotifsDelDia(){
   if(Brain.getNotifDay(CURRENT)===hoyKey)return; // una vez al día
   var avisos=calcularAvisos().filter(function(a){return a.dias<=1;});
   if(avisos.length){
-    try{ new Notification("Bibliotecas de Navarra",{body:avisos.length===1?avisos[0].title+" · "+avisos[0].sub:"Tienes "+avisos.length+" avisos para hoy y mañana"}); }catch(e){}
+    try{ new Notification("Bibliomapa",{body:avisos.length===1?avisos[0].title+" · "+avisos[0].sub:"Tienes "+avisos.length+" avisos para hoy y mañana"}); }catch(e){}
   }
   Brain.setNotifDay(CURRENT,hoyKey);
 }
