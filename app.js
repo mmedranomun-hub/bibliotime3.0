@@ -1220,7 +1220,7 @@ async function enterApp(){
   if(!window.__mapReady) initMap();
   restaurarSesionActiva();
   renderStudy(); renderProfile(); renderRacha(); renderStories();
-  if(DATA.onboarded)quizasResumenSemanal();
+  if(DATA.onboarded){if(DATA.resumenVisto!==semanaClave()&&datosSemana(1).ses.length)quizasResumenSemanal();else bienvenidaDiaria();}
   socialInitAfterLogin();
   if(!DATA.onboarded){
     if(DATA.sessions.length){DATA.onboarded=true;saveUserData();}
@@ -4104,4 +4104,24 @@ function nivelProgresoHTML(hAntes){
   var desde=n1>n0?0:pct(hAntes,n1), hasta=pct(hAhora,n1);
   return '<div class="np"><div class="np-top"><span>'+N[2]+' Nivel '+(n1+1)+' · '+escapeHTML(N[1])+'</span><b>'+(sig?'+'+hMin(Math.max(1,Math.round((hAhora-hAntes)*60))):'')+'</b></div>'+
     '<div class="np-bar"><i style="width:'+desde.toFixed(1)+'%" data-to="'+hasta.toFixed(1)+'"></i></div></div>';
+}
+
+/* ----- Bienvenida diaria (Duolingo): la primera vez que abres la app en el día ----- */
+function bienvenidaDiaria(){
+  if(!DATA||DATA.bienvenida===ymd()||estudiadoHoy())return;
+  DATA.bienvenida=ymd();saveUserData();
+  setTimeout(function(){
+    if(document.querySelector(".modal-bg")||$("storyViewer"))return;
+    var h=new Date().getHours(), saludo=h<6?"Buenas noches":h<14?"Buenos días":h<21?"Buenas tardes":"Buenas noches";
+    var u=(Brain.getUsers()[CURRENT]||{}).name, nombre=u&&!esInvitado()?", "+u.split(" ")[0]:"";
+    var n=streakDays(), M=misionesDeHoy(), tip=TIPS[hashStr(ymd())%TIPS.length], ex=proximoExamen();
+    var dEx=ex?Math.round((new Date(ex.k+"T00:00:00")-new Date(ymd()+"T00:00:00"))/864e5):null;
+    openModal('<div class="bienvenida"><div class="bv-fuego'+(n?'':' apagado')+'">🔥</div><h3>'+saludo+nombre+'</h3>'+
+      '<div class="sub">'+(n?'Llevas <b>'+n+(n===1?' día':' días')+'</b> de racha. ¡Que no se apague hoy!':'Hoy es un buen día para empezar una racha.')+'</div>'+
+      (ex&&dEx<=14?'<div class="bv-ex">📅 <b>'+escapeHTML(ex.ev.title)+'</b> · '+(dEx===0?'¡es hoy!':dEx===1?'mañana':'en '+dEx+' días')+'</div>':'')+
+      '<div class="bv-mis">🎯 Misiones de hoy: '+M.ids.map(function(id){var d=misionDef(id);return d?d.icon:'';}).join(" ")+' · cofre al completarlas</div>'+
+      '<div class="bv-tip">'+tip.e+' <b>'+escapeHTML(tip.t)+'</b>: '+escapeHTML(tip.x)+'</div>'+
+      '<button class="btn" onclick="closeModal();goView(\'study\');setTimeout(function(){var b=$(\'btnStart\');if(b)b.click();},250)">▶ Estudiar ahora</button>'+
+      '<button class="linkbtn" onclick="closeModal()" style="display:block;margin:12px auto 0">Más tarde</button></div>');
+  },900);
 }

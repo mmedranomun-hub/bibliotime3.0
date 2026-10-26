@@ -16,7 +16,6 @@ MassTimes.org / misas.org).
 - [ ] SEO · Página propia para las bibliotecas más buscadas (Biblioteca Nacional, Regional de Madrid, grandes universitarias y las de capitales de provincia con horario verificado), generada por `scripts/generar_paginas_seo.js`, con datos estructurados `Library`
 - [ ] SEO · Título y descripción de la portada según la ciudad del enlace (`/bibliotecas/<prov>/` ya enlaza `#bib`); revisar que Google renderiza la portada (Search Console → Inspección de URL) cuando el dominio esté conectado
 - [ ] Bosque · Especie de Navidad (abeto con luces, del 1 dic al 6 ene) y de primavera (almendro, marzo-abril)
-- [ ] Dopamina · Bienvenida diaria tipo Duolingo al abrir la app por primera vez en el día (racha, misión fácil y botón grande «Estudiar»), sin repetirla en el mismo día
 - [ ] Dopamina · Reacciones con emoji (🔥💪🧠) a las sesiones de amigos además de kudos (tabla nueva con RLS de amigos, idempotente)
 - [ ] Dopamina · Liga semanal entre amigos (Bronce/Plata/Oro según puesto del ranking la semana anterior), con insignia en el perfil
 - [ ] Rezos · Avisar al dueño en la Agenda («🙏 3 amigos rezan por tu examen de mañana») el día anterior al examen
@@ -56,6 +55,7 @@ empiezan el 1 de diciembre y los de la UPNA el 15), así que la producción debe
 - Ejecutar en Supabase (SQL Editor) el bloque «PRIVACIDAD DE LA PRESENCIA» del final de `supabase/supabase_social.sql` (política select de `presence` con caducidad de 4 h, `updated_at` puesto por el servidor y borrado de la propia fila; ya añadido también al final de `Bibliotime - Documentacion\SQL_PENDIENTE_supabase.sql`). Mientras no se ejecute, la caducidad de 4 h solo la aplica la app
 
 ## Hecho
+- [x] 2026-10-27 · Bienvenida diaria tipo Duolingo (racha, próximo examen, misiones, tip del día y «Estudiar ahora»), una vez al día y solo si aún no has estudiado; el lunes cede el sitio al resumen semanal
 - [x] 2026-10-27 · «Tu rincón» en la ficha de la biblioteca (horas, sesiones y mini bosque allí) y barra de nivel que se llena al terminar la sesión
 - [x] 2026-10-27 · Dopamina 4: modo foco a pantalla completa (tocar el árbol), chip del próximo examen con cuenta atrás y rezos, «N amigos estudiando ahora», aro del avatar según el nivel (bronce/plata/oro)
 - [x] 2026-10-26 · Dopamina 3: cuenta atrás en vivo hasta que cierra o abre la biblioteca; 🎃 calabaza de Halloween gratis hasta el 2 nov; logros «Bosque perfecto», «Cazador de cofres» y «Botánico»; 24 tips de estudio en baraja vertical tipo TikTok (me sirve, guardar, enviar, doble toque)
