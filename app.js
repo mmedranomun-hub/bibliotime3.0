@@ -2149,7 +2149,7 @@ function stopStudy(silent,endTs){
   if(studyTimer.tick)clearInterval(studyTimer.tick);
   var saved=null;
   if(sec>=20){
-    saved={id:genId(),date:ymd(new Date(ts)),min:Math.max(1,min),sec:sec,bib:bibIdx>=0?BIBLIOTECAS[bibIdx].nombre:NO_BIB,ts:ts,verif:verif,prod:null,note:"",offering:(extrasOn()&&DATA.offeringText)||"",subject:studyTimer.subject||null,focus:focusResult(),esp:plantarOn()?(DATA.especie||"roble"):null};
+    saved={id:genId(),date:ymd(new Date(ts)),min:Math.max(1,min),sec:sec,bib:bibIdx>=0?BIBLIOTECAS[bibIdx].nombre:NO_BIB,ts:ts,verif:verif,prod:null,note:"",offering:(extrasOn()&&DATA.offeringText)||"",subject:studyTimer.subject||null,focus:focusResult(),esp:plantarOn()?especieActual():null};
     DATA.sessions.push(saved);
     saveUserData();
     socialShareSession(saved);
@@ -2304,6 +2304,7 @@ function renderSubjectStats(){
 const FOCUS_GRACE_SEC=15;
 var FOCUS={hiddenAt:0,withered:false,lock:null};
 function plantarOn(){return !(DATA&&DATA.focusMode===false);}
+function especieActual(){var e=especieDe(DATA&&DATA.especie);return enTemporada(e)?e.id:"roble";}
 function focusActive(){return plantarOn()&&(studyTimer.running||(pomo.running&&pomo.phase==="focus"));}
 function focusStart(){FOCUS.withered=false;FOCUS.hiddenAt=0;if(plantarOn())requestWakeLock();renderFocusPlant();}
 function focusResult(){return plantarOn()?(FOCUS.withered?"withered":"ok"):null;}
@@ -2341,14 +2342,28 @@ var ESPECIES=[
   {id:"abeto",nombre:"Abeto nevado",icon:"🌲",precio:90},
   {id:"arce",nombre:"Arce de otoño",icon:"🍁",precio:120},
   {id:"palmera",nombre:"Palmera",icon:"🌴",precio:160},
-  {id:"cactus",nombre:"Cactus",icon:"🌵",precio:200}
+  {id:"cactus",nombre:"Cactus",icon:"🌵",precio:200},
+  {id:"calabaza",nombre:"Calabaza de Halloween",icon:"🎃",precio:0,desde:"10-20",hasta:"11-02"}
 ];
+// Especies de temporada: gratis, pero solo se pueden elegir dentro de sus fechas (MM-DD).
+function enTemporada(e){if(!e.desde)return true;var md=ymd().slice(5);return md>=e.desde&&md<=e.hasta;}
 function especieDe(id){for(var i=0;i<ESPECIES.length;i++)if(ESPECIES[i].id===id)return ESPECIES[i];return ESPECIES[0];}
 // Dibujo del árbol en SVG (colores del sistema de diseño: --arbol-*, --tronco, --marchito, --cerezo…).
 function arbolSVG(min,marchito,semilla,alto,esp){
   var e=etapaArbol(min), h=alto||alturaArbol(min), w=Math.round(h*0.66);
   esp=esp||"roble";
   var verdes=["var(--arbol-a)","var(--arbol-b)","var(--arbol-c)","var(--arbol-d)"], v=verdes[hashStr(semilla)%verdes.length];
+  if(esp==="calabaza"&&e>=1){
+    var r=[0,9,12,15,18,21][e], cy=96-r*0.85, cara=e>=4&&!marchito;
+    var cal=marchito?"var(--marchito)":"var(--calabaza)", cal2=marchito?"var(--marchito-osc)":"var(--calabaza-osc)";
+    var hojas='<path d="M30 '+(cy-r*0.85)+' C38 '+(cy-r*1.6)+' 46 '+(cy-r*1.2)+' 44 '+(cy-r*0.7)+'" stroke="'+(marchito?cal2:"var(--arbol-osc)")+'" stroke-width="2.5" fill="none" stroke-linecap="round"/>'+
+      '<path d="M30 '+(cy-r*0.9)+' C24 '+(cy-r*1.5)+' 16 '+(cy-r*1.4)+' 14 '+(cy-r*1.05)+' C20 '+(cy-r*0.95)+' 26 '+(cy-r*0.95)+' 30 '+(cy-r*0.9)+'Z" fill="'+(marchito?cal2:"var(--arbol-b)")+'"/>';
+    g=hojas+'<ellipse cx="'+(30-r*0.45)+'" cy="'+cy+'" rx="'+(r*0.62)+'" ry="'+(r*0.85)+'" fill="'+cal2+'"/><ellipse cx="'+(30+r*0.45)+'" cy="'+cy+'" rx="'+(r*0.62)+'" ry="'+(r*0.85)+'" fill="'+cal2+'"/>'+
+      '<ellipse cx="30" cy="'+cy+'" rx="'+(r*0.7)+'" ry="'+(r*0.9)+'" fill="'+cal+'"/><rect x="28" y="'+(cy-r*0.9-6)+'" width="4" height="8" rx="1.5" fill="var(--tronco)"/>'+
+      (cara?'<path d="M'+(30-r*0.45)+' '+(cy-r*0.2)+' l'+(r*0.18)+' -'+(r*0.28)+' l'+(r*0.18)+' '+(r*0.28)+'Z M'+(30+r*0.09)+' '+(cy-r*0.2)+' l'+(r*0.18)+' -'+(r*0.28)+' l'+(r*0.18)+' '+(r*0.28)+'Z" fill="var(--aviso)"/>'+
+        '<path d="M'+(30-r*0.5)+' '+(cy+r*0.2)+' Q30 '+(cy+r*0.65)+' '+(30+r*0.5)+' '+(cy+r*0.2)+' Q30 '+(cy+r*0.4)+' '+(30-r*0.5)+' '+(cy+r*0.2)+'Z" fill="var(--aviso)"/>':'');
+    return '<svg width="'+w+'" height="'+h+'" viewBox="0 0 60 100" aria-hidden="true"'+(marchito?' class="seco"':'')+'><ellipse cx="30" cy="97" rx="18" ry="3" fill="rgba(0,0,0,.12)"/>'+g+'</svg>';
+  }
   var C={roble:[v,"var(--arbol-osc)","var(--flor)"],cerezo:["var(--cerezo)","var(--cerezo-osc)","#fff"],arce:["var(--arce)","var(--arce-osc)","var(--aviso)"],
     abeto:["var(--pino)","var(--pino-osc)","var(--nieve)"],palmera:["var(--palma)","var(--palma-osc)","var(--aviso)"],cactus:["var(--cactus)","var(--cactus-osc)","var(--flor)"]}[esp]||[v,"var(--arbol-osc)","var(--flor)"];
   var copa=marchito?"var(--marchito)":C[0], copa2=marchito?"var(--marchito-osc)":C[1], deco=C[2], tronco=marchito?"var(--marchito-osc)":"var(--tronco)";
@@ -2406,7 +2421,7 @@ function renderFocusPlant(){
     if(el._etapa===clave){var t=el.querySelector(".fp-txt");if(t)t.textContent=txt;return;}
     var subio=el._etapa!=null&&!FOCUS.withered&&el._etapa.split("|")[1]==="false";
     el._etapa=clave;
-    el.innerHTML='<div class="fp-tree'+(subio?' grow':'')+'">'+arbolSVG(Math.max(min,1),FOCUS.withered,(DATA&&DATA.currentSubject)||"",96,DATA&&DATA.especie)+'</div><div class="fp-txt">'+escapeHTML(txt)+'</div>';
+    el.innerHTML='<div class="fp-tree'+(subio?' grow':'')+'">'+arbolSVG(Math.max(min,1),FOCUS.withered,(DATA&&DATA.currentSubject)||"",96,especieActual())+'</div><div class="fp-txt">'+escapeHTML(txt)+'</div>';
     if(subio){celebrar(el.querySelector(".fp-tree"),["🌱","🍃","✨"],8);}
   });
 }
@@ -2498,7 +2513,7 @@ function pomoTick(){
       if(plantarOn()&&(document.visibilityState==="hidden"||(FOCUS.hiddenAt&&Date.now()-FOCUS.hiddenAt>=FOCUS_GRACE_SEC*1000)))FOCUS.withered=true;
       FOCUS.hiddenAt=0;
       var saved={id:genId(),date:ymd(),min:POMO_FOCUS_MIN,sec:POMO_FOCUS_MIN*60,
-        bib:NO_BIB,ts:Date.now()-POMO_FOCUS_MIN*60000,verif:false,prod:null,note:"Pomodoro",offering:(extrasOn()&&DATA.offeringText)||"",subject:DATA.currentSubject||null,focus:focusResult(),esp:plantarOn()?(DATA.especie||"roble"):null};
+        bib:NO_BIB,ts:Date.now()-POMO_FOCUS_MIN*60000,verif:false,prod:null,note:"Pomodoro",offering:(extrasOn()&&DATA.offeringText)||"",subject:DATA.currentSubject||null,focus:focusResult(),esp:plantarOn()?especieActual():null};
       var hAntes=horasTotales();DATA.sessions.push(saved);saveUserData();socialShareSession(saved);comprobarSubidaNivel(hAntes);renderNivel();trasGuardarSesion(saved);
       showToast(saved.focus==="withered"?"🍅 Pomodoro completado, pero tu árbol se marchitó 🥀":"🍅 ¡Pomodoro completado! 🌳 Árbol plantado en tu bosque");
       if(saved.focus==="ok")confeti(50);
@@ -2836,8 +2851,17 @@ const BADGE_DEFS=[
   {id:"first_friend",icon:"🤝",label:"Primer amigo",desc:"Añade a tu primer amigo en la app"},
   {id:"first_prayer",icon:"🙏",label:"Buena fe",desc:"Reza por el examen de un amigo"},
   {id:"first_post",icon:"📖",label:"Crítico literario",desc:"Publica tu primera reseña en el blog"},
-  {id:"first_room",icon:"👥",label:"Trabajo en equipo",desc:"Estudia en una sala de grupo"}
+  {id:"first_room",icon:"👥",label:"Trabajo en equipo",desc:"Estudia en una sala de grupo"},
+  {id:"bosque7",icon:"🌲",label:"Bosque perfecto",desc:"7 días seguidos plantando árboles sin que se marchite ninguno"},
+  {id:"cofre1",icon:"🎁",label:"Cazador de cofres",desc:"Completa las 3 misiones de un día y abre el cofre"},
+  {id:"botanico",icon:"🌸",label:"Botánico",desc:"Desbloquea una especie nueva en la tienda del bosque"}
 ];
+function bosquePerfecto(){
+  var por={};DATA.sessions.forEach(function(s){var p=por[s.date]=por[s.date]||{ok:0,seco:0};if(s.focus==="withered")p.seco++;else p.ok++;});
+  var mejor=0,racha=0,d=new Date();d.setDate(d.getDate()-400);
+  for(var k=0;k<=400;k++){var x=por[ymd(d)];if(x&&x.ok&&!x.seco){racha++;mejor=Math.max(mejor,racha);}else racha=0;d.setDate(d.getDate()+1);}
+  return mejor;
+}
 function renderBadges(){
   var el=$("badgesGrid"); if(!el||!DATA)return;
   var changed=false;
@@ -2848,6 +2872,9 @@ function renderBadges(){
   if(computeBestStreak()>=7)grant("streak7");
   if(DATA.sessions.some(function(s){var h=new Date(s.ts).getHours();return h>=22||h<6;}))grant("night_owl");
   if(socialClient()&&SOCIAL.friends&&SOCIAL.friends.length>=1)grant("first_friend");
+  if(bosquePerfecto()>=7)grant("bosque7");
+  if(DATA.cofresAbiertos)grant("cofre1");
+  if((DATA.especiesCompradas||[]).length)grant("botanico");
   if(changed)saveUserData();
   el.innerHTML=BADGE_DEFS.map(function(b){
     var on=!!DATA.badges[b.id], cuando=badgeDateISO(DATA.badges[b.id]);
@@ -3237,6 +3264,7 @@ function renderNowCard(){
     var prox=null;BIBLIOTECAS.forEach(function(b,i){if(!enMiZona(i))return;var p=proximaApertura(b);if(p&&(!prox||p.dias*1440+p.min<prox.p.dias*1440+prox.p.min))prox={i:i,p:p};});
     html='<div class="nc-kicker">Ahora mismo</div><div class="nc-title">Todas las bibliotecas de tu zona están cerradas</div>';
     if(prox){var t=estadoTexto(BIBLIOTECAS[prox.i]);html+='<div class="nc-why">La primera en abrir: <b>'+escapeHTML(cortoNombre(BIBLIOTECAS[prox.i].nombre))+'</b> · '+escapeHTML(t.txt.replace("Cerrada · ",""))+'</div>'+
+      (prox.p.enMin<=24*60?cuentaAtrasHTML(prox.p.enMin,"Abre en"):'')+
       '<div class="nc-actions"><button class="btn sm ghost" onclick="window.__selBib('+prox.i+')">Ver en el mapa</button><button class="btn sm ghost" onclick="abrirLista(false)">Ver todas</button></div>';}
     el.innerHTML=html;return;
   }
@@ -3248,6 +3276,7 @@ function renderNowCard(){
   html='<div class="nc-kicker">Te recomiendo ahora'+(epocaExamenes()?' · <span class="nc-exam">época de exámenes</span>':'')+'</div>'+
     '<div class="nc-title" onclick="window.__selBib('+r.i+')">'+escapeHTML(cortoNombre(r.b.nombre))+'</div>'+
     '<div class="nc-why">'+why.map(escapeHTML).join(" · ")+'</div>'+
+    (!es24h(r.b)&&minutosHastaCierre(r.b)>0?cuentaAtrasHTML(minutosHastaCierre(r.b),"Cierra en"):'')+
     '<div class="nc-actions"><button class="btn sm" onclick="startStudyAt('+r.i+')">▶ Estudiar aquí</button>'+
     '<button class="btn sm ghost" onclick="window.__selBib('+r.i+')">Ver</button>'+
     '<button class="btn sm ghost" onclick="abrirLista()">'+(cands.length>1?"Otras "+(cands.length-1):"Ver todas")+'</button></div>';
@@ -3585,12 +3614,13 @@ function especieComprada(id){return especieDe(id).precio===0||((DATA.especiesCom
 function abrirTienda(){
   var n=semillas(), actual=DATA.especie||"roble";
   openModal('<h3>🌱 Especies para tu bosque</h3><div class="sub">Ganas 🌰 1 semilla por cada 5 min de árbol sano y más con las misiones. Tienes <b class="seeds-n">'+n+'</b> 🌰</div>'+
-    '<div class="shop">'+ESPECIES.map(function(e){
+    '<div class="shop">'+ESPECIES.filter(function(e){return enTemporada(e)||actual===e.id;}).sort(function(x,y){return (y.desde?1:0)-(x.desde?1:0);}).map(function(e){
       var mia=especieComprada(e.id), usando=actual===e.id, puede=n>=e.precio;
       var btn=usando?'<button class="btn sm" disabled>✓ Plantando</button>'
         :mia?'<button class="btn sm ghost" onclick="usarEspecie(\''+e.id+'\')">Usar</button>'
         :'<button class="btn sm'+(puede?'':' ghost')+'" '+(puede?'':'disabled ')+'onclick="comprarEspecie(\''+e.id+'\',this)">'+(puede?'Comprar · 🌰 '+e.precio:'🔒 🌰 '+e.precio)+'</button>';
-      return '<div class="shop-item'+(usando?' on':'')+(mia?'':' locked')+'"><div class="shop-tree">'+arbolSVG(200,false,e.id,96,e.id)+'</div><b>'+e.icon+' '+escapeHTML(e.nombre)+'</b>'+btn+'</div>';
+      var temp=e.desde?'<span class="shop-temp">⏰ Solo hasta el '+(+e.hasta.slice(3))+' de '+MESES[+e.hasta.slice(0,2)-1]+'</span>':'';
+      return '<div class="shop-item'+(usando?' on':'')+(mia?'':' locked')+(e.desde?' temporada':'')+'">'+temp+'<div class="shop-tree">'+arbolSVG(200,false,e.id,96,e.id)+'</div><b>'+e.icon+' '+escapeHTML(e.nombre)+'</b>'+btn+'</div>';
     }).join("")+'</div>');
 }
 function comprarEspecie(id,btn){
@@ -3668,7 +3698,7 @@ function renderMisiones(){
 function abrirCofre(btn){
   var M=misionesDeHoy(); if(M.cofre)return;
   if(M.ids.some(function(id){return !M.hechas[id];}))return;
-  M.cofre=true;var premio=20+(hashStr(ymd()+"cofre")%4)*10; // 20-50 semillas
+  M.cofre=true;DATA.cofresAbiertos=(DATA.cofresAbiertos||0)+1;var premio=20+(hashStr(ymd()+"cofre")%4)*10; // 20-50 semillas
   var hielo=(DATA.streakFreezes||0)<3&&hashStr(ymd())%3===0;
   DATA.semillasPremio=(DATA.semillasPremio||0)+premio;if(hielo)DATA.streakFreezes=(DATA.streakFreezes||0)+1;saveUserData();
   openModal('<div class="cofre-modal"><div class="cofre-big">🎁</div><h3>¡Misiones completadas!</h3><div class="sub">Has ganado <b>🌰 '+premio+' semillas</b>'+(hielo?' y <b>🧊 un congelador de racha</b>':'')+'.</div>'+
@@ -3759,6 +3789,7 @@ function renderStories(){
   var lista=SOCIAL.user?storiesAmigos():[], hoyMin=statsHoy().min;
   STORIES.lista=lista;
   var html='<button class="story me'+(hoyMin?' nueva':'')+'" onclick="abrirStoryMia()"><span class="st-ring"><span class="st-av">'+(hoyMin?arbolSVG(Math.max(hoyMin,1),false,"yo",40,DATA.especie):'＋')+'</span></span><small>Tu día</small></button>';
+  html+='<button class="story tips" onclick="abrirTips()"><span class="st-ring"><span class="st-av">💡</span></span><small>Tips</small></button>';
   html+=lista.map(function(s,k){
     return '<button class="story'+(s.nueva?' nueva':'')+(s.ahora?' ahora':'')+'" onclick="abrirStory('+k+')"><span class="st-ring"><span class="st-av" style="background:'+colorDe(s.id)+'">'+escapeHTML((s.nombre||"?").charAt(0).toUpperCase())+'</span></span>'+
       (s.ahora?'<em class="st-live">ESTUDIANDO</em>':'')+'<small>'+escapeHTML((s.nombre||"Amigo").split(" ")[0])+'</small></button>';
@@ -3934,3 +3965,72 @@ function quizasResumenSemanal(){
   if(!datosSemana(1).ses.length)return;
   setTimeout(function(){if(!document.querySelector(".modal-bg")&&!$("storyViewer"))abrirResumenSemanal(true);},1500);
 }
+
+/* ----- Cuenta atrás en vivo hasta que cierra o abre (como las apps de horarios de misas) ----- */
+function cuentaAtrasHTML(minFaltan,txt){
+  var fin=Date.now()+(minFaltan*60-new Date().getSeconds())*1000;
+  return '<div class="nc-cd" data-fin="'+fin+'" data-txt="'+escapeHTML(txt)+'"><span class="cd-t">⏳ '+escapeHTML(txt)+'</span><b class="cd-v">'+fmtCuenta(fin-Date.now())+'</b></div>';
+}
+function fmtCuenta(ms){var s=Math.max(0,Math.round(ms/1000)),h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;
+  return (h?h+":"+String(m).padStart(2,"0"):m)+":"+String(x).padStart(2,"0");}
+setInterval(function(){
+  document.querySelectorAll(".nc-cd[data-fin]").forEach(function(el){
+    var ms=+el.dataset.fin-Date.now(), v=el.querySelector(".cd-v"); if(!v)return;
+    if(ms<=0){renderNowCard();return;}
+    v.textContent=fmtCuenta(ms);el.classList.toggle("pronto",ms<30*60000);
+  });
+},1000);
+
+/* ----- Tips para estudiar mejor, en baraja vertical (como TikTok) ----- */
+// Técnicas con respaldo en la investigación sobre aprendizaje, explicadas con palabras propias.
+var TIPS=[
+  {e:"🧠",t:"Recuerda, no releas",x:"Cierra el libro y escribe lo que recuerdas. Sacar la información de la memoria (recuerdo activo) fija mucho más que volver a leerla."},
+  {e:"📅",t:"Repaso espaciado",x:"Repasa un tema al día siguiente, a los 3 días y a la semana. Espaciar los repasos vence a la curva del olvido mejor que darte un atracón."},
+  {e:"📝",t:"Hazte exámenes",x:"Practicar con preguntas tipo test o de desarrollo es de lo más eficaz que existe. Equivocarte en casa es gratis: en el examen no."},
+  {e:"🔀",t:"Intercala temas",x:"Mezcla tipos de problemas o asignaturas en la misma sesión. Cuesta más, pero aprendes a distinguir cuándo usar cada cosa."},
+  {e:"🧒",t:"Técnica Feynman",x:"Explica el tema como si se lo contaras a un niño de 12 años. Donde te atasques, ahí está lo que todavía no entiendes."},
+  {e:"❓",t:"Pregúntate por qué",x:"Para cada idea, pregúntate «¿por qué es así?» y «¿cómo se relaciona con lo que ya sé?». Conectar ideas las hace durar."},
+  {e:"🖼️",t:"Palabras + dibujos",x:"Acompaña lo que lees con un esquema, un dibujo o un diagrama. Dos vías de entrada a la memoria mejor que una."},
+  {e:"🍅",t:"Bloques con descanso",x:"Trabaja 25-50 min concentrado y descansa 5-10. Los descansos cortos mantienen la atención y el cronómetro te ayuda a no engañarte."},
+  {e:"📵",t:"El móvil, en otra habitación",x:"Solo tenerlo a la vista, aunque esté boca abajo, roba atención. Lejos y en silencio. Aquí, tu árbol te lo agradece 🌳"},
+  {e:"😴",t:"Dormir también es estudiar",x:"Mientras duermes, el cerebro consolida lo aprendido. Una noche en vela antes del examen suele restar más de lo que suma."},
+  {e:"🏃",t:"Muévete",x:"Un paseo o un poco de ejercicio entre bloques despeja la cabeza y ayuda a concentrarte en el siguiente."},
+  {e:"🎯",t:"Objetivo concreto",x:"«Estudiar Bioquímica» es vago. «Hacer los 20 problemas del tema 4» es un plan. Empieza cada sesión sabiendo qué vas a terminar."},
+  {e:"📍",t:"Si… entonces…",x:"Decide cuándo y dónde: «Si son las 16:00, entonces me siento en la biblioteca con Anatomía». Las intenciones concretas se cumplen más."},
+  {e:"⏱️",t:"Regla de los 2 minutos",x:"¿Te cuesta arrancar? Comprométete solo a 2 minutos. Lo difícil es empezar; seguir suele salir solo."},
+  {e:"🖍️",t:"Subrayar no es estudiar",x:"Subrayar y releer dan sensación de dominio, pero enseñan poco. Úsalos solo como paso previo a preguntarte y resumir."},
+  {e:"🧩",t:"Ejemplos concretos",x:"Para cada concepto abstracto, busca o inventa dos ejemplos distintos. Así lo reconocerás aunque te lo pregunten de otra forma."},
+  {e:"👥",t:"Enséñaselo a alguien",x:"Explicar un tema a un compañero es una de las mejores formas de aprenderlo. Una sala de estudio con amigos sirve para eso."},
+  {e:"🗂️",t:"Lo importante primero",x:"Ordena por importancia y urgencia. Lo que más pesa en el examen y peor llevas, al principio del día, cuando tienes más energía."},
+  {e:"🔁",t:"Mismo sitio, misma hora",x:"Estudiar en el mismo lugar y a la misma hora crea un hábito: el cerebro entra antes «en modo estudio». Tu biblioteca habitual ayuda."},
+  {e:"🎧",t:"Ruido, con cuidado",x:"Música con letra compite con la lectura. Si necesitas sonido, mejor algo instrumental o ruido de fondo suave."},
+  {e:"💧",t:"Cuida lo básico",x:"Agua, algo de comer y luz natural. Con hambre o cansancio la concentración cae aunque tengas toda la fuerza de voluntad."},
+  {e:"📈",t:"Mide tu progreso",x:"Ver cuánto has estudiado motiva y te muestra la verdad. Por eso cada sesión planta un árbol: tu bosque es tu historial."},
+  {e:"🙌",t:"Celebra lo pequeño",x:"Cada tema terminado cuenta. Reconocer avances pequeños mantiene la motivación a lo largo de un curso largo."},
+  {e:"🧘",t:"Antes del examen, respira",x:"Unas respiraciones lentas antes de empezar bajan los nervios. Lee todas las preguntas y empieza por las que sabes."}
+];
+function abrirTips(inicio){
+  var gustos=loadJSON("bpna_tips_gustos",{}), guardados=loadJSON("bpna_tips_guardados",{});
+  // orden diario distinto, como un «Para ti»
+  var orden=TIPS.map(function(t,i){return i;}).sort(function(a,b){return hashStr(ymd()+a)-hashStr(ymd()+b);});
+  if(inicio!=null){orden=orden.filter(function(i){return i!==inicio;});orden.unshift(inicio);}
+  var cols=["#5b4bd6","#a21caf","#0e7490","#c2410c","#047857","#be185d","#4338ca","#b45309"];
+  var o=document.createElement("div");o.className="tips-viewer";o.id="tipsViewer";
+  o.innerHTML='<button class="sv-x tips-x" onclick="cerrarTips()" aria-label="Cerrar">×</button><div class="tips-feed">'+orden.map(function(i,k){var t=TIPS[i];
+    return '<section class="tip" data-i="'+i+'" style="--c:'+cols[i%cols.length]+'"><div class="tip-body"><div class="tip-e">'+t.e+'</div><h2>'+escapeHTML(t.t)+'</h2><p>'+escapeHTML(t.x)+'</p>'+(k===0?'<div class="tip-hint">Desliza hacia arriba ↑</div>':'')+'</div>'+
+      '<div class="tip-acts"><button class="tip-like'+(gustos[i]?' on':'')+'" onclick="tipLike('+i+',this)"><span>'+(gustos[i]?'❤️':'🤍')+'</span><small>Me sirve</small></button>'+
+      '<button class="tip-save'+(guardados[i]?' on':'')+'" onclick="tipGuardar('+i+',this)"><span>'+(guardados[i]?'🔖':'📑')+'</span><small>'+(guardados[i]?'Guardado':'Guardar')+'</small></button>'+
+      '<button onclick="tipCompartir('+i+')"><span>↗️</span><small>Enviar</small></button></div></section>';}).join("")+'</div>';
+  document.body.appendChild(o);
+  o.querySelectorAll(".tip").forEach(function(sec){sec.addEventListener("dblclick",function(e){var i=+sec.dataset.i;var b=sec.querySelector(".tip-like");if(!loadJSON("bpna_tips_gustos",{})[i])tipLike(i,b);
+    if(!sinMovimiento()){var c=document.createElement("span");c.className="corazon";c.textContent="❤️";c.style.left=e.clientX+"px";c.style.top=e.clientY+"px";document.body.appendChild(c);setTimeout(function(){c.remove();},900);}});});
+  document.addEventListener("keydown",teclaTips);
+}
+function teclaTips(e){if(e.key==="Escape")cerrarTips();}
+function cerrarTips(){var o=$("tipsViewer");if(o)o.remove();document.removeEventListener("keydown",teclaTips);}
+function tipLike(i,b){var g=loadJSON("bpna_tips_gustos",{});g[i]=!g[i];saveJSON("bpna_tips_gustos",g);
+  if(b){b.classList.toggle("on",!!g[i]);b.querySelector("span").textContent=g[i]?"❤️":"🤍";if(g[i]){b.classList.remove("pop");void b.offsetWidth;b.classList.add("pop");celebrar(b,["❤️","✨"],8);}}}
+function tipGuardar(i,b){var g=loadJSON("bpna_tips_guardados",{});g[i]=!g[i];saveJSON("bpna_tips_guardados",g);
+  if(b){b.classList.toggle("on",!!g[i]);b.querySelector("span").textContent=g[i]?"🔖":"📑";b.querySelector("small").textContent=g[i]?"Guardado":"Guardar";if(g[i])showToast("🔖 Tip guardado");}}
+function tipCompartir(i){var t=TIPS[i],txt=t.e+" "+t.t+": "+t.x+" — bibliomapa.es";
+  if(navigator.share)navigator.share({title:t.t,text:txt}).catch(function(){});else{try{navigator.clipboard.writeText(txt);showToast("Tip copiado");}catch(e){}}}

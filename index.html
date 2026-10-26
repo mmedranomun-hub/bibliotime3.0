@@ -86,6 +86,7 @@
     --pino:#0f9f6e; --pino-osc:#047857; --tronco:#8b5e3c; --flor:#f9a8d4;
     --marchito:#b8a089; --marchito-osc:#8a7560;
     --cerezo:#f9a8d4; --cerezo-osc:#ec4899; --arce:#fb923c; --arce-osc:#dc2626; --nieve:#ffffff;
+    --calabaza:#f97316; --calabaza-osc:#c2410c;
     --palma:#4ade80; --palma-osc:#15803d; --cactus:#34d399; --cactus-osc:#047857;
     --fuego:linear-gradient(135deg,#f59e0b,#ef4444);          /* racha encendida */
     --cielo:linear-gradient(180deg,#e0f2fe 0%,#f0fdf4 70%); --cesped:linear-gradient(180deg,#86efac,#4ade80);
@@ -1014,6 +1015,35 @@
   .ct-txt{font-size:var(--fs-5xl);font-weight:800;color:#fff;animation:growIn .5s cubic-bezier(.34,1.56,.64,1) both}
   @keyframes ctPop{0%{transform:scale(2.2);opacity:0}60%{opacity:1}100%{transform:scale(1)}}
   .sv-kicker{font-size:var(--fs-s);font-weight:800;letter-spacing:.14em;opacity:.85;margin-bottom:6px}
+
+  /* Cuenta atrás en vivo de la tarjeta «Ahora» */
+  .nc-cd{display:inline-flex;align-items:center;gap:8px;margin:2px 0 10px;padding:6px 12px;border-radius:var(--r-pill);background:var(--acento-tenue);font-size:var(--fs-m)}
+  .nc-cd .cd-t{color:var(--suave);font-weight:700}
+  .nc-cd .cd-v{font-variant-numeric:tabular-nums;font-weight:800;color:var(--acento-tx);font-size:var(--fs-l)}
+  .nc-cd.pronto{background:rgba(245,158,11,.16);animation:latido 1.6s ease-in-out infinite}
+  .nc-cd.pronto .cd-v{color:var(--aviso-tx)}
+  /* Especie de temporada */
+  .shop-item{position:relative}
+  .shop-item.temporada{background:linear-gradient(160deg,rgba(249,115,22,.16),rgba(124,58,237,.12))}
+  .shop-temp{position:absolute;top:-8px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:var(--fs-2xs);font-weight:800;padding:2px 8px;border-radius:var(--r-pill);background:var(--fuego);color:#fff}
+  /* Tips en baraja vertical */
+  .story.tips .st-ring{background:conic-gradient(from 90deg,#facc15,#fb923c,#facc15)}
+  .story.tips .st-av{font-size:var(--fs-3xl)}
+  .tips-viewer{position:fixed;inset:0;z-index:5500;background:#0f172a;animation:fadeIn .25s both}
+  .tips-x{position:absolute;top:10px;right:14px;z-index:3}
+  .tips-feed{height:100%;overflow-y:auto;scroll-snap-type:y mandatory;scrollbar-width:none}
+  .tips-feed::-webkit-scrollbar{display:none}
+  .tip{height:100%;scroll-snap-align:start;scroll-snap-stop:always;position:relative;display:flex;align-items:center;color:#fff;
+    background:radial-gradient(120% 80% at 20% 10%,var(--c),#0f172a 75%)}
+  .tip-body{padding:0 86px 0 26px}
+  .tip-e{font-size:76px;line-height:1;margin-bottom:14px}
+  .tip h2{font-size:var(--fs-4xl);line-height:1.15;margin-bottom:12px;letter-spacing:-.02em}
+  .tip p{font-size:var(--fs-l);line-height:1.55;opacity:.92}
+  .tip-hint{margin-top:26px;font-size:var(--fs-s);font-weight:800;opacity:.7;animation:llama 1.6s ease-in-out infinite}
+  .tip-acts{position:absolute;right:12px;bottom:110px;display:flex;flex-direction:column;gap:18px}
+  .tip-acts button{display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;color:#fff;cursor:pointer}
+  .tip-acts span{font-size:var(--fs-4xl);width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center}
+  .tip-acts small{font-size:var(--fs-xs);font-weight:700}
 </style>
 </head>
 <body>

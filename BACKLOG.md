@@ -15,7 +15,7 @@ MassTimes.org / misas.org).
 ## Siguientes
 - [ ] SEO · Página propia para las bibliotecas más buscadas (Biblioteca Nacional, Regional de Madrid, grandes universitarias y las de capitales de provincia con horario verificado), generada por `scripts/generar_paginas_seo.js`, con datos estructurados `Library`
 - [ ] SEO · Título y descripción de la portada según la ciudad del enlace (`/bibliotecas/<prov>/` ya enlaza `#bib`); revisar que Google renderiza la portada (Search Console → Inspección de URL) cuando el dominio esté conectado
-- [ ] Bosque · Logro «Bosque sin marchitos 7 días» y especie de temporada (calabaza en Halloween, abeto con luces en Navidad)
+- [ ] Bosque · Especie de Navidad (abeto con luces, del 1 dic al 6 ene) y de primavera (almendro, marzo-abril)
 - [ ] Rezos · Avisar al dueño en la Agenda («🙏 3 amigos rezan por tu examen de mañana») el día anterior al examen
 Orden revisado el 2026-10-20 con el estudio de mercado (`Bibliotime - Documentacion\estudio_de_mercado.md`)
 y `salida_al_mercado\`. Fecha límite clave: estar en Google Play antes del 1 de diciembre (los exámenes de la UNAV
@@ -53,6 +53,7 @@ empiezan el 1 de diciembre y los de la UPNA el 15), así que la producción debe
 - Ejecutar en Supabase (SQL Editor) el bloque «PRIVACIDAD DE LA PRESENCIA» del final de `supabase/supabase_social.sql` (política select de `presence` con caducidad de 4 h, `updated_at` puesto por el servidor y borrado de la propia fila; ya añadido también al final de `Bibliotime - Documentacion\SQL_PENDIENTE_supabase.sql`). Mientras no se ejecute, la caducidad de 4 h solo la aplica la app
 
 ## Hecho
+- [x] 2026-10-26 · Dopamina 3: cuenta atrás en vivo hasta que cierra o abre la biblioteca; 🎃 calabaza de Halloween gratis hasta el 2 nov; logros «Bosque perfecto», «Cazador de cofres» y «Botánico»; 24 tips de estudio en baraja vertical tipo TikTok (me sirve, guardar, enviar, doble toque)
 - [x] 2026-10-26 · Dopamina 2: semillas 🌰 y tienda de 6 especies; misiones diarias con cofre; racha con llama (en peligro desde las 19 h, últimos 7 días); hitos en la sesión; historias de amigos con visor y doble toque para kudos; imágenes 1080×1920 para stories del bosque y de cada sesión; podio del ranking con «te faltan X para adelantar a…»; cuenta atrás 3-2-1 al empezar; resumen semanal tipo Wrapped el lunes
 - [x] 2026-10-26 · Marca «Bibliomapa · Bibliotecas de España» (sin Navarra en títulos, legales, bienvenida; vista inicial de toda España; sin ubicación se pide en vez de recomendar Navarra)
 - [x] 2026-10-26 · Rezos: error de RLS (los amigos no veían el total) → función `prayer_counts` + recuento siempre visible; rezar activado por defecto; compartir exámenes marcado por defecto
