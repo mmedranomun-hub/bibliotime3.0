@@ -6,7 +6,7 @@ añade una línea al registro de abajo.
 
 ## Las piezas
 ```
-          ┌──────────── cada 2 h, 8:00–22:00 ────────────┐
+          ┌──────── cada 2 h, de 7:38 a 21:38 ──────────┐
           │  DIRECTOR (tarea «Bibliomapa · director»)     │
           │  1. sincroniza y pasa scripts/probar.py        │
           │  2. lee OBJETIVOS.md + metricas.json          │
@@ -18,7 +18,7 @@ añade una línea al registro de abajo.
           └───────────────────────┬──────────────────────┘
                                   │ registro de ejecuciones
           ┌───────────────────────▼──────────────────────┐
-          │  OPTIMIZADOR DE BUCLES (domingo y miércoles)  │
+          │  OPTIMIZADOR (miércoles y domingo, 20:54)     │
           │  lanza 2 agentes que auditan el registro:     │
           │   · rendimiento: qué tareas salen bien/mal,   │
           │     cuánto avanzan las métricas por ejecución │
@@ -30,6 +30,8 @@ añade una línea al registro de abajo.
 Además siguen las rutinas diarias que ya existían (diseño 6:50, rendimiento 7:45, arreglo de fallos 12:37) y la
 tarea del ordenador de Marcos que hace el backlog cada 3 h. El director no toca sus tareas; el optimizador puede
 ajustarlas dentro de los límites de abajo.
+
+Tareas programadas: «Bibliomapa · director» y «Bibliomapa · optimizador de bucles» (en la cuenta de Marcos).
 
 ## Límites del optimizador (para que el sistema mejore sin descontrolarse)
 - Solo puede tocar tareas programadas cuyo nombre empiece por «Bibliomapa» o «Bibliotime».
