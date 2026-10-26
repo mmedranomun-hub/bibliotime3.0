@@ -2,7 +2,7 @@
 
 App web instalable (PWA) para encontrar bibliotecas abiertas en España, estudiar con cronómetro o
 Pomodoro, organizar exámenes en una agenda y estudiar con amigos.
-Web pública: https://bibliotime-ten.vercel.app
+Web pública: https://bibliomapa.es (dominio comprado; hasta conectarlo, https://bibliotime-ten.vercel.app)
 
 ## Mapa del proyecto
 
@@ -11,6 +11,7 @@ Web pública: https://bibliotime-ten.vercel.app
 | `index.html` | Estilos (con los tokens del sistema de diseño) y pantallas de la app | Sí |
 | `app.js` | Toda la lógica de la app (mapa, estudio, agenda, amigos…) | Sí |
 | `bibliotecas-espana.js` | Datos de las bibliotecas de fuera de Navarra (Overture Maps) | Sí |
+| `bibliotecas/`, `seo.css`, `sitemap.xml`, `robots.txt` | Páginas para Google por provincia y ciudad. **Generadas**: no editarlas a mano, ejecutar `node scripts/generar_paginas_seo.js` tras cambiar datos | Sí |
 | `sw.js` | Service worker: caché y uso sin conexión. Sube `CACHE_NAME` en cada cambio publicado | Sí |
 | `manifest.json` | Nombre, iconos y capturas de la app instalable | Sí |
 | `privacidad.html`, `condiciones.html`, `legal.css` | Textos legales (Google Play) y su estilo común | Sí |
@@ -30,6 +31,7 @@ Qué se publica lo decide `.vercelignore`.
 - `PLANTILLA_NUEVA_APP.md`: cómo crear otra app del mismo estilo (por ejemplo, de gimnasios) a partir de esta.
 - `DISENO.md` y `RENDIMIENTO.md`: registro diario de mejoras de diseño y de velocidad, con cifras.
 - `PUBLICAR_EN_GOOGLE_PLAY.md`: pasos para subir la app a Google Play.
+- `SEO.md`: cómo posicionar bibliomapa.es en Google (qué está hecho y qué falta).
 - `TRASLADAR_A_OTRO_ORDENADOR.md`: cómo empezar de cero o pasar el proyecto a otro ordenador sin perder nada.
 
 ## Scripts (`scripts/`)
@@ -37,6 +39,7 @@ Qué se publica lo decide `.vercelignore`.
 - `subir_a_github.ps1` / `descargar_de_github.ps1`: sincronizan la carpeta del ordenador con GitHub
   (los usan las tareas programadas de Windows; no cambiar su nombre ni su ruta).
 - `retomar_sesion_wifi.ps1`: abre la sesión de Claude Code al conectarse a una wifi (`-Instalar` una vez).
+- `generar_paginas_seo.js`: regenera `bibliotecas/`, `sitemap.xml` y `robots.txt` (ver `docs/SEO.md`).
 - `importar_bibliotecas_osm.js`: regenera `data/bibliotecas_espana.json` desde OpenStreetMap.
 
 ## Reglas que no se pueden romper

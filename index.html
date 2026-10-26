@@ -15,6 +15,12 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Bibliomapa · Bibliotecas abiertas en España">
 <meta name="twitter:description" content="Qué biblioteca está abierta ahora cerca de ti, en toda España. Horarios, afluencia, modo estudio y tu propio bosque.">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[
+{"@type":"WebSite","@id":"https://bibliomapa.es/#web","name":"Bibliomapa","alternateName":["Bibliotecas de España","Bibliotime"],"url":"https://bibliomapa.es/","inLanguage":"es-ES"},
+{"@type":"WebApplication","name":"Bibliomapa · Bibliotecas de España","url":"https://bibliomapa.es/","applicationCategory":"EducationalApplication","operatingSystem":"Web, Android","inLanguage":"es-ES",
+"description":"Mapa de más de 2.600 bibliotecas y salas de estudio de toda España: cuáles están abiertas ahora, horarios, afluencia, modo estudio con bosque de árboles, agenda de exámenes con amigos.",
+"offers":{"@type":"Offer","price":"0","priceCurrency":"EUR"}}]}</script>
+<link rel="sitemap" type="application/xml" href="sitemap.xml">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#6c5ce7">
 <link rel="icon" href="icons/favicon-32.png" type="image/png">
@@ -859,6 +865,7 @@
   .levelup{text-align:center}
   .levelup .lv-big{width:96px;height:96px;margin:0 auto 12px;border-radius:50%;display:flex;align-items:center;justify-content:center;
     background:var(--grad-acento);color:#fff;font-size:var(--fs-5xl);font-weight:800;box-shadow:var(--brillo);animation:growIn .8s cubic-bezier(.34,1.56,.64,1)}
+  .list-seo{display:block;margin:0 16px 8px;font-size:var(--fs-s);font-weight:700;color:var(--acento-tx);text-decoration:none}
 </style>
 </head>
 <body>
@@ -924,6 +931,7 @@
         <span class="season" id="seasonTag"></span>
       </div>
       <div class="list-search"><input type="search" id="listSearch" placeholder="Buscar biblioteca o ciudad…" autocomplete="off"></div>
+      <a class="list-seo" href="bibliotecas/">📍 Bibliotecas por provincia y ciudad →</a>
       <div class="list-filters" id="listFilters">
         <button data-f="abiertas">● Abiertas ahora</button>
         <button data-f="pronto">⏰ Abren pronto</button>

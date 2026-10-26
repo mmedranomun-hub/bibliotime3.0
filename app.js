@@ -3330,6 +3330,12 @@ function compartirEstado(){
 }
 function comprobarEnlaceCompartido(){
   var hash=location.hash;
+  // Enlace a una biblioteca (páginas de bibliomapa.es/bibliotecas/… y compartir): #bib=<índice>-<nombre>
+  if(hash.indexOf("#bib=")===0){
+    var bi=parseInt(hash.slice(5),10);
+    if(BIBLIOTECAS[bi]){(function intenta(n){if(window.__map&&window.__selBib){goView("map");window.__selBib(bi);}else if(n<40)setTimeout(function(){intenta(n+1);},250);})(0);}
+    return;
+  }
   if(hash.indexOf("#study=")!==0)return;
   try{
     var code=hash.slice(7);
