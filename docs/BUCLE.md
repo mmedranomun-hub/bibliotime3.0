@@ -6,7 +6,7 @@ añade una línea al registro de abajo.
 
 ## Las piezas
 ```
-          ┌──────── cada 2 h, de 7:38 a 21:38 ──────────┐
+          ┌──────── cada hora, día y noche (:18) ───────┐
           │  DIRECTOR (tarea «Bibliomapa · director»)     │
           │  1. sincroniza y pasa scripts/probar.py        │
           │  2. lee OBJETIVOS.md + metricas.json          │
@@ -38,7 +38,7 @@ Tareas programadas: «Bibliomapa · director» y «Bibliomapa · optimizador de 
 - Puede cambiar prompt, horario o activar/desactivar. **Nunca borra** ninguna (desactivar es reversible).
 - Como mucho 6 tareas «Bibliomapa/Bibliotime» activas a la vez; como mucho crea 1 nueva por revisión, y solo si el
   registro demuestra un hueco que ninguna cubre.
-- Nunca más de una ejecución por hora en ninguna tarea; nunca tocar tareas de otros temas (correo, La Guardia…).
+- Nunca más de una ejecución por hora en ninguna tarea (el director ya va cada hora: no se acelera más); nunca tocar tareas de otros temas (correo, La Guardia…).
 - Un cambio del optimizador se evalúa en la revisión siguiente: si las métricas empeoran, se deshace.
 - Todo cambio queda anotado abajo con el porqué.
 
