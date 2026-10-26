@@ -1074,7 +1074,7 @@ function socialRenderPanel(err){
         var p=socialPresenceFor(f.profile.id), loc='No está compartiendo ubicación ahora';
         var mapbtn='';
         if(p&&BIBLIOTECAS[p.bib_index]){var age=Math.round((Date.now()-new Date(p.updated_at).getTime())/60000);loc='Está en '+BIBLIOTECAS[p.bib_index].nombre.replace("Biblioteca ","").replace("Pública ","")+' · hace '+Math.max(0,age)+' min';mapbtn='<button class="mapbtn" onclick="socialGoFriend('+jsArg(f.profile.id)+')">Mapa</button>';}
-        return '<div class="friend-row"><div class="fav">'+socialInitial(f.profile.name)+'</div><div class="fi"><b>'+escapeHTML(f.profile.name||"Amigo")+'</b><small>'+escapeHTML(loc)+'</small></div><div class="factions">'+mapbtn+ugcMoreBtn("profile",f.profile.id,f.profile.id,f.profile.name||"Amigo")+'<button class="nobtn" title="Quitar de amigos" onclick="socialRemoveFriend('+jsArg(f.row.id)+','+jsArg(f.profile.name||"este amigo")+')">✕</button></div></div>';
+        return '<div class="friend-row"><div class="fav">'+socialInitial(f.profile.name)+'</div><div class="fi"><b>'+escapeHTML(f.profile.name||"Amigo")+'</b><small>'+escapeHTML(loc)+'</small></div><div class="factions"><button class="mapbtn" title="Ver su bosque" onclick="verBosqueAmigo('+jsArg(f.profile.id)+')">🌳</button>'+mapbtn+ugcMoreBtn("profile",f.profile.id,f.profile.id,f.profile.name||"Amigo")+'<button class="nobtn" title="Quitar de amigos" onclick="socialRemoveFriend('+jsArg(f.row.id)+','+jsArg(f.profile.name||"este amigo")+')">✕</button></div></div>';
       }).join("");
     }
   }
@@ -2042,7 +2042,7 @@ function restaurarSesionActiva(){
   studyTimer.running=true;studyTimer.start=a.start;studyTimer.bibIndex=a.bibIndex;studyTimer.verificada=!!a.verificada;studyTimer.subject=a.subject||null;
   studyTimer.avisoCierre=false;
   // la app se cerró: si estaba en modo foco, la planta no sobrevive
-  if(DATA.focusMode){FOCUS.withered=true;FOCUS.hiddenAt=0;}
+  if(plantarOn()){FOCUS.withered=true;FOCUS.hiddenAt=0;}
   if(revisarCronoOlvidado())return;
   startTick();
   $("miniStudy").classList.remove("hidden");renderNowCard();
@@ -2061,6 +2061,8 @@ function updateTimers(){
     if(mc>0&&mc<=30){studyTimer.avisoCierre=true;notificar("⏰ "+cortoNombre(BIBLIOTECAS[studyTimer.bibIndex].nombre)+" cierra en "+mc+" min");}
   }
   var t=$("studyTimer");if(t)t.textContent=fmtClock(sec);
+  // Hoy / Esta semana siguen al cronómetro (antes se quedaban en lo de antes de empezar)
+  if(studyTimer.running&&sec%30===0){var st=$("stToday");if(st)st.textContent=hMin(todayMinutes());var sw=$("stWeek");if(sw)sw.textContent=hMin(weekMinutes());}
   renderFocusPlant();
   var mt=$("miniTime");if(mt){var mm=Math.floor(sec/60),ss=sec%60;mt.textContent=String(mm).padStart(2,"0")+":"+String(ss).padStart(2,"0");}
   updateGoalRing();
@@ -2127,7 +2129,9 @@ function editarSesion(idx){
 }
 function pedirValoracion(sesion){
   var sel={v:0};
-  openModal('<h3>Sesión terminada</h3><div class="sub">'+fmtHoras(sesion.min)+' h en '+escapeHTML(sesion.bib.replace("Biblioteca ","").replace("Pública ",""))+(sesion.verif?' · <span class="badge-ok">✓ verificada</span>':'')+'</div>'+
+  var plantado=sesion.focus?'<div class="planted'+(sesion.focus==="withered"?' seco':'')+'"><div class="planted-tree">'+arbolSVG(sesion.min,sesion.focus==="withered",sesion.subject||sesion.id,110)+'</div>'+
+    '<div class="planted-txt">'+(sesion.focus==="withered"?'🥀 Tu árbol se marchitó porque saliste de la app. ¡El próximo crecerá!':'🎉 ¡Has plantado un '+ETAPAS_ARBOL[etapaArbol(sesion.min)][1].toLowerCase()+' en tu bosque!')+'</div></div>':'';
+  openModal(plantado+'<h3>Sesión terminada</h3><div class="sub">'+fmtHoras(sesion.min)+' h en '+escapeHTML(sesion.bib.replace("Biblioteca ","").replace("Pública ",""))+(sesion.verif?' · <span class="badge-ok">✓ verificada</span>':'')+'</div>'+
     '<label style="font-size:var(--fs-s);font-weight:700;color:var(--suave);text-transform:uppercase;letter-spacing:.05em">¿Qué tal ha ido?</label>'+
     '<div class="prodstars" id="prodStars">'+[1,2,3,4,5].map(function(n){return '<button data-v="'+n+'">★</button>';}).join("")+'</div>'+
     (bibIdxDe(sesion)>=0?'<label style="display:block;margin-top:12px;font-size:var(--fs-s);font-weight:700;color:var(--suave);text-transform:uppercase;letter-spacing:.05em">¿Cómo estaba de llena?</label>'+
@@ -2136,10 +2140,11 @@ function pedirValoracion(sesion){
     '<button class="btn" id="sessSave">Guardar</button>'+
     '<button class="linkbtn" id="sessSkip" style="display:block;margin:12px auto 0">Omitir</button>',
     function(){
+      if(sesion.focus==="ok"){confeti(sesion.min>=25?90:45);celebrar(document.querySelector(".planted-tree"),["🌱","🍃","✨","🌟"],12);}
       document.querySelectorAll("#prodStars button").forEach(function(b){
         b.addEventListener("click",function(){
           sel.v=parseInt(b.dataset.v);
-          document.querySelectorAll("#prodStars button").forEach(function(x,idx){x.classList.toggle("on",idx<sel.v);});
+          document.querySelectorAll("#prodStars button").forEach(function(x,idx){x.classList.toggle("on",idx<sel.v);if(idx<sel.v){x.classList.remove("pop");void x.offsetWidth;x.classList.add("pop");}});
         });
       });
       var occSel=null;
@@ -2179,6 +2184,7 @@ function renderStudy(){
   renderSubjects();
   renderSubjectStats();
   renderFocusPlant();
+  renderForest();
 }
 /* ===== ASIGNATURAS (como YPT: el tiempo se apunta a una asignatura) ===== */
 function renderSubjects(){
@@ -2188,7 +2194,7 @@ function renderSubjects(){
   subs.forEach(function(n,k){html+='<button data-k="'+k+'" class="'+(cur===n?"on":"")+'">'+escapeHTML(n)+'<span class="x" data-del="'+k+'" title="Quitar">×</span></button>';});
   html+='<button data-add="1">+ Añadir</button>';
   el.innerHTML=html;
-  var ft=$("focusToggle"); if(ft)ft.checked=!!DATA.focusMode;
+  var ft=$("focusToggle"); if(ft)ft.checked=plantarOn();
   var sl=$("subjLabel"); if(sl)sl.textContent=DATA.perfil==="opositor"?"Tema":"Asignatura";
 }
 function initSubjectUI(){
@@ -2212,9 +2218,9 @@ function initSubjectUI(){
   });
   $("focusToggle").addEventListener("change",function(){
     DATA.focusMode=this.checked;saveUserData();
-    if(this.checked){showToast("🌱 Modo foco: si sales de la app más de "+FOCUS_GRACE_SEC+" s, tu planta se marchita");if(focusActive())focusStart();}
+    if(this.checked){showToast("🌱 Cada sesión planta un árbol. Si sales de la app más de "+FOCUS_GRACE_SEC+" s, se marchita");if(focusActive())focusStart();}
     else{releaseWakeLock();}
-    renderFocusPlant();
+    renderFocusPlant();renderForest();
   });
 }
 function renderSubjectStats(){
@@ -2227,16 +2233,18 @@ function renderSubjectStats(){
   var html='<div class="section-title" style="margin-top:0">📚 Hoy por asignatura</div>';
   html+=keys.length?keys.map(function(k){return '<div class="subj-row"><span class="nm">'+escapeHTML(k)+'</span><span class="bar"><i style="width:'+Math.round(mins[k]/max*100)+'%"></i></span><span class="tm">'+hMin(mins[k])+'</span></div>';}).join("")
     :'<div class="empty-note">Elige una asignatura arriba y empieza: aquí verás cuánto le dedicas cada día.</div>';
-  var ok=0,ko=0;DATA.sessions.forEach(function(s){if(s.focus==="ok")ok++;else if(s.focus==="withered")ko++;});
-  if(ok||ko)html+='<div class="page-sub" style="margin-top:10px">Modo foco: 🌳 '+ok+' '+(ok===1?"planta":"plantas")+' crecida'+(ok===1?"":"s")+' · 🥀 '+ko+' marchita'+(ko===1?"":"s")+'</div>';
   el.innerHTML=html;
 }
-/* ===== MODO FOCO (como Forest: si sales de la app durante la sesión, la planta se marchita) ===== */
+/* ===== BOSQUE (como Forest): cada sesión planta un árbol; si sales de la app, se marchita =====
+   Plantar está activado por defecto (DATA.focusMode===false lo apaga). El árbol crece con los minutos:
+   brote → arbusto → árbol → árbol grande → pino → roble en flor. Cada usuario tiene su bosque (sus sesiones)
+   y puede ver el de sus amigos con las sesiones que comparten. */
 const FOCUS_GRACE_SEC=15;
 var FOCUS={hiddenAt:0,withered:false,lock:null};
-function focusActive(){return !!(DATA&&DATA.focusMode)&&(studyTimer.running||(pomo.running&&pomo.phase==="focus"));}
-function focusStart(){FOCUS.withered=false;FOCUS.hiddenAt=0;if(DATA&&DATA.focusMode)requestWakeLock();renderFocusPlant();}
-function focusResult(){return DATA&&DATA.focusMode?(FOCUS.withered?"withered":"ok"):null;}
+function plantarOn(){return !(DATA&&DATA.focusMode===false);}
+function focusActive(){return plantarOn()&&(studyTimer.running||(pomo.running&&pomo.phase==="focus"));}
+function focusStart(){FOCUS.withered=false;FOCUS.hiddenAt=0;if(plantarOn())requestWakeLock();renderFocusPlant();}
+function focusResult(){return plantarOn()?(FOCUS.withered?"withered":"ok"):null;}
 // Mantiene la pantalla encendida durante el foco: así bloquear el móvil no cuenta como "salir".
 async function requestWakeLock(){
   try{if(navigator.wakeLock&&document.visibilityState==="visible"&&!FOCUS.lock){FOCUS.lock=await navigator.wakeLock.request("screen");FOCUS.lock.addEventListener("release",function(){FOCUS.lock=null;});}}catch(e){}
@@ -2244,22 +2252,122 @@ async function requestWakeLock(){
 function releaseWakeLock(){try{if(FOCUS.lock){FOCUS.lock.release();FOCUS.lock=null;}}catch(e){}}
 document.addEventListener("visibilitychange",function(){
   if(!focusActive())return;
-  if(document.visibilityState==="hidden"){FOCUS.hiddenAt=Date.now();return;}
+  if(document.visibilityState==="hidden"){
+    FOCUS.hiddenAt=Date.now();
+    // Aviso al salir (si hay permiso): todavía estás a tiempo de volver.
+    try{if(!FOCUS.withered&&"Notification" in window&&Notification.permission==="granted")new Notification("🌱 ¡Tu árbol te necesita!",{body:"Vuelve en "+FOCUS_GRACE_SEC+" s o se marchitará",icon:"icons/icon-192.png",tag:"bosque"});}catch(e){}
+    return;
+  }
   requestWakeLock();
   if(FOCUS.hiddenAt){
     var away=Math.round((Date.now()-FOCUS.hiddenAt)/1000);FOCUS.hiddenAt=0;
-    if(away>=FOCUS_GRACE_SEC&&!FOCUS.withered){FOCUS.withered=true;showToast("🥀 Tu planta se ha marchitado: saliste "+away+" s de la app");}
+    if(away>=FOCUS_GRACE_SEC&&!FOCUS.withered){FOCUS.withered=true;showToast("🥀 Tu árbol se ha marchitado: saliste "+away+" s de la app");}
     renderFocusPlant();
   }
 });
+// Etapas del árbol según los minutos estudiados.
+var ETAPAS_ARBOL=[[0,"Brote"],[10,"Arbusto"],[25,"Árbol joven"],[50,"Árbol"],[90,"Pino"],[180,"Roble en flor"]];
+function etapaArbol(min){var e=0;for(var i=0;i<ETAPAS_ARBOL.length;i++)if(min>=ETAPAS_ARBOL[i][0])e=i;return e;}
+function hashStr(s){var h=0;s=String(s||"");for(var i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))|0;return Math.abs(h);}
+// Altura proporcional al estudio (raíz cuadrada: 15 min ≈ 53 px, 1 h ≈ 80 px, 3 h ≈ 120 px).
+function alturaArbol(min){return Math.round(Math.min(124,26+Math.sqrt(Math.max(1,min))*7.2));}
+// Dibujo del árbol en SVG (colores del sistema de diseño: --arbol-*, --tronco, --marchito).
+function arbolSVG(min,marchito,semilla,alto){
+  var e=etapaArbol(min), h=alto||alturaArbol(min), w=Math.round(h*0.66);
+  var verdes=["var(--arbol-a)","var(--arbol-b)","var(--arbol-c)","var(--arbol-d)"], v=verdes[hashStr(semilla)%verdes.length];
+  var copa=marchito?"var(--marchito)":v, copa2=marchito?"var(--marchito-osc)":"var(--arbol-osc)", tronco=marchito?"var(--marchito-osc)":"var(--tronco)";
+  var g="";
+  if(e===0){ // brote
+    g='<path d="M30 96 C30 84 30 78 30 70" stroke="'+(marchito?tronco:"var(--arbol-osc)")+'" stroke-width="3" fill="none" stroke-linecap="round"/>'+
+      (marchito?'<path d="M30 74 C22 80 16 84 14 92 C22 90 28 84 30 76Z" fill="'+copa+'"/><path d="M30 76 C38 82 42 88 44 94 C38 92 32 86 30 78Z" fill="'+copa2+'"/>'
+               :'<path d="M30 74 C22 64 14 64 10 68 C16 76 24 78 30 76Z" fill="'+copa+'"/><path d="M30 72 C36 60 46 58 50 62 C46 72 38 76 30 74Z" fill="'+copa2+'"/>');
+  }else if(e===1){ // arbusto
+    g='<rect x="27.5" y="78" width="5" height="18" rx="2" fill="'+tronco+'"/><circle cx="22" cy="74" r="13" fill="'+copa2+'"/><circle cx="38" cy="74" r="13" fill="'+copa2+'"/><circle cx="30" cy="64" r="15" fill="'+copa+'"/>';
+  }else if(e===2){ // árbol joven
+    g='<rect x="27" y="62" width="6" height="34" rx="2.5" fill="'+tronco+'"/><circle cx="30" cy="44" r="22" fill="'+copa+'"/><circle cx="22" cy="38" r="7" fill="'+copa2+'" opacity=".35"/>';
+  }else if(e===3){ // árbol
+    g='<rect x="26.5" y="58" width="7" height="38" rx="3" fill="'+tronco+'"/><path d="M30 70 L20 60" stroke="'+tronco+'" stroke-width="3" stroke-linecap="round"/>'+
+      '<circle cx="18" cy="46" r="15" fill="'+copa2+'"/><circle cx="42" cy="46" r="15" fill="'+copa2+'"/><circle cx="30" cy="32" r="20" fill="'+copa+'"/><circle cx="24" cy="26" r="6" fill="#fff" opacity=".18"/>';
+  }else if(e===4){ // pino
+    var p=marchito?copa:"var(--pino)", p2=marchito?copa2:"var(--pino-osc)";
+    g='<rect x="27" y="80" width="6" height="16" rx="2" fill="'+tronco+'"/><path d="M30 46 L52 84 L8 84Z" fill="'+p2+'"/><path d="M30 26 L48 62 L12 62Z" fill="'+p+'"/><path d="M30 6 L43 38 L17 38Z" fill="'+p2+'"/>';
+  }else{ // roble en flor
+    g='<rect x="26" y="56" width="8" height="40" rx="3" fill="'+tronco+'"/><path d="M30 66 L18 54 M30 62 L42 50" stroke="'+tronco+'" stroke-width="3.5" stroke-linecap="round"/>'+
+      '<circle cx="15" cy="42" r="15" fill="'+copa2+'"/><circle cx="45" cy="42" r="15" fill="'+copa2+'"/><circle cx="30" cy="26" r="22" fill="'+copa+'"/>'+
+      (marchito?'':'<circle cx="20" cy="22" r="3" fill="var(--flor)"/><circle cx="38" cy="18" r="3" fill="var(--flor)"/><circle cx="32" cy="34" r="3" fill="var(--flor)"/><circle cx="12" cy="44" r="2.6" fill="var(--flor)"/><circle cx="48" cy="40" r="2.6" fill="var(--flor)"/>');
+  }
+  return '<svg width="'+w+'" height="'+h+'" viewBox="0 0 60 100" aria-hidden="true"'+(marchito?' class="seco"':'')+'><ellipse cx="30" cy="97" rx="16" ry="3" fill="rgba(0,0,0,.12)"/>'+g+'</svg>';
+}
+// Árbol de la sesión en marcha: crece con los minutos; si sales de la app, se marchita.
 function renderFocusPlant(){
-  var el=$("focusPlant"); if(!el)return;
-  if(!focusActive()){el.classList.add("hidden");return;}
-  var min=studyTimer.running?elapsedMin():Math.floor((POMO_FOCUS_MIN*60-pomo.secondsLeft)/60);
-  var st=FOCUS.withered?["🥀","Marchita. Termina la sesión y vuelve a intentarlo."]
-    :min<5?["🌱","Brote · no salgas de la app"]:min<15?["🌿","Creciendo · "+min+" min"]:min<30?["🪴","Casi lista · "+min+" min"]:["🌳","¡Árbol completo! · "+min+" min"];
-  el.classList.remove("hidden");
-  el.innerHTML='<span class="em">'+st[0]+'</span>'+st[1];
+  ["focusPlant","pomoPlant"].forEach(function(id){
+    var el=$(id); if(!el)return;
+    var mio=id==="focusPlant"?studyTimer.running:(pomo.running&&pomo.phase==="focus");
+    if(!focusActive()||!mio){el.classList.add("hidden");el._etapa=null;return;}
+    var min=studyTimer.running?elapsedMin():Math.floor((POMO_FOCUS_MIN*60-pomo.secondsLeft)/60);
+    var e=etapaArbol(min), sig=ETAPAS_ARBOL[e+1];
+    var txt=FOCUS.withered?"🥀 Se ha marchitado. Termina la sesión y planta otro."
+      :ETAPAS_ARBOL[e][1]+(sig?" · "+sig[1].toLowerCase()+" en "+(sig[0]-min)+" min":" · ¡el árbol más grande!")+" · no salgas de la app";
+    var clave=e+"|"+FOCUS.withered;
+    el.classList.remove("hidden");
+    if(el._etapa===clave){var t=el.querySelector(".fp-txt");if(t)t.textContent=txt;return;}
+    var subio=el._etapa!=null&&!FOCUS.withered&&el._etapa.split("|")[1]==="false";
+    el._etapa=clave;
+    el.innerHTML='<div class="fp-tree'+(subio?' grow':'')+'">'+arbolSVG(Math.max(min,1),FOCUS.withered,(DATA&&DATA.currentSubject)||"",96)+'</div><div class="fp-txt">'+escapeHTML(txt)+'</div>';
+    if(subio){celebrar(el.querySelector(".fp-tree"),["🌱","🍃","✨"],8);}
+  });
+}
+// ----- Mi bosque -----
+var FOREST_PERIOD=loadJSON("bpna_forest_period","week");
+function sesionesPeriodo(lista,periodo){
+  var desde=null,hoy=new Date();hoy.setHours(0,0,0,0);
+  if(periodo==="day")desde=ymd(hoy);
+  else if(periodo==="week"){var l=new Date(hoy);l.setDate(hoy.getDate()-((hoy.getDay()+6)%7));desde=ymd(l);}
+  else if(periodo==="month"){desde=ymd(new Date(hoy.getFullYear(),hoy.getMonth(),1));}
+  return lista.filter(function(s){return !desde||s.date>=desde;});
+}
+// HTML del bosque para una lista de sesiones {min, date, focus, subject, id}.
+function bosqueHTML(ses,vacio){
+  if(!ses.length)return '<div class="forest-ground empty"><div class="forest-empty">'+vacio+'</div></div>';
+  var orden=ses.slice().sort(function(a,b){return (a.ts||0)-(b.ts||0)||(a.date<b.date?-1:1);});
+  var max=160, extra=orden.length>max?orden.length-max:0; if(extra)orden=orden.slice(-max);
+  return '<div class="forest-ground">'+orden.map(function(s,i){
+    var m=s.focus==="withered", t=(m?"🥀 Marchito":"🌳 "+ETAPAS_ARBOL[etapaArbol(s.min)][1])+" · "+hMin(s.min)+" · "+fmtFeedDate(s.date)+(s.subject?" · "+s.subject:"");
+    return '<span class="arbol" style="--d:'+Math.min(i*28,1400)+'ms" title="'+escapeHTML(t)+'" onclick="showToast(this.title)">'+arbolSVG(s.min,m,s.subject||s.id||i)+'</span>';
+  }).join("")+(extra?'<span class="forest-more">+'+extra+'</span>':'')+'</div>';
+}
+function resumenBosque(ses){
+  var vivos=0,secos=0,min=0;ses.forEach(function(s){if(s.focus==="withered")secos++;else vivos++;min+=s.min;});
+  return '<b>'+vivos+'</b> '+(vivos===1?"árbol":"árboles")+(secos?' · <b>'+secos+'</b> '+(secos===1?"marchito":"marchitos"):'')+' · '+hMin(min);
+}
+function renderForest(){
+  var el=$("forestCard"); if(!el||!DATA)return;
+  var P={day:"Hoy",week:"Semana",month:"Mes",all:"Todo"};
+  var ses=sesionesPeriodo(DATA.sessions,FOREST_PERIOD);
+  var vacio=DATA.sessions.length?"Sin árboles en este periodo. ¡Empieza una sesión y planta uno!":"Tu bosque está vacío. Empieza a estudiar y planta tu primer árbol 🌱";
+  var racha=0;try{racha=streakDays();}catch(e){}
+  el.innerHTML='<div class="forest-head"><div class="section-title" style="margin:0">🌳 Mi bosque</div>'+
+    '<div class="seg mini" id="forestSeg">'+Object.keys(P).map(function(k){return '<button data-p="'+k+'" class="'+(k===FOREST_PERIOD?"on":"")+'">'+P[k]+'</button>';}).join("")+'</div></div>'+
+    '<div class="forest-sum">'+resumenBosque(ses)+(racha>1?' · 🔥 '+racha+' días':'')+'</div>'+
+    bosqueHTML(ses,vacio)+
+    '<div class="forest-foot">'+(plantarOn()?'Cada sesión planta un árbol: cuanto más estudias, más crece. Si sales de la app más de '+FOCUS_GRACE_SEC+' s, se marchita.':'Plantar árboles está desactivado (actívalo arriba, en «🌳 Plantar árbol»).')+
+    (SOCIAL.user&&SOCIAL.friends&&SOCIAL.friends.length?' <button class="linkbtn" onclick="abrirBosquesAmigos()">Ver el bosque de tus amigos →</button>':'')+'</div>';
+  el.querySelectorAll("#forestSeg button").forEach(function(b){b.addEventListener("click",function(){FOREST_PERIOD=b.dataset.p;saveJSON("bpna_forest_period",FOREST_PERIOD);renderForest();});});
+}
+function abrirBosquesAmigos(){
+  var am=(SOCIAL.friends||[]).filter(function(f){return !isBlocked(f.profile.id);});
+  openModal('<h3>🌳 Bosques de tus amigos</h3><div class="sub">Solo cuenta lo que cada uno comparte (últimos 30 días).</div>'+
+    '<div class="pick-list">'+am.map(function(f){return '<button onclick="verBosqueAmigo('+jsArg(f.profile.id)+')"><b>'+escapeHTML(f.profile.name||"Amigo")+'</b></button>';}).join("")+'</div>');
+}
+async function verBosqueAmigo(id){
+  var sb=socialClient(); if(!sb||!SOCIAL.user)return;
+  var nombre=socialNameById(id), desde=new Date();desde.setDate(desde.getDate()-30);
+  openModal('<h3>🌳 El bosque de '+escapeHTML(nombre)+'</h3><div class="sub">Cargando…</div>');
+  var res=await sb.from("shared_sessions").select("local_id,minutes,date,focus,subject,created_at").eq("owner_id",id).gte("date",ymd(desde)).order("created_at",{ascending:true}).limit(300);
+  var ses=(res.data||[]).map(function(s){return {id:s.local_id,min:s.minutes||0,date:s.date,focus:s.focus,subject:s.subject,ts:Date.parse(s.created_at)||0};});
+  openModal('<h3>🌳 El bosque de '+escapeHTML(nombre)+'</h3><div class="sub">'+resumenBosque(ses)+' · últimos 30 días</div>'+
+    bosqueHTML(ses,escapeHTML(nombre)+" aún no ha compartido sesiones.")+
+    '<button class="btn ghost" style="margin-top:14px" onclick="abrirBosquesAmigos()">← Otros amigos</button>');
 }
 /* ===== MODO POMODORO ===== */
 // Los pomodoros no van ligados a una biblioteca: no cuentan para "favorita" ni sugerencias.
@@ -2291,15 +2399,16 @@ function pomoTick(){
     if(pomo.phase==="focus"){
       pomo.cycles++;
       // Si el pomodoro termina con la app oculta, el modo foco no llegó a ver la vuelta: se marchita aquí.
-      if(DATA.focusMode&&(document.visibilityState==="hidden"||(FOCUS.hiddenAt&&Date.now()-FOCUS.hiddenAt>=FOCUS_GRACE_SEC*1000)))FOCUS.withered=true;
+      if(plantarOn()&&(document.visibilityState==="hidden"||(FOCUS.hiddenAt&&Date.now()-FOCUS.hiddenAt>=FOCUS_GRACE_SEC*1000)))FOCUS.withered=true;
       FOCUS.hiddenAt=0;
       var saved={id:genId(),date:ymd(),min:POMO_FOCUS_MIN,sec:POMO_FOCUS_MIN*60,
         bib:NO_BIB,ts:Date.now()-POMO_FOCUS_MIN*60000,verif:false,prod:null,note:"Pomodoro",offering:(extrasOn()&&DATA.offeringText)||"",subject:DATA.currentSubject||null,focus:focusResult()};
       DATA.sessions.push(saved);saveUserData();socialShareSession(saved);
-      showToast("🍅 Pomodoro completado ("+POMO_FOCUS_MIN+" min). ¡A descansar!");
+      showToast(saved.focus==="withered"?"🍅 Pomodoro completado, pero tu árbol se marchitó 🥀":"🍅 ¡Pomodoro completado! 🌳 Árbol plantado en tu bosque");
+      if(saved.focus==="ok")confeti(50);
       pomo.phase="break";pomo.secondsLeft=POMO_BREAK_MIN*60;pomo.endAt=Date.now()+pomo.secondsLeft*1000;
       releaseWakeLock();
-      renderProfile();
+      renderProfile();renderForest();
     }else{
       showToast("⏰ Descanso terminado. ¿Otro pomodoro?");
       pomo.running=false; if(pomo.tick){clearInterval(pomo.tick);pomo.tick=null;}

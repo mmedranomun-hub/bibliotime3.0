@@ -73,6 +73,11 @@
     /* Tipografía: 11 tamaños, nada fuera de la escala salvo cifras gigantes (cronómetro) */
     --fs-2xs:10px; --fs-xs:11px; --fs-s:12px; --fs-m:13px; --fs-base:14px; --fs-l:16px;
     --fs-xl:18px; --fs-2xl:20px; --fs-3xl:24px; --fs-4xl:28px; --fs-5xl:32px;
+    /* Bosque (árboles de las sesiones) */
+    --arbol-a:#22c55e; --arbol-b:#16a34a; --arbol-c:#10b981; --arbol-d:#65a30d; --arbol-osc:#15803d;
+    --pino:#0f9f6e; --pino-osc:#047857; --tronco:#8b5e3c; --flor:#f9a8d4;
+    --marchito:#b8a089; --marchito-osc:#8a7560;
+    --cielo:linear-gradient(180deg,#e0f2fe 0%,#f0fdf4 70%); --cesped:linear-gradient(180deg,#86efac,#4ade80);
     /* Radios */
     --r-xs:6px; --r-s:8px; --r-m:12px; --r-l:16px; --r-xl:20px; --r-pill:999px;
   }
@@ -90,6 +95,8 @@
     --ev-ex-bg:rgba(251,113,133,.20); --ev-ex-tx:#fecdd3;
     --ev-ta-bg:rgba(96,165,250,.20); --ev-ta-tx:#dbeafe;
     --ev-ot-bg:rgba(45,212,191,.18); --ev-ot-tx:#ccfbf1;
+    --cielo:linear-gradient(180deg,#0f1b3d 0%,#13283a 70%); --cesped:linear-gradient(180deg,#166534,#14532d);
+    --tronco:#a47148; --marchito:#7c6a58; --marchito-osc:#5f5144;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%}
@@ -161,8 +168,12 @@
     border:1px solid rgba(148,163,184,.4);background:rgba(var(--blanco),.5);color:var(--suave)}
   .subj-chips button.on{background:var(--grad-acento);color:#fff;border-color:transparent}
   .subj-chips button .x{margin-left:6px;opacity:.7}
-  .focus-plant{margin-top:12px;text-align:center;font-size:var(--fs-m);color:var(--suave)}
-  .focus-plant .em{display:block;font-size:44px;line-height:1.1;transition:transform .4s}
+  .focus-plant{margin:4px 0 6px;text-align:center;font-size:var(--fs-m);color:var(--suave);font-weight:600}
+  .focus-plant .fp-tree{display:inline-block;transform-origin:50% 100%;animation:sway 3.2s ease-in-out infinite}
+  .focus-plant .fp-tree.grow{animation:growIn .7s cubic-bezier(.34,1.56,.64,1),sway 3.2s ease-in-out .7s infinite}
+  .focus-plant .fp-tree svg.seco{filter:saturate(.6)}
+  @keyframes sway{0%,100%{transform:rotate(-1.5deg)}50%{transform:rotate(1.5deg)}}
+  @keyframes growIn{from{transform:scale(.3);opacity:.3}to{transform:scale(1);opacity:1}}
   .subj-row{display:flex;align-items:center;gap:10px;margin:8px 0;font-size:var(--fs-m)}
   .subj-row .nm{width:34%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
   .subj-row .bar{flex:1;height:8px;border-radius:var(--r-pill);background:rgba(148,163,184,.25);overflow:hidden}
@@ -352,9 +363,14 @@
   .timer-big{font-size:64px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:.01em;line-height:1;margin:6px 0 4px}
   .study-place{font-size:var(--fs-base);color:var(--suave);margin-bottom:20px}
   .ring-wrap{position:relative;width:180px;height:180px;margin:0 auto 18px}
-  .ring-wrap svg{transform:rotate(-90deg)}
+  .ring-wrap > svg{transform:rotate(-90deg)}
   .ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
   .ring-center .pct{font-size:var(--fs-5xl);font-weight:800}
+  /* Con una sesión en marcha, el árbol crece dentro del anillo de la meta (como Forest) */
+  .ring-wrap .focus-plant{position:absolute;inset:0;margin:0;display:flex;align-items:center;justify-content:center;padding-top:6px}
+  .ring-wrap .focus-plant .fp-txt{position:absolute;top:calc(100% + 4px);left:50%;transform:translateX(-50%);width:300px;max-width:80vw}
+  .ring-wrap:has(.focus-plant:not(.hidden)){margin-bottom:46px}
+  .ring-wrap:has(.focus-plant:not(.hidden)) .ring-center{display:none}
   .ring-center .goal{font-size:var(--fs-xs);color:var(--suave);text-transform:uppercase;letter-spacing:.08em}
   .study-controls{display:flex;gap:10px;justify-content:center;margin-top:8px;flex-wrap:wrap}
   .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-top:18px}
@@ -763,6 +779,31 @@
   .pray-btn.sm{padding:4px 4px 4px 8px;font-size:var(--fs-xs)}
   .pray-mine{display:inline-block;margin-left:4px;text-transform:none;padding:2px 8px;border-radius:var(--r-pill);background:var(--acento-tenue);
     color:var(--acento-tx);font-weight:800;font-size:var(--fs-xs);animation:pop .5s}
+
+  /* ===== MI BOSQUE ===== */
+  .forest-card{overflow:hidden}
+  .forest-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .seg.mini{margin:0;padding:3px;gap:2px}
+  .seg.mini button{padding:5px 10px;font-size:var(--fs-xs)}
+  .forest-sum{margin:8px 0 10px;font-size:var(--fs-m);color:var(--suave)}
+  .forest-sum b{color:var(--texto);font-weight:800}
+  .forest-ground{position:relative;display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:center;gap:0 2px;
+    padding:18px 10px 14px;min-height:150px;border-radius:var(--r-l);background:var(--cielo);
+    box-shadow:inset 0 -18px 0 -4px rgba(74,222,128,.55)}
+  .forest-ground::after{content:"";position:absolute;left:0;right:0;bottom:0;height:14px;border-radius:0 0 var(--r-l) var(--r-l);background:var(--cesped)}
+  .forest-ground.empty{align-items:center}
+  .forest-empty{position:relative;z-index:1;text-align:center;color:var(--suave);font-size:var(--fs-m);font-weight:600;max-width:260px}
+  .arbol{position:relative;z-index:1;display:inline-flex;margin-bottom:6px;cursor:pointer;transform-origin:50% 100%;
+    animation:sprout .6s cubic-bezier(.34,1.56,.64,1) both;animation-delay:var(--d,0ms)}
+  .arbol:hover{transform:scale(1.12) rotate(-2deg)}
+  .arbol svg.seco{opacity:.85}
+  @keyframes sprout{from{transform:scale(0) translateY(10px);opacity:0}to{transform:scale(1);opacity:1}}
+  .forest-more{position:relative;z-index:1;align-self:center;font-weight:800;color:var(--acento-tx);padding:0 8px}
+  .forest-foot{margin-top:10px;font-size:var(--fs-s);color:var(--suave);line-height:1.5}
+  .planted{text-align:center;margin:-6px 0 8px}
+  .planted-tree{display:inline-block;transform-origin:50% 100%;animation:growIn .9s cubic-bezier(.34,1.56,.64,1)}
+  .planted-txt{font-weight:800;font-size:var(--fs-base);color:var(--ok-tx);margin-top:2px}
+  .planted.seco .planted-txt{color:var(--suave)}
 </style>
 </head>
 <body>
@@ -865,9 +906,8 @@
       <div class="page-sub">Cronómetro de sesiones y meta de horas.</div>
       <div class="seg" id="studyTab" style="margin-bottom:16px"><button data-t="crono" class="on">Cronómetro</button><button data-t="pomo">Pomodoro</button><button data-t="ofrecer" class="extra">Ofrecer estudio</button></div>
       <div class="glasscard" id="subjectCard" style="margin-bottom:16px">
-        <div class="subj-head"><span id="subjLabel">Asignatura</span><label class="focus-toggle" title="Si sales de la app más de 15 s durante la sesión, tu planta se marchita"><input type="checkbox" id="focusToggle"> 🌱 Modo foco</label></div>
+        <div class="subj-head"><span id="subjLabel">Asignatura</span><label class="focus-toggle" title="Cada sesión planta un árbol en tu bosque. Si sales de la app más de 15 s, se marchita"><input type="checkbox" id="focusToggle"> 🌳 Plantar árbol</label></div>
         <div class="subj-chips" id="subjectChips"></div>
-        <div class="focus-plant hidden" id="focusPlant"></div>
       </div>
       <div id="studyOfferPanel" class="hidden glasscard" style="margin-bottom:18px">
         <div class="page-sub" style="margin-bottom:12px">Dedica este tiempo de estudio a alguien o algo. Se guardará junto a tu próxima sesión.</div>
@@ -877,6 +917,7 @@
       <div id="pomodoroPanel" class="hidden glasscard studyhero" style="margin-bottom:18px">
         <div class="page-sub" id="pomoPhase" style="font-size:var(--fs-base);font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--acento-tx)">Concéntrate</div>
         <div class="timer-big" id="pomoTime">25:00</div>
+        <div class="focus-plant hidden" id="pomoPlant"></div>
         <div class="study-place">Ciclos completados hoy: <b id="pomoCycles">0</b></div>
         <div class="study-controls">
           <button class="btn sm" id="btnPomoToggle">▶ Empezar</button>
@@ -894,6 +935,7 @@
               <stop offset="0" stop-color="#6c5ce7"/><stop offset="1" stop-color="var(--acento2)"/></linearGradient></defs>
           </svg>
           <div class="ring-center"><div class="pct" id="goalPct">0%</div><div class="goal" id="goalLbl">de la meta</div></div>
+          <div class="focus-plant hidden" id="focusPlant"></div>
         </div>
         <div class="timer-big" id="studyTimer">00:00:00</div>
         <div class="study-place" id="studyPlace">Sin sesión activa</div>
@@ -909,6 +951,7 @@
         <div class="stat"><div class="num" id="stSessions">0</div><div class="lab">Sesiones totales</div></div>
         <div class="stat"><div class="num" id="stStreak">0</div><div class="lab">Días seguidos</div></div>
       </div>
+      <div class="glasscard forest-card" id="forestCard" style="margin-top:18px"></div>
       <div class="glasscard" id="subjectStats" style="margin-top:18px"></div>
       <div class="bookshelf-card" style="margin-top:18px">
         <div class="bookshelf-label" id="bookshelfLabel">0h de estudio acumuladas</div>
