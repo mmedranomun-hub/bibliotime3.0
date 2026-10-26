@@ -13,6 +13,11 @@ Fuentes de las ideas: informes de investigación del 2026-10-08 (Strava, y Catho
 MassTimes.org / misas.org).
 
 ## Siguientes
+- [ ] SEO · Página propia para las bibliotecas más buscadas (Biblioteca Nacional, Regional de Madrid, grandes universitarias y las de capitales de provincia con horario verificado), generada por `scripts/generar_paginas_seo.js`, con datos estructurados `Library`
+- [ ] SEO · Título y descripción de la portada según la ciudad del enlace (`/bibliotecas/<prov>/` ya enlaza `#bib`); revisar que Google renderiza la portada (Search Console → Inspección de URL) cuando el dominio esté conectado
+- [ ] Bosque · Compartir tu bosque como imagen para stories (`<canvas>`, reutilizar `compartirSemana`)
+- [ ] Bosque · Especies desbloqueables por nivel (cerezo, palmera, cactus) y logro «Bosque sin marchitos 7 días»
+- [ ] Rezos · Avisar al dueño en la Agenda («🙏 3 amigos rezan por tu examen de mañana») el día anterior al examen
 Orden revisado el 2026-10-20 con el estudio de mercado (`Bibliotime - Documentacion\estudio_de_mercado.md`)
 y `salida_al_mercado\`. Fecha límite clave: estar en Google Play antes del 1 de diciembre (los exámenes de la UNAV
 empiezan el 1 de diciembre y los de la UPNA el 15), así que la producción debe solicitarse hacia el 17 de noviembre.
@@ -39,6 +44,8 @@ empiezan el 1 de diciembre y los de la UPNA el 15), así que la producción debe
 - Producción en Vercel: https://bibliotime-ten.vercel.app (proyecto `juan-f396/bibliotime`; `.vercelignore` deja fuera scripts, backlog, SQL y `.env*`). Se actualiza a mano con `npx vercel deploy` (prueba) y `npx vercel promote <url>`; todavía no está conectado a GitHub para desplegar solo. La TWA de Google Play y `assetlinks.json` deberán apuntar a este dominio (o a uno propio)
 
 ## Pendiente del usuario (no lo puede hacer la tarea automática)
+- Ejecutar en Supabase (SQL Editor) el bloque «REZOS VISIBLES PARA AMIGOS» del final de `supabase/supabase_social.sql` (función `prayer_counts`). Mientras no exista, cada amigo solo ve su propio rezo (0 o 1), no el total
+- Conectar **bibliomapa.es** al proyecto de Vercel, darlo de alta en Google Search Console y enviar `sitemap.xml` (pasos en `docs/SEO.md`). Sin esto las páginas de SEO no posicionan
 - Ejecutar en Supabase (SQL Editor) el bloque «COMENTARIOS EN SESIONES» del final de `supabase/supabase_social.sql`
 - Ejecutar en Supabase (SQL Editor) el bloque «REPORTES DE HORARIO» del final de `supabase/supabase_social.sql` (tabla `horario_reportes` y función `horario_confirmaciones`). Mientras no exista, los reportes van al buzón `feedback` y no se muestra el recuento de confirmaciones
 - Ejecutar en Supabase (SQL Editor) el bloque «DENUNCIAS Y BLOQUEOS» del final de `supabase/supabase_social.sql` (tablas `content_reports` y `user_blocks`; ya añadido también al final de `Bibliotime - DocumentacionSQL_PENDIENTE_supabase.sql`). Mientras no exista, las denuncias van al buzón `feedback` (contexto `content_report`) y los bloqueos solo se guardan en el dispositivo. Después, revisar a menudo `content_reports` (columna `estado`) para cumplir la moderación que exige Google Play
@@ -47,6 +54,11 @@ empiezan el 1 de diciembre y los de la UPNA el 15), así que la producción debe
 - Ejecutar en Supabase (SQL Editor) el bloque «PRIVACIDAD DE LA PRESENCIA» del final de `supabase/supabase_social.sql` (política select de `presence` con caducidad de 4 h, `updated_at` puesto por el servidor y borrado de la propia fila; ya añadido también al final de `Bibliotime - Documentacion\SQL_PENDIENTE_supabase.sql`). Mientras no se ejecute, la caducidad de 4 h solo la aplica la app
 
 ## Hecho
+- [x] 2026-10-26 · Marca «Bibliomapa · Bibliotecas de España» (sin Navarra en títulos, legales, bienvenida; vista inicial de toda España; sin ubicación se pide en vez de recomendar Navarra)
+- [x] 2026-10-26 · Rezos: error de RLS (los amigos no veían el total) → función `prayer_counts` + recuento siempre visible; rezar activado por defecto; compartir exámenes marcado por defecto
+- [x] 2026-10-26 · Bosque como Forest: un árbol por sesión proporcional a los minutos, crece dentro del anillo, se marchita al salir >15 s; «Mi bosque» y bosque de amigos
+- [x] 2026-10-26 · Diseño más vivo: niveles por horas, confeti en meta/nivel/árbol, rebotes, auroras, avisos animados (todo respeta «reducir movimiento»)
+- [x] 2026-10-26 · SEO: 126 páginas por provincia/ciudad, sitemap, robots, JSON-LD, enlace `#bib=` (`docs/SEO.md`)
 - [x] 2026-10-20 · Privacidad · Presencia de amigos revisada (RGPD/LOPDGDD). Auditoría: ya era opcional y desactivada por defecto, sin coordenadas (solo `bib_index`; la ubicación solo vive en memoria del dispositivo, sin geolocalización en segundo plano) y solo para amigos aceptados; faltaba caducidad en SQL, comprobar si la biblioteca está cerrada, apagarla al cerrar la app o la sesión, y en las salas se veía la biblioteca aunque no compartieras. Ahora: se muestra solo si es de <4 h y la biblioteca está abierta, se deja de compartir a las 4 h o al cerrar la biblioteca, se apaga al cerrar la app (keepalive) y al cerrar sesión, aviso al activarla, «Modo invisible» en Ajustes, aviso de 14 años ya estaba en el registro; `privacidad.html` actualizada; SQL «PRIVACIDAD DE LA PRESENCIA»; caché v35 (`778f200`)
 - [x] 2026-10-20 · Google Play (bloqueante) · Contenido generado por usuarios: botón ⋯ en blog, comentarios, sesiones del feed y amigos con «Denunciar» (motivo + comentario ≤500; tabla `content_reports`, y si no existe va al buzón `feedback`) y «Bloquear usuario» (oculta en el cliente blog, comentarios, feed, ranking, presencia, salas y eventos; tabla `user_blocks` + caché local; lista para desbloquear en Ajustes). `condiciones.html` enlazada desde Ajustes, el registro («Al crear la cuenta aceptas…») y `privacidad.html` (`f21fc8d`). Falta ejecutar el SQL y revisar las denuncias a mano en Supabase
 - [x] 2026-10-20 · Misas · Fecha de verificación del horario en la ficha (campo `h.fv` en las 44 de España, con la fecha del commit de cada lote; aviso a los 180 días; las de Navarra: «sin fecha de verificación») + botones «✓ Sigue siendo correcto» / «⚠ Reportar horario incorrecto» con sesión, recuento de confirmaciones de 90 días y SQL `horario_reportes` (`6bdf51c`). Falta ejecutar el SQL
