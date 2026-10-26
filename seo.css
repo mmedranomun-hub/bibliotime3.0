@@ -53,3 +53,12 @@ h2 small{font-size:var(--fs-s);color:var(--suave);font-weight:600}
 .app-pitch ul{padding-left:4px;list-style:none;margin:0 0 10px}
 .app-pitch li{margin:6px 0}
 footer{max-width:760px;margin:0 auto;padding:0 16px 32px;font-size:var(--fs-s);color:var(--suave)}
+/* Páginas temáticas (domingo, fin de semana, hasta tarde) */
+.temas{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:14px 0}
+.temas span{font-size:var(--fs-m);font-weight:700;color:var(--suave)}
+.temas a{text-decoration:none;font-weight:700;font-size:var(--fs-m);padding:7px 12px;border-radius:var(--r-pill);
+  background:var(--acento-tenue);border:1px solid var(--linea);color:var(--acento-tx)}
+.temas a small{color:var(--suave);font-weight:600}
+.dest{display:inline-block;margin:8px 0 0;font-size:var(--fs-m);font-weight:800;color:var(--acento-tx);
+  background:var(--acento-tenue);padding:4px 10px;border-radius:var(--r-pill)}
+.loc{scroll-margin-top:64px}
