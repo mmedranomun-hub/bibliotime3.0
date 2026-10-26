@@ -402,6 +402,7 @@ async function socialRefreshAll(){
   await socialLoadPrayerCounts();
   socialRenderPanel();
   socialRenderFriendEvents();
+  renderStories();
   socialRenderFriendMarkers();
   if(DATA)renderCal();else renderCalFriendExams();
 }
@@ -455,7 +456,7 @@ async function prayForExam(localId,ownerId,title,btn){
     else{showToast("No se pudo registrar: "+ins.error.message);}
     return;
   }
-  showToast("🙏 Has rezado por el examen de "+title);
+  showToast("🙏 Has rezado por el examen de "+title);registrarAccion("social");
   if(DATA&&!DATA.badges.first_prayer){DATA.badges.first_prayer=new Date().toISOString();saveUserData();}
   await socialLoadPrayerCounts();
   renderCalFriendExams();socialRenderFriendEvents();
@@ -907,6 +908,7 @@ async function giveKudos(localId,ownerId){
   var name=(SOCIAL.profile&&SOCIAL.profile.name)||"Alguien";
   var ins=await sb.from("kudos").insert({session_local_id:localId,session_owner_id:ownerId,giver_id:SOCIAL.user.id,giver_name:name});
   if(ins.error&&ins.error.code!=="23505"){showToast("No se pudo dar kudos");return;}
+  if(!ins.error)registrarAccion("social");
   await socialLoadKudos();
   renderSessionFeed();
 }
@@ -1207,7 +1209,7 @@ async function enterApp(){
   if(!window.__listReady){buildList(); if(LIST_FILTERS.cerca&&!window.__userPos)locateMe();}
   if(!window.__mapReady) initMap();
   restaurarSesionActiva();
-  renderStudy(); renderProfile();
+  renderStudy(); renderProfile(); renderRacha(); renderStories();
   socialInitAfterLogin();
   if(!DATA.onboarded){
     if(DATA.sessions.length){DATA.onboarded=true;saveUserData();}
@@ -1395,6 +1397,7 @@ function goView(v){
   if(v==="events")renderEvents();
   if(v==="blog")renderBlog();
   if(v==="profile"||v==="friends")renderProfile();
+  if(v==="friends")renderStories();
 }
 
 
@@ -2062,7 +2065,8 @@ function updateTimers(){
   }
   var t=$("studyTimer");if(t)t.textContent=fmtClock(sec);
   // Hoy / Esta semana siguen al cronómetro (antes se quedaban en lo de antes de empezar)
-  if(studyTimer.running&&sec%30===0){var st=$("stToday");if(st)st.textContent=hMin(todayMinutes());var sw=$("stWeek");if(sw)sw.textContent=hMin(weekMinutes());}
+  if(studyTimer.running&&sec%30===0){var st=$("stToday");if(st)st.textContent=hMin(todayMinutes());var sw=$("stWeek");if(sw)sw.textContent=hMin(weekMinutes());comprobarMisiones();renderRacha();}
+  comprobarHitos();
   renderFocusPlant();
   var mt=$("miniTime");if(mt){var mm=Math.floor(sec/60),ss=sec%60;mt.textContent=String(mm).padStart(2,"0")+":"+String(ss).padStart(2,"0");}
   updateGoalRing();
@@ -2124,7 +2128,7 @@ function stopStudy(silent,endTs){
   if(studyTimer.tick)clearInterval(studyTimer.tick);
   var saved=null;
   if(sec>=20){
-    saved={id:genId(),date:ymd(new Date(ts)),min:Math.max(1,min),sec:sec,bib:bibIdx>=0?BIBLIOTECAS[bibIdx].nombre:NO_BIB,ts:ts,verif:verif,prod:null,note:"",offering:(extrasOn()&&DATA.offeringText)||"",subject:studyTimer.subject||null,focus:focusResult()};
+    saved={id:genId(),date:ymd(new Date(ts)),min:Math.max(1,min),sec:sec,bib:bibIdx>=0?BIBLIOTECAS[bibIdx].nombre:NO_BIB,ts:ts,verif:verif,prod:null,note:"",offering:(extrasOn()&&DATA.offeringText)||"",subject:studyTimer.subject||null,focus:focusResult(),esp:plantarOn()?(DATA.especie||"roble"):null};
     DATA.sessions.push(saved);
     saveUserData();
     socialShareSession(saved);
@@ -2134,7 +2138,7 @@ function stopStudy(silent,endTs){
   $("miniStudy").classList.add("hidden");renderNowCard();
   socialClearPresence();
   renderStudy();renderProfile();
-  if(saved)renderNivel();
+  if(saved){renderNivel();trasGuardarSesion(saved);}
   if(saved&&!silent){
     pedirValoracion(saved,horasAntes);
   }else if(!silent&&sec>=20){
@@ -2162,8 +2166,8 @@ function editarSesion(idx){
 }
 function pedirValoracion(sesion,horasAntes){
   var sel={v:0};
-  var plantado=sesion.focus?'<div class="planted'+(sesion.focus==="withered"?' seco':'')+'"><div class="planted-tree">'+arbolSVG(sesion.min,sesion.focus==="withered",sesion.subject||sesion.id,110)+'</div>'+
-    '<div class="planted-txt">'+(sesion.focus==="withered"?'🥀 Tu árbol se marchitó porque saliste de la app. ¡El próximo crecerá!':'🎉 ¡Has plantado un '+ETAPAS_ARBOL[etapaArbol(sesion.min)][1].toLowerCase()+' en tu bosque!')+'</div></div>':'';
+  var plantado=sesion.focus?'<div class="planted'+(sesion.focus==="withered"?' seco':'')+'"><div class="planted-tree">'+arbolSVG(sesion.min,sesion.focus==="withered",sesion.subject||sesion.id,110,sesion.esp)+'</div>'+
+    '<div class="planted-txt">'+(sesion.focus==="withered"?'🥀 Tu árbol se marchitó porque saliste de la app. ¡El próximo crecerá!':'🎉 ¡Has plantado un '+ETAPAS_ARBOL[etapaArbol(sesion.min)][1].toLowerCase()+' en tu bosque!'+(Math.floor(sesion.min/5)?'<span class="planted-seeds">🌰 +'+Math.floor(sesion.min/5)+' semillas</span>':''))+'</div></div>':'';
   openModal(plantado+'<h3>Sesión terminada</h3><div class="sub">'+fmtHoras(sesion.min)+' h en '+escapeHTML(sesion.bib.replace("Biblioteca ","").replace("Pública ",""))+(sesion.verif?' · <span class="badge-ok">✓ verificada</span>':'')+'</div>'+
     '<label style="font-size:var(--fs-s);font-weight:700;color:var(--suave);text-transform:uppercase;letter-spacing:.05em">¿Qué tal ha ido?</label>'+
     '<div class="prodstars" id="prodStars">'+[1,2,3,4,5].map(function(n){return '<button data-v="'+n+'">★</button>';}).join("")+'</div>'+
@@ -2171,6 +2175,7 @@ function pedirValoracion(sesion,horasAntes){
       '<div class="occ-quick" id="sessOcc"><button data-l="libre">🟢 Con sitio</button><button data-l="media">🟡 Media</button><button data-l="llena">🔴 Llena</button></div>':'')+
     '<div class="field" style="margin-top:10px"><input type="text" id="sessNote" placeholder="Nota opcional (ej: terminé el tema 4)"></div>'+
     '<button class="btn" id="sessSave">Guardar</button>'+
+    (sesion.focus==="ok"?'<button class="btn ghost" style="margin-top:10px" onclick="compartirSesionStory(\''+sesion.id+'\')">📸 Compartir en stories</button>':'')+
     '<button class="linkbtn" id="sessSkip" style="display:block;margin:12px auto 0">Omitir</button>',
     function(){
       if(sesion.focus==="ok"){confeti(sesion.min>=25?90:45);celebrar(document.querySelector(".planted-tree"),["🌱","🍃","✨","🌟"],12);}
@@ -2220,6 +2225,7 @@ function renderStudy(){
   renderFocusPlant();
   renderForest();
   renderNivel();
+  renderMisiones();renderSemillas();renderRacha();
 }
 /* ===== ASIGNATURAS (como YPT: el tiempo se apunta a una asignatura) ===== */
 function renderSubjects(){
@@ -2301,35 +2307,66 @@ document.addEventListener("visibilitychange",function(){
   }
 });
 // Etapas del árbol según los minutos estudiados.
-var ETAPAS_ARBOL=[[0,"Brote"],[10,"Arbusto"],[25,"Árbol joven"],[50,"Árbol"],[90,"Pino"],[180,"Roble en flor"]];
+var ETAPAS_ARBOL=[[0,"Brote"],[10,"Arbusto"],[25,"Árbol joven"],[50,"Árbol"],[90,"Gran árbol"],[180,"Árbol legendario"]];
 function etapaArbol(min){var e=0;for(var i=0;i<ETAPAS_ARBOL.length;i++)if(min>=ETAPAS_ARBOL[i][0])e=i;return e;}
 function hashStr(s){var h=0;s=String(s||"");for(var i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))|0;return Math.abs(h);}
 // Altura proporcional al estudio (raíz cuadrada: 15 min ≈ 53 px, 1 h ≈ 80 px, 3 h ≈ 120 px).
 function alturaArbol(min){return Math.round(Math.min(124,26+Math.sqrt(Math.max(1,min))*7.2));}
 // Dibujo del árbol en SVG (colores del sistema de diseño: --arbol-*, --tronco, --marchito).
-function arbolSVG(min,marchito,semilla,alto){
+// Especies (se desbloquean con semillas en la tienda del bosque). Las dos primeras etapas son iguales para todas.
+var ESPECIES=[
+  {id:"roble",nombre:"Roble",icon:"🌳",precio:0},
+  {id:"cerezo",nombre:"Cerezo",icon:"🌸",precio:60},
+  {id:"abeto",nombre:"Abeto nevado",icon:"🌲",precio:90},
+  {id:"arce",nombre:"Arce de otoño",icon:"🍁",precio:120},
+  {id:"palmera",nombre:"Palmera",icon:"🌴",precio:160},
+  {id:"cactus",nombre:"Cactus",icon:"🌵",precio:200}
+];
+function especieDe(id){for(var i=0;i<ESPECIES.length;i++)if(ESPECIES[i].id===id)return ESPECIES[i];return ESPECIES[0];}
+// Dibujo del árbol en SVG (colores del sistema de diseño: --arbol-*, --tronco, --marchito, --cerezo…).
+function arbolSVG(min,marchito,semilla,alto,esp){
   var e=etapaArbol(min), h=alto||alturaArbol(min), w=Math.round(h*0.66);
+  esp=esp||"roble";
   var verdes=["var(--arbol-a)","var(--arbol-b)","var(--arbol-c)","var(--arbol-d)"], v=verdes[hashStr(semilla)%verdes.length];
-  var copa=marchito?"var(--marchito)":v, copa2=marchito?"var(--marchito-osc)":"var(--arbol-osc)", tronco=marchito?"var(--marchito-osc)":"var(--tronco)";
+  var C={roble:[v,"var(--arbol-osc)","var(--flor)"],cerezo:["var(--cerezo)","var(--cerezo-osc)","#fff"],arce:["var(--arce)","var(--arce-osc)","var(--aviso)"],
+    abeto:["var(--pino)","var(--pino-osc)","var(--nieve)"],palmera:["var(--palma)","var(--palma-osc)","var(--aviso)"],cactus:["var(--cactus)","var(--cactus-osc)","var(--flor)"]}[esp]||[v,"var(--arbol-osc)","var(--flor)"];
+  var copa=marchito?"var(--marchito)":C[0], copa2=marchito?"var(--marchito-osc)":C[1], deco=C[2], tronco=marchito?"var(--marchito-osc)":"var(--tronco)";
   var g="";
   if(e===0){ // brote
     g='<path d="M30 96 C30 84 30 78 30 70" stroke="'+(marchito?tronco:"var(--arbol-osc)")+'" stroke-width="3" fill="none" stroke-linecap="round"/>'+
       (marchito?'<path d="M30 74 C22 80 16 84 14 92 C22 90 28 84 30 76Z" fill="'+copa+'"/><path d="M30 76 C38 82 42 88 44 94 C38 92 32 86 30 78Z" fill="'+copa2+'"/>'
-               :'<path d="M30 74 C22 64 14 64 10 68 C16 76 24 78 30 76Z" fill="'+copa+'"/><path d="M30 72 C36 60 46 58 50 62 C46 72 38 76 30 74Z" fill="'+copa2+'"/>');
-  }else if(e===1){ // arbusto
+               :'<path d="M30 74 C22 64 14 64 10 68 C16 76 24 78 30 76Z" fill="var(--arbol-a)"/><path d="M30 72 C36 60 46 58 50 62 C46 72 38 76 30 74Z" fill="var(--arbol-osc)"/>');
+  }else if(e===1&&esp!=="cactus"){ // arbusto
     g='<rect x="27.5" y="78" width="5" height="18" rx="2" fill="'+tronco+'"/><circle cx="22" cy="74" r="13" fill="'+copa2+'"/><circle cx="38" cy="74" r="13" fill="'+copa2+'"/><circle cx="30" cy="64" r="15" fill="'+copa+'"/>';
+  }else if(esp==="abeto"||(esp==="roble"&&e===4)){ // conífera (el roble es pino en la etapa 4)
+    var k=esp==="abeto"?Math.max(0,5-e)*6:0, nieve=esp==="abeto"&&!marchito&&e>=3;
+    var p=marchito?copa:"var(--pino)", p2=marchito?copa2:"var(--pino-osc)";
+    g='<rect x="27" y="80" width="6" height="16" rx="2" fill="'+tronco+'"/><path d="M30 '+(46+k)+' L52 84 L8 84Z" fill="'+p2+'"/><path d="M30 '+(26+k)+' L48 62 L12 62Z" fill="'+p+'"/><path d="M30 '+(6+k)+' L43 38 L17 38Z" fill="'+p2+'"/>'+
+      (nieve?'<path d="M30 '+(6+k)+' L36 '+(21+k/2)+' L30 '+(18+k/2)+' L24 '+(21+k/2)+'Z" fill="'+deco+'"/><path d="M19 62 L26 57 L30 61 L34 57 L41 62Z" fill="'+deco+'" opacity=".9"/><path d="M14 84 L24 78 L30 82 L36 78 L46 84Z" fill="'+deco+'" opacity=".9"/>':'');
+  }else if(esp==="palmera"){
+    var alt=e>=4?8:e>=3?16:26;
+    g='<path d="M31 96 C29 80 33 60 30 '+(alt+14)+'" stroke="'+tronco+'" stroke-width="6" fill="none" stroke-linecap="round"/>'+
+      '<path d="M30 '+(alt+14)+' C18 '+(alt+6)+' 8 '+(alt+14)+' 4 '+(alt+26)+' C14 '+(alt+18)+' 22 '+(alt+18)+' 30 '+(alt+16)+'Z" fill="'+copa2+'"/>'+
+      '<path d="M30 '+(alt+14)+' C42 '+(alt+6)+' 52 '+(alt+14)+' 56 '+(alt+26)+' C46 '+(alt+18)+' 38 '+(alt+18)+' 30 '+(alt+16)+'Z" fill="'+copa2+'"/>'+
+      '<path d="M30 '+(alt+14)+' C22 '+(alt)+' 14 '+(alt-4)+' 8 '+(alt+2)+' C18 '+(alt+4)+' 24 '+(alt+8)+' 30 '+(alt+15)+'Z" fill="'+copa+'"/>'+
+      '<path d="M30 '+(alt+14)+' C38 '+(alt)+' 46 '+(alt-4)+' 52 '+(alt+2)+' C42 '+(alt+4)+' 36 '+(alt+8)+' 30 '+(alt+15)+'Z" fill="'+copa+'"/>'+
+      (e>=4&&!marchito?'<circle cx="27" cy="'+(alt+19)+'" r="3" fill="'+deco+'"/><circle cx="33" cy="'+(alt+19)+'" r="3" fill="'+deco+'"/>':'');
+  }else if(esp==="cactus"){
+    var top=[70,58,40,26,14,8][e];
+    g='<rect x="23" y="'+top+'" width="14" height="'+(96-top)+'" rx="7" fill="'+copa+'"/><path d="M30 '+(top+6)+' V94" stroke="'+copa2+'" stroke-width="1.5" opacity=".6"/>'+
+      (e>=2?'<path d="M23 '+(top+30)+' H14 a5 5 0 0 1 -5 -5 V'+(top+14)+'" stroke="'+copa+'" stroke-width="9" fill="none" stroke-linecap="round"/>':'')+
+      (e>=3?'<path d="M37 '+(top+40)+' H46 a5 5 0 0 0 5 -5 V'+(top+22)+'" stroke="'+copa+'" stroke-width="9" fill="none" stroke-linecap="round"/>':'')+
+      (e>=5&&!marchito?'<circle cx="30" cy="'+(top+1)+'" r="5" fill="'+deco+'"/><circle cx="30" cy="'+(top+1)+'" r="2" fill="var(--aviso)"/>':'');
   }else if(e===2){ // árbol joven
     g='<rect x="27" y="62" width="6" height="34" rx="2.5" fill="'+tronco+'"/><circle cx="30" cy="44" r="22" fill="'+copa+'"/><circle cx="22" cy="38" r="7" fill="'+copa2+'" opacity=".35"/>';
-  }else if(e===3){ // árbol
+  }else if(e===3||e===4){ // árbol (cerezo y arce también en la etapa 4)
     g='<rect x="26.5" y="58" width="7" height="38" rx="3" fill="'+tronco+'"/><path d="M30 70 L20 60" stroke="'+tronco+'" stroke-width="3" stroke-linecap="round"/>'+
-      '<circle cx="18" cy="46" r="15" fill="'+copa2+'"/><circle cx="42" cy="46" r="15" fill="'+copa2+'"/><circle cx="30" cy="32" r="20" fill="'+copa+'"/><circle cx="24" cy="26" r="6" fill="#fff" opacity=".18"/>';
-  }else if(e===4){ // pino
-    var p=marchito?copa:"var(--pino)", p2=marchito?copa2:"var(--pino-osc)";
-    g='<rect x="27" y="80" width="6" height="16" rx="2" fill="'+tronco+'"/><path d="M30 46 L52 84 L8 84Z" fill="'+p2+'"/><path d="M30 26 L48 62 L12 62Z" fill="'+p+'"/><path d="M30 6 L43 38 L17 38Z" fill="'+p2+'"/>';
-  }else{ // roble en flor
+      '<circle cx="18" cy="46" r="15" fill="'+copa2+'"/><circle cx="42" cy="46" r="15" fill="'+copa2+'"/><circle cx="30" cy="32" r="20" fill="'+copa+'"/><circle cx="24" cy="26" r="6" fill="#fff" opacity=".18"/>'+
+      (e===4&&!marchito?'<circle cx="22" cy="36" r="2.6" fill="'+deco+'"/><circle cx="38" cy="30" r="2.6" fill="'+deco+'"/>':'');
+  }else{ // gran árbol en flor
     g='<rect x="26" y="56" width="8" height="40" rx="3" fill="'+tronco+'"/><path d="M30 66 L18 54 M30 62 L42 50" stroke="'+tronco+'" stroke-width="3.5" stroke-linecap="round"/>'+
       '<circle cx="15" cy="42" r="15" fill="'+copa2+'"/><circle cx="45" cy="42" r="15" fill="'+copa2+'"/><circle cx="30" cy="26" r="22" fill="'+copa+'"/>'+
-      (marchito?'':'<circle cx="20" cy="22" r="3" fill="var(--flor)"/><circle cx="38" cy="18" r="3" fill="var(--flor)"/><circle cx="32" cy="34" r="3" fill="var(--flor)"/><circle cx="12" cy="44" r="2.6" fill="var(--flor)"/><circle cx="48" cy="40" r="2.6" fill="var(--flor)"/>');
+      (marchito?'':'<circle cx="20" cy="22" r="3" fill="'+deco+'"/><circle cx="38" cy="18" r="3" fill="'+deco+'"/><circle cx="32" cy="34" r="3" fill="'+deco+'"/><circle cx="12" cy="44" r="2.6" fill="'+deco+'"/><circle cx="48" cy="40" r="2.6" fill="'+deco+'"/>');
   }
   return '<svg width="'+w+'" height="'+h+'" viewBox="0 0 60 100" aria-hidden="true"'+(marchito?' class="seco"':'')+'><ellipse cx="30" cy="97" rx="16" ry="3" fill="rgba(0,0,0,.12)"/>'+g+'</svg>';
 }
@@ -2348,7 +2385,7 @@ function renderFocusPlant(){
     if(el._etapa===clave){var t=el.querySelector(".fp-txt");if(t)t.textContent=txt;return;}
     var subio=el._etapa!=null&&!FOCUS.withered&&el._etapa.split("|")[1]==="false";
     el._etapa=clave;
-    el.innerHTML='<div class="fp-tree'+(subio?' grow':'')+'">'+arbolSVG(Math.max(min,1),FOCUS.withered,(DATA&&DATA.currentSubject)||"",96)+'</div><div class="fp-txt">'+escapeHTML(txt)+'</div>';
+    el.innerHTML='<div class="fp-tree'+(subio?' grow':'')+'">'+arbolSVG(Math.max(min,1),FOCUS.withered,(DATA&&DATA.currentSubject)||"",96,DATA&&DATA.especie)+'</div><div class="fp-txt">'+escapeHTML(txt)+'</div>';
     if(subio){celebrar(el.querySelector(".fp-tree"),["🌱","🍃","✨"],8);}
   });
 }
@@ -2368,7 +2405,7 @@ function bosqueHTML(ses,vacio){
   var max=160, extra=orden.length>max?orden.length-max:0; if(extra)orden=orden.slice(-max);
   return '<div class="forest-ground">'+orden.map(function(s,i){
     var m=s.focus==="withered", t=(m?"🥀 Marchito":"🌳 "+ETAPAS_ARBOL[etapaArbol(s.min)][1])+" · "+hMin(s.min)+" · "+fmtFeedDate(s.date)+(s.subject?" · "+s.subject:"");
-    return '<span class="arbol" style="--d:'+Math.min(i*28,1400)+'ms" title="'+escapeHTML(t)+'" onclick="showToast(this.title)">'+arbolSVG(s.min,m,s.subject||s.id||i)+'</span>';
+    return '<span class="arbol" style="--d:'+Math.min(i*28,1400)+'ms" title="'+escapeHTML(t)+'" onclick="showToast(this.title)">'+arbolSVG(s.min,m,s.subject||s.id||i,null,s.esp)+'</span>';
   }).join("")+(extra?'<span class="forest-more">+'+extra+'</span>':'')+'</div>';
 }
 function resumenBosque(ses){
@@ -2385,6 +2422,7 @@ function renderForest(){
     '<div class="seg mini" id="forestSeg">'+Object.keys(P).map(function(k){return '<button data-p="'+k+'" class="'+(k===FOREST_PERIOD?"on":"")+'">'+P[k]+'</button>';}).join("")+'</div></div>'+
     '<div class="forest-sum">'+resumenBosque(ses)+(racha>1?' · 🔥 '+racha+' días':'')+'</div>'+
     bosqueHTML(ses,vacio)+
+    '<div class="forest-acts"><button class="btn sm" onclick="abrirTienda()">'+especieDe(DATA.especie).icon+' Especies · 🌰 <span class="seeds-n">'+semillas()+'</span></button>'+(ses.length?'<button class="btn sm ghost" onclick="compartirBosque()">📸 Compartir</button>':'')+'</div>'+
     '<div class="forest-foot">'+(plantarOn()?'Cada sesión planta un árbol: cuanto más estudias, más crece. Si sales de la app más de '+FOCUS_GRACE_SEC+' s, se marchita.':'Plantar árboles está desactivado (actívalo arriba, en «🌳 Plantar árbol»).')+
     (SOCIAL.user&&SOCIAL.friends&&SOCIAL.friends.length?' <button class="linkbtn" onclick="abrirBosquesAmigos()">Ver el bosque de tus amigos →</button>':'')+'</div>';
   el.querySelectorAll("#forestSeg button").forEach(function(b){b.addEventListener("click",function(){FOREST_PERIOD=b.dataset.p;saveJSON("bpna_forest_period",FOREST_PERIOD);renderForest();});});
@@ -2437,8 +2475,8 @@ function pomoTick(){
       if(plantarOn()&&(document.visibilityState==="hidden"||(FOCUS.hiddenAt&&Date.now()-FOCUS.hiddenAt>=FOCUS_GRACE_SEC*1000)))FOCUS.withered=true;
       FOCUS.hiddenAt=0;
       var saved={id:genId(),date:ymd(),min:POMO_FOCUS_MIN,sec:POMO_FOCUS_MIN*60,
-        bib:NO_BIB,ts:Date.now()-POMO_FOCUS_MIN*60000,verif:false,prod:null,note:"Pomodoro",offering:(extrasOn()&&DATA.offeringText)||"",subject:DATA.currentSubject||null,focus:focusResult()};
-      var hAntes=horasTotales();DATA.sessions.push(saved);saveUserData();socialShareSession(saved);comprobarSubidaNivel(hAntes);renderNivel();
+        bib:NO_BIB,ts:Date.now()-POMO_FOCUS_MIN*60000,verif:false,prod:null,note:"Pomodoro",offering:(extrasOn()&&DATA.offeringText)||"",subject:DATA.currentSubject||null,focus:focusResult(),esp:plantarOn()?(DATA.especie||"roble"):null};
+      var hAntes=horasTotales();DATA.sessions.push(saved);saveUserData();socialShareSession(saved);comprobarSubidaNivel(hAntes);renderNivel();trasGuardarSesion(saved);
       showToast(saved.focus==="withered"?"🍅 Pomodoro completado, pero tu árbol se marchitó 🥀":"🍅 ¡Pomodoro completado! 🌳 Árbol plantado en tu bosque");
       if(saved.focus==="ok")confeti(50);
       pomo.phase="break";pomo.secondsLeft=POMO_BREAK_MIN*60;pomo.endAt=Date.now()+pomo.secondsLeft*1000;
@@ -2500,7 +2538,7 @@ function renderSessionFeed(force){
       var stars=s.prod?'<span class="fstars">'+"★".repeat(s.prod)+"☆".repeat(5-s.prod)+'</span>':'';
       var n=SOCIAL.kudosCounts[s.local_id]||0, ya=!!SOCIAL.kudosByMe[s.local_id];
       var extra=(s.subject?' · '+escapeHTML(s.subject):'')+(s.focus==="ok"?' <span title="Sesión de foco completada">🌳</span>':(s.focus==="withered"?' <span title="Salió de la app durante el modo foco">🥀</span>':''));
-      return '<div class="feed-item"><div class="fhead"><div class="fplace">'+escapeHTML(who)+' · '+escapeHTML(lugar)+extra+(s.verif?' <span class="fverif" title="Check-in verificado">✓</span>':'')+'</div><div style="display:flex;align-items:center;gap:2px"><div class="fdate">'+fmtFeedDate(s.date)+'</div>'+ugcMoreBtn("shared_session",s.owner_id+":"+s.local_id,s.owner_id,who)+'</div></div>'+
+      return '<div class="feed-item" ondblclick="kudosDoble(event,'+jsArg(s.local_id)+','+jsArg(s.owner_id)+')"><div class="fhead"><div class="fplace">'+escapeHTML(who)+' · '+escapeHTML(lugar)+extra+(s.verif?' <span class="fverif" title="Check-in verificado">✓</span>':'')+'</div><div style="display:flex;align-items:center;gap:2px"><div class="fdate">'+fmtFeedDate(s.date)+'</div>'+ugcMoreBtn("shared_session",s.owner_id+":"+s.local_id,s.owner_id,who)+'</div></div>'+
         '<div class="fdur">'+hMin(s.minutes)+'</div>'+
         '<div class="fmeta">'+stars+'</div>'+
         (s.note?'<div class="fnote">"'+escapeHTML(s.note)+'"</div>':'')+
@@ -2685,7 +2723,7 @@ function openDayModal(key){
         if(!DATA.events[key])DATA.events[key]=[];
         var compartir=!!SOCIAL.user&&$("evShareExam").checked;
         var evObj={id:genId(),title:t,type:selType,shared:compartir};
-        DATA.events[key].push(evObj);saveUserData();closeModal();renderCal();
+        DATA.events[key].push(evObj);saveUserData();closeModal();renderCal();registrarAccion("agenda");
         if(compartir)socialShareEvent({id:evObj.id,title:evObj.title,type:selType,date:key});
       });
       document.querySelectorAll("#dayEvs .del").forEach(function(btn){btn.addEventListener("click",function(){
@@ -3500,3 +3538,340 @@ if("serviceWorker" in navigator){
   });
 }
 
+
+/* =====================================================================================
+   DOPAMINA SANA (2026-10-26): semillas y tienda del bosque (Forest), misiones diarias con cofre
+   (Duolingo), racha con llama (Duolingo/Snapchat), hitos durante la sesión, historias de amigos
+   (Instagram), doble toque para dar kudos (Instagram/TikTok) y tarjetas para stories (Strava).
+   Todo se calcula en el dispositivo con DATA; las animaciones respetan «reducir movimiento».
+   ===================================================================================== */
+
+/* ----- Semillas 🌰: 1 por cada 5 min de un árbol que no se marchitó + premios. Lo gastado se guarda. ----- */
+function semillasGanadasSesiones(){var t=0;((DATA&&DATA.sessions)||[]).forEach(function(s){if(s.focus!=="withered")t+=Math.floor((s.min||0)/5);});return t;}
+function semillas(){if(!DATA)return 0;return Math.max(0,semillasGanadasSesiones()+(DATA.semillasPremio||0)-(DATA.semillasGastadas||0));}
+function darSemillas(n,motivo,el){
+  DATA.semillasPremio=(DATA.semillasPremio||0)+n;saveUserData();
+  showToast("🌰 +"+n+" semillas"+(motivo?" · "+motivo:""));
+  celebrar(el||$("seedsPill")||null,["🌰","✨"],8);renderSemillas();
+}
+function renderSemillas(){
+  var n=semillas();
+  document.querySelectorAll(".seeds-n").forEach(function(x){if(x.textContent!==String(n)){x.textContent=n;x.classList.remove("pop");void x.offsetWidth;x.classList.add("pop");}});
+}
+function especieComprada(id){return especieDe(id).precio===0||((DATA.especiesCompradas||[]).indexOf(id)!==-1);}
+function abrirTienda(){
+  var n=semillas(), actual=DATA.especie||"roble";
+  openModal('<h3>🌱 Especies para tu bosque</h3><div class="sub">Ganas 🌰 1 semilla por cada 5 min de árbol sano y más con las misiones. Tienes <b class="seeds-n">'+n+'</b> 🌰</div>'+
+    '<div class="shop">'+ESPECIES.map(function(e){
+      var mia=especieComprada(e.id), usando=actual===e.id, puede=n>=e.precio;
+      var btn=usando?'<button class="btn sm" disabled>✓ Plantando</button>'
+        :mia?'<button class="btn sm ghost" onclick="usarEspecie(\''+e.id+'\')">Usar</button>'
+        :'<button class="btn sm'+(puede?'':' ghost')+'" '+(puede?'':'disabled ')+'onclick="comprarEspecie(\''+e.id+'\',this)">'+(puede?'Comprar · 🌰 '+e.precio:'🔒 🌰 '+e.precio)+'</button>';
+      return '<div class="shop-item'+(usando?' on':'')+(mia?'':' locked')+'"><div class="shop-tree">'+arbolSVG(200,false,e.id,96,e.id)+'</div><b>'+e.icon+' '+escapeHTML(e.nombre)+'</b>'+btn+'</div>';
+    }).join("")+'</div>');
+}
+function comprarEspecie(id,btn){
+  var e=especieDe(id); if(especieComprada(id)){usarEspecie(id);return;}
+  if(semillas()<e.precio){showToast("Te faltan "+(e.precio-semillas())+" semillas 🌰");return;}
+  DATA.semillasGastadas=(DATA.semillasGastadas||0)+e.precio;
+  DATA.especiesCompradas=(DATA.especiesCompradas||[]).concat([id]);DATA.especie=id;saveUserData();
+  celebrar(btn,[e.icon,"✨","🌰"],14);confeti(70);showToast("🎉 ¡"+e.nombre+" desbloqueado! Tus próximos árboles serán "+e.icon);
+  setTimeout(abrirTienda,500);renderForest();renderSemillas();
+}
+function usarEspecie(id){DATA.especie=id;saveUserData();showToast(especieDe(id).icon+" Ahora plantas: "+especieDe(id).nombre);abrirTienda();renderFocusPlant();}
+
+/* ----- Misiones diarias (3 al día, una siempre fácil) con cofre al completarlas ----- */
+var MISIONES_POOL=[
+  {id:"m25",icon:"⏱️",txt:"Estudia 25 min hoy",meta:25,min:true,val:function(h){return h.min;}},
+  {id:"arboles2",icon:"🌳",txt:"Planta 2 árboles sanos",meta:2,val:function(h){return h.vivos;}},
+  {id:"pomo",icon:"🍅",txt:"Completa un Pomodoro",meta:1,val:function(h){return h.pomos;}},
+  {id:"biblio",icon:"📚",txt:"Estudia en una biblioteca",meta:1,val:function(h){return h.enBib;}},
+  {id:"madruga",icon:"🌅",txt:"Empieza antes de las 10:00",meta:1,val:function(h){return h.temprano;}},
+  {id:"largo",icon:"💪",txt:"Una sesión de 45 min seguidos",meta:45,min:true,val:function(h){return h.maxSes;}},
+  {id:"m90",icon:"🔥",txt:"Estudia 1 h 30 min hoy",meta:90,min:true,val:function(h){return h.min;}},
+  {id:"social",icon:"👏",txt:"Da kudos o reza por un amigo",meta:1,cuenta:true,val:function(h){return h.social;}},
+  {id:"agenda",icon:"📅",txt:"Apunta un examen o tarea",meta:1,val:function(h){return h.agenda;}}
+];
+function registrarAccion(tipo){
+  if(!DATA)return; var hoy=ymd();
+  if(!DATA.acciones||DATA.acciones.fecha!==hoy)DATA.acciones={fecha:hoy};
+  DATA.acciones[tipo]=(DATA.acciones[tipo]||0)+1;saveUserData();comprobarMisiones();
+}
+function statsHoy(){
+  var hoy=ymd(),h={min:0,vivos:0,pomos:0,enBib:0,temprano:0,maxSes:0,social:0,agenda:0};
+  DATA.sessions.forEach(function(s){if(s.date!==hoy)return;h.min+=s.min;if(s.focus!=="withered")h.vivos++;if(s.note==="Pomodoro")h.pomos++;
+    if(s.bib&&s.bib!==NO_BIB)h.enBib++;if(s.ts&&new Date(s.ts).getHours()<10)h.temprano++;h.maxSes=Math.max(h.maxSes,s.min);});
+  if(studyTimer.running){var m=elapsedMin();h.min+=m;h.maxSes=Math.max(h.maxSes,m);if(new Date(studyTimer.start).getHours()<10&&ymd(new Date(studyTimer.start))===hoy)h.temprano=Math.max(h.temprano,1);
+    if(studyTimer.bibIndex>=0)h.enBib=Math.max(h.enBib,1);}
+  var a=DATA.acciones&&DATA.acciones.fecha===hoy?DATA.acciones:{};h.social=a.social||0;h.agenda=a.agenda||0;
+  return h;
+}
+function misionesDeHoy(){
+  var hoy=ymd();
+  if(DATA.misiones&&DATA.misiones.fecha===hoy)return DATA.misiones;
+  var hora=new Date().getHours();
+  // sin misiones imposibles: madrugar solo si aún es temprano; de noche, misiones cortas
+  var pool=MISIONES_POOL.filter(function(m){return m.id!=="m25"&&(!m.cuenta||SOCIAL.user)&&!(m.id==="madruga"&&hora>=9)&&!(hora>=21&&(m.id==="m90"||m.id==="largo"));});
+  var semilla=hashStr(hoy+(CURRENT||"")), ids=["m25"];
+  while(ids.length<3&&pool.length){var k=semilla%pool.length;ids.push(pool[k].id);pool.splice(k,1);semilla=Math.floor(semilla/7)+13;}
+  DATA.misiones={fecha:hoy,ids:ids,hechas:{},cofre:false};saveUserData();
+  return DATA.misiones;
+}
+function misionDef(id){return MISIONES_POOL.filter(function(m){return m.id===id;})[0];}
+function comprobarMisiones(){
+  if(!DATA)return; var M=misionesDeHoy(), h=statsHoy(), nuevas=[];
+  M.ids.forEach(function(id){var d=misionDef(id);if(d&&!M.hechas[id]&&d.val(h)>=d.meta){M.hechas[id]=new Date().toISOString();nuevas.push(d);}});
+  if(nuevas.length){
+    DATA.semillasPremio=(DATA.semillasPremio||0)+10*nuevas.length;saveUserData();
+    nuevas.forEach(function(d,k){setTimeout(function(){showToast("✅ Misión cumplida: "+d.txt+" · +10 🌰");celebrar($("missionsCard"),[d.icon,"✨","🌰"],10);},k*1400);});
+    renderSemillas();
+  }
+  renderMisiones();
+}
+function renderMisiones(){
+  var el=$("missionsCard"); if(!el||!DATA)return;
+  var M=misionesDeHoy(), h=statsHoy(), hechas=M.ids.filter(function(id){return M.hechas[id];}).length;
+  var finDia=new Date();finDia.setHours(24,0,0,0);var qm=Math.max(0,Math.round((finDia-Date.now())/60000)), quedan=qm>=60?Math.floor(qm/60)+" h":qm+" min";
+  el.innerHTML='<div class="mis-head"><div class="section-title" style="margin:0">🎯 Misiones de hoy</div><span class="mis-time">⏳ '+quedan+'</span></div>'+
+    M.ids.map(function(id){
+      var d=misionDef(id); if(!d)return "";
+      var v=Math.min(d.meta,d.val(h)), pct=Math.round(v/d.meta*100), ok=!!M.hechas[id];
+      return '<div class="mis'+(ok?' ok':'')+'"><div class="mis-ic">'+(ok?'✅':d.icon)+'</div><div class="mis-main"><div class="mis-txt">'+escapeHTML(d.txt)+'</div>'+
+        '<div class="mis-bar"><i style="width:'+pct+'%"></i></div></div><div class="mis-val">'+(d.min?hMin(v).replace("0h ",""):v)+'/'+(d.min?hMin(d.meta).replace("0h ",""):d.meta)+'</div></div>';
+    }).join("")+
+    '<button class="cofre'+(hechas===3&&!M.cofre?' listo':'')+(M.cofre?' abierto':'')+'" onclick="abrirCofre(this)" '+(hechas===3&&!M.cofre?'':'disabled')+'>'+
+      '<span class="cofre-ic">'+(M.cofre?'🎁':'🎁')+'</span><span>'+(M.cofre?'Cofre de hoy abierto · vuelve mañana':hechas===3?'¡Abre tu cofre!':'Cofre: completa las 3 misiones ('+hechas+'/3)')+'</span></button>';
+}
+function abrirCofre(btn){
+  var M=misionesDeHoy(); if(M.cofre)return;
+  if(M.ids.some(function(id){return !M.hechas[id];}))return;
+  M.cofre=true;var premio=20+(hashStr(ymd()+"cofre")%4)*10; // 20-50 semillas
+  var hielo=(DATA.streakFreezes||0)<3&&hashStr(ymd())%3===0;
+  DATA.semillasPremio=(DATA.semillasPremio||0)+premio;if(hielo)DATA.streakFreezes=(DATA.streakFreezes||0)+1;saveUserData();
+  openModal('<div class="cofre-modal"><div class="cofre-big">🎁</div><h3>¡Misiones completadas!</h3><div class="sub">Has ganado <b>🌰 '+premio+' semillas</b>'+(hielo?' y <b>🧊 un congelador de racha</b>':'')+'.</div>'+
+    '<button class="btn" onclick="closeModal();abrirTienda()">Ver especies</button><button class="linkbtn" onclick="closeModal()" style="display:block;margin:12px auto 0">Seguir</button></div>',function(){
+    var c=document.querySelector(".cofre-big");setTimeout(function(){if(c){c.textContent="✨";c.classList.add("abre");}confeti(140);celebrar(c,["🌰","✨","💎","⭐"],18);},700);
+  });
+  renderMisiones();renderSemillas();
+}
+
+/* ----- Racha con llama (Duolingo): pastilla arriba, ventana con la semana, «en peligro» por la tarde ----- */
+function estudiadoHoy(){var hoy=ymd();return studyTimer.running||DATA.sessions.some(function(s){return s.date===hoy;});}
+function renderRacha(){
+  var el=$("streakPill"); if(!el||!DATA)return;
+  var n=streakDays(), hoy=estudiadoHoy(), peligro=!hoy&&n>0&&new Date().getHours()>=19;
+  el.className="streak-pill"+(hoy?" on":"")+(peligro?" peligro":"");
+  el.innerHTML='<span class="fl">🔥</span><b>'+n+'</b>';
+  el.title=hoy?"Racha de "+n+" días":(peligro?"¡Tu racha está en peligro! Estudia hoy":"Aún no has estudiado hoy");
+}
+function abrirRacha(){
+  var n=streakDays(), mejor=0;try{mejor=computeBestStreak();}catch(e){}
+  var dias={};DATA.sessions.forEach(function(s){dias[s.date]=(dias[s.date]||0)+s.min;});(DATA.usedFreezeDates||[]).forEach(function(d){if(!dias[d])dias[d]=-1;});
+  // los últimos 7 días acabando hoy (como Duolingo)
+  var hoy=new Date(),LET=["D","L","M","X","J","V","S"];
+  var sem=[6,5,4,3,2,1,0].map(function(atras){var d=new Date(hoy);d.setDate(hoy.getDate()-atras);var key=ymd(d),v=dias[key],l=atras===0?"Hoy":LET[d.getDay()];
+    var cls=v>0?"ok":v===-1?"hielo":(key===ymd()?"hoy":key<ymd()?"falta":"");
+    return '<div class="sd '+cls+'"><span>'+(v>0?"🔥":v===-1?"🧊":"")+'</span><small>'+l+'</small></div>';}).join("");
+  var hoyOk=estudiadoHoy();
+  openModal('<div class="racha-modal"><div class="racha-fuego'+(hoyOk?'':' apagado')+'">🔥</div><div class="racha-n">'+n+'</div><div class="racha-lbl">'+(n===1?"día seguido":"días seguidos")+'</div>'+
+    '<div class="semana-racha">'+sem+'</div>'+
+    '<div class="sub" style="margin-top:12px">'+(hoyOk?"¡Hoy ya cuenta! Vuelve mañana para mantenerla.":n?"Estudia hoy para no perder tu racha de "+n+" días.":"Estudia hoy y empieza una racha.")+'</div>'+
+    '<div class="racha-stats"><div><b>'+mejor+'</b><small>Mejor racha</small></div><div><b>🧊 '+(DATA.streakFreezes||0)+'</b><small>Congeladores</small></div><div><b>🌰 '+semillas()+'</b><small>Semillas</small></div></div>'+
+    (hoyOk?'':'<button class="btn" onclick="closeModal();goView(\'study\')">▶ Estudiar ahora</button>')+'</div>');
+}
+// Primera sesión del día: la llama se enciende (estilo Duolingo)
+function celebrarRacha(){
+  if(sinMovimiento()){showToast("🔥 ¡Racha de "+streakDays()+" días!");return;}
+  var n=streakDays(), o=document.createElement("div");o.className="racha-overlay";
+  o.innerHTML='<div class="ro-fuego">🔥</div><div class="ro-n">'+n+'</div><div class="ro-t">'+(n===1?"¡Empieza tu racha!":"¡Racha de "+n+" días!")+'</div>';
+  o.addEventListener("click",function(){o.remove();});document.body.appendChild(o);
+  setTimeout(function(){o.classList.add("out");setTimeout(function(){o.remove();},500);},2300);
+}
+function trasGuardarSesion(sesion){
+  var hoy=ymd(), deHoy=DATA.sessions.filter(function(s){return s.date===hoy;}).length;
+  if(sesion&&sesion.date===hoy&&deHoy===1)setTimeout(celebrarRacha,350);
+  comprobarMisiones();renderRacha();renderSemillas();
+}
+
+/* ----- Hitos durante la sesión ----- */
+var HITOS=[25,50,90,120,180,240];
+function comprobarHitos(){
+  if(!studyTimer.running)return; var m=elapsedMin();
+  studyTimer.hitos=studyTimer.hitos||{start:studyTimer.start};
+  if(studyTimer.hitos.start!==studyTimer.start)studyTimer.hitos={start:studyTimer.start};
+  HITOS.forEach(function(x){
+    if(m>=x&&m<x+2&&!studyTimer.hitos[x]){studyTimer.hitos[x]=1;
+      var frases={25:"¡25 min! Calentando motores",50:"¡50 min seguidos! Imparable",90:"¡1 h 30! Modo bestia",120:"¡2 horas! Leyenda de la biblioteca",180:"¡3 horas! Tu árbol florece",240:"¡4 horas! Respeto"};
+      showToast("🔥 "+frases[x]+(FOCUS.withered?"":" · tu árbol crece"));celebrar(document.querySelector(".ring-wrap"),["🔥","⚡","✨"],12);
+    }else if(m>=x+2)studyTimer.hitos[x]=1; // al restaurar una sesión no se celebran hitos viejos
+  });
+}
+
+/* ----- Doble toque para dar kudos (Instagram) ----- */
+function kudosDoble(ev,localId,ownerId){
+  if(ev&&ev.target&&ev.target.closest&&ev.target.closest("button,a,input,textarea"))return;
+  var x=ev.clientX,y=ev.clientY;
+  if(!sinMovimiento()){var c=document.createElement("span");c.className="corazon";c.textContent="👏";c.style.left=x+"px";c.style.top=y+"px";document.body.appendChild(c);setTimeout(function(){c.remove();},900);}
+  if(SOCIAL.kudosByMe[localId])return;
+  giveKudos(localId,ownerId);
+}
+
+/* ----- Historias (Instagram): quién ha estudiado hoy ----- */
+var STORIES={lista:[],idx:0,slide:0,timer:null};
+function storiesVistas(){return loadJSON("bpna_stories_vistas",{});}
+function storiesAmigos(){
+  var ayer=new Date();ayer.setDate(ayer.getDate()-1);var desde=ymd(ayer), grupos={};
+  filterBlocked(SOCIAL.friendSessions||[],"owner_id").forEach(function(s){if(s.date<desde)return;(grupos[s.owner_id]=grupos[s.owner_id]||[]).push(s);});
+  (SOCIAL.presence||[]).forEach(function(p){if(!grupos[p.user_id])grupos[p.user_id]=[];});
+  var vistas=storiesVistas();
+  return Object.keys(grupos).map(function(id){
+    var ses=grupos[id].slice().sort(function(a,b){return Date.parse(a.created_at||a.date)-Date.parse(b.created_at||b.date);});
+    var ultima=ses.length?ses[ses.length-1].local_id:"";var ahora=socialPresenceFor(id);
+    return {id:id,nombre:socialNameById(id),ses:ses,ahora:ahora,nueva:!!(ahora||(ultima&&vistas[id]!==ultima)),ultima:ultima};
+  }).sort(function(a,b){return (b.ahora?1:0)-(a.ahora?1:0)||(b.nueva?1:0)-(a.nueva?1:0);});
+}
+function colorDe(id){var cs=["#6c5ce7","#ec4899","#f59e0b","#10b981","#0ea5e9","#a21caf","#ef4444","#14b8a6"];return cs[hashStr(id)%cs.length];}
+function renderStories(){
+  var el=$("storiesBar"); if(!el||!DATA)return;
+  var lista=SOCIAL.user?storiesAmigos():[], hoyMin=statsHoy().min;
+  STORIES.lista=lista;
+  var html='<button class="story me'+(hoyMin?' nueva':'')+'" onclick="abrirStoryMia()"><span class="st-ring"><span class="st-av">'+(hoyMin?arbolSVG(Math.max(hoyMin,1),false,"yo",40,DATA.especie):'＋')+'</span></span><small>Tu día</small></button>';
+  html+=lista.map(function(s,k){
+    return '<button class="story'+(s.nueva?' nueva':'')+(s.ahora?' ahora':'')+'" onclick="abrirStory('+k+')"><span class="st-ring"><span class="st-av" style="background:'+colorDe(s.id)+'">'+escapeHTML((s.nombre||"?").charAt(0).toUpperCase())+'</span></span>'+
+      (s.ahora?'<em class="st-live">ESTUDIANDO</em>':'')+'<small>'+escapeHTML((s.nombre||"Amigo").split(" ")[0])+'</small></button>';
+  }).join("");
+  if(!lista.length)html+='<button class="story invita" onclick="'+(SOCIAL.user?'invitarAmigos()':'abrirLogin(\'reg\')')+'"><span class="st-ring"><span class="st-av">＋</span></span><small>'+(SOCIAL.user?'Invitar':'Amigos')+'</small></button>';
+  el.innerHTML=html;
+}
+function slideHTML(s,nombre){
+  var m=s.minutes!=null?s.minutes:s.min, lugar=(s.bib_name||s.bib||"").replace("Biblioteca ","").replace("Pública ","");
+  var hace=s.created_at?(function(){var x=Math.round((Date.now()-Date.parse(s.created_at))/60000);return x<60?"hace "+x+" min":x<1440?"hace "+Math.round(x/60)+" h":"ayer";})():fmtFeedDate(s.date);
+  return '<div class="sv-tree">'+arbolSVG(Math.max(m,1),s.focus==="withered",s.subject||s.local_id||s.id,190,s.esp)+'</div>'+
+    '<div class="sv-min">'+hMin(m)+'</div><div class="sv-where">'+(lugar&&lugar!==NO_BIB?'📍 '+escapeHTML(lugar):'🏠 Fuera de la biblioteca')+(s.subject?' · 📚 '+escapeHTML(s.subject):'')+'</div>'+
+    (s.focus==="withered"?'<div class="sv-tag">🥀 Se le marchitó el árbol</div>':s.focus==="ok"?'<div class="sv-tag">🌳 Árbol plantado</div>':'')+
+    (s.note&&s.note!=="Pomodoro"?'<div class="sv-note">“'+escapeHTML(s.note)+'”</div>':'')+'<div class="sv-hace">'+escapeHTML(hace)+'</div>';
+}
+function abrirStory(k){
+  var s=STORIES.lista[k]; if(!s)return; STORIES.idx=k;STORIES.slide=0;
+  var slides=s.ses.map(function(x){return {html:slideHTML(x,s.nombre),ses:x};});
+  if(s.ahora){var b=BIBLIOTECAS[s.ahora.bib_index];slides.push({html:'<div class="sv-live">🔴 EN DIRECTO</div><div class="sv-min">Estudiando ahora</div><div class="sv-where">'+(b?'📍 '+escapeHTML(cortoNombre(b.nombre)):'')+'</div>'+(s.ahora.started_at?'<div class="sv-hace">empezó hace '+(function(){var x=Math.max(1,Math.round((Date.now()-Date.parse(s.ahora.started_at))/60000));return x<60?x+' min':Math.floor(x/60)+' h '+(x%60)+' min';})()+'</div>':'')+(b?'<button class="btn sm" style="margin-top:16px" onclick="cerrarStory();socialGoFriend(\''+s.id+'\')">Ver en el mapa</button>':''),ses:null});}
+  if(!slides.length)return;
+  if(s.ultima){var v=storiesVistas();v[s.id]=s.ultima;saveJSON("bpna_stories_vistas",v);}
+  mostrarStory(s.nombre,colorDe(s.id),slides,s.id);
+}
+function abrirStoryMia(){
+  var hoy=ymd(), mias=DATA.sessions.filter(function(s){return s.date===hoy;});
+  var slides=mias.map(function(x){return {html:slideHTML(x,"Tú"),ses:null};});
+  var h=statsHoy();
+  slides.push({html:'<div class="sv-min">'+(h.min?hMin(h.min)+' hoy':'Tu día está por empezar')+'</div><div class="sv-where">🔥 Racha de '+streakDays()+' días · 🌰 '+semillas()+' semillas</div>'+
+    '<button class="btn sm" style="margin-top:18px" onclick="compartirStoryDia()">📸 Compartir en stories</button>'+
+    (h.min?'':'<button class="btn sm ghost" style="margin-top:10px;background:#fff" onclick="cerrarStory();goView(\'study\')">▶ Empezar a estudiar</button>'),ses:null});
+  mostrarStory("Tu día",null,slides,"yo");
+}
+function mostrarStory(nombre,color,slides,id){
+  cerrarStory();
+  var o=document.createElement("div");o.className="story-viewer";o.id="storyViewer";
+  if(color)o.style.setProperty("--sv",color);
+  o.innerHTML='<div class="sv-bars">'+slides.map(function(){return '<span><i></i></span>';}).join("")+'</div>'+
+    '<div class="sv-head"><span class="sv-av">'+escapeHTML(nombre.charAt(0).toUpperCase())+'</span><b>'+escapeHTML(nombre)+'</b><button class="sv-x" onclick="cerrarStory()" aria-label="Cerrar">×</button></div>'+
+    '<div class="sv-body"></div><div class="sv-foot"></div><div class="sv-tap izq"></div><div class="sv-tap der"></div>';
+  document.body.appendChild(o);
+  STORIES.slides=slides;STORIES.owner=id;STORIES.slide=0;
+  o.querySelector(".sv-tap.izq").addEventListener("click",function(){irSlide(STORIES.slide-1);});
+  o.querySelector(".sv-tap.der").addEventListener("click",function(){irSlide(STORIES.slide+1);});
+  o.querySelector(".sv-body").addEventListener("dblclick",function(e){var sl=STORIES.slides[STORIES.slide];if(sl&&sl.ses)kudosDoble(e,sl.ses.local_id,sl.ses.owner_id);});
+  document.addEventListener("keydown",teclaStory);
+  irSlide(0);
+}
+function irSlide(n){
+  var o=$("storyViewer"); if(!o)return;
+  if(n<0)n=0;
+  if(n>=STORIES.slides.length){
+    // siguiente amigo con historia, como en Instagram
+    if(STORIES.owner!=="yo"&&STORIES.idx+1<STORIES.lista.length){abrirStory(STORIES.idx+1);return;}
+    cerrarStory();return;
+  }
+  STORIES.slide=n;var sl=STORIES.slides[n];
+  o.querySelectorAll(".sv-bars span").forEach(function(b,k){b.className=k<n?"vista":k===n?"activa":"";});
+  var body=o.querySelector(".sv-body");body.innerHTML=sl.html;body.classList.remove("entra");void body.offsetWidth;body.classList.add("entra");
+  var foot=o.querySelector(".sv-foot");
+  if(sl.ses&&STORIES.owner!=="yo"){
+    var ya=!!SOCIAL.kudosByMe[sl.ses.local_id],nk=SOCIAL.kudosCounts[sl.ses.local_id]||0;
+    foot.innerHTML='<button class="sv-kudos'+(ya?' on':'')+'" onclick="event.stopPropagation();kudosDoble({clientX:innerWidth/2,clientY:innerHeight-120},\''+sl.ses.local_id+'\',\''+sl.ses.owner_id+'\');this.classList.add(\'on\',\'pop\')">👏 '+(ya?'Kudos dados':'Dar kudos')+(nk?' · '+nk:'')+'</button><small>o toca dos veces</small>';
+  }else foot.innerHTML="";
+  clearTimeout(STORIES.timer);
+  var dur=sl.ses?5200:7000;
+  var bar=o.querySelector(".sv-bars span.activa i");if(bar){bar.style.animationDuration=dur+"ms";}
+  STORIES.timer=setTimeout(function(){irSlide(STORIES.slide+1);},dur);
+}
+function teclaStory(e){if(e.key==="Escape")cerrarStory();else if(e.key==="ArrowRight")irSlide(STORIES.slide+1);else if(e.key==="ArrowLeft")irSlide(STORIES.slide-1);}
+function cerrarStory(){clearTimeout(STORIES.timer);var o=$("storyViewer");if(o)o.remove();document.removeEventListener("keydown",teclaStory);renderStories();}
+
+/* ----- Tarjetas para stories (Strava/Instagram): imagen 1080×1920 del bosque o de la sesión ----- */
+function svgLiteral(svg){
+  var cs=getComputedStyle(document.documentElement);
+  return svg.replace("<svg ",'<svg xmlns="http://www.w3.org/2000/svg" ').replace(/var\((--[\w-]+)\)/g,function(m,v){return cs.getPropertyValue(v).trim()||"#22c55e";});
+}
+function cargarSVG(svg){return new Promise(function(res){var im=new Image();im.onload=function(){res(im);};im.onerror=function(){res(null);};im.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svgLiteral(svg));});}
+function lienzoStory(){
+  var W=1080,H=1920,c=document.createElement("canvas");c.width=W;c.height=H;var g=c.getContext("2d");
+  var gr=g.createLinearGradient(0,0,0,H);gr.addColorStop(0,"#5b4bd6");gr.addColorStop(.55,"#a21caf");gr.addColorStop(1,"#f59e0b");g.fillStyle=gr;g.fillRect(0,0,W,H);
+  return {c:c,g:g,W:W,H:H};
+}
+function textoC(g,t,x,y,font,color){g.font=font;g.fillStyle=color||"#fff";g.textAlign="center";g.fillText(t,x,y);g.textAlign="left";}
+async function compartirLienzo(c,nombre,texto){
+  var blob=await new Promise(function(r){c.toBlob(r,"image/png");});
+  var file=new File([blob],nombre,{type:"image/png"});
+  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:"Bibliomapa",text:texto});return;}}catch(e){if(e&&e.name==="AbortError")return;}
+  var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=nombre;document.body.appendChild(a);a.click();a.remove();
+  showToast("Imagen descargada: súbela a tus stories 📸");
+}
+async function dibujarBosque(g,ses,x0,y0,ancho,alto){
+  // suelo
+  g.fillStyle="rgba(255,255,255,.16)";g.beginPath();g.roundRect?g.roundRect(x0,y0,ancho,alto,40):g.rect(x0,y0,ancho,alto);g.fill();
+  g.fillStyle="#4ade80";g.fillRect(x0,y0+alto-36,ancho,36);
+  var lista=ses.slice(-40), filas=lista.length>14?3:lista.length>4?2:1, porFila=Math.ceil(lista.length/filas)||1, altoFila=(alto-60)/filas;
+  for(var f=0;f<filas;f++){
+    var trozo=lista.slice(f*porFila,(f+1)*porFila), base=y0+alto-36-(filas-1-f)*altoFila;
+    var imgs=await Promise.all(trozo.map(function(s){return cargarSVG(arbolSVG(s.min,s.focus==="withered",s.subject||s.id,null,s.esp));}));
+    // escala para llenar la fila sin salirse: por alto (el árbol más alto) y por ancho (la suma)
+    var maxH=Math.max.apply(null,trozo.map(function(s){return alturaArbol(s.min);})), sumW=trozo.reduce(function(a,s){return a+alturaArbol(s.min)*0.66;},0);
+    var esc=Math.min((altoFila-30)/maxH,(ancho-60)/sumW,6);
+    var anchos=imgs.map(function(im,k){return im?alturaArbol(trozo[k].min)*0.66*esc:0;}), total=anchos.reduce(function(a,b){return a+b;},0);
+    var x=x0+(ancho-total)/2;
+    imgs.forEach(function(im,k){if(!im)return;var h=alturaArbol(trozo[k].min)*esc,w=anchos[k];g.drawImage(im,x,base-h,w,h);x+=w;});
+  }
+}
+async function compartirBosque(){
+  var ses=sesionesPeriodo(DATA.sessions,FOREST_PERIOD==="all"?"month":FOREST_PERIOD);
+  if(!ses.length){showToast("Planta algún árbol primero 🌱");return;}
+  showToast("Preparando tu imagen…");
+  var L=lienzoStory(),g=L.g,W=L.W,vivos=ses.filter(function(s){return s.focus!=="withered";}).length,min=ses.reduce(function(a,s){return a+s.min;},0);
+  var P={day:"HOY",week:"ESTA SEMANA",month:"ESTE MES",all:"ESTE MES"}[FOREST_PERIOD];
+  textoC(g,"MI BOSQUE · "+P,W/2,190,"800 44px system-ui,sans-serif","rgba(255,255,255,.85)");
+  textoC(g,hMin(min),W/2,370,"800 190px system-ui,sans-serif");
+  var rd=streakDays();textoC(g,"🌳 "+vivos+(vivos===1?" árbol":" árboles")+"   🔥 "+rd+(rd===1?" día":" días"),W/2,470,"700 56px system-ui,sans-serif");
+  await dibujarBosque(g,ses,70,560,W-140,1000);
+  textoC(g,"Planta tu bosque estudiando",W/2,1700,"600 48px system-ui,sans-serif","rgba(255,255,255,.9)");
+  textoC(g,"bibliomapa.es",W/2,1790,"800 64px system-ui,sans-serif");
+  compartirLienzo(L.c,"mi-bosque.png","Mi bosque de estudio 🌳 "+hMin(min)+" · bibliomapa.es");
+}
+async function compartirSesionStory(id){
+  var s=DATA.sessions.filter(function(x){return x.id===id;})[0]; if(!s)return;
+  showToast("Preparando tu imagen…");
+  var L=lienzoStory(),g=L.g,W=L.W;
+  textoC(g,"SESIÓN DE ESTUDIO",W/2,200,"800 44px system-ui,sans-serif","rgba(255,255,255,.85)");
+  var im=await cargarSVG(arbolSVG(s.min,s.focus==="withered",s.subject||s.id,null,s.esp));
+  if(im)g.drawImage(im,W/2-260,330,520,788);
+  textoC(g,hMin(s.min),W/2,1290,"800 200px system-ui,sans-serif");
+  var lugar=s.bib&&s.bib!==NO_BIB?cortoNombre(s.bib):"";
+  textoC(g,(lugar?"📍 "+lugar:"")+(s.subject?(lugar?"  ·  ":"")+"📚 "+s.subject:""),W/2,1390,"700 50px system-ui,sans-serif");
+  textoC(g,"🔥 Racha de "+streakDays()+(streakDays()===1?" día":" días"),W/2,1480,"700 56px system-ui,sans-serif");
+  textoC(g,"bibliomapa.es",W/2,1790,"800 64px system-ui,sans-serif");
+  compartirLienzo(L.c,"mi-sesion.png","He estudiado "+hMin(s.min)+" 🌳 bibliomapa.es");
+}
+async function compartirStoryDia(){
+  var hoy=ymd(),ses=DATA.sessions.filter(function(s){return s.date===hoy;});
+  if(!ses.length){showToast("Estudia un poco y comparte tu día 🌱");return;}
+  var prev=FOREST_PERIOD;FOREST_PERIOD="day";await compartirBosque();FOREST_PERIOD=prev;
+}
