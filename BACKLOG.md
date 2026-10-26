@@ -52,6 +52,8 @@ empiezan el 1 de diciembre y los de la UPNA el 15), así que la producción debe
 - [ ] Misas · Compartir una biblioteca con enlace `#bib=<slug>` y `navigator.share`
 - [ ] Misas · Atajos de PWA en `manifest.json` ("Te recomiendo ahora", "Abren pronto")
 
+- [ ] Objetivo 1 · Arreglo: en bibliotecas de fuera de Navarra con horario, el bloque ACCESO de la ficha dice «red pública de Navarra (Ley Foral 32/2002)» (en app.js la rama de acceso por defecto solo mira `b.sinHorario`); visto el 2026-10-27 en la Infanta Elena de Sevilla
+
 ## Datos (por lotes pequeños, siempre con fuente oficial)
 - [ ] España · Horarios verificados: seguir añadiendo 10 bibliotecas por tarea (hay 54 con horario, 37/51 provincias). Priorizar capitales de provincia sin ninguna. Como pista para buscar la fuente oficial puede usarse el campo `oh` de `data/bibliotecas_espana.json` (OpenStreetMap, ODbL), pero nunca publicarlo como verificado. Cada horario nuevo lleva `h.fv` con la fecha (AAAA-MM-DD) en que se comprobó la fuente
 - [ ] Navarra · verificar horario/aforo/recursos de 10 bibliotecas con la web oficial; repetir hasta cubrir las 104
@@ -70,6 +72,8 @@ empiezan el 1 de diciembre y los de la UPNA el 15), así que la producción debe
 - Ejecutar en Supabase (SQL Editor) el bloque «PRIVACIDAD DE LA PRESENCIA» del final de `supabase/supabase_social.sql` (política select de `presence` con caducidad de 4 h, `updated_at` puesto por el servidor y borrado de la propia fila; ya añadido también al final de `Bibliotime - Documentacion\SQL_PENDIENTE_supabase.sql`). Mientras no se ejecute, la caducidad de 4 h solo la aplica la app
 
 ## Hecho
+- [x] 2026-10-27 · Exámenes · Chip «📚 Temporada de exámenes», nota con fuente en ficha/popup y horario extraordinario en «abierta ahora» (`temporada-examenes.js`): 3/5 ciudades con fuente oficial 2026-27 (Pamplona UNAV, Madrid UPM, Sevilla UPO). Faltan Barcelona y Valencia
+- [x] 2026-10-27 · España · Horario verificado en 10 capitales sin ninguno (Murcia, Castellón, Alicante, Sevilla, Almería, Huelva, Girona, Teruel, Palencia, Soria): 27 → 37/51 provincias
 - [x] Objetivo 4 · Páginas temáticas «abiertas domingo», «fin de semana» y «hasta tarde» de España y por provincia (≥ 2), solo con horarios verificados con fuente; 125 → 144 páginas SEO (2026-10-27)
 - [x] 2026-10-27 · Bienvenida diaria tipo Duolingo (racha, próximo examen, misiones, tip del día y «Estudiar ahora»), una vez al día y solo si aún no has estudiado; el lunes cede el sitio al resumen semanal
 - [x] 2026-10-27 · «Tu rincón» en la ficha de la biblioteca (horas, sesiones y mini bosque allí) y barra de nivel que se llena al terminar la sesión

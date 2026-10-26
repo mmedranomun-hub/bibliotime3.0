@@ -56,4 +56,6 @@ sin esperar a su hora. Una línea «⏳ en curso» de hace más de 90 min es de 
 Formato: `AAAA-MM-DD HH:MM · quién · objetivo(s) · resultado (✅ subido / ⚠️ a medias / ❌ falló) · commit · métrica que movió`
 
 - 2026-10-27 00:15 · sesión con Marcos · montaje del bucle: `scripts/probar.py` (11 pruebas), OBJETIVOS.md, este archivo · ✅ · línea base: 11/11, 0 errores, 1995 ms, 148 horarios, 27/51 provincias, 125 páginas
-- 2026-10-27 00:20 · director · ⏳ en curso · Objetivo 2 (temporada de exámenes), Objetivo 1 (horarios de capitales), Objetivo 4 (SEO)
+- 2026-10-27 00:20 · director/agente exámenes · Objetivo 2 · ✅ · 2228443 · ciudades con calendario oficial 0 → 3/5 (Pamplona, Madrid, Sevilla); app.js gzip 100,6 → 102,3 KB
+- 2026-10-27 00:20 · director/agente horarios · Objetivo 1 · ✅ · f173bd8 · provincias 27 → 37/51, bibliotecas con horario 148 → 158
+- 2026-10-27 00:20 · director/agente SEO · Objetivo 4 · ✅ · 9e8e0bf · páginas SEO 125 → 146 (temáticas domingo/finde/hasta tarde); pruebas 12/12, 0 errores, carga 1372 ms
