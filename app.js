@@ -2082,12 +2082,44 @@ function updateGoalRing(){
   if(ring){var c=502.6;ring.style.strokeDashoffset=String(c-(c*pct/100));}
   var gp=$("goalPct");if(gp)gp.textContent=pct+"%";
   var gl=$("goalLbl");if(gl)gl.textContent="de "+(goal/60).toFixed(goal%60?1:0)+"h/"+(period==="week"?"sem":"día");
+  var rw=document.querySelector(".ring-wrap");if(rw)rw.classList.toggle("goal-hecha",pct>=100);
+  // Meta cumplida: una celebración por día (o por semana si la meta es semanal), solo mientras estudias o al terminar.
+  if(DATA&&pct>=100&&done>0){
+    var clave=period==="week"?"s"+ymd(new Date(Date.now()-((new Date().getDay()+6)%7)*864e5)):ymd();
+    if(DATA.metaCelebrada!==clave){DATA.metaCelebrada=clave;saveUserData();
+      setTimeout(function(){confeti(120);showToast("🏆 ¡Meta "+(period==="week"?"semanal":"de hoy")+" cumplida! Eres una máquina");},300);}
+  }
+  document.body.classList.toggle("estudiando",!!studyTimer.running);
+}
+/* ===== NIVELES (por horas totales de estudio) ===== */
+var NIVELES=[[0,"Semilla","🌱"],[1,"Brote","🌿"],[3,"Lector","📖"],[6,"Estudiante","✏️"],[10,"Constante","💪"],[16,"Ratón de biblioteca","🐭"],
+  [25,"Concentrado","🎯"],[40,"Erudito","🦉"],[60,"Sabio","🧠"],[90,"Maestro","🏅"],[130,"Leyenda","🏆"],[180,"Leyenda II","👑"],[250,"Leyenda III","🌟"],[350,"Inmortal","🔥"]];
+function horasTotales(){var t=0;(DATA?DATA.sessions:[]).forEach(function(s){t+=s.min;});if(studyTimer.running)t+=elapsedMin();return t/60;}
+function nivelDe(h){var n=0;for(var i=0;i<NIVELES.length;i++)if(h>=NIVELES[i][0])n=i;return n;}
+function nivelHTML(mini){
+  var h=horasTotales(), n=nivelDe(h), cur=NIVELES[n], sig=NIVELES[n+1];
+  var pct=sig?Math.round((h-cur[0])/(sig[0]-cur[0])*100):100;
+  var falta=sig?Math.max(0,sig[0]-h):0, faltaTxt=falta>=1?Math.ceil(falta)+" h":Math.ceil(falta*60)+" min";
+  return '<div class="lv-badge">'+cur[2]+'<small>Nv '+(n+1)+'</small></div><div class="lv-main"><div class="lv-name">'+cur[1]+'</div>'+
+    '<div class="lv-next">'+(sig?(mini?'':Math.floor(h)+' h estudiadas · ')+'faltan '+faltaTxt+' para <b>'+sig[1]+'</b> '+sig[2]:'¡Nivel máximo! '+Math.floor(h)+' h estudiadas')+'</div>'+
+    '<div class="lv-bar"><i style="width:'+pct+'%"></i></div></div>';
+}
+function renderNivel(){var a=$("levelCard");if(a)a.innerHTML=nivelHTML(false);var b=$("levelCardStudy");if(b)b.innerHTML=nivelHTML(true);}
+// Subida de nivel tras guardar una sesión
+function comprobarSubidaNivel(antes){
+  var n0=nivelDe(antes), n1=nivelDe(horasTotales()); if(n1<=n0)return;
+  var nv=NIVELES[n1];
+  setTimeout(function(){
+    openModal('<div class="levelup"><div class="lv-big">'+nv[2]+'</div><h3>¡Subes al nivel '+(n1+1)+'!</h3><div class="sub">Ahora eres <b>'+nv[1]+'</b>. Sigue así: tu bosque lo nota 🌳</div><button class="btn" onclick="closeModal()">¡Vamos!</button></div>',
+      function(){confeti(140);});
+  },250);
 }
 function stopStudy(silent,endTs){
   if(!studyTimer.running)return;
   var sec=endTs?Math.max(0,Math.floor((endTs-studyTimer.start)/1000)):elapsedSec();
   if(DATA){DATA.active=null;saveUserData();}
   var min=Math.round(sec/60);
+  var horasAntes=horasTotales()-elapsedMin()/60;
   var bibIdx=studyTimer.bibIndex, ts=studyTimer.start, verif=studyTimer.verificada;
   if(studyTimer.tick)clearInterval(studyTimer.tick);
   var saved=null;
@@ -2102,8 +2134,9 @@ function stopStudy(silent,endTs){
   $("miniStudy").classList.add("hidden");renderNowCard();
   socialClearPresence();
   renderStudy();renderProfile();
+  if(saved)renderNivel();
   if(saved&&!silent){
-    pedirValoracion(saved);
+    pedirValoracion(saved,horasAntes);
   }else if(!silent&&sec>=20){
     showToast("Sesión guardada: "+fmtHoras(Math.max(1,min))+" h");
   }
@@ -2127,7 +2160,7 @@ function editarSesion(idx){
     });
   });
 }
-function pedirValoracion(sesion){
+function pedirValoracion(sesion,horasAntes){
   var sel={v:0};
   var plantado=sesion.focus?'<div class="planted'+(sesion.focus==="withered"?' seco':'')+'"><div class="planted-tree">'+arbolSVG(sesion.min,sesion.focus==="withered",sesion.subject||sesion.id,110)+'</div>'+
     '<div class="planted-txt">'+(sesion.focus==="withered"?'🥀 Tu árbol se marchitó porque saliste de la app. ¡El próximo crecerá!':'🎉 ¡Has plantado un '+ETAPAS_ARBOL[etapaArbol(sesion.min)][1].toLowerCase()+' en tu bosque!')+'</div></div>':'';
@@ -2156,8 +2189,9 @@ function pedirValoracion(sesion){
         if(occSel&&bibIdxDe(sesion)>=0)addOccReport(bibIdxDe(sesion),occSel,true);
         sesion.prod=sel.v||null; sesion.note=$("sessNote").value.trim();
         saveUserData();socialShareSession(sesion);closeModal();renderProfile();renderStudy();showToast("Sesión guardada");
+        if(horasAntes!=null)comprobarSubidaNivel(horasAntes);
       });
-      $("sessSkip").addEventListener("click",function(){closeModal();});
+      $("sessSkip").addEventListener("click",function(){closeModal();if(horasAntes!=null)comprobarSubidaNivel(horasAntes);});
     });
 }
 function renderStudy(){
@@ -2185,6 +2219,7 @@ function renderStudy(){
   renderSubjectStats();
   renderFocusPlant();
   renderForest();
+  renderNivel();
 }
 /* ===== ASIGNATURAS (como YPT: el tiempo se apunta a una asignatura) ===== */
 function renderSubjects(){
@@ -2403,7 +2438,7 @@ function pomoTick(){
       FOCUS.hiddenAt=0;
       var saved={id:genId(),date:ymd(),min:POMO_FOCUS_MIN,sec:POMO_FOCUS_MIN*60,
         bib:NO_BIB,ts:Date.now()-POMO_FOCUS_MIN*60000,verif:false,prod:null,note:"Pomodoro",offering:(extrasOn()&&DATA.offeringText)||"",subject:DATA.currentSubject||null,focus:focusResult()};
-      DATA.sessions.push(saved);saveUserData();socialShareSession(saved);
+      var hAntes=horasTotales();DATA.sessions.push(saved);saveUserData();socialShareSession(saved);comprobarSubidaNivel(hAntes);renderNivel();
       showToast(saved.focus==="withered"?"🍅 Pomodoro completado, pero tu árbol se marchitó 🥀":"🍅 ¡Pomodoro completado! 🌳 Árbol plantado en tu bosque");
       if(saved.focus==="ok")confeti(50);
       pomo.phase="break";pomo.secondsLeft=POMO_BREAK_MIN*60;pomo.endAt=Date.now()+pomo.secondsLeft*1000;
@@ -2666,6 +2701,7 @@ function openDayModal(key){
 /* ===================== PERFIL ===================== */
 function renderProfile(){
   if(!DATA)return;
+  renderNivel();
   var totalMin=0;DATA.sessions.forEach(function(s){totalMin+=s.min;});
   if(studyTimer.running)totalMin+=elapsedMin();
   $("pTotalH").textContent=Math.floor(totalMin/60)+"h";
