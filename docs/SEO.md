@@ -29,6 +29,20 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
   desde el índice y desde cada provincia que tenga alguna, y entre los temas; todas en `sitemap.xml`.
 - Crecen solas: al añadir horarios verificados y regenerar, aparecen nuevas provincias.
 
+## Hecho (2026-10-27) · Página propia de las bibliotecas más buscadas (301 páginas en total, antes 146)
+- 155 páginas `/bibliotecas/<prov>/<slug-biblioteca>/`: Biblioteca Nacional, Regional de Madrid, las de tipo
+  `mayor`/`universidad` de capitales de provincia (más Santiago y Mérida, capitales autonómicas) y todas las de
+  capitales con horario verificado (52 de ellas lo tienen). Gijón y otras no capitales quedan fuera por ahora.
+- Slug estable a partir del nombre (máx. 70 caracteres, cortado por palabra); si choca con otra biblioteca o con una
+  página de localidad/tema de la provincia se añade la localidad (y `-2`, `-3` si aún choca).
+- Contenido: h1, tipo, dirección, teléfono, web, tabla de horario con fuente y fecha (o «Horario sin confirmar»),
+  aviso de la fuente (si la nota dice «Sábados sin confirmar», ese día sale «Sin confirmar», no «Cerrada»),
+  botón «Ver en el mapa» (`/#bib=<índice>`), 6 bibliotecas más cercanas de la misma localidad con distancia, migas,
+  canonical, JSON-LD `Library` (con `openingHoursSpecification` solo si está verificado) y `FAQPage`
+  («¿Abre los domingos…?», «¿A qué hora cierra…?») solo cuando hay horario verificado.
+- Las tarjetas de provincia, localidad y temáticas enlazan el nombre de la biblioteca a su página. Todas en `sitemap.xml`.
+- Crecen solas: cada horario verificado nuevo en una capital genera su página al regenerar.
+
 ## Lo que tienes que hacer tú (sin esto no sirve de nada)
 1. **Conectar el dominio** en Vercel: proyecto `bibliotime` → Settings → Domains → añadir `bibliomapa.es` y
    `www.bibliomapa.es` (redirigir www → sin www) y poner en tu registrador los DNS que te indique Vercel.
@@ -42,6 +56,6 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
 
 ## Siguientes mejoras (en el backlog)
 - Más horarios verificados (las páginas con horario rinden mucho mejor: es lo que la gente busca).
-- Página por biblioteca para las más buscadas (Biblioteca Nacional, Regional de Madrid, grandes universitarias).
+- Ampliar las páginas por biblioteca a grandes ciudades que no son capital (Gijón, Vigo, Cartagena, Jerez…).
 - Páginas «temporada de exámenes / salas 24 h» por ciudad cuando haya fuentes oficiales.
 - Medir en Search Console qué búsquedas traen visitas y reforzar esas páginas.

@@ -5,6 +5,8 @@
      bibliotecas/<provincia>/<localidad>/index.html (localidades con 3 o más bibliotecas)
      bibliotecas/abiertas-domingo|abiertas-fin-de-semana|abiertas-hasta-tarde/index.html (España, por provincia)
      bibliotecas/<provincia>/<tema>/index.html   (mismos temas, solo con 2 o más bibliotecas que cumplen)
+     bibliotecas/<provincia>/<biblioteca>/index.html (las más buscadas: Nacional, Regional de Madrid, grandes y
+       universitarias de capitales y todas las de capitales con horario verificado)
      sitemap.xml y robots.txt
    Uso (desde la raíz del proyecto):  node scripts/generar_paginas_seo.js
    Vuelve a ejecutarlo cada vez que cambien los datos (app.js o bibliotecas-espana.js).
@@ -103,7 +105,7 @@ function libraryLD(b, url) {
     address: { "@type": "PostalAddress", streetAddress: b.dir || undefined, addressLocality: b.c, addressRegion: b.p, addressCountry: "ES" } };
   if (b.tel) o.telephone = b.tel;
   if (b.web) o.sameAs = b.web;
-  if (b.h && b.h.inv) {
+  if (verificado(b)) { // solo horarios con fuente y fecha
     o.openingHoursSpecification = [];
     DIAS.forEach((d, k) => (b.h.inv[d] || []).forEach((r) => o.openingHoursSpecification.push({ "@type": "OpeningHoursSpecification", dayOfWeek: DIAS_SCHEMA[k], opens: r[0], closes: r[1] })));
   }
@@ -111,7 +113,7 @@ function libraryLD(b, url) {
 }
 
 // ---------- Plantilla ----------
-function pagina({ ruta, titulo, descripcion, h1, intro, cuerpo, migas, ld }) {
+function pagina({ ruta, titulo, descripcion, h1, intro, cuerpo, migas, ld, cta }) {
   const url = DOMINIO + ruta;
   const migasLD = { "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: migas.map((x, k) => ({ "@type": "ListItem", position: k + 1, name: x[0], item: DOMINIO + x[1] })) };
   return `<!DOCTYPE html>
@@ -141,7 +143,7 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld)}</script>` : ""}
 <nav class="migas" aria-label="Estás en">${migas.map((x, k) => (k < migas.length - 1 ? `<a href="${x[1]}">${esc(x[0])}</a> › ` : `<span>${esc(x[0])}</span>`)).join("")}</nav>
 <h1>${h1}</h1>
 <p class="intro">${intro}</p>
-<a class="cta" href="/">📍 ¿Cuál está abierta ahora cerca de ti? Abrir el mapa</a>
+${cta || `<a class="cta" href="/">📍 ¿Cuál está abierta ahora cerca de ti? Abrir el mapa</a>`}
 ${cuerpo}
 <section class="app-pitch">
   <h2>Estudia con Bibliomapa</h2>
@@ -165,8 +167,9 @@ function tarjeta(b, destacado) {
   const horario = b.h && b.h.inv
     ? `<div class="hor ok">🕒 ${esc(horarioTexto(b.h.inv))}${b.h.fv ? ` <small>(verificado el ${esc(b.h.fv.split("-").reverse().join("/"))}${b.h.f ? `, <a href="${esc(b.h.f)}" rel="nofollow noopener" target="_blank">fuente</a>` : ""})</small>` : ""}</div>${b.h.nota ? `<div class="nota">${esc(b.h.nota)}</div>` : ""}`
     : `<div class="hor">🕒 Horario sin confirmar: consúltalo en su web o en la app</div>`;
+  const propia = paginaDe.get(b.i);
   return `<article class="bib">
-  <h3>${esc(b.n)}</h3>
+  <h3>${propia ? `<a href="${propia}">${esc(b.n)}</a>` : esc(b.n)}</h3>
   <div class="meta"><span class="tipo">${TIPO[b.t] || "Biblioteca"}</span>${b.dir ? ` · ${esc(b.dir)}` : ""}</div>
   ${destacado ? `<p class="dest">${esc(destacado)}</p>` : ""}${horario}
   <div class="acc"><a href="${enlaceApp(b)}">Ver en el mapa</a>${b.tel ? ` · <a href="tel:${esc(b.tel.replace(/\s/g, ""))}">${esc(b.tel)}</a>` : ""}${b.web ? ` · <a href="${esc(b.web)}" rel="nofollow noopener" target="_blank">Web oficial</a>` : ""}</div>
@@ -240,6 +243,118 @@ function navTemas(actual, prov) {
   const enl = TEMAS.filter((t) => t.slug !== actual && (prov ? temaProv[t.slug][prov] : todas.some(t.cumple)))
     .map((t) => `<a href="/bibliotecas/${prov ? slug(prov) + "/" : ""}${t.slug}/">${esc(t.corto)}</a>`);
   return enl.length ? `<nav class="temas" aria-label="Otros horarios">${enl.join("")}</nav>` : "";
+}
+
+// ---------- Página propia de las bibliotecas más buscadas ----------
+// Entran: Biblioteca Nacional y Regional de Madrid; las «mayor»/«universidad» de capitales de provincia
+// (y de Santiago y Mérida, capitales autonómicas); y todas las de capitales con horario verificado (h.f + h.fv).
+// Ruta: /bibliotecas/<prov>/<slug del nombre>/ (si choca, se añade la localidad). El slug sale del nombre,
+// así que no cambia al regenerar mientras no cambie el nombre.
+const CAPITALES = {
+  "alava": ["vitoria", "vitoria-gasteiz", "gasteiz"], "albacete": ["albacete"], "alicante": ["alicante", "alacant"], "almeria": ["almeria"],
+  "asturias": ["oviedo"], "avila": ["avila"], "badajoz": ["badajoz", "merida"], "baleares": ["palma", "palma-de-mallorca"], "barcelona": ["barcelona"],
+  "bizkaia": ["bilbao"], "burgos": ["burgos"], "caceres": ["caceres"], "cadiz": ["cadiz"], "cantabria": ["santander"],
+  "castellon": ["castellon", "castello-de-la-plana", "castellon-de-la-plana"], "ceuta": ["ceuta"], "ciudad-real": ["ciudad-real"], "cordoba": ["cordoba"],
+  "a-coruna": ["a-coruna", "la-coruna", "santiago-de-compostela"], "cuenca": ["cuenca"], "gipuzkoa": ["donostia", "san-sebastian", "donostia-san-sebastian"],
+  "girona": ["girona"], "granada": ["granada"], "guadalajara": ["guadalajara"], "huelva": ["huelva"], "huesca": ["huesca"], "jaen": ["jaen"],
+  "la-rioja": ["logrono"], "las-palmas": ["las-palmas-de-gran-canaria"], "leon": ["leon"], "lleida": ["lleida"], "lugo": ["lugo"], "madrid": ["madrid"],
+  "malaga": ["malaga"], "melilla": ["melilla"], "murcia": ["murcia"], "navarra": ["pamplona", "iruna", "pamplona-iruna"], "ourense": ["ourense"],
+  "palencia": ["palencia"], "pontevedra": ["pontevedra"], "salamanca": ["salamanca"], "santa-cruz-de-tenerife": ["santa-cruz-de-tenerife"],
+  "segovia": ["segovia"], "sevilla": ["sevilla"], "soria": ["soria"], "tarragona": ["tarragona"], "teruel": ["teruel"], "toledo": ["toledo"],
+  "valencia": ["valencia"], "valladolid": ["valladolid"], "zamora": ["zamora"], "zaragoza": ["zaragoza"],
+};
+const enCapital = (b) => (CAPITALES[slug(b.p)] || []).includes(slug(b.c));
+const masBuscada = (b) => /^Biblioteca Nacional de España$|^Biblioteca Regional Joaqu[ií]n Leguina/.test(b.n) ||
+  (enCapital(b) && (b.t === "mayor" || b.t === "universidad" || verificado(b)));
+const paginaDe = new Map(); // índice de la biblioteca → ruta de su página
+const conPaginaPropia = todas.filter(masBuscada).sort((a, b) => a.i - b.i);
+provincias.forEach((p) => {
+  const ps = slug(p), usados = new Set(TEMAS.map((t) => t.slug));
+  porProv[p].forEach((b) => usados.add(slug(b.c))); // no pisar las páginas de localidad
+  conPaginaPropia.filter((b) => b.p === p).forEach((b) => {
+    let base = slug(b.n) || "biblioteca";
+    if (base.length > 70) base = base.slice(0, 71).replace(/-[^-]*$/, ""); // URLs cortas, cortando por palabra
+    let s = base;
+    if (usados.has(s)) s = `${base}-${slug(b.c)}`;
+    for (let k = 2; usados.has(s); k++) s = `${base}-${slug(b.c)}-${k}`;
+    usados.add(s);
+    paginaDe.set(b.i, `/bibliotecas/${ps}/${s}/`);
+  });
+});
+
+const DIAS_LARGOS = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"];
+const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+const distKm = (a, b) => { const R = 6371, r = Math.PI / 180, dLa = (b.lat - a.lat) * r, dLo = (b.lon - a.lon) * r;
+  const x = Math.sin(dLa / 2) ** 2 + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin(dLo / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(x)); };
+const distTexto = (km) => (km < 1 ? `${Math.max(50, Math.round(km * 20) * 50)} m` : `${km.toFixed(1).replace(".", ",")} km`);
+// Hora de cierre de un día (la de su última franja); «00:00» es medianoche.
+const cierreDia = (b, d) => { const l = b.h.inv[d] || []; return l.length ? quitaCero(l[l.length - 1][1]).replace(/^0:00$/, "00:00 (medianoche)") : (sinConfirmar(b, d) ? "?" : ""); };
+// Si la nota de la fuente dice «Sábados sin confirmar», ese día no se da por cerrado.
+const RAIZ_DIA = ["lunes", "martes", "mi[eé]rcoles", "jueves", "viernes", "s[aá]bados?", "domingos?"];
+const sinConfirmar = (b, d) => !(b.h.inv[d] || []).length && !!b.h.nota && new RegExp(`${RAIZ_DIA[DIAS.indexOf(d)]}[^.]*sin confirmar`, "i").test(b.h.nota);
+const laBib = (n) => (/^Biblioteca\b/.test(n) ? "la " + n : n);
+function rangoDias(desde, hasta) {
+  if (desde === hasta) return `el ${DIAS_LARGOS[desde]}`;
+  if (hasta === desde + 1) return `el ${DIAS_LARGOS[desde]} y el ${DIAS_LARGOS[hasta]}`;
+  return `de ${DIAS_LARGOS[desde]} a ${DIAS_LARGOS[hasta]}`;
+}
+function textoCierre(b) {
+  const g = [];
+  DIAS.forEach((d, k) => { const c = cierreDia(b, d), u = g[g.length - 1]; if (u && u.c === c) u.hasta = k; else g.push({ desde: k, hasta: k, c }); });
+  return g.map((x) => `${rangoDias(x.desde, x.hasta)} ${x.c === "?" ? "no está confirmado" : x.c ? `cierra a las ${x.c}` : "está cerrada"}`).join("; ");
+}
+function faqBiblioteca(b) {
+  const segun = `Según su horario verificado en la web oficial el ${fechaEs(b.h.fv)}`;
+  const nota = b.h.nota ? ` Aviso de la fuente: ${b.h.nota}` : "";
+  const dom = b.h.inv.D || [];
+  const q = [
+    [`¿Abre los domingos ${laBib(b.n)}?`, dom.length ? `Sí. ${segun}, los domingos abre de ${franjas(dom)}.${nota} Comprueba festivos y verano en su web.`
+      : sinConfirmar(b, "D") ? `No está confirmado: la fuente oficial no da horario de domingo.${nota}` : `No. ${segun}, los domingos está cerrada.${nota}`],
+    [`¿A qué hora cierra ${laBib(b.n)}?`, `${segun}: ${textoCierre(b)}.${nota} En verano, festivos y época de exámenes puede cambiar.`],
+  ];
+  const ld = { "@context": "https://schema.org", "@type": "FAQPage", mainEntity: q.map(([p, r]) => ({ "@type": "Question", name: p, acceptedAnswer: { "@type": "Answer", text: r } })) };
+  return { html: `<section class="faq"><h2>Preguntas frecuentes</h2>${q.map(([p, r]) => `<details><summary>${esc(p)}</summary><p>${esc(r)}</p></details>`).join("")}</section>`, ld };
+}
+function tablaHorario(b) {
+  const filas = DIAS.map((d, k) => `<tr><th scope="row">${cap(DIAS_LARGOS[k])}</th><td>${franjas(b.h.inv[d]) || (sinConfirmar(b, d) ? "Sin confirmar" : "Cerrada")}</td></tr>`).join("");
+  return `<table class="horario"><caption>Horario de invierno</caption><tbody>${filas}</tbody></table>
+<p class="fuente">Verificado el ${esc(fechaEs(b.h.fv))} en la <a href="${esc(b.h.f)}" rel="nofollow noopener" target="_blank">fuente oficial</a>. En verano, festivos y época de exámenes puede cambiar: confírmalo antes de ir.</p>${b.h.nota ? `<p class="nota">⚠️ ${esc(b.h.nota)}</p>` : ""}`;
+}
+function paginaBiblioteca(b) {
+  const ruta = paginaDe.get(b.i), ps = slug(b.p), ok = verificado(b);
+  const mismaLoc = porProv[b.p].filter((o) => o.c === b.c);
+  const locConPagina = mismaLoc.length >= 3 && slug(b.c) && slug(b.c) !== ps;
+  const cercanas = mismaLoc.filter((o) => o.i !== b.i).map((o) => ({ o, d: distKm(b, o) })).sort((x, y) => x.d - y.d).slice(0, 6);
+  const tipo = TIPO[b.t] || "Biblioteca";
+  const fq = ok ? faqBiblioteca(b) : null;
+  const datos = [
+    b.dir ? `<dt>Dirección</dt><dd>${esc(b.dir)}</dd>` : "",
+    `<dt>Localidad</dt><dd>${locConPagina ? `<a href="/bibliotecas/${ps}/${slug(b.c)}/">${esc(b.c)}</a>` : esc(b.c)} (<a href="/bibliotecas/${ps}/">${esc(b.p)}</a>)</dd>`,
+    b.tel ? `<dt>Teléfono</dt><dd><a href="tel:${esc(b.tel.replace(/\s/g, ""))}">${esc(b.tel)}</a></dd>` : "",
+    b.web ? `<dt>Web</dt><dd><a href="${esc(b.web)}" rel="nofollow noopener" target="_blank">${esc(b.web.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, ""))}</a></dd>` : "",
+  ].join("");
+  const horario = ok ? tablaHorario(b)
+    : `<p class="hor">🕒 Horario sin confirmar: aún no lo tenemos comprobado en una fuente oficial con fecha. Consúltalo en su web${b.tel ? " o por teléfono" : ""} antes de ir.</p>`;
+  const lisCerca = cercanas.map(({ o, d }) => { const r = paginaDe.get(o.i);
+    return `<li><a href="${r || enlaceApp(o)}">${esc(o.n)}</a> <small>${distTexto(d)}${verificado(o) ? " · horario verificado" : ""}${r ? "" : " · en el mapa"}</small></li>`; }).join("");
+  const migas = [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], [b.p, `/bibliotecas/${ps}/`]]
+    .concat(locConPagina ? [[b.c, `/bibliotecas/${ps}/${slug(b.c)}/`]] : []).concat([[b.n, ruta]]);
+  const resumen = !ok ? "Horario sin confirmar." : DIAS.some((d) => sinConfirmar(b, d)) ? `Horario verificado el ${fechaEs(b.h.fv)}.` : `Horario verificado: ${horarioTexto(b.h.inv)}.`;
+  escribe(ruta, pagina({
+    ruta, titulo: `${b.n} (${b.c}): horario, dirección y teléfono | Bibliomapa`,
+    descripcion: `${b.n}, ${tipo.toLowerCase()} en ${b.c} (${b.p}). ${resumen} Dirección, teléfono, web y bibliotecas cercanas.`,
+    h1: esc(b.n),
+    intro: `<span class="tipo">${esc(tipo)}</span> en ${esc(b.c)} (${esc(b.p)}). ${ok ? `Horario comprobado en su web oficial el ${esc(fechaEs(b.h.fv))}.` : "Aún no tenemos su horario verificado."}`,
+    cta: `<a class="cta" href="${enlaceApp(b)}">📍 Ver en el mapa</a>`,
+    cuerpo: `<section class="ficha" aria-labelledby="t-datos"><h2 id="t-datos">Datos de contacto</h2><dl>${datos}</dl></section>
+<section class="ficha" aria-labelledby="t-hor"><h2 id="t-hor">Horario</h2>${horario}</section>
+${fq ? fq.html : ""}
+${cercanas.length ? `<section class="cerca" aria-labelledby="t-cerca"><h2 id="t-cerca">Otras bibliotecas en ${esc(b.c)}</h2><ul>${lisCerca}</ul></section>` : ""}
+<p class="volver"><a href="${locConPagina ? `/bibliotecas/${ps}/${slug(b.c)}/` : `/bibliotecas/${ps}/`}">← Todas las bibliotecas de ${esc(locConPagina ? b.c : b.p)}</a></p>`,
+    migas,
+    ld: [{ "@context": "https://schema.org", ...libraryLD(b, DOMINIO + ruta) }, ...(fq ? [fq.ld] : [])],
+  }));
+  urls.push([ruta, "0.7"]);
 }
 
 provincias.forEach((p) => {
@@ -320,6 +435,9 @@ temasEspana.forEach(({ t, l }) => {
   urls.push([rutaT, "0.8"]);
 });
 
+// páginas de cada biblioteca más buscada
+conPaginaPropia.forEach(paginaBiblioteca);
+
 // índice
 escribe("/bibliotecas/", pagina({
   ruta: "/bibliotecas/", titulo: "Bibliotecas de España por provincia: abiertas ahora y horarios | Bibliomapa",
@@ -339,4 +457,4 @@ Allow: /
 
 Sitemap: ${DOMINIO}/sitemap.xml
 `);
-console.log(`Páginas: ${urls.length - 1} (+ portada) · provincias: ${provincias.length} · bibliotecas: ${todas.length}`);
+console.log(`Páginas: ${urls.length - 1} (+ portada) · provincias: ${provincias.length} · bibliotecas: ${todas.length} · con página propia: ${paginaDe.size} (${conPaginaPropia.filter(verificado).length} con horario verificado)`);
