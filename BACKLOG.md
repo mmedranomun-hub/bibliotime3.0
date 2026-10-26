@@ -55,7 +55,7 @@ empiezan el 1 de diciembre y los de la UPNA el 15), así que la producción debe
 - [ ] Objetivo 1 · Arreglo: en bibliotecas de fuera de Navarra con horario, el bloque ACCESO de la ficha dice «red pública de Navarra (Ley Foral 32/2002)» (en app.js la rama de acceso por defecto solo mira `b.sinHorario`); visto el 2026-10-27 en la Infanta Elena de Sevilla
 
 ## Datos (por lotes pequeños, siempre con fuente oficial)
-- [ ] España · Horarios verificados: seguir añadiendo 10 bibliotecas por tarea (hay 54 con horario, 37/51 provincias). Priorizar capitales de provincia sin ninguna. Como pista para buscar la fuente oficial puede usarse el campo `oh` de `data/bibliotecas_espana.json` (OpenStreetMap, ODbL), pero nunca publicarlo como verificado. Cada horario nuevo lleva `h.fv` con la fecha (AAAA-MM-DD) en que se comprobó la fuente
+- [ ] España · Horarios verificados: seguir añadiendo 10 bibliotecas por tarea (hay 64 con horario, 47/51 provincias; faltan Salamanca, Segovia, Baleares y Cádiz: sus BPE de la capital no están en el archivo o su web no daba el horario de invierno). Priorizar capitales de provincia sin ninguna. Como pista para buscar la fuente oficial puede usarse el campo `oh` de `data/bibliotecas_espana.json` (OpenStreetMap, ODbL), pero nunca publicarlo como verificado. Cada horario nuevo lleva `h.fv` con la fecha (AAAA-MM-DD) en que se comprobó la fuente
 - [ ] Navarra · verificar horario/aforo/recursos de 10 bibliotecas con la web oficial; repetir hasta cubrir las 104
 
 ## Web pública
