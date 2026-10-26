@@ -1,0 +1,43 @@
+{
+  "fecha": "2026-10-27 00:10",
+  "pruebas": {
+    "arranca: datos y vistas": true,
+    "marca España (sin «Navarra» en la cabecera)": true,
+    "tarjeta Ahora se pinta": true,
+    "todas las vistas sin errores": true,
+    "sesión: empieza, crece el árbol, se guarda": true,
+    "bosque, misiones, racha y nivel": true,
+    "marchitar si se sale de la app": true,
+    "tienda y semillas": true,
+    "historias y tips": true,
+    "agenda: añadir examen": true,
+    "enlace #bib abre la ficha": true
+  },
+  "errores_js": [],
+  "carga_ms_cpu4x": 1995,
+  "datos": {
+    "bibliotecas": 2616,
+    "con_horario_verificado": 148,
+    "provincias_con_horario": 27,
+    "provincias_total": 51
+  },
+  "seo": {
+    "paginas": 125,
+    "sitemap": true
+  },
+  "peso": {
+    "index.html": {
+      "kb": 117.0,
+      "kb_gzip": 26.2
+    },
+    "app.js": {
+      "kb": 341.1,
+      "kb_gzip": 100.6
+    },
+    "bibliotecas-espana.js": {
+      "kb": 569.8,
+      "kb_gzip": 154.4
+    }
+  },
+  "ok": true
+}

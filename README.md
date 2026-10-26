@@ -31,6 +31,7 @@ Qué se publica lo decide `.vercelignore`.
 - `PLANTILLA_NUEVA_APP.md`: cómo crear otra app del mismo estilo (por ejemplo, de gimnasios) a partir de esta.
 - `DISENO.md` y `RENDIMIENTO.md`: registro diario de mejoras de diseño y de velocidad, con cifras.
 - `PUBLICAR_EN_GOOGLE_PLAY.md`: pasos para subir la app a Google Play.
+- `OBJETIVOS.md` y `BUCLE.md`: objetivos medibles y el bucle automático que trabaja en ellos (con su registro); `METRICAS.md`, el historial de cifras.
 - `SEO.md`: cómo posicionar bibliomapa.es en Google (qué está hecho y qué falta).
 - `TRASLADAR_A_OTRO_ORDENADOR.md`: cómo empezar de cero o pasar el proyecto a otro ordenador sin perder nada.
 
@@ -39,6 +40,7 @@ Qué se publica lo decide `.vercelignore`.
 - `subir_a_github.ps1` / `descargar_de_github.ps1`: sincronizan la carpeta del ordenador con GitHub
   (los usan las tareas programadas de Windows; no cambiar su nombre ni su ruta).
 - `retomar_sesion_wifi.ps1`: abre la sesión de Claude Code al conectarse a una wifi (`-Instalar` una vez).
+- `probar.py`: pruebas de regresión y métricas (`--guardar` las apunta en docs/). Nada se sube si falla.
 - `generar_paginas_seo.js`: regenera `bibliotecas/`, `sitemap.xml` y `robots.txt` (ver `docs/SEO.md`).
 - `importar_bibliotecas_osm.js`: regenera `data/bibliotecas_espana.json` desde OpenStreetMap.
 
