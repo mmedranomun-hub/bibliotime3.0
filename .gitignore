@@ -8,3 +8,4 @@ data/
 .env*
 scripts/retomar_sesion_wifi.log
 scripts/retomar_sesion_wifi.ultima
+.claude/worktrees/
