@@ -23,6 +23,19 @@ Orden revisado el 2026-10-20 con el estudio de mercado (`Bibliotime - Documentac
 y `salida_al_mercado\`. Fecha límite clave: estar en Google Play antes del 1 de diciembre (los exámenes de la UNAV
 empiezan el 1 de diciembre y los de la UPNA el 15), así que la producción debe solicitarse hacia el 17 de noviembre.
 - [ ] Exámenes · Capa o chip «Temporada de exámenes»: aperturas extraordinarias y salas 24 h de diciembre-enero, SOLO con fuente oficial y fechas (usar el mecanismo de `horario_excepciones` si hace falta, o un campo con fuente y periodo en los datos). Tenerlo antes del 1 de diciembre (empiezan los exámenes de la UNAV). Si no hay fuentes publicadas todavía, dejar la estructura lista y apuntar en el backlog qué webs revisar
+  - 2026-10-27 · Hecho: `temporada-examenes.js` (campos y reglas en su cabecera), chip «📚 Temporada de exámenes» (solo si hay entradas vigentes o en ≤ 30 días), nota con fuente en el popup y la ficha, y «abierta ahora» con el horario de exámenes cuando la entrada trae `semana` (solo en bibliotecas con horario). Prueba en `scripts/probar.py`. Ciudades con fuente oficial 2026-27: **Pamplona** (UNAV Central, diciembre), **Madrid** (UPM Campus Sur y ETSI Agronómica), **Sevilla** (UPO, campus de Dos Hermanas). Faltan **Barcelona** y **Valencia**
+  - Revisar (sin calendario 2026-27 publicado el 27-10-2026; no reutilizar fechas de cursos pasados):
+    - UPNA (Pamplona): https://www.unavarra.es/biblioteca — exámenes desde el 15 dic; suele avisar en noviembre-diciembre. Recordar que en exámenes la sala se reserva a la comunidad UPNA
+    - UNAV Ciencias y enero de 2027 de la Central: https://www.unav.edu/web/biblioteca/horarios/biblioteca-ciencias y …/horarios/biblioteca-central — publican el mes siguiente a finales del anterior (enero, hacia mediados de diciembre)
+    - UCM (Madrid, sala María Zambrano 24 h y bibliotecas de facultad): https://www.ucm.es/noticias y https://biblioteca.ucm.es — suele publicarse en diciembre para enero
+    - UAM (Madrid, Sala Búho y Medicina): https://www.uam.es/uam/vida-universitaria/bibliotecas/noticias — el curso pasado lo publicó el 01-12-2025
+    - Ayuntamiento de Madrid, salas de estudio de distrito con horario ampliado: https://diario.madrid.es — notas por distrito en diciembre-enero
+    - UB (Barcelona, CRAI): https://crai.ub.edu — horaris ampliats a finals de novembre/desembre
+    - UPC y UAB: https://bibliotecnica.upc.edu y https://www.uab.cat/biblioteques — mismo calendario
+    - Ajuntament de Barcelona, «sales d'estudi nocturnes» / Biblioteques de Barcelona: https://ajuntament.barcelona.cat/biblioteques — se anuncian en diciembre para enero
+    - Universitat de València: https://www.uv.es/uvweb/servei-biblioteques-documentacio/ca/ (novetats de cada biblioteca) — el curso pasado, a mediados de noviembre (13-11-2025)
+    - UPV (València): https://www.upv.es/entidades/abdc/ — «Horario extraordinario por exámenes», diciembre-enero
+    - Universidad de Sevilla: https://bib.us.es — aperturas extraordinarias en diciembre-enero
 - [ ] Misas · Selector "¿qué estará abierta el sábado a las 17:00?" en la lista (`estadoBib(b, fecha)`) + chip «Fin de semana», complementando los chips ya existentes
 - [ ] Strava · Clubs persistentes de clase o carrera con ranking semanal (tablas `clubs`, `club_members`). Antes de los exámenes de enero
 - [ ] Afluencia · Semáforo (verde/ámbar/rojo, como la ULL), caducidad visible de los reportes («hace 20 min») y horas punta propias a partir de los reportes históricos

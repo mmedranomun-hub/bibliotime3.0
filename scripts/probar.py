@@ -96,6 +96,26 @@ PRUEBAS = [
       $('evTitle').value='Examen prueba';$('evAdd').click();await new Promise(r=>setTimeout(r,200));
       var ok=(DATA.events[k]||[]).some(e=>e.title==='Examen prueba');renderStudy();
       return ok && $('examChip').innerText.indexOf('Examen prueba')>=0 || 'no aparece el examen';"""),
+    ("temporada de exámenes: fuentes, chip y nota", """
+      var raw=window.TEMPORADA_EXAMENES||[], re=/^\\d{4}-\\d{2}-\\d{2}$/, hoy=ymd(new Date(Date.now()+864e5)); // +1 día: el navegador de pruebas va en UTC
+      for(const e of raw){
+        if(!/^https:\\/\\/[^\\s]+\\.[a-z]{2,}\\//.test(e.f||''))return 'fuente no válida: '+e.espacio;
+        if(!re.test(e.fv||'')||e.fv>hoy)return 'fv no válida: '+e.espacio;
+        if(!re.test(e.desde)||!re.test(e.hasta)||e.desde>e.hasta)return 'periodo no válido: '+e.espacio;
+        if(e.bib&&!BIBLIOTECAS.some(b=>b.nombre===e.bib))return 'no enlaza con la app: '+e.bib;}
+      if(EXAMENES.length!==raw.length)return 'entradas descartadas al cargar';
+      for(const e of EXAMENES){var b=BIBLIOTECAS[e.i];if(!b||!e.sem)continue;
+        for(const c of e.cerrado){var d=new Date(c[0]+'T12:00:00');if((horarioVigente(b,d)[d.getDay()]||[]).length)return 'abierta en día de cierre: '+e.espacio;}}
+      abrirLista(false);var chip=document.querySelector('#listFilters [data-f="examenes"]');
+      if(!chip)return 'sin chip';
+      if(chip.hidden===hayTemporadaExamenes())return 'chip visible sin temporada (o al revés)';
+      var con=BIBLIOTECAS.map((b,i)=>i).filter(i=>examenDeBib(BIBLIOTECAS[i]));
+      if(!chip.hidden){chip.click();var n=document.querySelectorAll('#list .card').length;chip.click();
+        if(n!==con.length)return 'el filtro muestra '+n+' de '+con.length;}
+      cerrarLista();
+      if(con.length){openBibDetailModal(con[0]);var a=document.querySelector('#modalRoot .ex-nota a');closeModal();
+        if(!a||a.getAttribute('href')!==examenDeBib(BIBLIOTECAS[con[0]]).f)return 'la ficha no enlaza la fuente';}
+      return true;"""),
     ("enlace #bib abre la ficha", """
       location.hash='#bib=104-x';comprobarEnlaceCompartido();await new Promise(r=>setTimeout(r,900));
       return !!document.querySelector('.leaflet-popup-content') || 'no abre la ficha';"""),

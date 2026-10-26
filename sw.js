@@ -9,6 +9,7 @@ const APP_SHELL = [
   "./index.html",
   "./app.js",
   "./bibliotecas-espana.js",
+  "./temporada-examenes.js",
   "./manifest.json",
   "./icons/icon-192.png",
   "./icons/icon-512.png"

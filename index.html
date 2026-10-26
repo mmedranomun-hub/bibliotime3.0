@@ -272,6 +272,12 @@
   .pop .hours{margin-top:12px;border-top:1px solid rgba(148,163,184,.3);padding-top:10px}
   /* Verificación del horario y reportes (idea de MassTimes.org) */
   .hr-verif{font-size:var(--fs-xs);color:var(--suave);margin-top:6px;line-height:1.45}
+  /* Temporada de exámenes: nota con el horario extraordinario y su fuente oficial (temporada-examenes.js) */
+  .ex-nota{margin-top:8px;padding:8px 10px;border-radius:var(--r-m);background:var(--acento-tenue);border:1px solid var(--borde);
+    font-size:var(--fs-s);line-height:1.45;color:var(--texto);text-align:left}
+  .ex-nota a{color:var(--acento-tx);font-weight:600}
+  .ex-nota .ex-fv{color:var(--suave);font-size:var(--fs-xs)}
+  .list-filters button[hidden]{display:none}
   .hr-viejo{display:block;color:var(--aviso-tx);font-weight:700;margin-top:2px}
   .hr-acciones{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
   .hr-acciones .btn{width:auto;flex:1 1 150px}
@@ -1163,6 +1169,7 @@
       <div class="list-search"><input type="search" id="listSearch" placeholder="Buscar biblioteca o ciudad…" autocomplete="off"></div>
       <a class="list-seo" href="bibliotecas/">📍 Bibliotecas por provincia y ciudad →</a>
       <div class="list-filters" id="listFilters">
+        <button data-f="examenes" hidden>📚 Temporada de exámenes</button>
         <button data-f="abiertas">● Abiertas ahora</button>
         <button data-f="pronto">⏰ Abren pronto</button>
         <button data-f="tarde">🌙 Hasta tarde</button>
@@ -1471,6 +1478,8 @@
         onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js';document.head.appendChild(s);"></script>
 <!-- Bibliotecas del resto de España (datos abiertos de Overture Maps; ver el propio archivo) -->
 <script src="bibliotecas-espana.js"></script>
+<!-- Aperturas extraordinarias y salas de exámenes del curso (solo fuente oficial). Si no carga, la app sigue igual. -->
+<script src="temporada-examenes.js"></script>
 <!-- defer: Leaflet no bloquea el primer pintado (initMap reintenta si L aún no está). Supabase ya no se carga
      al inicio: solo si hay una sesión en la nube o al iniciar sesión / usar algo que lo necesite (cargarSupabase). -->
 <script src="app.js"></script>

@@ -15,9 +15,11 @@ function esVeranoDe(b,d){
   return b.veranoDesde<=b.veranoHasta?(k>=b.veranoDesde&&k<=b.veranoHasta):(k>=b.veranoDesde||k<=b.veranoHasta);
 }
 // Horario de la temporada (invierno/verano) que rige en "fecha" (por defecto, hoy).
-function horarioVigente(b,fecha){if(b.sinHorario)return SIN_HORARIO;const v=esVeranoDe(b,fecha||new Date());
-  if(v&&b.horasVerano)return b.horasVerano; if(!v&&b.horasInvierno)return b.horasInvierno;
-  return b.horas||b.horasInvierno||b.horasVerano;}
+// Si la biblioteca tiene horario de temporada de exámenes con todos los días (temporada-examenes.js),
+// los días de la semana que caen dentro de su periodo usan ese horario (ver conExamenes).
+function horarioVigente(b,fecha){if(b.sinHorario)return SIN_HORARIO;fecha=fecha||new Date();const v=esVeranoDe(b,fecha);
+  var base=(v&&b.horasVerano)?b.horasVerano:((!v&&b.horasInvierno)?b.horasInvierno:(b.horas||b.horasInvierno||b.horasVerano));
+  return b._examenSem?conExamenes(b,base,fecha):base;}
 const HM=[[h(8,30),h(14,30)]], HT=[[h(14,0),h(20,0)]];
 function semana(L,M,X,J,V,S,D){return [D,L,M,X,J,V,S]}
 const barrioInv=semana(HT,HT,HT,HT,HT,[],[]), barrioVer=semana(HM,HM,HM,HM,HM,[],[]);
@@ -172,6 +174,64 @@ function horarioDeDatos(o){
   }
   BIBLIOTECAS.push(b);
 });
+/* ===== Temporada de exámenes (temporada-examenes.js): aperturas extraordinarias con fuente oficial =====
+   Cada entrada válida (fechas AAAA-MM-DD, fuente https y fecha de comprobación) se engancha a su biblioteca
+   por nombre exacto. Sin el archivo, EXAMENES queda vacío y nada cambia. */
+function tramosDeTexto(lst){return (lst||[]).map(function(r){var a=r[0].split(":"),c=r[1].split(":");return [h(+a[0],+a[1]),h(+c[0],+c[1])];});}
+var EXAMENES=(function(){
+  var re=/^\d{4}-\d{2}-\d{2}$/,out=[],porNombre={};
+  BIBLIOTECAS.forEach(function(b,i){porNombre[b.nombre]=i;});
+  (Array.isArray(window.TEMPORADA_EXAMENES)?window.TEMPORADA_EXAMENES:[]).forEach(function(e){
+    try{
+      if(!e||!re.test(e.desde)||!re.test(e.hasta)||e.desde>e.hasta||!re.test(e.fv||"")||!/^https:\/\//.test(e.f||"")||!e.horario)return;
+      var x={ciudad:e.ciudad||"",espacio:e.espacio||"",desde:e.desde,hasta:e.hasta,horario:String(e.horario),nota:e.nota||"",f:e.f,fv:e.fv,
+        i:(e.bib&&porNombre[e.bib]!=null)?porNombre[e.bib]:-1,sem:null,dias:{},cerrado:[]};
+      var b=x.i>=0?BIBLIOTECAS[x.i]:null;
+      // el horario completo solo se aplica a bibliotecas que ya tienen horario verificado
+      if(e.semana&&b&&!b.sinHorario){
+        x.sem=horarioDeDatos(e.semana);
+        Object.keys(e.dias||{}).forEach(function(k){if(re.test(k))x.dias[k]=tramosDeTexto(e.dias[k]);});
+        (e.cerrado||[]).forEach(function(c){if(c&&re.test(c[0])&&re.test(c[1]))x.cerrado.push(c);});
+      }
+      out.push(x);
+      if(b){(b._examen=b._examen||[]).push(x);if(x.sem)b._examenSem=true;}
+    }catch(err){}
+  });
+  return out;
+})();
+// Tramos del día "fecha" según la entrada, o null si la entrada no fija ese día.
+function tramosExamen(e,fecha){
+  if(!e.sem)return null; var k=ymd(fecha); if(k<e.desde||k>e.hasta)return null;
+  for(var c=0;c<e.cerrado.length;c++){if(k>=e.cerrado[c][0]&&k<=e.cerrado[c][1])return [];}
+  return e.dias[k]||e.sem[fecha.getDay()]||[];
+}
+// Semana que empieza en "fecha" (hoy y los 6 días siguientes) con los días del periodo de exámenes cambiados.
+function conExamenes(b,base,fecha){
+  var r=null;
+  for(var k=0;k<7;k++){var d=new Date(fecha.getFullYear(),fecha.getMonth(),fecha.getDate()+k),t=null;
+    for(var j=0;j<b._examen.length&&t===null;j++)t=tramosExamen(b._examen[j],d);
+    if(t!==null){if(!r)r=base.slice();r[d.getDay()]=t;}}
+  return r||base;
+}
+// Entrada vigente o que empieza en ≤ 30 días (las ya pasadas no se muestran).
+const EX_PROXIMA_DIAS=30;
+function exVentana(e,hoy,lim){return e.hasta>=hoy&&e.desde<=lim;}
+function exLimites(){var n=new Date();return [ymd(n),ymd(new Date(n.getFullYear(),n.getMonth(),n.getDate()+EX_PROXIMA_DIAS))];}
+function examenDeBib(b){
+  if(!b||!b._examen)return null; var l=exLimites();
+  for(var k=0;k<b._examen.length;k++){if(exVentana(b._examen[k],l[0],l[1]))return b._examen[k];}
+  return null;
+}
+function hayTemporadaExamenes(){var l=exLimites();return EXAMENES.some(function(e){return e.i>=0&&exVentana(e,l[0],l[1]);});}
+function fmtDiaMes(iso){var p=String(iso).split("-");return (+p[2])+" "+MESES[+p[1]-1].slice(0,3);}
+function notaExamenHTML(b,compacta){
+  var e=examenDeBib(b); if(!e)return "";
+  var vig=e.desde<=ymd(new Date());
+  var per=vig?"hasta el "+fmtDiaMes(e.hasta):"del "+fmtDiaMes(e.desde)+" al "+fmtDiaMes(e.hasta);
+  return '<div class="ex-nota">📚 <b>Exámenes'+(vig?'':' · próximamente')+'</b> ('+per+'): '+escapeHTML(e.horario)+
+    (e.nota&&!compacta?'. '+escapeHTML(e.nota):'')+' · <a target="_blank" rel="noopener" href="'+escapeHTML(e.f)+'">fuente</a>'+
+    (compacta?'':' <span class="ex-fv">(comprobado el '+fmtDiaMes(e.fv)+')</span>')+'</div>';
+}
 BIBLIOTECAS.forEach(function(b){
   var info=ACCESO_INFO[b.nombre];
   if(info){b.acceso=info.acceso;b.accesibilidad=info.accesibilidad;return;}
@@ -1587,6 +1647,7 @@ function popupHTML(b,i){
   s+='<div class="pop-today">'+escapeHTML(estadoTexto(b).txt)+'</div>';
   s+=rinconHTML(b);
   s+=popIconRow(b);
+  s+=notaExamenHTML(b,true);
   if(epocaExamenes()&&esUPNA(b))s+='<div class="pop-today" style="color:#b45309">⚠️ En exámenes la sala suele reservarse a la comunidad UPNA</div>';
   var o=occSummary(i);
   s+='<div style="margin-top:10px">'+(o?('<div class="occ-report" style="justify-content:center"><span class="od '+o.info.className+'"></span><span><b>'+o.info.label+'</b></span></div>'):'<div class="occ-empty">⚪ Sin datos recientes de afluencia</div>')+'</div>';
@@ -1618,12 +1679,13 @@ function openBibDetailModal(i){
   s+='<div class="bib-actions"><a class="btn sm" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination='+b.lat+','+b.lon+'">🧭 Cómo llegar</a>'+
     (b.tel?'<a class="btn sm ghost" href="tel:'+escapeHTML(b.tel.replace(/\s/g,""))+'">📞 Llamar</a>':'')+
     (b.web&&/^https?:\/\//.test(b.web)?'<a class="btn sm ghost" target="_blank" rel="noopener" href="'+escapeHTML(b.web)+'">🌐 Web</a>':'')+'</div>';
-  var cal=horarioVigente(b),hoy=new Date().getDay();
+  s+=notaExamenHTML(b,false);
+  var cal=horarioVigente(b),hoy=new Date().getDay(),exHoy=b._examenSem&&b._examen.some(function(e){return tramosExamen(e,new Date())!==null;});
   if(b.sinHorario){
     s+='<div class="hours"><h4>Horario</h4><div style="font-size:var(--fs-s);color:var(--suave)">Sin confirmar todavía'+(b.web?': consúltalo en su web.':'.')+
       ' <button class="linkbtn" onclick="closeModal();enviarSugerencia('+jsArg("Horario de "+b.nombre)+')">¿Lo sabes? Cuéntanoslo</button></div></div>';
   }else{
-  s+='<div class="hours"><h4>'+(verano?"Horario de verano":"Horario de invierno")+'</h4><table>';
+  s+='<div class="hours"><h4>'+(exHoy?"Horario de estos días (exámenes)":(verano?"Horario de verano":"Horario de invierno"))+'</h4><table>';
   for(var d=1;d<=7;d++){var di=d%7,tr=cal[di]||[];
     var txt=tr.length?tr.map(function(t){return fmtHoras(t[0])+"–"+fmtHoras(t[1]);}).join(", "):'<span class="closed-day">Cerrado</span>';
     s+='<tr class="'+(di===hoy?"today":"")+'"><td>'+DIAS[di]+'</td><td>'+txt+'</td></tr>';}
@@ -1780,6 +1842,7 @@ function buildList(){
   var F=LIST_FILTERS, idx=[], q=normTxt(($("listSearch")||{}).value||"").trim();
   BIBLIOTECAS.forEach(function(b,i){
     if(F.fav&&!esFavorita(i))return;
+    if(F.examenes&&!examenDeBib(b))return;
     if(F.abiertas&&!estadoBib(b))return;
     if(F.pronto&&!abrePronto(b))return;
     if(F.tarde&&!abiertaHastaTarde(b))return;
@@ -1799,7 +1862,7 @@ function buildList(){
   }else if(F.tarde){
     idx.sort(function(a,c){return horaCierre(BIBLIOTECAS[c])-horaCierre(BIBLIOTECAS[a]);});
   }
-  if(!idx.length)list.innerHTML='<div class="empty-note">Ninguna biblioteca cumple estos filtros'+(F.wifi?' (el wifi solo figura donde está confirmado)':'')+(F.pronto?' (ninguna cerrada abre en los próximos '+PRONTO_MIN+' min)':'')+(F.tarde?' (ninguna abierta cierra a las 21:00 o más tarde)':'')+'.</div>';
+  if(!idx.length)list.innerHTML='<div class="empty-note">Ninguna biblioteca cumple estos filtros'+(F.wifi?' (el wifi solo figura donde está confirmado)':'')+(F.pronto?' (ninguna cerrada abre en los próximos '+PRONTO_MIN+' min)':'')+(F.tarde?' (ninguna abierta cierra a las 21:00 o más tarde)':'')+(F.examenes?' (solo figuran las que han publicado su calendario de exámenes en su web oficial)':'')+'.</div>';
   var total=idx.length, LIM=120;
   if(total>LIM){idx=idx.slice(0,LIM);}
   idx.forEach(function(i){
@@ -1826,8 +1889,11 @@ function normTxt(t){return String(t||"").toLowerCase().normalize("NFD").replace(
 // "Abiertas ahora" depende de la hora: se recalcula cada minuto aunque no lleguen datos nuevos.
 setInterval(function(){if(!window.__listReady)return; if(LIST_FILTERS.abiertas||LIST_FILTERS.pronto||LIST_FILTERS.tarde)buildList(); else renderNowCard();},60000);
 (function(){var ls=$("listSearch");if(!ls)return;var tmo;ls.addEventListener("input",function(){clearTimeout(tmo);tmo=setTimeout(buildList,200);});})();
-var LIST_FILTERS=Object.assign({fav:false,abiertas:false,pronto:false,tarde:false,cerca:false,libre:false,wifi:false,horario:false,uni:false},loadJSON("bpna_list_filters",{}));
+var LIST_FILTERS=Object.assign({examenes:false,fav:false,abiertas:false,pronto:false,tarde:false,cerca:false,libre:false,wifi:false,horario:false,uni:false},loadJSON("bpna_list_filters",{}));
 function syncListFilterButtons(){
+  // «Temporada de exámenes» solo se ve si hay aperturas extraordinarias vigentes o en los próximos 30 días
+  var ex=document.querySelector('#listFilters [data-f="examenes"]'),hay=hayTemporadaExamenes();
+  if(ex)ex.hidden=!hay; if(!hay&&LIST_FILTERS.examenes)LIST_FILTERS.examenes=false;
   document.querySelectorAll("#listFilters button").forEach(function(btn){btn.classList.toggle("on",!!LIST_FILTERS[btn.dataset.f]);});
   var fb=document.querySelector('#listFilters [data-f="fav"]'),nf=nFavoritas(); if(fb)fb.textContent="★ Favoritas"+(nf?" ("+nf+")":"");
 }
