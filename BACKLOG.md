@@ -50,6 +50,8 @@ empiezan el 1 de diciembre y los de la UPNA el 15), así que la producción debe
 - [ ] Misas · Compartir una biblioteca con enlace `#bib=<slug>` y `navigator.share`
 - [ ] Misas · Atajos de PWA en `manifest.json` ("Te recomiendo ahora", "Abren pronto")
 
+- [ ] Objetivo 1 · Datos: en `bibliotecas-espana.js` la entrada «Biblioteca Municipal Sant Hilari Sacalm» (índice 93) tiene la dirección de la BPE de Guadalajara (Plaza Dávalos); corregir el nombre o la dirección con fuente oficial sin mover el índice (visto el 2026-10-27)
+
 ## Datos (por lotes pequeños, siempre con fuente oficial)
 - [ ] España · Horarios verificados: seguir añadiendo 10 bibliotecas por tarea (hay 64 con horario, 47/51 provincias; faltan Salamanca, Segovia, Baleares y Cádiz: sus BPE de la capital no están en el archivo o su web no daba el horario de invierno). Priorizar capitales de provincia sin ninguna. Como pista para buscar la fuente oficial puede usarse el campo `oh` de `data/bibliotecas_espana.json` (OpenStreetMap, ODbL), pero nunca publicarlo como verificado. Cada horario nuevo lleva `h.fv` con la fecha (AAAA-MM-DD) en que se comprobó la fuente
 - [ ] Navarra · verificar horario/aforo/recursos de 10 bibliotecas con la web oficial; repetir hasta cubrir las 104
