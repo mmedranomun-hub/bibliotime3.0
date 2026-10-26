@@ -1044,6 +1044,39 @@
   .tip-acts button{display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;color:#fff;cursor:pointer}
   .tip-acts span{font-size:var(--fs-4xl);width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center}
   .tip-acts small{font-size:var(--fs-xs);font-weight:700}
+
+  /* Próximo examen y amigos estudiando ahora */
+  .exam-chip,.amigos-ahora{width:100%;display:flex;align-items:center;gap:12px;margin-bottom:12px;padding:10px 14px;border-radius:var(--r-l);border:1px solid var(--borde);
+    background:var(--glass-fuerte);box-shadow:var(--sombra);cursor:pointer;text-align:left;color:var(--texto);font:inherit}
+  .exam-chip .ec-n{width:44px;height:44px;flex-shrink:0;border-radius:var(--r-m);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:var(--fs-2xl);
+    background:var(--ev-ex-bg);color:var(--ev-ex-tx)}
+  .exam-chip.cerca .ec-n{background:var(--fuego);color:#fff;animation:latido 1.8s ease-in-out infinite}
+  .exam-chip .ec-t,.amigos-ahora>span:nth-child(2){flex:1;min-width:0;display:flex;flex-direction:column}
+  .exam-chip b,.amigos-ahora b{font-size:var(--fs-base);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .exam-chip small,.amigos-ahora small{font-size:var(--fs-s);color:var(--suave);font-weight:600}
+  .exam-chip .ec-go{font-size:var(--fs-3xl);color:var(--suave)}
+  .aa-avs{display:flex}
+  .aa-avs i{width:32px;height:32px;border-radius:50%;margin-left:-8px;border:2px solid var(--glass-fuerte);display:flex;align-items:center;justify-content:center;color:#fff;font-style:normal;font-weight:800;font-size:var(--fs-s)}
+  .aa-avs i:first-child{margin-left:0}
+  .aa-dot{width:10px;height:10px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 0 rgba(34,197,94,.6);animation:directo 1.6s infinite}
+  @keyframes directo{0%{box-shadow:0 0 0 0 rgba(34,197,94,.6)}100%{box-shadow:0 0 0 12px rgba(34,197,94,0)}}
+  /* Aro del avatar según el nivel */
+  .avatar[data-tier="bronce"]{box-shadow:0 0 0 4px #c2773e}
+  .avatar[data-tier="plata"]{box-shadow:0 0 0 4px #94a3b8,0 0 18px rgba(148,163,184,.6)}
+  .avatar[data-tier="oro"]{box-shadow:0 0 0 4px #f59e0b,0 0 24px rgba(245,158,11,.7);animation:latido 2.4s infinite}
+  /* Modo foco a pantalla completa */
+  .ring-wrap .focus-plant{cursor:zoom-in}
+  .foco{position:fixed;inset:0;z-index:5600;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:#fff;text-align:center;padding:24px;
+    background:radial-gradient(80% 60% at 50% 35%,#134e4a,#0b1220 75%);animation:fadeIn .4s both}
+  .foco-x{position:absolute;top:12px;right:16px}
+  .foco-tree .fp-tree{display:inline-block;transform-origin:50% 100%;animation:sway 3.2s ease-in-out infinite;filter:drop-shadow(0 18px 30px rgba(0,0,0,.4))}
+  .foco-tree .fp-tree.grow{animation:growIn .7s cubic-bezier(.34,1.56,.64,1),sway 3.2s ease-in-out .7s infinite}
+  .foco-time{font-size:64px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:.01em;margin-top:8px}
+  .foco-etapa{font-weight:700;opacity:.85}
+  .foco-frase{margin-top:18px;font-size:var(--fs-l);max-width:320px;opacity:.9;min-height:48px}
+  .foco-frase.entra{animation:fadeUp .6s both}
+  .foco-acts{position:absolute;bottom:34px}
+  .foco-acts .btn{color:#fff;border-color:rgba(255,255,255,.35)}
 </style>
 </head>
 <body>
@@ -1147,6 +1180,8 @@
       <div class="page-title">Modo estudio</div>
       <div class="page-sub">Cada sesión planta un árbol en tu bosque 🌳</div>
       <div class="level-card mini" id="levelCardStudy"></div>
+      <div id="examChip"></div>
+      <div id="friendsNow"></div>
       <div class="glasscard missions-card" id="missionsCard" style="margin-bottom:16px"></div>
       <div class="seg" id="studyTab" style="margin-bottom:16px"><button data-t="crono" class="on">Cronómetro</button><button data-t="pomo">Pomodoro</button><button data-t="ofrecer" class="extra">Ofrecer estudio</button></div>
       <div class="glasscard" id="subjectCard" style="margin-bottom:16px">

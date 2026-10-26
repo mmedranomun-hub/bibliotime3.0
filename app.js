@@ -402,7 +402,7 @@ async function socialRefreshAll(){
   await socialLoadPrayerCounts();
   socialRenderPanel();
   socialRenderFriendEvents();
-  renderStories();
+  renderStories();renderAmigosAhora();renderExamChip();
   socialRenderFriendMarkers();
   if(DATA)renderCal();else renderCalFriendExams();
 }
@@ -2129,7 +2129,7 @@ function nivelHTML(mini){
     '<div class="lv-next">'+(sig?(mini?'':Math.floor(h)+' h estudiadas · ')+'faltan '+faltaTxt+' para <b>'+sig[1]+'</b> '+sig[2]:'¡Nivel máximo! '+Math.floor(h)+' h estudiadas')+'</div>'+
     '<div class="lv-bar"><i style="width:'+pct+'%"></i></div></div>';
 }
-function renderNivel(){var a=$("levelCard");if(a)a.innerHTML=nivelHTML(false);var b=$("levelCardStudy");if(b)b.innerHTML=nivelHTML(true);}
+function renderNivel(){var av=$("profAvatar");if(av){var n=nivelDe(horasTotales());av.dataset.tier=n>=10?"oro":n>=6?"plata":n>=3?"bronce":"";}var a=$("levelCard");if(a)a.innerHTML=nivelHTML(false);var b=$("levelCardStudy");if(b)b.innerHTML=nivelHTML(true);}
 // Subida de nivel tras guardar una sesión
 function comprobarSubidaNivel(antes){
   var n0=nivelDe(antes), n1=nivelDe(horasTotales()); if(n1<=n0)return;
@@ -2246,7 +2246,7 @@ function renderStudy(){
   renderFocusPlant();
   renderForest();
   renderNivel();
-  renderMisiones();renderSemillas();renderRacha();
+  renderMisiones();renderSemillas();renderRacha();renderExamChip();renderAmigosAhora();
 }
 /* ===== ASIGNATURAS (como YPT: el tiempo se apunta a una asignatura) ===== */
 function renderSubjects(){
@@ -2421,6 +2421,7 @@ function renderFocusPlant(){
     if(el._etapa===clave){var t=el.querySelector(".fp-txt");if(t)t.textContent=txt;return;}
     var subio=el._etapa!=null&&!FOCUS.withered&&el._etapa.split("|")[1]==="false";
     el._etapa=clave;
+    el.onclick=abrirFoco;el.title="Toca para el modo foco a pantalla completa";
     el.innerHTML='<div class="fp-tree'+(subio?' grow':'')+'">'+arbolSVG(Math.max(min,1),FOCUS.withered,(DATA&&DATA.currentSubject)||"",96,especieActual())+'</div><div class="fp-txt">'+escapeHTML(txt)+'</div>';
     if(subio){celebrar(el.querySelector(".fp-tree"),["🌱","🍃","✨"],8);}
   });
@@ -4034,3 +4035,53 @@ function tipGuardar(i,b){var g=loadJSON("bpna_tips_guardados",{});g[i]=!g[i];sav
   if(b){b.classList.toggle("on",!!g[i]);b.querySelector("span").textContent=g[i]?"🔖":"📑";b.querySelector("small").textContent=g[i]?"Guardado":"Guardar";if(g[i])showToast("🔖 Tip guardado");}}
 function tipCompartir(i){var t=TIPS[i],txt=t.e+" "+t.t+": "+t.x+" — bibliomapa.es";
   if(navigator.share)navigator.share({title:t.t,text:txt}).catch(function(){});else{try{navigator.clipboard.writeText(txt);showToast("Tip copiado");}catch(e){}}}
+
+/* ----- Próximo examen (cuenta atrás + rezos) y amigos estudiando ahora (prueba social) ----- */
+function proximoExamen(){
+  var hoy=ymd(),mejor=null;
+  Object.keys(DATA.events||{}).forEach(function(k){if(k<hoy)return;(DATA.events[k]||[]).forEach(function(ev){if(ev.type==="examen"&&(!mejor||k<mejor.k))mejor={k:k,ev:ev};});});
+  return mejor;
+}
+function renderExamChip(){
+  var el=$("examChip"); if(!el||!DATA)return;
+  var p=proximoExamen(); if(!p){el.innerHTML="";return;}
+  var d=Math.round((new Date(p.k+"T00:00:00")-new Date(ymd()+"T00:00:00"))/864e5);
+  var cuando=d===0?"¡Es hoy!":d===1?"Mañana":"Faltan "+d+" días";
+  var rez=p.ev.shared&&SOCIAL.prayerCounts&&SOCIAL.prayerCounts[p.ev.id]?' · 🙏 '+SOCIAL.prayerCounts[p.ev.id]:'';
+  el.innerHTML='<button class="exam-chip'+(d<=3?' cerca':'')+'" onclick="goView(\'cal\')"><span class="ec-n">'+(d===0?'🎯':d)+'</span><span class="ec-t"><b>'+escapeHTML(p.ev.title)+'</b><small>'+cuando+rez+'</small></span><span class="ec-go">›</span></button>';
+}
+function renderAmigosAhora(){
+  var el=$("friendsNow"); if(!el)return;
+  var ps=(SOCIAL.user&&SOCIAL.presence)?SOCIAL.presence.filter(function(p){return !isBlocked(p.user_id);}):[];
+  if(!ps.length){el.innerHTML="";return;}
+  el.innerHTML='<button class="amigos-ahora" onclick="goView(\'friends\')"><span class="aa-avs">'+ps.slice(0,4).map(function(p){return '<i style="background:'+colorDe(p.user_id)+'">'+escapeHTML(socialNameById(p.user_id).charAt(0).toUpperCase())+'</i>';}).join("")+'</span>'+
+    '<span><b>'+(ps.length===1?escapeHTML(socialNameById(ps[0].user_id).split(" ")[0])+' está estudiando ahora':ps.length+' amigos estudiando ahora')+'</b><small>¡Únete! 🔥</small></span><span class="aa-dot"></span></button>';
+}
+
+/* ----- Pantalla de foco (Forest): el árbol a pantalla completa mientras estudias ----- */
+var FRASES_FOCO=["Un tema más y te tomas un descanso 💪","Tu árbol crece con cada minuto 🌱","Lo difícil era empezar. Ya lo has hecho.","Concéntrate en esta página, no en todo el temario.","Tu yo del examen te lo va a agradecer 🙌","No salgas de la app: tu árbol te necesita 🌳"];
+function abrirFoco(){
+  if(!studyTimer.running&&!(pomo.running&&pomo.phase==="focus")){showToast("Empieza una sesión para entrar en modo foco");return;}
+  var o=document.createElement("div");o.className="foco";o.id="focoView";
+  o.innerHTML='<button class="sv-x foco-x" onclick="cerrarFoco()" aria-label="Salir del modo foco">×</button><div class="foco-tree"></div><div class="foco-time"></div><div class="foco-etapa"></div><div class="foco-frase"></div>'+
+    '<div class="foco-acts"><button class="btn ghost" onclick="cerrarFoco()">Salir del modo foco</button></div>';
+  document.body.appendChild(o);
+  try{if(o.requestFullscreen)o.requestFullscreen().catch(function(){});}catch(e){}
+  FOCO_ETAPA=null;pintarFoco();FOCO_T=setInterval(pintarFoco,1000);
+}
+var FOCO_T=null,FOCO_ETAPA=null;
+function pintarFoco(){
+  var o=$("focoView"); if(!o)return;
+  if(!studyTimer.running&&!(pomo.running&&pomo.phase==="focus")){cerrarFoco();return;}
+  var sec=studyTimer.running?elapsedSec():(POMO_FOCUS_MIN*60-pomo.secondsLeft), min=Math.floor(sec/60), e=etapaArbol(min), clave=e+"|"+FOCUS.withered;
+  o.querySelector(".foco-time").textContent=studyTimer.running?fmtClock(sec):String(Math.floor(pomo.secondsLeft/60)).padStart(2,"0")+":"+String(pomo.secondsLeft%60).padStart(2,"0");
+  if(clave!==FOCO_ETAPA){
+    var subio=FOCO_ETAPA!=null&&!FOCUS.withered;FOCO_ETAPA=clave;
+    o.querySelector(".foco-tree").innerHTML='<div class="fp-tree'+(subio?' grow':'')+'">'+arbolSVG(Math.max(min,1),FOCUS.withered,(DATA&&DATA.currentSubject)||"",240,especieActual())+'</div>';
+    var sig=ETAPAS_ARBOL[e+1];
+    o.querySelector(".foco-etapa").textContent=FOCUS.withered?"🥀 Se ha marchitado":ETAPAS_ARBOL[e][1]+(sig?" · "+sig[1].toLowerCase()+" en "+(sig[0]-min)+" min":"");
+    if(subio)celebrar(o.querySelector(".foco-tree"),["🌱","🍃","✨"],10);
+  }else if(!FOCUS.withered){var sg=ETAPAS_ARBOL[e+1];o.querySelector(".foco-etapa").textContent=ETAPAS_ARBOL[e][1]+(sg?" · "+sg[1].toLowerCase()+" en "+(sg[0]-min)+" min":"");}
+  if(sec%20===0||!o.querySelector(".foco-frase").textContent){var f=o.querySelector(".foco-frase");f.textContent=FRASES_FOCO[Math.floor(sec/20)%FRASES_FOCO.length];f.classList.remove("entra");void f.offsetWidth;f.classList.add("entra");}
+}
+function cerrarFoco(){clearInterval(FOCO_T);var o=$("focoView");if(o)o.remove();try{if(document.fullscreenElement)document.exitFullscreen();}catch(e){}}
