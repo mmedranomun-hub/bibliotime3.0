@@ -31,7 +31,12 @@ Además siguen las rutinas diarias que ya existían (diseño 6:50, rendimiento 7
 tarea del ordenador de Marcos que hace el backlog cada 3 h. El director no toca sus tareas; el optimizador puede
 ajustarlas dentro de los límites de abajo.
 
-Tareas programadas: «Bibliomapa · director» y «Bibliomapa · optimizador de bucles» (en la cuenta de Marcos).
+Tareas programadas: «Bibliomapa · director» (cada hora, :18), «Bibliomapa · guardián del bucle» (cada hora, :48) y
+«Bibliomapa · optimizador de bucles» (miércoles y domingo, 20:54), en la cuenta de Marcos.
+
+**Guardián:** media hora después de cada director comprueba que el bucle sigue vivo. Si el sistema desactivó el director
+(fallos, cuota) lo reactiva; si la última vuelta falló o lleva más de 2 h sin ejecutarse —lo normal cuando se acaba
+la cuota y luego se regenera— lo relanza en ese momento. Si Marcos lo pausó a mano, lo respeta.
 
 ## Límites del optimizador (para que el sistema mejore sin descontrolarse)
 - Solo puede tocar tareas programadas cuyo nombre empiece por «Bibliomapa» o «Bibliotime».
@@ -43,8 +48,9 @@ Tareas programadas: «Bibliomapa · director» y «Bibliomapa · optimizador de 
 - Todo cambio queda anotado abajo con el porqué.
 
 ## Si se acaba el uso del plan
-Las ejecuciones que caigan sin cuota fallan y la siguiente lo retoma desde el registro y el backlog: no hace falta
-ningún mensaje para «volver a empezar». El trabajo a medias nunca se sube (solo lo que pasa `scripts/probar.py`).
+Las ejecuciones que caigan sin cuota fallan. En cuanto se regenera, la primera que entra (director o guardián) lo
+retoma desde el registro y el backlog; el guardián además reactiva lo que el sistema haya apagado y relanza el director
+sin esperar a su hora. Una línea «⏳ en curso» de hace más de 90 min es de una vuelta cortada: se marca ⚠️ y se sigue. El trabajo a medias nunca se sube (solo lo que pasa `scripts/probar.py`).
 
 ## Registro de ejecuciones
 Formato: `AAAA-MM-DD HH:MM · quién · objetivo(s) · resultado (✅ subido / ⚠️ a medias / ❌ falló) · commit · métrica que movió`
