@@ -232,17 +232,19 @@ function notaExamenHTML(b,compacta){
     (e.nota&&!compacta?'. '+escapeHTML(e.nota):'')+' · <a target="_blank" rel="noopener" href="'+escapeHTML(e.f)+'">fuente</a>'+
     (compacta?'':' <span class="ex-fv">(comprobado el '+fmtDiaMes(e.fv)+')</span>')+'</div>';
 }
-BIBLIOTECAS.forEach(function(b){
+BIBLIOTECAS.forEach(function(b,i){
   var info=ACCESO_INFO[b.nombre];
   if(info){b.acceso=info.acceso;b.accesibilidad=info.accesibilidad;return;}
   // Red de Bibliotecas Públicas de Navarra: la Ley Foral 32/2002 establece acceso libre en toda la red.
   // Se aplica por defecto a las bibliotecas municipales sin ficha investigada individualmente; el resto de
   // datos de accesibilidad física sí quedan como "sin confirmar" al no haberse verificado edificio por edificio.
-  if(b.sinHorario){
+  // Fuera de Navarra (BIBLIOTECAS_ES, desde N_NAVARRA) no rige la ley foral, tenga o no horario.
+  if(i>=N_NAVARRA){
     // Ley 10/2007 de la lectura, art. 13: acceso libre y gratuito a los servicios básicos de las bibliotecas públicas.
     if(b.tipoBib==="publica")b.acceso={tipo:"libre",detalle:"Biblioteca pública: acceso libre y gratuito a los servicios básicos (Ley 10/2007 de la lectura). Sin ficha individual verificada."};
     else if(b.tipoBib==="universidad")b.acceso={tipo:"desconocido",detalle:"Biblioteca universitaria: el acceso suele estar limitado a su comunidad, sobre todo en exámenes. Consulta su web."};
-    else b.acceso={tipo:"desconocido",detalle:"Sin confirmar"};
+    else b.acceso={tipo:"desconocido",detalle:"Consulta las condiciones en"+(/^https?:\/\//.test(b.web)?"":" la propia biblioteca")};
+    b.acceso.web=true;
     b.accesibilidad={sillaRuedas:null,turistas:null,gratisDias:null,notas:"Sin confirmar"};
     return;
   }
@@ -1795,7 +1797,8 @@ function accesoAccesibilidadHTML(b){
   var tipoTxt = ac.tipo==="libre" ? "🔓 Entrada libre y gratuita"
     : ac.tipo==="restringido" ? "🔒 Acceso restringido / requiere carnet"
     : "❔ Tipo de acceso: sin confirmar";
-  var s='<div class="hours"><h4>Acceso</h4><div style="font-size:var(--fs-s);color:var(--suave)">'+escapeHTML(tipoTxt)+(ac.detalle?' · '+escapeHTML(ac.detalle):'')+'</div>';
+  var s='<div class="hours"><h4>Acceso</h4><div style="font-size:var(--fs-s);color:var(--suave)">'+escapeHTML(tipoTxt)+(ac.detalle?' · '+escapeHTML(ac.detalle):'')+
+    (ac.web&&/^https?:\/\//.test(b.web||"")?(/ en$/.test(ac.detalle)?' ':' · ')+'<a class="linkbtn" target="_blank" rel="noopener" href="'+escapeHTML(b.web)+'">su web ↗</a>':'')+'</div>';
   var badges=[];
   if(ax.sillaRuedas===true)badges.push("♿ Accesible en silla de ruedas");
   if(ax.sillaRuedas===false)badges.push("♿ No adaptada");
@@ -2412,10 +2415,13 @@ var ESPECIES=[
   {id:"arce",nombre:"Arce de otoño",icon:"🍁",precio:120},
   {id:"palmera",nombre:"Palmera",icon:"🌴",precio:160},
   {id:"cactus",nombre:"Cactus",icon:"🌵",precio:200},
-  {id:"calabaza",nombre:"Calabaza de Halloween",icon:"🎃",precio:0,desde:"10-20",hasta:"11-02"}
+  {id:"calabaza",nombre:"Calabaza de Halloween",icon:"🎃",precio:0,desde:"10-20",hasta:"11-02"},
+  {id:"navidad",nombre:"Abeto de Navidad",icon:"🎄",precio:0,desde:"12-01",hasta:"01-06"},
+  {id:"almendro",nombre:"Almendro en flor",icon:"🌼",precio:0,desde:"03-01",hasta:"04-30"}
 ];
-// Especies de temporada: gratis, pero solo se pueden elegir dentro de sus fechas (MM-DD).
-function enTemporada(e){if(!e.desde)return true;var md=ymd().slice(5);return md>=e.desde&&md<=e.hasta;}
+// Especies de temporada: gratis, pero solo se pueden elegir dentro de sus fechas (MM-DD). Si "desde" es
+// mayor que "hasta", el periodo cruza el año (12-01 → 01-06).
+function enTemporada(e,f){if(!e.desde)return true;var md=ymd(f).slice(5);return e.desde<=e.hasta?md>=e.desde&&md<=e.hasta:md>=e.desde||md<=e.hasta;}
 function especieDe(id){for(var i=0;i<ESPECIES.length;i++)if(ESPECIES[i].id===id)return ESPECIES[i];return ESPECIES[0];}
 // Dibujo del árbol en SVG (colores del sistema de diseño: --arbol-*, --tronco, --marchito, --cerezo…).
 function arbolSVG(min,marchito,semilla,alto,esp){
@@ -2434,7 +2440,7 @@ function arbolSVG(min,marchito,semilla,alto,esp){
     return '<svg width="'+w+'" height="'+h+'" viewBox="0 0 60 100" aria-hidden="true"'+(marchito?' class="seco"':'')+'><ellipse cx="30" cy="97" rx="18" ry="3" fill="rgba(0,0,0,.12)"/>'+g+'</svg>';
   }
   var C={roble:[v,"var(--arbol-osc)","var(--flor)"],cerezo:["var(--cerezo)","var(--cerezo-osc)","#fff"],arce:["var(--arce)","var(--arce-osc)","var(--aviso)"],
-    abeto:["var(--pino)","var(--pino-osc)","var(--nieve)"],palmera:["var(--palma)","var(--palma-osc)","var(--aviso)"],cactus:["var(--cactus)","var(--cactus-osc)","var(--flor)"]}[esp]||[v,"var(--arbol-osc)","var(--flor)"];
+    abeto:["var(--pino)","var(--pino-osc)","var(--nieve)"],navidad:["var(--pino)","var(--pino-osc)","var(--nieve)"],almendro:["var(--almendro)","var(--almendro-osc)","var(--cerezo-osc)"],palmera:["var(--palma)","var(--palma-osc)","var(--aviso)"],cactus:["var(--cactus)","var(--cactus-osc)","var(--flor)"]}[esp]||[v,"var(--arbol-osc)","var(--flor)"];
   var copa=marchito?"var(--marchito)":C[0], copa2=marchito?"var(--marchito-osc)":C[1], deco=C[2], tronco=marchito?"var(--marchito-osc)":"var(--tronco)";
   var g="";
   if(e===0){ // brote
@@ -2443,11 +2449,14 @@ function arbolSVG(min,marchito,semilla,alto,esp){
                :'<path d="M30 74 C22 64 14 64 10 68 C16 76 24 78 30 76Z" fill="var(--arbol-a)"/><path d="M30 72 C36 60 46 58 50 62 C46 72 38 76 30 74Z" fill="var(--arbol-osc)"/>');
   }else if(e===1&&esp!=="cactus"){ // arbusto
     g='<rect x="27.5" y="78" width="5" height="18" rx="2" fill="'+tronco+'"/><circle cx="22" cy="74" r="13" fill="'+copa2+'"/><circle cx="38" cy="74" r="13" fill="'+copa2+'"/><circle cx="30" cy="64" r="15" fill="'+copa+'"/>';
-  }else if(esp==="abeto"||(esp==="roble"&&e===4)){ // conífera (el roble es pino en la etapa 4)
-    var k=esp==="abeto"?Math.max(0,5-e)*6:0, nieve=esp==="abeto"&&!marchito&&e>=3;
+  }else if(esp==="abeto"||esp==="navidad"||(esp==="roble"&&e===4)){ // conífera (el roble es pino en la etapa 4)
+    var k=esp!=="roble"?Math.max(0,5-e)*6:0, nieve=esp==="abeto"&&!marchito&&e>=3;
     var p=marchito?copa:"var(--pino)", p2=marchito?copa2:"var(--pino-osc)";
     g='<rect x="27" y="80" width="6" height="16" rx="2" fill="'+tronco+'"/><path d="M30 '+(46+k)+' L52 84 L8 84Z" fill="'+p2+'"/><path d="M30 '+(26+k)+' L48 62 L12 62Z" fill="'+p+'"/><path d="M30 '+(6+k)+' L43 38 L17 38Z" fill="'+p2+'"/>'+
-      (nieve?'<path d="M30 '+(6+k)+' L36 '+(21+k/2)+' L30 '+(18+k/2)+' L24 '+(21+k/2)+'Z" fill="'+deco+'"/><path d="M19 62 L26 57 L30 61 L34 57 L41 62Z" fill="'+deco+'" opacity=".9"/><path d="M14 84 L24 78 L30 82 L36 78 L46 84Z" fill="'+deco+'" opacity=".9"/>':'');
+      (nieve?'<path d="M30 '+(6+k)+' L36 '+(21+k/2)+' L30 '+(18+k/2)+' L24 '+(21+k/2)+'Z" fill="'+deco+'"/><path d="M19 62 L26 57 L30 61 L34 57 L41 62Z" fill="'+deco+'" opacity=".9"/><path d="M14 84 L24 78 L30 82 L36 78 L46 84Z" fill="'+deco+'" opacity=".9"/>':'')+
+      (esp==="navidad"&&!marchito?[[22,35],[30,37],[38,35],[17,59],[27,61],[36,60],[44,58],[13,81],[24,83],[35,82],[46,80]].map(function(q,j){
+        return '<circle class="luz l'+j%3+'" cx="'+q[0]+'" cy="'+q[1]+'" r="2.5" fill="var(--luz-'+"abc"[j%3]+')"/>';}).join("")+
+        '<path d="M30 '+(k+1)+' l2.4 4.6 5 .7 -3.7 3.4 .9 5 -4.6 -2.4 -4.6 2.4 .9 -5 -3.7 -3.4 5 -.7Z" fill="var(--estrella)"/>':'');
   }else if(esp==="palmera"){
     var alt=e>=4?8:e>=3?16:26;
     g='<path d="M31 96 C29 80 33 60 30 '+(alt+14)+'" stroke="'+tronco+'" stroke-width="6" fill="none" stroke-linecap="round"/>'+

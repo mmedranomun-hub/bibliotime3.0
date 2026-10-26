@@ -17,7 +17,6 @@ MassTimes.org / misas.org).
 - [ ] Objetivo 4 · Enlazar las páginas temáticas desde la portada (`index.html`, pie o sección «Buscar por horario», sin tocar la app) y añadir `dateModified` con la fecha de verificación más reciente a su JSON-LD; medir en Search Console «biblioteca abierta domingo <ciudad>» cuando el dominio esté conectado
 - [ ] SEO · Página propia para las bibliotecas más buscadas (Biblioteca Nacional, Regional de Madrid, grandes universitarias y las de capitales de provincia con horario verificado), generada por `scripts/generar_paginas_seo.js`, con datos estructurados `Library`
 - [ ] SEO · Título y descripción de la portada según la ciudad del enlace (`/bibliotecas/<prov>/` ya enlaza `#bib`); revisar que Google renderiza la portada (Search Console → Inspección de URL) cuando el dominio esté conectado
-- [ ] Bosque · Especie de Navidad (abeto con luces, del 1 dic al 6 ene) y de primavera (almendro, marzo-abril)
 - [ ] Dopamina · Reacciones con emoji (🔥💪🧠) a las sesiones de amigos además de kudos (tabla nueva con RLS de amigos, idempotente)
 - [ ] Dopamina · Liga semanal entre amigos (Bronce/Plata/Oro según puesto del ranking la semana anterior), con insignia en el perfil
 - [ ] Rezos · Avisar al dueño en la Agenda («🙏 3 amigos rezan por tu examen de mañana») el día anterior al examen
@@ -52,8 +51,6 @@ empiezan el 1 de diciembre y los de la UPNA el 15), así que la producción debe
 - [ ] Misas · Compartir una biblioteca con enlace `#bib=<slug>` y `navigator.share`
 - [ ] Misas · Atajos de PWA en `manifest.json` ("Te recomiendo ahora", "Abren pronto")
 
-- [ ] Objetivo 1 · Arreglo: en bibliotecas de fuera de Navarra con horario, el bloque ACCESO de la ficha dice «red pública de Navarra (Ley Foral 32/2002)» (en app.js la rama de acceso por defecto solo mira `b.sinHorario`); visto el 2026-10-27 en la Infanta Elena de Sevilla
-
 ## Datos (por lotes pequeños, siempre con fuente oficial)
 - [ ] España · Horarios verificados: seguir añadiendo 10 bibliotecas por tarea (hay 64 con horario, 47/51 provincias; faltan Salamanca, Segovia, Baleares y Cádiz: sus BPE de la capital no están en el archivo o su web no daba el horario de invierno). Priorizar capitales de provincia sin ninguna. Como pista para buscar la fuente oficial puede usarse el campo `oh` de `data/bibliotecas_espana.json` (OpenStreetMap, ODbL), pero nunca publicarlo como verificado. Cada horario nuevo lleva `h.fv` con la fecha (AAAA-MM-DD) en que se comprobó la fuente
 - [ ] Navarra · verificar horario/aforo/recursos de 10 bibliotecas con la web oficial; repetir hasta cubrir las 104
@@ -72,6 +69,8 @@ empiezan el 1 de diciembre y los de la UPNA el 15), así que la producción debe
 - Ejecutar en Supabase (SQL Editor) el bloque «PRIVACIDAD DE LA PRESENCIA» del final de `supabase/supabase_social.sql` (política select de `presence` con caducidad de 4 h, `updated_at` puesto por el servidor y borrado de la propia fila; ya añadido también al final de `Bibliotime - Documentacion\SQL_PENDIENTE_supabase.sql`). Mientras no se ejecute, la caducidad de 4 h solo la aplica la app
 
 ## Hecho
+- [x] 2026-10-27 · Objetivo 1 · Arreglo: el acceso por defecto depende de si la biblioteca es de Navarra (índice < `N_NAVARRA`), no de si tiene horario. Las de fuera ya no citan la Ley Foral 32/2002: públicas, Ley 10/2007; universitarias, «consulta su web»; el resto, «Consulta las condiciones en su web ↗» (enlace si hay `web`). Prueba en `scripts/probar.py`
+- [x] 2026-10-27 · Bosque · Especies de temporada gratis: 🎄 Abeto de Navidad con luces que parpadean y estrella (1 dic – 6 ene) y 🌼 Almendro en flor (1 mar – 30 abr). `enTemporada` admite periodos que cruzan el año (12-01 → 01-06) y una fecha opcional; prueba con fechas simuladas en `scripts/probar.py`
 - [x] 2026-10-27 · Exámenes · Chip «📚 Temporada de exámenes», nota con fuente en ficha/popup y horario extraordinario en «abierta ahora» (`temporada-examenes.js`): 3/5 ciudades con fuente oficial 2026-27 (Pamplona UNAV, Madrid UPM, Sevilla UPO). Faltan Barcelona y Valencia
 - [x] 2026-10-27 · España · Horario verificado en 10 capitales sin ninguno (Murcia, Castellón, Alicante, Sevilla, Almería, Huelva, Girona, Teruel, Palencia, Soria): 27 → 37/51 provincias
 - [x] Objetivo 4 · Páginas temáticas «abiertas domingo», «fin de semana» y «hasta tarde» de España y por provincia (≥ 2), solo con horarios verificados con fuente; 125 → 144 páginas SEO (2026-10-27)

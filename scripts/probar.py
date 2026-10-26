@@ -88,6 +88,22 @@ PRUEBAS = [
     ("tienda y semillas", """
       DATA.semillasPremio=(DATA.semillasPremio||0)+100;abrirTienda();var n=document.querySelectorAll('.shop-item').length;closeModal();
       return n>=6||('solo '+n+' especies');"""),
+    ("acceso: la ley foral solo en Navarra", """
+      for(var i=N_NAVARRA;i<BIBLIOTECAS.length;i++)if(/Ley Foral/.test(accesoAccesibilidadHTML(BIBLIOTECAS[i])))return 'ley foral fuera de Navarra: '+BIBLIOTECAS[i].nombre;
+      var nav=BIBLIOTECAS.slice(0,N_NAVARRA).some(b=>/Ley Foral 32\\/2002/.test(accesoAccesibilidadHTML(b)));
+      var sev=BIBLIOTECAS.findIndex(b=>b.nombre==='Biblioteca Pública Infanta Elena'&&b.ciudad==='Sevilla');
+      if(sev<0)return 'no está la Infanta Elena de Sevilla';
+      openBibDetailModal(sev);var t=$('modalRoot').innerText;closeModal();
+      return nav&&!/Ley Foral/.test(t)||'ficha de Sevilla: '+t.slice(0,80);"""),
+    ("especies de temporada (cruzan el año)", """
+      var nav=especieDe('navidad'),alm=especieDe('almendro'),d=s=>new Date(s+'T12:00:00');
+      if(nav.id!=='navidad'||alm.id!=='almendro')return 'faltan especies';
+      var c=[[nav,'2026-12-01',1],[nav,'2026-12-15',1],[nav,'2027-01-06',1],[nav,'2027-01-07',0],[nav,'2026-11-30',0],[nav,'2026-06-15',0],
+        [alm,'2027-03-01',1],[alm,'2027-04-30',1],[alm,'2027-05-01',0],[especieDe('calabaza'),'2026-11-03',0]];
+      for(const x of c)if(enTemporada(x[0],d(x[1]))!==!!x[2])return x[0].id+' mal el '+x[1];
+      var o=ymd;ymd=f=>f?o(f):'2026-12-15';abrirTienda();var t=$('modalRoot').innerText,l=document.querySelectorAll('#modalRoot .luz').length;closeModal();
+      ymd=f=>f?o(f):'2026-07-15';abrirTienda();var t2=$('modalRoot').innerText;closeModal();ymd=o;
+      return t.indexOf('Abeto de Navidad')>=0&&l>0&&t2.indexOf('Abeto de Navidad')<0||'tienda: navidad fuera de fecha o sin luces';"""),
     ("historias y tips", """
       goView('friends');renderStories();var ok=!!document.querySelector('#storiesBar .story.me');
       abrirTips();ok=ok&&document.querySelectorAll('.tip').length>=20;cerrarTips();return ok;"""),

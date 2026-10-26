@@ -87,6 +87,8 @@
     --marchito:#b8a089; --marchito-osc:#8a7560;
     --cerezo:#f9a8d4; --cerezo-osc:#ec4899; --arce:#fb923c; --arce-osc:#dc2626; --nieve:#ffffff;
     --calabaza:#f97316; --calabaza-osc:#c2410c;
+    --luz-a:#facc15; --luz-b:#ef4444; --luz-c:#0ea5e9; --estrella:#f59e0b;   /* abeto de Navidad */
+    --almendro:#fdf2f8; --almendro-osc:#fbcfe8;                              /* almendro de primavera */
     --palma:#4ade80; --palma-osc:#15803d; --cactus:#34d399; --cactus-osc:#047857;
     --fuego:linear-gradient(135deg,#f59e0b,#ef4444);          /* racha encendida */
     --cielo:linear-gradient(180deg,#e0f2fe 0%,#f0fdf4 70%); --cesped:linear-gradient(180deg,#86efac,#4ade80);
@@ -109,6 +111,8 @@
     --ev-ot-bg:rgba(45,212,191,.18); --ev-ot-tx:#ccfbf1;
     --cielo:linear-gradient(180deg,#0f1b3d 0%,#13283a 70%); --cesped:linear-gradient(180deg,#166534,#14532d);
     --tronco:#a47148; --marchito:#7c6a58; --marchito-osc:#5f5144;
+    --luz-a:#fde047; --luz-b:#f87171; --luz-c:#7dd3fc; --estrella:#fcd34d;
+    --almendro:#fdf2f8; --almendro-osc:#f9a8d4;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%}
@@ -1031,6 +1035,10 @@
   /* Especie de temporada */
   .shop-item{position:relative}
   .shop-item.temporada{background:linear-gradient(160deg,rgba(249,115,22,.16),rgba(124,58,237,.12))}
+  .luz{animation:parpadeo 2.4s ease-in-out infinite}
+  .luz.l1{animation-delay:.8s} .luz.l2{animation-delay:1.6s}
+  @keyframes parpadeo{0%,100%{opacity:1}50%{opacity:.35}}
+  @media(prefers-reduced-motion:reduce){.luz{animation:none}}
   .shop-temp{position:absolute;top:-8px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:var(--fs-2xs);font-weight:800;padding:2px 8px;border-radius:var(--r-pill);background:var(--fuego);color:#fff}
   /* Tips en baraja vertical */
   .story.tips .st-ring{background:conic-gradient(from 90deg,#facc15,#fb923c,#facc15)}
