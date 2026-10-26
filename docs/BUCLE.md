@@ -50,3 +50,4 @@ ningún mensaje para «volver a empezar». El trabajo a medias nunca se sube (so
 Formato: `AAAA-MM-DD HH:MM · quién · objetivo(s) · resultado (✅ subido / ⚠️ a medias / ❌ falló) · commit · métrica que movió`
 
 - 2026-10-27 00:15 · sesión con Marcos · montaje del bucle: `scripts/probar.py` (11 pruebas), OBJETIVOS.md, este archivo · ✅ · línea base: 11/11, 0 errores, 1995 ms, 148 horarios, 27/51 provincias, 125 páginas
+- 2026-10-27 00:20 · director · ⏳ en curso · Objetivo 2 (temporada de exámenes), Objetivo 1 (horarios de capitales), Objetivo 4 (SEO)
