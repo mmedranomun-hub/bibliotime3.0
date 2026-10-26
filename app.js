@@ -1585,6 +1585,7 @@ function popupHTML(b,i){
   var s='<div class="pop pop-compact"><h2>'+escapeHTML(b.nombre)+'</h2>';
   s+='<div class="pop-meta"><span class="estado '+(b.sinHorario?"unk":(abierto?"open":"closed"))+'">'+(b.sinHorario?"● Horario sin confirmar":(abierto?"● Abierta":"● Cerrada"))+'</span>'+(distTxt?'<span class="pop-dist">📍 '+distTxt+'</span>':'')+favBtnHTML(i)+'</div>';
   s+='<div class="pop-today">'+escapeHTML(estadoTexto(b).txt)+'</div>';
+  s+=rinconHTML(b);
   s+=popIconRow(b);
   if(epocaExamenes()&&esUPNA(b))s+='<div class="pop-today" style="color:#b45309">⚠️ En exámenes la sala suele reservarse a la comunidad UPNA</div>';
   var o=occSummary(i);
@@ -2189,7 +2190,8 @@ function pedirValoracion(sesion,horasAntes){
   var sel={v:0};
   var plantado=sesion.focus?'<div class="planted'+(sesion.focus==="withered"?' seco':'')+'"><div class="planted-tree">'+arbolSVG(sesion.min,sesion.focus==="withered",sesion.subject||sesion.id,110,sesion.esp)+'</div>'+
     '<div class="planted-txt">'+(sesion.focus==="withered"?'🥀 Tu árbol se marchitó porque saliste de la app. ¡El próximo crecerá!':'🎉 ¡Has plantado un '+ETAPAS_ARBOL[etapaArbol(sesion.min)][1].toLowerCase()+' en tu bosque!'+(Math.floor(sesion.min/5)?'<span class="planted-seeds">🌰 +'+Math.floor(sesion.min/5)+' semillas</span>':''))+'</div></div>':'';
-  openModal(plantado+'<h3>Sesión terminada</h3><div class="sub">'+fmtHoras(sesion.min)+' h en '+escapeHTML(sesion.bib.replace("Biblioteca ","").replace("Pública ",""))+(sesion.verif?' · <span class="badge-ok">✓ verificada</span>':'')+'</div>'+
+  var barraNivel=horasAntes!=null?nivelProgresoHTML(horasAntes):'';
+  openModal(plantado+barraNivel+'<h3>Sesión terminada</h3><div class="sub">'+fmtHoras(sesion.min)+' h en '+escapeHTML(sesion.bib.replace("Biblioteca ","").replace("Pública ",""))+(sesion.verif?' · <span class="badge-ok">✓ verificada</span>':'')+'</div>'+
     '<label style="font-size:var(--fs-s);font-weight:700;color:var(--suave);text-transform:uppercase;letter-spacing:.05em">¿Qué tal ha ido?</label>'+
     '<div class="prodstars" id="prodStars">'+[1,2,3,4,5].map(function(n){return '<button data-v="'+n+'">★</button>';}).join("")+'</div>'+
     (bibIdxDe(sesion)>=0?'<label style="display:block;margin-top:12px;font-size:var(--fs-s);font-weight:700;color:var(--suave);text-transform:uppercase;letter-spacing:.05em">¿Cómo estaba de llena?</label>'+
@@ -2199,6 +2201,7 @@ function pedirValoracion(sesion,horasAntes){
     (sesion.focus==="ok"?'<button class="btn ghost" style="margin-top:10px" onclick="compartirSesionStory(\''+sesion.id+'\')">📸 Compartir en stories</button>':'')+
     '<button class="linkbtn" id="sessSkip" style="display:block;margin:12px auto 0">Omitir</button>',
     function(){
+      var bn=document.querySelector(".np-bar i");if(bn)setTimeout(function(){bn.style.width=bn.dataset.to+"%";},350);
       if(sesion.focus==="ok"){confeti(sesion.min>=25?90:45);celebrar(document.querySelector(".planted-tree"),["🌱","🍃","✨","🌟"],12);}
       document.querySelectorAll("#prodStars button").forEach(function(b){
         b.addEventListener("click",function(){
@@ -4085,3 +4088,20 @@ function pintarFoco(){
   if(sec%20===0||!o.querySelector(".foco-frase").textContent){var f=o.querySelector(".foco-frase");f.textContent=FRASES_FOCO[Math.floor(sec/20)%FRASES_FOCO.length];f.classList.remove("entra");void f.offsetWidth;f.classList.add("entra");}
 }
 function cerrarFoco(){clearInterval(FOCO_T);var o=$("focoView");if(o)o.remove();try{if(document.fullscreenElement)document.exitFullscreen();}catch(e){}}
+
+/* ----- «Tu rincón» en la ficha de la biblioteca: lo que has estudiado allí, con mini bosque ----- */
+function rinconHTML(b){
+  if(!DATA||!DATA.sessions)return "";
+  var ses=DATA.sessions.filter(function(s){return s.bib===b.nombre;}); if(!ses.length)return "";
+  var min=ses.reduce(function(a,s){return a+s.min;},0), vivos=ses.filter(function(s){return s.focus!=="withered";});
+  var mini=vivos.slice(-8).map(function(s){return arbolSVG(s.min,false,s.subject||s.id,28,s.esp);}).join("");
+  return '<div class="rincon"><div class="rc-trees">'+mini+'</div><div><b>Tu rincón · '+hMin(min)+'</b><small>'+ses.length+(ses.length===1?' sesión':' sesiones')+' · 🌳 '+vivos.length+(vivos.length===1?' árbol':' árboles')+' aquí</small></div></div>';
+}
+/* ----- Barra de nivel que se llena al terminar la sesión ----- */
+function nivelProgresoHTML(hAntes){
+  var hAhora=horasTotales(), n0=nivelDe(hAntes), n1=nivelDe(hAhora), N=NIVELES[n1], sig=NIVELES[n1+1];
+  function pct(h,n){var c=NIVELES[n],s=NIVELES[n+1];return s?Math.max(0,Math.min(100,(h-c[0])/(s[0]-c[0])*100)):100;}
+  var desde=n1>n0?0:pct(hAntes,n1), hasta=pct(hAhora,n1);
+  return '<div class="np"><div class="np-top"><span>'+N[2]+' Nivel '+(n1+1)+' · '+escapeHTML(N[1])+'</span><b>'+(sig?'+'+hMin(Math.max(1,Math.round((hAhora-hAntes)*60))):'')+'</b></div>'+
+    '<div class="np-bar"><i style="width:'+desde.toFixed(1)+'%" data-to="'+hasta.toFixed(1)+'"></i></div></div>';
+}
