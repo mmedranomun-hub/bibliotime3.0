@@ -316,7 +316,8 @@ function estadoBib(b){const now=ahoraEn(b),d=now.getDay(),m=now.getHours()*60+no
 
 /* ===== CÓDIGO BAJO DEMANDA (app-extra.js) =====
    Las ventanas y acciones que solo se usan al pulsar un botón (denunciar/bloquear, reportar un horario,
-   añadir préstamo/evento/meta, avisos, sugerencias, imágenes para stories con canvas, resumen «Wrapped»…)
+   añadir préstamo/evento/meta, avisos, sugerencias, imágenes para stories con canvas, resumen «Wrapped»,
+   bienvenida de la 1.ª visita, sala de estudio en grupo, hilo de comentarios…)
    viven en app-extra.js para que app.js pese menos y el primer pintado en móvil sea más rápido.
    Cada nombre de EXTRA_FUNCS es aquí un «stub»: al llamarlo carga app-extra.js una sola vez (que
    redefine la función de verdad con el mismo nombre global) y la ejecuta con los mismos argumentos.
@@ -341,7 +342,15 @@ var EXTRA_FUNCS=[
   "compartirSesionStory",
   "compartirStoryDia",
   "abrirResumenSemanal",
-  "compartirSemanaPasada"];
+  "compartirSemanaPasada",
+  "onboarding",
+  "createStudyRoom",
+  "joinStudyRoom",
+  "leaveStudyRoom",
+  "loadRoomMembers",
+  "pintarSalaActiva",
+  "postComment",
+  "deleteComment"];
 var _extraP=null;
 function cargarExtra(){
   if(!_extraP)_extraP=new Promise(function(ok,ko){
@@ -808,56 +817,9 @@ async function socialLoadPresence(){
   SOCIAL.presenceAll=res.data||[];
   SOCIAL.presence=presenciasVisibles(SOCIAL.presenceAll);
 }
-/* ===== SESIONES DE ESTUDIO EN GRUPO ===== */
-async function createStudyRoom(name){
-  var sb=socialClient(); if(!sb||!SOCIAL.user){showToast("Necesitas Supabase configurado e iniciar sesión");return;}
-  var ins=await sb.from("study_rooms").insert({owner_id:SOCIAL.user.id,name:(name||"").trim()||"Sala de estudio"}).select("*").single();
-  if(ins.error){showToast("No se pudo crear la sala: "+ins.error.message);return;}
-  SOCIAL.room={code:ins.data.code,name:ins.data.name};
-  if(DATA&&!DATA.badges.first_room){DATA.badges.first_room=new Date().toISOString();saveUserData();}
-  await socialHeartbeat();
-  await loadRoomMembers();
-  renderStudyRoom();
-  showToast("Sala creada: "+ins.data.code);
-}
-async function joinStudyRoom(code){
-  var sb=socialClient(); if(!sb||!SOCIAL.user){showToast("Necesitas Supabase configurado e iniciar sesión");return;}
-  code=(code||"").trim().toUpperCase(); if(!code){showToast("Escribe un código de sala");return;}
-  // join_study_room (SQL nuevo); si aún no existe, consulta directa como antes
-  var r=await sb.rpc("join_study_room",{p_code:code});
-  if(r.error){r=await sb.from("study_rooms").select("*").eq("code",code).maybeSingle();}
-  else{r={data:(r.data&&r.data[0])||null};}
-  if(r.error||!r.data){showToast("No encuentro esa sala");return;}
-  SOCIAL.room={code:r.data.code,name:r.data.name};
-  if(DATA&&!DATA.badges.first_room){DATA.badges.first_room=new Date().toISOString();saveUserData();}
-  await socialHeartbeat();
-  await loadRoomMembers();
-  renderStudyRoom();
-  showToast("Te uniste a "+r.data.name);
-}
-async function leaveStudyRoom(){
-  SOCIAL.room=null;SOCIAL.roomMembers=[];
-  await socialHeartbeat();
-  renderStudyRoom();
-  showToast("Has salido de la sala");
-}
-async function loadRoomMembers(){
-  var sb=socialClient(); if(!sb||!SOCIAL.room){SOCIAL.roomMembers=[];return;}
-  var cutoff=new Date(Date.now()-10*60000).toISOString();
-  var res=await sb.from("presence").select("user_id,bib_index,started_at,updated_at").eq("room_code",SOCIAL.room.code).not("started_at","is",null).gte("updated_at",cutoff);
-  if(res.error){SOCIAL.roomMembers=[];return;}
-  var rows=res.data||[];
-  var ids=rows.map(function(r){return r.user_id;});
-  var names={};
-  if(ids.length){var pr=await sb.from("profiles").select("id,name").in("id",ids); if(!pr.error)(pr.data||[]).forEach(function(p){names[p.id]=p.name;});}
-  SOCIAL.roomMembers=rows.map(function(r){return {id:r.user_id,name:names[r.user_id]||"Alguien",bib_index:r.bib_index,started_at:r.started_at};})
-    .sort(function(a,b){return new Date(a.started_at)-new Date(b.started_at);});
-}
-function elapsedSince(iso){
-  var sec=Math.max(0,Math.floor((Date.now()-new Date(iso).getTime())/1000));
-  var mm=Math.floor(sec/60),ss=sec%60;
-  return String(mm).padStart(2,"0")+":"+String(ss).padStart(2,"0");
-}
+/* ===== SESIONES DE ESTUDIO EN GRUPO =====
+   Crear, unirse, salir y pintar la sala activa van en app-extra.js (solo hacen falta al pulsar
+   «Crear sala» o «Unirse»; SOCIAL.room no se guarda entre visitas). Aquí queda el formulario. */
 function renderStudyRoom(){
   var card=$("roomCard"); if(!card)return;
   var sb=socialClient();
@@ -876,19 +838,7 @@ function renderStudyRoom(){
     $("btnJoinRoom").addEventListener("click",function(){joinStudyRoom($("roomCodeInput").value);});
     return;
   }
-  var miembros=filterBlocked(SOCIAL.roomMembers,"id");
-  var membersHTML=miembros.length
-    ? miembros.map(function(m){
-        var lugar=BIBLIOTECAS[m.bib_index]?BIBLIOTECAS[m.bib_index].nombre.replace("Biblioteca ","").replace("Pública ",""):"—";
-        return '<div class="pray-row"><div class="pi"><b>'+escapeHTML(m.name)+'</b><small>'+escapeHTML(lugar)+'</small></div><span class="tabular" style="font-family:var(--mono,monospace);font-weight:800;color:var(--acento-tx)">'+elapsedSince(m.started_at)+'</span></div>';
-      }).join("")
-    : '<div class="empty-note">Nadie está estudiando en la sala ahora mismo</div>';
-  card.innerHTML='<div class="section-title" style="margin-top:0">👥 '+escapeHTML(SOCIAL.room.name)+'</div>'+
-    '<div class="codebox"><span style="font-size:var(--fs-s);color:var(--suave);font-weight:800">Código</span><code>'+escapeHTML(SOCIAL.room.code)+'</code><button class="btn sm ghost" id="btnCopyRoomCode" style="width:auto">Copiar</button></div>'+
-    membersHTML+
-    '<button class="btn sm danger" id="btnLeaveRoom" style="margin-top:10px">Salir de la sala</button>';
-  $("btnCopyRoomCode").addEventListener("click",function(){navigator.clipboard.writeText(SOCIAL.room.code);showToast("Código copiado");});
-  $("btnLeaveRoom").addEventListener("click",leaveStudyRoom);
+  pintarSalaActiva(card); // la sala ya creada o unida (app-extra.js)
 }
 /* ===== SESIONES COMPARTIDAS + KUDOS (feed de amigos, estilo Strava) ===== */
 // Si la BD aún no tiene las columnas subject/focus (SQL sin actualizar), dejamos de enviarlas
@@ -1040,43 +990,10 @@ function commentButtonHTML(localId,ownerId){
   var n=commentsFor(localId,ownerId).length, open=!!SOCIAL.commentsOpen[localId];
   return '<button class="kudos-btn cmt-btn'+(open?" on":"")+'" data-cmt-toggle="'+escapeHTML(localId)+'" aria-expanded="'+open+'">💬 '+(n?n:"Comentar")+'</button>';
 }
+// El hilo (y enviar/borrar) va en app-extra.js: solo se ve tras pulsar «💬 Comentar».
 function commentThreadHTML(localId,ownerId){
   if(!commentsAvailable()||!SOCIAL.commentsOpen[localId])return "";
-  var me=SOCIAL.user.id, list=commentsFor(localId,ownerId);
-  var html='<div class="cmt-thread">';
-  if(!list.length)html+='<div class="cmt-empty">Aún no hay comentarios. ¡Sé el primero en animar!</div>';
-  list.forEach(function(c){
-    var puede=c.author_id===me||c.session_owner_id===me;
-    html+='<div class="cmt"><div class="cmt-av">'+socialInitial(c.author_name)+'</div><div class="cmt-body"><b>'+escapeHTML(c.author_name||"Alguien")+'</b><small>'+escapeHTML(timeAgo(c.created_at))+'</small><p>'+escapeHTML(c.body)+'</p></div>'+
-      (c.author_id!==me?ugcMoreBtn("session_comment",c.id,c.author_id,c.author_name):'')+
-      (puede?'<button class="cmt-del" title="Borrar comentario" aria-label="Borrar comentario" data-cmt-del="'+escapeHTML(c.id)+'" data-cmt-sid="'+escapeHTML(localId)+'">×</button>':'')+'</div>';
-  });
-  html+='<div class="cmt-form"><input type="text" maxlength="'+COMMENT_MAX+'" placeholder="Escribe un comentario…" aria-label="Escribe un comentario" data-cmt-input="'+escapeHTML(localId)+'" value="'+escapeHTML(SOCIAL.commentDrafts[localId]||"")+'">'+
-    '<button class="btn sm" data-cmt-send="'+escapeHTML(localId)+'" data-cmt-owner="'+escapeHTML(ownerId)+'">Enviar</button></div></div>';
-  return html;
-}
-async function postComment(localId,ownerId){
-  var sb=socialClient(); if(!sb||!SOCIAL.user){showToast("Necesitas Supabase configurado e iniciar sesión");return;}
-  var body=String(SOCIAL.commentDrafts[localId]||"").trim();
-  if(!body){showToast("Escribe algo antes de enviar");return;}
-  if(body.length>COMMENT_MAX){showToast("Máximo "+COMMENT_MAX+" caracteres");return;}
-  var name=(SOCIAL.profile&&SOCIAL.profile.name)||"Alguien";
-  var ins=await sb.from("session_comments").insert({session_local_id:localId,session_owner_id:ownerId,author_id:SOCIAL.user.id,author_name:name,body:body});
-  if(ins.error){
-    if(commentTableMissing(ins)){SOCIAL.commentsOk=false;renderSessionFeed(true);return;}
-    showToast("No se pudo enviar el comentario");return;
-  }
-  SOCIAL.commentDrafts[localId]="";
-  await socialLoadComments([localId]);
-  renderSessionFeed(true);
-}
-async function deleteComment(id,localId){
-  var sb=socialClient(); if(!sb||!SOCIAL.user)return;
-  if(!confirm("¿Borrar este comentario?"))return;
-  var del=await sb.from("session_comments").delete().eq("id",id);
-  if(del.error){showToast("No se pudo borrar el comentario");return;}
-  await socialLoadComments([localId]);
-  renderSessionFeed(true);
+  return typeof window.hiloComentariosHTML==="function"?hiloComentariosHTML(localId,ownerId):"";
 }
 function initCommentEvents(){
   var el=$("sessionFeed"); if(!el)return;
@@ -1086,8 +1003,11 @@ function initCommentEvents(){
   });
   el.addEventListener("click",function(e){
     var t=e.target.closest("[data-cmt-toggle],[data-cmt-send],[data-cmt-del]"); if(!t)return;
-    if(t.dataset.cmtToggle!=null){var id=t.dataset.cmtToggle;SOCIAL.commentsOpen[id]=!SOCIAL.commentsOpen[id];renderSessionFeed(true);
-      if(SOCIAL.commentsOpen[id]){var inp=el.querySelector('[data-cmt-input="'+CSS.escape(id)+'"]');if(inp)inp.focus();}}
+    if(t.dataset.cmtToggle!=null){var id=t.dataset.cmtToggle;SOCIAL.commentsOpen[id]=!SOCIAL.commentsOpen[id];
+      var pinta=function(){renderSessionFeed(true);
+        if(SOCIAL.commentsOpen[id]){var inp=el.querySelector('[data-cmt-input="'+CSS.escape(id)+'"]');if(inp)inp.focus();}};
+      if(!SOCIAL.commentsOpen[id]||typeof window.hiloComentariosHTML==="function")pinta();
+      else cargarExtra().then(pinta,function(){SOCIAL.commentsOpen[id]=false;showToast("Sin conexión: no se pudo abrir. Inténtalo de nuevo");});}
     else if(t.dataset.cmtSend!=null){postComment(t.dataset.cmtSend,t.dataset.cmtOwner);}
     else if(t.dataset.cmtDel!=null){deleteComment(t.dataset.cmtDel,t.dataset.cmtSid);}
   });
@@ -1368,7 +1288,7 @@ async function enterApp(){
   socialInitAfterLogin();
   if(!DATA.onboarded){
     if(DATA.sessions.length){DATA.onboarded=true;saveUserData();}
-    else setTimeout(onboarding,400);
+    else setTimeout(onboarding,400); // bienvenida: en app-extra.js, solo se pide en la 1.ª visita
   }
   actualizarBadge();
   setTimeout(comprobarEnlaceCompartido,500);
@@ -1388,54 +1308,6 @@ function actualizarBotonInstalar(){var b=$("btnInstall");if(b)b.classList.toggle
 function instalarApp(){
   if(INSTALL_EVT){INSTALL_EVT.prompt();INSTALL_EVT.userChoice.finally(function(){INSTALL_EVT=null;actualizarBotonInstalar();});return;}
   if(esIOS())openModal('<h3>Instalar en iPhone</h3><div class="sub">1. Pulsa el botón Compartir (el cuadrado con la flecha) en Safari.<br>2. Elige «Añadir a pantalla de inicio».<br>3. Pulsa «Añadir».</div><button class="btn" onclick="closeModal()">Entendido</button>');
-}
-/* ===== BIENVENIDA (3 pasos) ===== */
-function onboarding(){
-  DATA.onboarded=true;saveUserData(); // si cierra la ventana, no se vuelve a mostrar
-  var PERFILES=[["uni","🎓 Estudio en la universidad"],["opositor","📘 Preparo oposiciones"],["bach","📝 Bachillerato o FP"],["otro","🙂 Otra cosa"]];
-  function paso1(){
-    openModal('<div class="ob-step">1 de 3</div><h3>¿Qué estudias?</h3><div class="sub">Así te recomendamos mejor dónde ir.</div><div class="pick-list">'+
-      PERFILES.map(function(p){return '<button data-p="'+p[0]+'"><b>'+p[1]+'</b></button>';}).join("")+'</div>',function(){
-      document.querySelectorAll(".pick-list button").forEach(function(b){b.addEventListener("click",function(){
-        DATA.perfil=b.dataset.p;
-        if(DATA.perfil==="opositor"&&!DATA.goalCustom){DATA.goalPeriod="week";DATA.goalMin=25*60;}
-        saveUserData();paso2();});});
-    });
-  }
-  // Paso 2: bibliotecas cerca de ti (con tu ubicación) o, sin ella, un buscador para toda España.
-  function paso2(){
-    var up=window.__userPos;
-    var cerca=up?BIBLIOTECAS.map(function(b,i){return {i:i,d:distMetros(up.lat,up.lon,b.lat,b.lon)};}).filter(function(x){return x.d<15000;})
-      .sort(function(a,b){return a.d-b.d;}).slice(0,40).map(function(x){return x.i;}):[];
-    var opts=cerca.map(function(i){return '<option value="'+i+'">'+escapeHTML(cortoNombre(BIBLIOTECAS[i].nombre))+'</option>';}).join("");
-    var todas=BIBLIOTECAS.map(function(b,i){return cerca.indexOf(i)===-1?'<option value="'+i+'">'+escapeHTML(cortoNombre(b.nombre))+'</option>':'';}).join("");
-    openModal('<div class="ob-step">2 de 3</div><h3>¿Dónde sueles estudiar?</h3><div class="sub">La tendremos en cuenta al recomendarte y al empezar a estudiar.</div>'+
-      (up?'':'<button class="btn ghost sm" id="obGeo" style="margin-bottom:10px">📍 Ver las que tengo cerca</button>')+
-      '<div class="field"><select id="obBib" style="width:100%;padding:11px;border-radius:var(--r-m);border:1px solid rgba(148,163,184,.4);font:inherit"><option value="-1">Aún no lo sé</option>'+
-      (opts?'<optgroup label="Cerca de ti">'+opts+'</optgroup><optgroup label="Resto de España">'+todas+'</optgroup>':'<optgroup label="Toda España">'+todas+'</optgroup>')+'</select></div>'+
-      '<button class="btn" id="obNext">Siguiente</button>',function(){
-      var g=$("obGeo");
-      if(g)g.addEventListener("click",function(){
-        if(!navigator.geolocation){showToast("Tu navegador no permite la ubicación");return;}
-        g.textContent="Buscando…";
-        navigator.geolocation.getCurrentPosition(function(p){window.__userPos={lat:p.coords.latitude,lon:p.coords.longitude};paso2();},
-          function(){g.textContent="📍 Ver las que tengo cerca";showToast("No he podido saber tu ubicación: elige en la lista");},{timeout:8000,maximumAge:300000});
-      });
-      $("obNext").addEventListener("click",function(){
-        var v=+$("obBib").value;DATA.habitualIdx=v>=0?v:null;
-        // Universitarios de la UNAV o la UPNA: se afina la recomendación como antes (acceso restringido, exámenes).
-        if(DATA.perfil==="uni"&&v>=0){if(esUNAV(BIBLIOTECAS[v]))DATA.perfil="unav";else if(esUPNA(BIBLIOTECAS[v]))DATA.perfil="upna";}
-        saveUserData();paso3();});
-    });
-  }
-  function paso3(){
-    openModal('<div class="ob-step">3 de 3</div><h3>Estudia con tus amigos</h3><div class="sub">Verás dónde estudian, competiréis en horas y podréis crear salas de estudio. Mándales la app con tu código.</div>'+
-      '<button class="btn" id="obInvite">📨 Invitar a amigos</button><button class="linkbtn" id="obDone" style="display:block;margin:14px auto 0">Empezar a usar la app</button>',function(){
-      $("obInvite").addEventListener("click",invitarAmigos);
-      $("obDone").addEventListener("click",function(){closeModal();renderNowCard();renderSubjects();});
-    });
-  }
-  paso1();
 }
 function invitarAmigos(){
   var code=SOCIAL.profile&&SOCIAL.profile.friend_code;

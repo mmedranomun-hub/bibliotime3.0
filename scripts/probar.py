@@ -17,6 +17,7 @@ RAIZ = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", "/opt/pw-browsers")
 LEAFLET_DIR = os.environ.get("LEAFLET_DIR", "/tmp/leaflet-1.9.4")
 PUERTO = int(os.environ.get("PUERTO", "8765"))
+CARGAS = int(os.environ.get("CARGAS", "5"))  # repeticiones de la medición de carga con CPU 4×
 
 
 def preparar_leaflet():
@@ -217,9 +218,11 @@ async def main():
             await pg.route("**/*", ruta)
             return ctx, pg
 
-        # --- velocidad: mediana de 3 cargas con la CPU 4 veces más lenta (como un móvil medio) ---
+        # --- velocidad: mediana de 5 cargas con la CPU 4 veces más lenta (como un móvil medio) ---
+        # Entre cargas sueltas hay ±300 ms de ruido: con 5 la mediana deja comparar cambios pequeños,
+        # y el mínimo/máximo dicen cuánto ruido hubo en esa ejecución (cada carga tarda ~2 s).
         tiempos = []
-        for _ in range(3):
+        for _ in range(CARGAS):
             ctx, pg = await nueva_pagina()
             cdp = await ctx.new_cdp_session(pg)
             await cdp.send("Emulation.setCPUThrottlingRate", {"rate": 4})
@@ -228,7 +231,8 @@ async def main():
             await pg.wait_for_function("document.getElementById('nowCard') && document.getElementById('nowCard').innerText.length>10", timeout=30000)
             tiempos.append(round((time.time() - t0) * 1000))
             await ctx.close()
-        res["carga_ms_cpu4x"] = statistics.median(tiempos)
+        res["carga_ms_cpu4x"] = round(statistics.median(tiempos))
+        res["carga_ms_cpu4x_min_max"] = [min(tiempos), max(tiempos)]
 
         # --- pruebas funcionales ---
         ctx, pg = await nueva_pagina()
