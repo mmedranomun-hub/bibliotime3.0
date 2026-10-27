@@ -103,6 +103,10 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
 - En cuanto alguien añada en `app.js` esos dos campos a una biblioteca de Navarra comprobada en su web oficial, al regenerar
   entra sola. Simulación con las 15 de Pamplona: 412 → 433 páginas (Salas de estudio en Pamplona; Navarra y Pamplona
   abiertas hoy, domingo, fin de semana y hasta tarde; Navarra verano; 11 fichas nuevas), sin títulos repetidos.
+- 2026-10-27 (después) · Ya hay **13 de 104** con `fuenteHorario` + `verificadoHorario` (comprobadas ese día en pamplona.es,
+  bibliotecaspublicas.es, unav.edu y unavarra.es; la Biblioteca de Navarra, corregida con su verano de julio y agosto).
+  Simulado: 412 → 431 páginas. Faltan UNAV Ciencias (verano sin fuente) y Facultades Eclesiásticas (sin horario publicado);
+  ver BACKLOG. Las páginas se publican cuando el director regenere.
 
 ## Lo que tienes que hacer tú (sin esto no sirve de nada)
 1. **Conectar el dominio** en Vercel: proyecto `bibliotime` → Settings → Domains → añadir `bibliomapa.es` y
