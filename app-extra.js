@@ -547,3 +547,38 @@ async function deleteComment(id,localId){
   await socialLoadComments([localId]);
   renderSessionFeed(true);
 }
+/* ----- Agenda: «🙏 N amigos rezan por tu examen de mañana» (lo llama renderCalRezos de app.js) ----- */
+// Solo cifras reales: el dueño de un examen puede leer todas las filas de prayers de sus exámenes (política
+// «prayers select involved»), así que no depende de la función prayer_counts. Si esa lectura falla, se avisa
+// SIN número y solo si ya consta al menos un rezo de otra persona; si no, no se pinta nada.
+var REZOS_AVISO={k:"",t:0,filas:null};
+async function pintarAvisoRezos(el,exs){
+  var sb=socialClient();if(!sb||!SOCIAL.user||!el)return;
+  var yo=SOCIAL.user.id,ids=exs.map(function(e){return e.id;}),k=yo+":"+ids.join("|");
+  if(REZOS_AVISO.k!==k||Date.now()-REZOS_AVISO.t>60000){
+    REZOS_AVISO={k:k,t:Date.now(),filas:null};
+    try{var r=await sb.from("prayers").select("event_local_id,prayed_by_id,prayed_by_name").eq("event_owner_id",yo).in("event_local_id",ids);
+      if(r&&!r.error&&r.data)REZOS_AVISO.filas=r.data;}catch(e){}
+  }
+  var filas=REZOS_AVISO.filas;
+  var html=exs.map(function(ex){
+    var cuando=ex.d?"mañana":"hoy",tit,quien="";
+    if(filas){
+      var vistos={},nombres=[];
+      filas.forEach(function(f){var id=f.prayed_by_id;
+        if(f.event_local_id!==ex.id||!id||id===yo||vistos[id]||isBlocked(id))return;
+        vistos[id]=1;nombres.push(String(f.prayed_by_name||socialNameById(id)).trim().split(/\s+/)[0]||"Alguien");});
+      var n=nombres.length;if(!n)return "";
+      tit=n+(n===1?" amigo reza":" amigos rezan")+" por tu examen de "+cuando;
+      var v=nombres.slice(0,3),mas=n-v.length;
+      quien=" · "+(mas?v.join(", ")+" y "+mas+" más":v.length>1?v.slice(0,-1).join(", ")+" y "+v[v.length-1]:v[0]);
+    }else{
+      var c=(SOCIAL.prayerCounts&&SOCIAL.prayerCounts[ex.id])||0;
+      if(c<=(SOCIAL.prayedByMe&&SOCIAL.prayedByMe[ex.id]?1:0))return "";
+      tit="Tus amigos rezan por tu examen de "+cuando;
+    }
+    return '<div class="rezos-aviso extra"><span class="ra-ic" aria-hidden="true">🙏</span><div class="ra-t"><b>'+escapeHTML(tit)+'</b>'+
+      '<small>'+escapeHTML(ex.title||"Examen")+escapeHTML(quien)+'</small><small class="ra-animo">'+(ex.d?"Descansa bien esta noche. ¡Mucho ánimo!":"Respira hondo y a por ello. ¡Mucho ánimo!")+'</small></div></div>';
+  }).join("");
+  if(el.dataset.html!==html){el.dataset.html=html;el.innerHTML=html;}
+}

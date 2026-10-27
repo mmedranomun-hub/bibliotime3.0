@@ -2622,6 +2622,16 @@ function renderCal(){
   if(typeof actualizarBadge==="function")actualizarBadge();
   renderCalProx();
   renderCalFriendExams();
+  renderCalRezos();
+}
+// Aviso «🙏 N amigos rezan por tu examen de mañana» (exámenes compartidos de hoy y mañana). Lo pinta
+// app-extra.js; sin stub en EXTRA_FUNCS para no sacar «Sin conexión» por algo que el usuario no ha pulsado.
+function renderCalRezos(){
+  var el=$("calRezos");if(!el)return;
+  var m=new Date();m.setDate(m.getDate()+1);var exs=[];
+  if(SOCIAL.user&&socialClient()&&extrasOn())[ymd(),ymd(m)].forEach(function(k,d){(DATA.events[k]||[]).forEach(function(ev){if(ev.type==="examen"&&ev.shared&&ev.id)exs.push({id:ev.id,title:ev.title,d:d});});});
+  if(!exs.length){el.innerHTML=el.dataset.html="";return Promise.resolve();}
+  return cargarExtra().then(function(){if(typeof pintarAvisoRezos==="function")return pintarAvisoRezos(el,exs);}).catch(function(){});
 }
 // Lista de los eventos de las próximas dos semanas, con el título completo (en la cuadrícula del móvil solo caben puntos)
 function renderCalProx(){

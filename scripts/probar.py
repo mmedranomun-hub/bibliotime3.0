@@ -113,6 +113,33 @@ PRUEBAS = [
       $('evTitle').value='Examen prueba';$('evAdd').click();await new Promise(r=>setTimeout(r,200));
       var ok=(DATA.events[k]||[]).some(e=>e.title==='Examen prueba');renderStudy();
       return ok && $('examChip').innerText.indexOf('Examen prueba')>=0 || 'no aparece el examen';"""),
+    ("agenda: aviso «🙏 N amigos rezan por tu examen de mañana» solo con rezos reales", """
+      goView('cal');var m=new Date();m.setDate(m.getDate()+1);var k=ymd(m),el=$('calRezos'),t=()=>el.innerText;
+      var oc=socialClient,ou=SOCIAL.user,opc=SOCIAL.prayerCounts,opm=SOCIAL.prayedByMe,filas=[],fallo=false;
+      var ev={id:'prueba-ex1',type:'examen',title:'Cálculo II',shared:true};
+      var otra=async()=>{await cargarExtra();REZOS_AVISO.t=0;await renderCalRezos();}, ox=DATA.extras;
+      try{
+        await renderCalRezos();if(t())return 'se ve sin sesión';
+        socialClient=()=>({from:()=>({select:()=>({eq:()=>({in:async()=>fallo?{data:null,error:{message:'x'}}:{data:filas,error:null}})})})});
+        SOCIAL.user={id:'prueba-yo'};SOCIAL.prayerCounts={};SOCIAL.prayedByMe={};
+        (DATA.events[k]=DATA.events[k]||[]).push(ev);
+        await otra();if(t())return 'se ve sin rezos';
+        filas=[{event_local_id:'prueba-ex1',prayed_by_id:'prueba-yo',prayed_by_name:'Yo'}];
+        await otra();if(t())return 'cuenta mi propio rezo';
+        filas=[{event_local_id:'prueba-ex1',prayed_by_id:'a',prayed_by_name:'Ana López'}];
+        await otra();if(!/1 amigo reza por tu examen de mañana/.test(t())||!/Ana/.test(t()))return 'singular mal: '+t();
+        filas=filas.concat([{event_local_id:'prueba-ex1',prayed_by_id:'b',prayed_by_name:'Luis'},{event_local_id:'prueba-ex1',prayed_by_id:'c',prayed_by_name:'Marta'},{event_local_id:'otro',prayed_by_id:'d',prayed_by_name:'Eva'}]);
+        await otra();if(!/3 amigos rezan por tu examen de mañana/.test(t())||!/Ana, Luis y Marta/.test(t()))return 'plural mal: '+t();
+        if(!document.querySelector('#calRezos .rezos-aviso'))return 'sin tarjeta';
+        fallo=true;await otra();if(t())return 'sin datos muestra algo';
+        SOCIAL.prayerCounts={'prueba-ex1':2};await otra();
+        if(!/Tus amigos rezan por tu examen de mañana/.test(t())||/\\d/.test(t().split('\\n')[0]))return 'sin recuento inventa cifra: '+t();
+        DATA.extras=false;await otra();var off=t();DATA.extras=ox;if(off)return 'se ve con la fe desactivada';
+        return true;
+      }finally{
+        DATA.events[k]=(DATA.events[k]||[]).filter(e=>e!==ev);if(!DATA.events[k].length)delete DATA.events[k];
+        socialClient=oc;SOCIAL.user=ou;SOCIAL.prayerCounts=opc;SOCIAL.prayedByMe=opm;await renderCalRezos();
+      }"""),
     ("temporada de exámenes: fuentes, chip y nota", """
       var raw=window.TEMPORADA_EXAMENES||[], re=/^\\d{4}-\\d{2}-\\d{2}$/, hoy=ymd(new Date(Date.now()+864e5)); // +1 día: el navegador de pruebas va en UTC
       for(const e of raw){

@@ -819,6 +819,16 @@
   .pray-btn.sm{padding:4px 4px 4px 8px;font-size:var(--fs-xs)}
   .pray-mine{display:inline-block;margin-left:4px;text-transform:none;padding:2px 8px;border-radius:var(--r-pill);background:var(--acento-tenue);
     color:var(--acento-tx);font-weight:800;font-size:var(--fs-xs);animation:pop .5s}
+  /* Agenda: «🙏 N amigos rezan por tu examen de mañana» (app-extra.js) */
+  .rezos-aviso{display:flex;align-items:flex-start;gap:12px;margin-bottom:12px;padding:14px 16px;border-radius:var(--r-l);
+    background:linear-gradient(var(--acento-tenue),var(--acento-tenue)),var(--glass-fuerte);border:1px solid var(--borde);
+    border-left:4px solid var(--acento);box-shadow:var(--sombra);animation:pop .5s}
+  .rezos-aviso .ra-ic{font-size:var(--fs-3xl);line-height:1.1}
+  .rezos-aviso .ra-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+  .rezos-aviso b{font-size:var(--fs-base);font-weight:800;color:var(--acento-tx)}
+  .rezos-aviso small{font-size:var(--fs-s);font-weight:600;color:var(--texto);overflow-wrap:anywhere}
+  .rezos-aviso .ra-animo{color:var(--suave)}
+  @media(prefers-reduced-motion:reduce){.rezos-aviso{animation:none}}
 
   /* ===== MI BOSQUE ===== */
   .forest-card{overflow:hidden}
@@ -1308,6 +1318,7 @@
     <div class="container">
       <div class="page-title">Agenda</div>
       <div class="page-sub">Añade exámenes, tareas y otros eventos. Pincha un día para gestionarlo.</div>
+      <div id="calRezos"></div>
       <div class="glasscard">
         <div class="cal-top">
           <h2 id="calMonth">—</h2>
