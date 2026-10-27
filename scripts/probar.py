@@ -156,6 +156,34 @@ PRUEBAS = [
       }finally{
         DATA.sessions=o.s;DATA.hitosBosque=o.h;DATA.semillasPremio=o.p;DATA.misiones=o.m;DATA.acciones=o.a;DATA.hitoBosquePend=0;closeModal();renderForest();renderMisiones();
       }"""),
+    ("próxima especie: barra en «Mi bosque» y aviso «ya puedes» una sola vez", """
+      var k=['sessions','semillasPremio','semillasGastadas','especiesCompradas','especiesAvisadas','especieAvisoPend','misiones','acciones','hitosBosque','hitoBosquePend'],o={};
+      k.forEach(x=>o[x]=DATA[x]);
+      var toasts=[],st=window.showToast,cm=window.comprobarMisiones;window.showToast=m=>toasts.push(m);window.comprobarMisiones=()=>{};
+      try{
+        closeModal();var hoy=ymd(),mk=i=>({id:'pe'+i,date:hoy,min:30,ts:Date.now()-(100-i)*1000,bib:NO_BIB,focus:'ok',esp:'roble'});
+        DATA.sessions=[mk(0),mk(1)];DATA.semillasPremio=0;DATA.semillasGastadas=0;DATA.especiesCompradas=[];DATA.especiesAvisadas=[];DATA.especieAvisoPend=0;DATA.hitosBosque=[1e9];
+        goView('study');renderForest();var b=$('forestCard').querySelector('.prox-esp'),t=(b||{}).innerText||'';
+        if(!/Cerezo/.test(t)||!/te faltan 48/.test(t)||!/12\\/60/.test(t))return 'barra mal: '+t;
+        if(b.querySelector('.hp-bar i').style.width!=='20%')return 'ancho mal: '+b.querySelector('.hp-bar i').style.width;
+        DATA.especiesCompradas=['cerezo'];renderForest();t=$('forestCard').querySelector('.prox-esp').innerText;
+        if(!/Abeto nevado/.test(t))return 'no pasa a la siguiente: '+t;
+        DATA.especiesCompradas=[];
+        openModal('<h3>Sesión terminada</h3>');var s=mk(2);s.min=245;DATA.sessions.push(s);trasGuardarSesion(s);
+        if(DATA.especieAvisoPend!=='cerezo'||DATA.especiesAvisadas.indexOf('cerezo')<0)return 'no prepara el aviso: '+DATA.especieAvisoPend;
+        await new Promise(r=>setTimeout(r,3400));
+        if(toasts.some(m=>/cerezos/.test(m)))return 'el aviso tapa la ventana abierta';
+        closeModal();await new Promise(r=>setTimeout(r,900));
+        if(toasts.filter(m=>/Ya puedes plantar cerezos/.test(m)).length!==1)return 'sin aviso al cerrar: '+JSON.stringify(toasts);
+        renderForest();if(!/Ya puedes plantar cerezos/.test($('forestCard').querySelector('.prox-esp').innerText))return 'la barra no dice que ya puede';
+        s=mk(3);DATA.sessions.push(s);trasGuardarSesion(s);await new Promise(r=>setTimeout(r,3400));
+        if(toasts.filter(m=>/cerezos/.test(m)).length!==1||DATA.especieAvisoPend)return 'repite el aviso';
+        DATA.especiesCompradas=ESPECIES.filter(e=>e.precio>0).map(e=>e.id);renderForest();
+        if($('forestCard').querySelector('.prox-esp'))return 'barra con todo comprado';
+        return true;
+      }finally{
+        window.showToast=st;window.comprobarMisiones=cm;k.forEach(x=>DATA[x]=o[x]);closeModal();renderForest();renderMisiones();
+      }"""),
     ("acceso: la ley foral solo en Navarra", """
       for(var i=N_NAVARRA;i<BIBLIOTECAS.length;i++)if(/Ley Foral/.test(accesoAccesibilidadHTML(BIBLIOTECAS[i])))return 'ley foral fuera de Navarra: '+BIBLIOTECAS[i].nombre;
       var nav=BIBLIOTECAS.slice(0,N_NAVARRA).some(b=>/Ley Foral 32\\/2002/.test(accesoAccesibilidadHTML(b)));

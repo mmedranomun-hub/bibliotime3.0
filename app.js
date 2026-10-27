@@ -2190,11 +2190,11 @@ function alturaArbol(min){return Math.round(Math.min(124,26+Math.sqrt(Math.max(1
 // Especies (se desbloquean con semillas en la tienda del bosque). Las dos primeras etapas son iguales para todas.
 var ESPECIES=[
   {id:"roble",nombre:"Roble",icon:"🌳",precio:0},
-  {id:"cerezo",nombre:"Cerezo",icon:"🌸",precio:60},
-  {id:"abeto",nombre:"Abeto nevado",icon:"🌲",precio:90},
-  {id:"arce",nombre:"Arce de otoño",icon:"🍁",precio:120},
-  {id:"palmera",nombre:"Palmera",icon:"🌴",precio:160},
-  {id:"cactus",nombre:"Cactus",icon:"🌵",precio:200},
+  {id:"cerezo",nombre:"Cerezo",icon:"🌸",precio:60,pl:"cerezos"},
+  {id:"abeto",nombre:"Abeto nevado",icon:"🌲",precio:90,pl:"abetos nevados"},
+  {id:"arce",nombre:"Arce de otoño",icon:"🍁",precio:120,pl:"arces de otoño"},
+  {id:"palmera",nombre:"Palmera",icon:"🌴",precio:160,pl:"palmeras"},
+  {id:"cactus",nombre:"Cactus",icon:"🌵",precio:200,pl:"cactus"},
   {id:"calabaza",nombre:"Calabaza de Halloween",icon:"🎃",precio:0,desde:"10-20",hasta:"11-02"},
   {id:"navidad",nombre:"Abeto de Navidad",icon:"🎄",precio:0,desde:"12-01",hasta:"01-06"},
   {id:"almendro",nombre:"Almendro en flor",icon:"🌼",precio:0,desde:"03-01",hasta:"04-30"}
@@ -2317,7 +2317,7 @@ function renderForest(){
   var racha=0;try{racha=streakDays();}catch(e){}
   el.innerHTML='<div class="forest-head"><div class="section-title" style="margin:0">🌳 Mi bosque</div>'+
     '<div class="seg mini" id="forestSeg">'+Object.keys(P).map(function(k){return '<button data-p="'+k+'" class="'+(k===FOREST_PERIOD?"on":"")+'">'+P[k]+'</button>';}).join("")+'</div></div>'+
-    '<div class="forest-sum">'+resumenBosque(ses)+(racha>1?' · 🔥 '+racha+' días':'')+'</div>'+proxHitoHTML()+
+    '<div class="forest-sum">'+resumenBosque(ses)+(racha>1?' · 🔥 '+racha+' días':'')+'</div>'+proxHitoHTML()+proxEspecieHTML()+
     bosqueHTML(ses,vacio)+
     '<div class="forest-acts"><button class="btn sm" onclick="abrirTienda()">'+especieDe(DATA.especie).icon+' Especies · 🌰 <span class="seeds-n">'+semillas()+'</span></button>'+(ses.length?'<button class="btn sm ghost" onclick="compartirBosque()">📸 Compartir</button>':'')+'</div>'+
     '<div class="forest-foot">'+(plantarOn()?'Cada sesión planta un árbol: cuanto más estudias, más crece. Si sales de la app más de '+FOCUS_GRACE_SEC+' s, se marchita.':'Plantar árboles está desactivado (actívalo arriba, en «🌳 Plantar árbol»).')+
@@ -2801,6 +2801,7 @@ function openModal(html,after){
 function closeModal(){
   var hito=!!document.querySelector("#modalRoot .hito-bosque");$("modalRoot").innerHTML="";
   // Si hay un hito del bosque sin celebrar (otra ventana lo tapaba), se enseña al cerrar esa ventana.
+  if(DATA&&DATA.especieAvisoPend)setTimeout(avisoEspecie,700);
   if(DATA&&DATA.hitoBosquePend){if(hito){DATA.hitoBosquePend=0;saveUserData();}else setTimeout(function(){if(!$("modalRoot").innerHTML&&DATA.hitoBosquePend)mostrarHitoBosque();},400);}
 }
 function showToast(msg){
@@ -3447,7 +3448,7 @@ function trasGuardarSesion(sesion){
   var hoy=ymd(), deHoy=DATA.sessions.filter(function(s){return s.date===hoy;}).length;
   if(sesion&&sesion.date===hoy&&deHoy===1)setTimeout(celebrarRacha,350);
   if(sesion&&sesion.focus!=="withered")comprobarHitoBosque();
-  comprobarMisiones();renderRacha();renderSemillas();
+  comprobarMisiones();comprobarEspecieLista();renderRacha();renderSemillas();
 }
 
 /* ----- Hitos del bosque: al llegar a 10, 25, 50… árboles sanos, tarjeta de celebración y semillas.
@@ -3477,6 +3478,29 @@ function proxHitoHTML(){
     return '<div class="hito-prox"><div class="hp-txt"><span>'+h.icon+' '+(f===1?'¡<b>1 árbol más</b>':'<b>'+f+' árboles más</b>')+' y tu bosque será '+h.art+' <b>'+h.nombre+'</b>'+(f===1?'!':'')+'</span><span class="hp-n">'+n+'/'+h.n+'</span></div>'+
       '<div class="hp-bar"><i style="width:'+pct+'%"></i></div></div>';}}
   return "";
+}
+
+/* ----- Próxima especie: la más barata sin comprar (las de temporada son gratis y no cuentan). Barra en
+   «Mi bosque» y, cuando una sesión te da para comprarla, un aviso suave una sola vez por especie
+   (DATA.especiesAvisadas) que espera a que no haya ninguna ventana abierta (ni un hito pendiente). ----- */
+function proxEspecie(){var r=null;ESPECIES.forEach(function(e){if(e.precio>0&&!especieComprada(e.id)&&(!r||e.precio<r.precio))r=e;});return r;}
+function proxEspecieHTML(){
+  var e=proxEspecie(); if(!e||!DATA.sessions.length)return "";
+  var n=semillas(), f=e.precio-n;
+  return '<div class="hito-prox prox-esp"><div class="hp-txt"><span>'+e.icon+' '+(f>0?'<b>'+e.nombre+'</b>: te faltan '+f+' 🌰':'¡Ya puedes plantar <b>'+e.pl+'</b>!')+'</span><span class="hp-n">'+Math.min(n,e.precio)+'/'+e.precio+'</span></div>'+
+    '<div class="hp-bar"><i style="width:'+Math.max(4,Math.min(100,Math.round(n/e.precio*100)))+'%"></i></div></div>';
+}
+function comprobarEspecieLista(){
+  var n=semillas(), av=DATA.especiesAvisadas||[];
+  var nuevas=ESPECIES.filter(function(e){return e.precio>0&&e.precio<=n&&!especieComprada(e.id)&&av.indexOf(e.id)<0;});
+  if(!nuevas.length)return;
+  DATA.especiesAvisadas=av.concat(nuevas.map(function(e){return e.id;}));DATA.especieAvisoPend=nuevas[nuevas.length-1].id;saveUserData();
+  setTimeout(avisoEspecie,3200);
+}
+function avisoEspecie(){
+  if(!DATA||!DATA.especieAvisoPend||$("modalRoot").innerHTML||DATA.hitoBosquePend)return;
+  var e=especieDe(DATA.especieAvisoPend);DATA.especieAvisoPend=0;saveUserData();
+  if(!especieComprada(e.id))showToast(e.icon+" ¡Ya puedes plantar "+e.pl+"! Están en «Especies» 🌰");
 }
 
 /* ----- Hitos durante la sesión ----- */
