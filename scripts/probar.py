@@ -132,6 +132,25 @@ PRUEBAS = [
       if(con.length){openBibDetailModal(con[0]);var a=document.querySelector('#modalRoot .ex-nota a');closeModal();
         if(!a||a.getAttribute('href')!==examenDeBib(BIBLIOTECAS[con[0]]).f)return 'la ficha no enlaza la fuente';}
       return true;"""),
+    ("reacciones 🔥💪🧠: ocultas sin sesión, alternan en local sin tabla", """
+      if(reaccionesHTML('x','y')!=='')return 'se ven sin sesión';
+      var oc=socialClient,ou=SOCIAL.user,of=SOCIAL.friendSessions,ok0=SOCIAL.reactsOk,ot=feedTab,ofr=SOCIAL.friends;
+      try{
+        socialClient=()=>({});SOCIAL.user={id:'prueba-yo'};SOCIAL.reactsOk=false;SOCIAL.friends=[];
+        SOCIAL.friendSessions=[{local_id:'s1',owner_id:'prueba-amigo',bib_name:'Biblioteca Prueba',minutes:90,date:ymd()}];
+        reacCargarLocal();feedTab='amigos';renderSessionFeed(true);
+        var b=()=>document.querySelector('#sessionFeed [data-reac="🔥"]');
+        if(document.querySelectorAll('#sessionFeed .reac').length!==3)return 'no hay 3 reacciones';
+        b().click();await new Promise(r=>setTimeout(r,50));
+        if(!b().classList.contains('on')||b().innerText.indexOf('1')<0)return 'no se marca la reacción';
+        if(!(loadJSON(reacLocalKey(),{})['prueba-amigo:s1']||{})['🔥'])return 'no se guarda en local';
+        b().click();await new Promise(r=>setTimeout(r,50));
+        if(b().classList.contains('on')||/\\d/.test(b().innerText))return 'no se quita (o deja un contador)';
+        return true;
+      }finally{
+        try{localStorage.removeItem(reacLocalKey());}catch(e){}
+        socialClient=oc;SOCIAL.user=ou;SOCIAL.friendSessions=of;SOCIAL.reactsOk=ok0;SOCIAL.friends=ofr;SOCIAL.reacts={};SOCIAL.reactsMine={};feedTab=ot;renderSessionFeed(true);
+      }"""),
     ("enlace #bib abre la ficha", """
       location.hash='#bib=104-x';comprobarEnlaceCompartido();await new Promise(r=>setTimeout(r,900));
       return !!document.querySelector('.leaflet-popup-content') || 'no abre la ficha';"""),

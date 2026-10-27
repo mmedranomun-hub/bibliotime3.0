@@ -332,6 +332,7 @@ const SUPABASE_ANON_KEY="sb_publishable_1iosUmxRfDEWl-KjHm4F1Q_aceAX01t";
 let SB=null;
 let SOCIAL={user:null,profile:null,friends:[],requests:[],sent:[],events:[],presence:[],friendMarkers:[],timer:null,prayerCounts:{},prayedByMe:{},room:null,roomMembers:[],friendSessions:[],kudosCounts:{},kudosByMe:{},leaderboard:[],
   comments:{},commentsOpen:{},commentDrafts:{},commentsOk:true,myCommentsAt:0,
+  reacts:{},reactsMine:{},reactsOk:true,
   blocked:{},blogPosts:[],eventsAll:[],presenceAll:[]};
 var feedTab="mia";
 // Claves puestas (la librería puede no estar cargada todavía)
@@ -435,7 +436,7 @@ async function socialInitAfterLogin(){
     SOCIAL.timer=setInterval(function(){
       socialHeartbeat();socialRefreshAll();socialCheckNewPrayers();
       if(SOCIAL.room){loadRoomMembers().then(renderStudyRoom);}
-      if(feedTab==="amigos"){socialLoadFriendSessions().then(socialLoadKudos).then(socialLoadFriendComments).then(renderSessionFeed);}
+      if(feedTab==="amigos"){socialLoadFriendSessions().then(socialLoadKudos).then(socialLoadReactions).then(socialLoadFriendComments).then(renderSessionFeed);}
       else{SOCIAL.myCommentsAt=0;renderSessionFeed();}
       loadOccupancyCloud().then(function(){refreshOccUI();});
     },45000);
@@ -974,6 +975,83 @@ async function giveKudos(localId,ownerId){
   await socialLoadKudos();
   renderSessionFeed();
 }
+/* ===== REACCIONES EN SESIONES (🔥 💪 🧠, además de los kudos) =====
+   Tabla session_reactions (bloque «REACCIONES EN SESIONES» de supabase/supabase_social.sql).
+   Solo suman: no hay contadores negativos ni avisos por no reaccionar. Si la tabla aún no existe,
+   tus reacciones se guardan solo en este dispositivo (y no se vuelve a preguntar en 6 h). */
+var REACCIONES=[["🔥","Qué fuego"],["💪","Ánimo"],["🧠","Cerebrito"]];
+function reacKey(localId,ownerId){return ownerId+":"+localId;}
+function reacLocalKey(){return "bpna_reacciones_"+(SOCIAL.user?SOCIAL.user.id:"");}
+function reacCargarLocal(){
+  var mias=loadJSON(reacLocalKey(),{})||{}, cnt={};
+  Object.keys(mias).forEach(function(k){cnt[k]={};Object.keys(mias[k]).forEach(function(e){cnt[k][e]=1;});});
+  SOCIAL.reacts=cnt;SOCIAL.reactsMine=mias;
+}
+async function socialLoadReactions(){
+  var sb=socialClient(); if(!sb||!SOCIAL.user)return;
+  var sinTabla=loadJSON("bpna_reac_sin_tabla",0);
+  if(sinTabla&&Date.now()-sinTabla<6*3600e3)SOCIAL.reactsOk=false;
+  if(!SOCIAL.reactsOk){reacCargarLocal();return;}
+  var ids=SOCIAL.friendSessions.map(function(s){return s.local_id;});
+  if(!ids.length){SOCIAL.reacts={};SOCIAL.reactsMine={};return;}
+  var res=await sb.from("session_reactions").select("session_local_id,session_owner_id,user_id,emoji").in("session_local_id",ids);
+  if(res.error){if(tableMissing(res,"session_reactions")){SOCIAL.reactsOk=false;saveJSON("bpna_reac_sin_tabla",Date.now());reacCargarLocal();}return;}
+  var cnt={},mias={},me=SOCIAL.user.id;
+  (res.data||[]).forEach(function(r){
+    if(isBlocked(r.user_id))return;
+    var k=reacKey(r.session_local_id,r.session_owner_id);
+    cnt[k]=cnt[k]||{};cnt[k][r.emoji]=(cnt[k][r.emoji]||0)+1;
+    if(r.user_id===me){mias[k]=mias[k]||{};mias[k][r.emoji]=true;}
+  });
+  SOCIAL.reacts=cnt;SOCIAL.reactsMine=mias;
+}
+function reaccionesHTML(localId,ownerId){
+  if(!socialClient()||!SOCIAL.user)return "";
+  var k=reacKey(localId,ownerId), c=SOCIAL.reacts[k]||{}, m=SOCIAL.reactsMine[k]||{};
+  return '<div class="reacs" role="group" aria-label="Reacciones" data-reac-row="'+escapeHTML(k)+'">'+REACCIONES.map(function(r){
+    var n=c[r[0]]||0, on=!!m[r[0]];
+    return '<button type="button" class="reac'+(on?" on":"")+'" aria-pressed="'+on+'" title="'+r[1]+'" aria-label="'+r[1]+(n?" ("+n+")":"")+'" data-reac="'+r[0]+'" data-reac-sid="'+escapeHTML(localId)+'" data-reac-owner="'+escapeHTML(ownerId)+'">'+
+      '<span class="reac-e">'+r[0]+'</span>'+(n?'<span class="reac-n">'+n+'</span>':'')+'</button>';
+  }).join("")+'</div>';
+}
+function reacPintar(localId,ownerId,emoji){
+  var fila=document.querySelector('[data-reac-row="'+CSS.escape(reacKey(localId,ownerId))+'"]'); if(!fila)return;
+  var tmp=document.createElement("div");tmp.innerHTML=reaccionesHTML(localId,ownerId);
+  var nueva=tmp.firstChild; if(!nueva)return;
+  fila.replaceWith(nueva);
+  var b=nueva.querySelector('[data-reac="'+emoji+'"]');
+  if(b&&b.classList.contains("on")&&!sinMovimiento()){b.classList.add("rebota");setTimeout(function(){b.classList.remove("rebota");},500);}
+}
+function reacAplicar(k,emoji,poner){
+  var c=SOCIAL.reacts[k]=SOCIAL.reacts[k]||{}, m=SOCIAL.reactsMine[k]=SOCIAL.reactsMine[k]||{};
+  if(poner){m[emoji]=true;c[emoji]=(c[emoji]||0)+1;}
+  else{delete m[emoji];c[emoji]=Math.max(0,(c[emoji]||0)-1);}
+}
+async function reaccionar(localId,ownerId,emoji){
+  if(!socialClient()||!SOCIAL.user||!REACCIONES.some(function(r){return r[0]===emoji;}))return;
+  var k=reacKey(localId,ownerId), poner=!(SOCIAL.reactsMine[k]&&SOCIAL.reactsMine[k][emoji]);
+  reacAplicar(k,emoji,poner);
+  reacPintar(localId,ownerId,emoji);
+  if(poner){if(navigator.vibrate)try{navigator.vibrate(12);}catch(e){}registrarAccion("social");}
+  if(!SOCIAL.reactsOk){
+    var mias=loadJSON(reacLocalKey(),{})||{};
+    if(poner){mias[k]=mias[k]||{};mias[k][emoji]=true;}else if(mias[k]){delete mias[k][emoji];if(!Object.keys(mias[k]).length)delete mias[k];}
+    saveJSON(reacLocalKey(),mias);return;
+  }
+  var sb=socialClient(), q=sb.from("session_reactions"), res;
+  if(poner)res=await q.insert({session_local_id:localId,session_owner_id:ownerId,user_id:SOCIAL.user.id,emoji:emoji});
+  else res=await q.delete().eq("session_local_id",localId).eq("session_owner_id",ownerId).eq("user_id",SOCIAL.user.id).eq("emoji",emoji);
+  if(!res.error||res.error.code==="23505")return;
+  if(tableMissing(res,"session_reactions")){
+    // la tabla aún no existe: se queda la reacción en este dispositivo
+    SOCIAL.reactsOk=false;saveJSON("bpna_reac_sin_tabla",Date.now());
+    var mias2=loadJSON(reacLocalKey(),{})||{};
+    Object.keys(SOCIAL.reactsMine).forEach(function(kk){var o=SOCIAL.reactsMine[kk];if(Object.keys(o).length)mias2[kk]=Object.assign({},o);});
+    saveJSON(reacLocalKey(),mias2);reacCargarLocal();reacPintar(localId,ownerId,"");return;
+  }
+  reacAplicar(k,emoji,!poner);reacPintar(localId,ownerId,"");
+  showToast("No se pudo guardar la reacción");
+}
 /* ===== COMENTARIOS EN SESIONES (estilo comentarios de actividad de Strava) =====
    Tabla session_comments (ver supabase/supabase_social.sql). Si aún no existe en Supabase,
    se marca SOCIAL.commentsOk=false y la UI de comentarios se oculta en silencio. */
@@ -1046,6 +1124,10 @@ async function deleteComment(id,localId){
 }
 function initCommentEvents(){
   var el=$("sessionFeed"); if(!el)return;
+  el.addEventListener("click",function(e){
+    var r=e.target.closest("[data-reac]"); if(!r)return;
+    reaccionar(r.dataset.reacSid,r.dataset.reacOwner,r.dataset.reac);
+  });
   el.addEventListener("click",function(e){
     var t=e.target.closest("[data-cmt-toggle],[data-cmt-send],[data-cmt-del]"); if(!t)return;
     if(t.dataset.cmtToggle!=null){var id=t.dataset.cmtToggle;SOCIAL.commentsOpen[id]=!SOCIAL.commentsOpen[id];renderSessionFeed(true);
@@ -2662,6 +2744,7 @@ function renderSessionFeed(force){
         (s.offering?'<div class="foffer">🙏 Ofrecido por '+escapeHTML(s.offering)+'</div>':'')+
         '<div class="feed-actions"><button class="kudos-btn'+(ya?" on":"")+'" '+(ya?"disabled":"")+' onclick="giveKudos('+jsArg(s.local_id)+','+jsArg(s.owner_id)+')">👏 '+(n?n:"Dar kudos")+'</button>'+
         commentButtonHTML(s.local_id,s.owner_id)+'</div>'+
+        reaccionesHTML(s.local_id,s.owner_id)+
         commentThreadHTML(s.local_id,s.owner_id)+
         '</div>';
     }).join("");
@@ -3602,7 +3685,7 @@ window.addEventListener("DOMContentLoaded",function(){
     document.querySelectorAll("#feedTabSeg button").forEach(function(x){x.classList.remove("on");});
     b.classList.add("on");
     feedTab=b.dataset.t;
-    if(feedTab==="amigos"){socialLoadFriendSessions().then(socialLoadKudos).then(socialLoadFriendComments).then(renderSessionFeed);}
+    if(feedTab==="amigos"){socialLoadFriendSessions().then(socialLoadKudos).then(socialLoadReactions).then(socialLoadFriendComments).then(renderSessionFeed);}
     else renderSessionFeed();
   });});
   $("calPrev").addEventListener("click",function(){calRef.setMonth(calRef.getMonth()-1);renderCal();});

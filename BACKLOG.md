@@ -15,7 +15,6 @@ MassTimes.org / misas.org).
 ## Siguientes
 - [ ] Objetivo 4 · Enlazar las páginas temáticas desde la portada (`index.html`, pie o sección «Buscar por horario», sin tocar la app) y añadir `dateModified` con la fecha de verificación más reciente a su JSON-LD; medir en Search Console «biblioteca abierta domingo <ciudad>» cuando el dominio esté conectado
 - [ ] SEO · Título y descripción de la portada según la ciudad del enlace (`/bibliotecas/<prov>/` ya enlaza `#bib`); revisar que Google renderiza la portada (Search Console → Inspección de URL) cuando el dominio esté conectado
-- [ ] Dopamina · Reacciones con emoji (🔥💪🧠) a las sesiones de amigos además de kudos (tabla nueva con RLS de amigos, idempotente)
 - [ ] Dopamina · Liga semanal entre amigos (Bronce/Plata/Oro según puesto del ranking la semana anterior), con insignia en el perfil
 - [ ] Rezos · Avisar al dueño en la Agenda («🙏 3 amigos rezan por tu examen de mañana») el día anterior al examen
 Orden revisado el 2026-10-20 con el estudio de mercado (`Bibliotime - Documentacion\estudio_de_mercado.md`)
@@ -58,6 +57,7 @@ empiezan el 1 de diciembre y los de la UPNA el 15), así que la producción debe
 - Producción en Vercel: https://bibliotime-ten.vercel.app (proyecto `juan-f396/bibliotime`; `.vercelignore` deja fuera scripts, backlog, SQL y `.env*`). Se actualiza a mano con `npx vercel deploy` (prueba) y `npx vercel promote <url>`; todavía no está conectado a GitHub para desplegar solo. La TWA de Google Play y `assetlinks.json` deberán apuntar a este dominio (o a uno propio)
 
 ## Pendiente del usuario (no lo puede hacer la tarea automática)
+- Ejecutar en Supabase (SQL Editor) el bloque «REACCIONES EN SESIONES» del final de `supabase/supabase_social.sql` (tabla `session_reactions` con RLS de amigos). Mientras no exista, cada persona ve solo sus propias reacciones, guardadas en su dispositivo
 - Ejecutar en Supabase (SQL Editor) el bloque «REZOS VISIBLES PARA AMIGOS» del final de `supabase/supabase_social.sql` (función `prayer_counts`). Mientras no exista, cada amigo solo ve su propio rezo (0 o 1), no el total
 - Conectar **bibliomapa.es** al proyecto de Vercel, darlo de alta en Google Search Console y enviar `sitemap.xml` (pasos en `docs/SEO.md`). Sin esto las páginas de SEO no posicionan
 - Ejecutar en Supabase (SQL Editor) el bloque «COMENTARIOS EN SESIONES» del final de `supabase/supabase_social.sql`
@@ -68,6 +68,7 @@ empiezan el 1 de diciembre y los de la UPNA el 15), así que la producción debe
 - Ejecutar en Supabase (SQL Editor) el bloque «PRIVACIDAD DE LA PRESENCIA» del final de `supabase/supabase_social.sql` (política select de `presence` con caducidad de 4 h, `updated_at` puesto por el servidor y borrado de la propia fila; ya añadido también al final de `Bibliotime - Documentacion\SQL_PENDIENTE_supabase.sql`). Mientras no se ejecute, la caducidad de 4 h solo la aplica la app
 
 ## Hecho
+- [x] 2026-10-27 · Dopamina · Reacciones 🔥 💪 🧠 en las sesiones de amigos del feed, además del kudos: tocar alterna la tuya, recuento por emoji (sin ceros ni negativos), rebote (quieto con «reducir movimiento») y vibración corta; cuentan para la misión «social». Tabla `session_reactions` con RLS de amigos (bloque «REACCIONES EN SESIONES»); sin la tabla se guardan en local. Prueba nueva en `scripts/probar.py`
 - [x] 2026-10-27 · Objetivo 1 · Horario verificado en 13 bibliotecas más (Salamanca, Segovia, Baleares ×2, Cádiz, Málaga ×2, Madrid ×3, Barcelona Arús, Zaragoza, Guadalajara): 47 → 51/51 provincias, 168 → 181. Índice 93 corregido: era la BPE de Guadalajara con datos de Sant Hilari Sacalm (que ya está en el 1653)
 - [x] 2026-10-27 · Objetivo 4 · Páginas temáticas por localidad (domingo, fin de semana, hasta tarde; ≥ 2 verificadas y sin duplicar la provincia) y «abiertas en verano» (España y provincias con ≥ 2 con `h.ver`); `CollectionPage` con `dateModified` y `lastmod` en el sitemap: 308 → 339 páginas
 - [x] 2026-10-27 · Objetivo 1 · Arreglo: el acceso por defecto depende de si la biblioteca es de Navarra (índice < `N_NAVARRA`), no de si tiene horario. Las de fuera ya no citan la Ley Foral 32/2002: públicas, Ley 10/2007; universitarias, «consulta su web»; el resto, «Consulta las condiciones en su web ↗» (enlace si hay `web`). Prueba en `scripts/probar.py`

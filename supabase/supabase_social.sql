@@ -433,3 +433,34 @@ drop policy if exists "prayers insert own" on prayers;
 create policy "prayers insert own" on prayers for insert with check (
   auth.uid() = prayed_by_id and (auth.uid() = event_owner_id or public.are_friends(auth.uid(), event_owner_id))
 );
+
+-- ===== REACCIONES EN SESIONES (🔥 💪 🧠, además de los kudos) — 2026-10-27 =====
+-- Mismo criterio de privacidad que los kudos y los comentarios: las ven quien reacciona, el dueño de
+-- la sesión y sus amigos aceptados. Solo puedes poner o quitar TU reacción en sesiones de un amigo.
+-- Una fila por persona, sesión y emoji (tocar otra vez la quita). Idempotente: se puede ejecutar varias veces.
+-- Mientras no exista, la app guarda tus reacciones solo en tu dispositivo.
+create table if not exists session_reactions (
+  id uuid primary key default gen_random_uuid(),
+  session_local_id text not null,
+  session_owner_id uuid not null references profiles(id) on delete cascade,
+  user_id uuid not null default auth.uid() references profiles(id) on delete cascade,
+  emoji text not null,
+  created_at timestamptz not null default now(),
+  unique(session_local_id, session_owner_id, user_id, emoji)
+);
+alter table session_reactions drop constraint if exists session_reactions_emoji_check;
+alter table session_reactions add constraint session_reactions_emoji_check check (emoji in ('🔥','💪','🧠'));
+create index if not exists session_reactions_session_idx on session_reactions(session_local_id);
+alter table session_reactions enable row level security;
+drop policy if exists "session_reactions select involved" on session_reactions;
+create policy "session_reactions select involved" on session_reactions for select using (
+  auth.uid() = user_id or auth.uid() = session_owner_id or public.are_friends(auth.uid(), session_owner_id)
+);
+drop policy if exists "session_reactions insert own friend" on session_reactions;
+create policy "session_reactions insert own friend" on session_reactions for insert with check (
+  auth.uid() = user_id and auth.uid() <> session_owner_id and public.are_friends(auth.uid(), session_owner_id)
+);
+drop policy if exists "session_reactions delete own friend" on session_reactions;
+create policy "session_reactions delete own friend" on session_reactions for delete using (
+  auth.uid() = user_id and public.are_friends(auth.uid(), session_owner_id)
+);

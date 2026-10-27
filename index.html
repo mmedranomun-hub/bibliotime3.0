@@ -476,6 +476,17 @@
   .kudos-btn.on{background:var(--grad-aviso);border-color:transparent;color:#fff;cursor:default}
   .feed-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
   .feed-actions .kudos-btn{margin-top:0}
+  /* reacciones 🔥 💪 🧠 en sesiones de amigos: solo suman, sin contadores negativos */
+  .reacs{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .reac{display:inline-flex;align-items:center;gap:4px;min-height:32px;padding:4px 11px;border-radius:var(--r-pill);cursor:pointer;
+    border:1px solid color-mix(in srgb,var(--neutro) 40%,transparent);background:rgba(var(--blanco),.5);
+    font-size:var(--fs-s);font-weight:800;color:var(--suave);transition:border-color .15s,background .15s}
+  .reac-e{font-size:var(--fs-l);line-height:1}
+  .reac:hover{border-color:var(--aviso)}
+  .reac.on{border-color:var(--aviso);background:color-mix(in srgb,var(--aviso) 16%,transparent);color:var(--aviso-tx)}
+  .reac.rebota .reac-e{animation:reacRebote .45s cubic-bezier(.34,1.56,.64,1)}
+  @keyframes reacRebote{0%{transform:scale(1)}35%{transform:scale(1.45) rotate(-8deg)}70%{transform:scale(.92)}100%{transform:scale(1)}}
+  @media(prefers-reduced-motion:reduce){.reac.rebota .reac-e{animation:none}}
   .cmt-btn:hover{border-color:var(--acento);color:var(--acento-tx)}
   .cmt-btn.on{border-color:var(--acento);color:var(--acento-tx);background:rgba(108,92,231,.12);cursor:pointer}
   .cmt-thread{margin-top:10px;border-top:1px solid rgba(148,163,184,.25);padding-top:10px}
