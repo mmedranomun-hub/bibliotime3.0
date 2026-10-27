@@ -135,6 +135,29 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
   `FAQPage`, migas. Título ≤ 65 y descripción ≤ 160 únicos (con nombre y sigla si caben). Enlazadas desde el índice general
   («Por universidad»), la provincia y la localidad («Universidades: UCM 16…») y el dato «Universidad» de cada ficha.
 
+## Hecho (2026-10-27) · Hub «Bibliotecas por horario», fechas de verificación y comprobador (453 páginas, antes 452)
+- **`/bibliotecas/horarios/`**: reúne todas las búsquedas por horario. «En toda España» (hoy, domingo, fin de semana, hasta
+  tarde, verano, salas de estudio, universidades, con recuentos) y «Por provincia» (27 hoy): en cada una sus temáticas, las de
+  sus localidades («Pozuelo de Alarcón: Todas 5 · Hoy 2 · Hasta tarde 2»), sus salas de estudio y sus universidades. Al final,
+  las provincias con horario verificado pero sin páginas por horario (menos de 2 que cumplan) y una FAQ con datos verificados
+  (en qué provincias abren en domingo, hasta tarde y en verano; de dónde salen los horarios). `CollectionPage` con
+  `dateModified` y `hasPart`, `FAQPage`, migas; en `sitemap.xml` con prioridad 0.9.
+- Enlazado interno: todas las páginas temáticas (España, provincia, localidad) llevan «Todos los horarios» en su barra de temas;
+  las de salas de estudio y universidades (y sus índices), «Todos los horarios por provincia»; «Por horario» de provincias y
+  localidades, «Más horarios» (a su provincia en el hub); el índice `/bibliotecas/`, «Por provincia».
+- `dateModified` (y `lastmod` del sitemap) = fecha de verificación (`h.fv`) más reciente de las bibliotecas con horario
+  verificado que muestra la página. Ya lo tenían las temáticas, salas y universidades; ahora también provincias y localidades
+  (`CollectionPage`) y las fichas de biblioteca (un `WebPage` con `about` → la `Library`, que no admite `dateModified`). Las
+  páginas sin ningún horario verificado siguen con la fecha del día en que se genera.
+- Arreglos: una web sin `http(s)://` en los datos (Villanueva de la Serena) salía como enlace relativo roto en 2 páginas: el
+  generador le añade `http://`; dos sedes «Biblioteca Universidad de Murcia» tenían la misma meta description: la segunda
+  lleva la dirección.
+- **`node scripts/comprobar_paginas_seo.js`** (ejecutarlo tras regenerar): enlaces internos rotos (incluidas anclas `#…`),
+  títulos y descripciones repetidos, JSON-LD ilegible, páginas sin enlaces entrantes y URL del sitemap que no existen o
+  faltan. Sale con código 1 si algo falla. Hoy: 453 páginas, 15.950 enlaces internos, 0 rotos, 0 títulos y 0 descripciones
+  repetidos, 0 huérfanas, sitemap completo.
+- Pendiente (fuera del generador): un enlace desde la portada (`index.html`) a `/bibliotecas/horarios/`.
+
 ## Lo que tienes que hacer tú (sin esto no sirve de nada)
 1. **Conectar el dominio** en Vercel: proyecto `bibliotime` → Settings → Domains → añadir `bibliomapa.es` y
    `www.bibliomapa.es` (redirigir www → sin www) y poner en tu registrador los DNS que te indique Vercel.
