@@ -85,7 +85,24 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
 - `CollectionPage` con `dateModified` (verificación más reciente) e `ItemList` de `Library`, `FAQPage`, migas; título único
   ≤ 65 («Salas de estudio en <ciudad>: N bibliotecas para estudiar»). Enlazadas desde el índice, la provincia, la localidad
   («Para estudiar: …») y las fichas de biblioteca de esa ciudad. Crecen solas al verificar horarios o clasificar bibliotecas.
-- Pamplona no sale: el generador no lee aún los horarios de Navarra de `app.js` (`h: null`), así que no tiene ninguna verificada.
+- Pamplona no sale todavía: ver la sección siguiente.
+
+## Hecho (2026-10-27) · El generador lee los horarios de Navarra de `app.js` (412 páginas, sin cambios aún)
+- Ya no usa una expresión regular: lee `app.js` como texto y evalúa en un contexto `vm` vacío (sin `window` ni `document`,
+  con tiempo máximo) solo el bloque de datos, desde `function h(hh,mm)` hasta el cierre de `const BIBLIOTECAS=[…]`. No se
+  ejecuta la app. Convierte `horas`/`horasInvierno`/`horasVerano` (formato `semana()`, minutos) al formato de
+  `bibliotecas-espana.js` (`{"L":[["08:30","20:30"]],…}`) y comprueba que el número de bibliotecas cuadra con `app.js`.
+- **Decisión: un horario de Navarra solo se publica si trae fuente y fecha en `app.js`**: `fuenteHorario` (url https) y
+  `verificadoHorario` (AAAA-MM-DD), los mismos campos que la ficha de la app ya enseña como «Horario verificado el … · fuente»
+  (opcionales: `notaHorario`, `veranoDesde`/`veranoHasta` en «MM-DD»; sin ellos el verano es el de la app para la red de
+  Navarra, del 15-06 al 14-09). Hoy **ninguna de las 104 los tiene**: las 15 de Pamplona se metieron a mano en junio sin fuente
+  y las 89 del resto salen del conjunto de datos abiertos del Gobierno de Navarra (commit 216a48c, 2026-09-13) sin url ni fecha
+  de comprobación; el commit 6bdf51c ya dejó escrito que «las de Navarra no tienen fecha registrada» y la app dice «Horario sin
+  fecha de verificación». No se pudo comprobar en la web oficial desde aquí (unav.edu y bibliotecaspublicas.es bloqueadas),
+  así que se quedan en «Horario sin confirmar»: no se usa la fecha de un commit sin fuente ni se inventa una.
+- En cuanto alguien añada en `app.js` esos dos campos a una biblioteca de Navarra comprobada en su web oficial, al regenerar
+  entra sola. Simulación con las 15 de Pamplona: 412 → 433 páginas (Salas de estudio en Pamplona; Navarra y Pamplona
+  abiertas hoy, domingo, fin de semana y hasta tarde; Navarra verano; 11 fichas nuevas), sin títulos repetidos.
 
 ## Lo que tienes que hacer tú (sin esto no sirve de nada)
 1. **Conectar el dominio** en Vercel: proyecto `bibliotime` → Settings → Domains → añadir `bibliomapa.es` y

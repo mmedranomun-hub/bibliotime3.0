@@ -18,7 +18,7 @@
    Vuelve a ejecutarlo cada vez que cambien los datos (app.js o bibliotecas-espana.js).
 
    Reglas: solo se publican datos que ya están en la app. Los horarios solo si están verificados (campo h,
-   con su fuente y fecha); el resto dice «horario sin confirmar». No se inventa nada para posicionar.
+   con su fuente y fecha; en Navarra, fuenteHorario + verificadoHorario en app.js); el resto dice «horario sin confirmar». No se inventa nada para posicionar.
    El índice de cada biblioteca es el mismo que en la app (#bib=<índice>-<nombre> abre su ficha en el mapa). */
 "use strict";
 const fs = require("fs");
@@ -28,25 +28,52 @@ const DOMINIO = "https://bibliomapa.es";
 const HOY = new Date().toISOString().slice(0, 10);
 
 // ---------- Datos ----------
+// Navarra: se lee app.js como TEXTO y se evalúa solo el bloque de datos (desde `function h(hh,mm)` hasta el cierre del
+// array BIBLIOTECAS: las funciones h()/semana(), las constantes de horario y el literal) en un contexto `vm` vacío, sin
+// window ni document y con tiempo máximo. No se ejecuta la app.
+const vm = require("vm");
 const appJs = fs.readFileSync(path.join(RAIZ, "app.js"), "utf8");
+const iDatos = appJs.indexOf("function h(hh,mm)");
 const inicio = appJs.indexOf("const BIBLIOTECAS=[");
-const fin = appJs.indexOf("];", inicio);
+const fin = appJs.indexOf("\n];", inicio);
+if (iDatos < 0 || inicio < iDatos || fin < 0) { console.error("No encuentro el bloque de datos de Navarra en app.js."); process.exit(1); }
 const bloqueNavarra = appJs.slice(inicio, fin);
-const re = /\{nombre:"((?:[^"\\]|\\.)*)",lat:(-?[\d.]+),lon:(-?[\d.]+),dir:"((?:[^"\\]|\\.)*)",tel:"((?:[^"\\]|\\.)*)",web:"((?:[^"\\]|\\.)*)"/g;
-const navarra = [];
-let m;
-while ((m = re.exec(bloqueNavarra))) {
-  const [, n, lat, lon, dir, tel, web] = m;
-  navarra.push({ n: n.replace(/\\"/g, '"'), lat: +lat, lon: +lon, dir, tel, web, p: "Navarra", t: /Universidad|UPNA|UNED/.test(n) ? "universidad" : "publica" });
+const BIB_APP = vm.runInNewContext(appJs.slice(iDatos, fin + 3) + "\nBIBLIOTECAS;", Object.create(null), { timeout: 2000 });
+// Horario interno de la app (semana(): [D,L,M,X,J,V,S] con minutos) → formato de bibliotecas-espana.js ({"L":[["09:00","21:00"]],…}).
+const hhmm = (min) => String(Math.floor(min / 60) % 24).padStart(2, "0") + ":" + String(min % 60).padStart(2, "0");
+const ORDEN_APP = ["D", "L", "M", "X", "J", "V", "S"];
+function horarioDeApp(s) {
+  if (!Array.isArray(s) || s.length !== 7) return null;
+  const o = {};
+  ORDEN_APP.forEach((d, k) => { o[d] = (s[k] || []).map((r) => [hhmm(r[0]), hhmm(r[1])]); });
+  return o;
 }
+// Un horario de Navarra solo se publica si en app.js trae fuente (`fuenteHorario`, url https) y fecha de comprobación
+// (`verificadoHorario`, AAAA-MM-DD): los mismos campos que la ficha de la app enseña como «Horario verificado el … · fuente».
+// Sin ellos queda h: null («Horario sin confirmar»): nunca se da por verificado un horario sin fuente ni fecha.
+// Verano: `horasVerano` con `veranoDesde`/`veranoHasta` («MM-DD») si los trae; si no, el periodo que usa la app para la
+// red de Navarra (esVerano(): del 15 de junio al 14 de septiembre).
+function horarioNavarra(b) {
+  if (!/^https:\/\//.test(b.fuenteHorario || "") || !/^\d{4}-\d{2}-\d{2}$/.test(b.verificadoHorario || "")) return null;
+  const inv = horarioDeApp(b.horasInvierno || b.horas);
+  if (!inv) return null;
+  const h = { inv, f: b.fuenteHorario, fv: b.verificadoHorario };
+  const ver = b.horasInvierno && b.horasVerano ? horarioDeApp(b.horasVerano) : null;
+  if (ver) { h.ver = ver; h.vd = b.veranoDesde || "06-15"; h.vh = b.veranoHasta || "09-14"; }
+  if (b.notaHorario) h.nota = b.notaHorario;
+  return h;
+}
+const navarra = BIB_APP.map((b) => ({ n: b.nombre, lat: b.lat, lon: b.lon, dir: b.dir || "", tel: b.tel || "", web: b.web || "",
+  p: "Navarra", t: /Universidad|UPNA|UNED/.test(b.nombre) ? "universidad" : "publica", h: horarioNavarra(b) }));
 const ventana = {};
 new Function("window", fs.readFileSync(path.join(RAIZ, "bibliotecas-espana.js"), "utf8"))(ventana);
 const espana = ventana.BIBLIOTECAS_ES;
 const nNavarraApp = (bloqueNavarra.match(/\n  \{nombre:"/g) || []).length;
 if (navarra.length !== nNavarraApp) {
-  console.error(`No cuadran las bibliotecas de Navarra (${navarra.length} leídas, ${nNavarraApp} en app.js). Revisa la expresión regular.`);
+  console.error(`No cuadran las bibliotecas de Navarra (${navarra.length} leídas, ${nNavarraApp} en app.js).`);
   process.exit(1);
 }
+const nNavarraConHorario = navarra.filter((b) => b.h).length;
 
 // Localidad de las de Navarra: «31839 Arbizu» en la dirección; 310xx/311xx sin nombre → Pamplona; si no, del nombre.
 function localidadNavarra(b) {
@@ -58,7 +85,7 @@ function localidadNavarra(b) {
   return "Pamplona";
 }
 const todas = [];
-navarra.forEach((b, i) => todas.push({ ...b, i, c: localidadNavarra(b), h: null }));
+navarra.forEach((b, i) => todas.push({ ...b, i, c: localidadNavarra(b) }));
 espana.forEach((b, k) => todas.push({ ...b, i: navarra.length + k }));
 
 // Provincia que falta: la de la biblioteca con provincia más cercana.
@@ -866,3 +893,4 @@ Sitemap: ${DOMINIO}/sitemap.xml
 `);
 console.log(`Vecinas: ${locsConPagina.filter((x) => !localidadesCercanas(x.p, x.c).length).length} de ${locsConPagina.length} localidades sin «Localidades cercanas» (ninguna con página a menos de 150 km)`);
 console.log(`Páginas: ${urls.length - 1} (+ portada) · provincias: ${provincias.length} · bibliotecas: ${todas.length} · con página propia: ${paginaDe.size} (${conPaginaPropia.filter(verificado).length} con horario verificado)`);
+console.log(`Navarra: ${nNavarraConHorario} de ${navarra.length} con horario publicable (fuenteHorario + verificadoHorario en app.js)`);
