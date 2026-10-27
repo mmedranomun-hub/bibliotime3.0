@@ -13,7 +13,6 @@ Fuentes de las ideas: informes de investigación del 2026-10-08 (Strava, y Catho
 MassTimes.org / misas.org).
 
 ## Siguientes
-- [ ] Objetivo 4 · Página temática `/bibliotecas/<ciudad>/abiertas-hasta-tarde/` y `abiertas-domingo/` por **localidad** (Madrid capital, Barcelona, Valencia…) cuando haya 2 o más con horario verificado, enlazada desde la página de localidad; y «abiertas en agosto / verano» usando `h.ver` + `vd`/`vh` (solo las que tienen horario de verano verificado)
 - [ ] Objetivo 4 · Enlazar las páginas temáticas desde la portada (`index.html`, pie o sección «Buscar por horario», sin tocar la app) y añadir `dateModified` con la fecha de verificación más reciente a su JSON-LD; medir en Search Console «biblioteca abierta domingo <ciudad>» cuando el dominio esté conectado
 - [ ] SEO · Título y descripción de la portada según la ciudad del enlace (`/bibliotecas/<prov>/` ya enlaza `#bib`); revisar que Google renderiza la portada (Search Console → Inspección de URL) cuando el dominio esté conectado
 - [ ] Dopamina · Reacciones con emoji (🔥💪🧠) a las sesiones de amigos además de kudos (tabla nueva con RLS de amigos, idempotente)
@@ -50,10 +49,9 @@ empiezan el 1 de diciembre y los de la UPNA el 15), así que la producción debe
 - [ ] Misas · Compartir una biblioteca con enlace `#bib=<slug>` y `navigator.share`
 - [ ] Misas · Atajos de PWA en `manifest.json` ("Te recomiendo ahora", "Abren pronto")
 
-- [ ] Objetivo 1 · Datos: en `bibliotecas-espana.js` la entrada «Biblioteca Municipal Sant Hilari Sacalm» (índice 93) tiene la dirección de la BPE de Guadalajara (Plaza Dávalos); corregir el nombre o la dirección con fuente oficial sin mover el índice (visto el 2026-10-27)
 
 ## Datos (por lotes pequeños, siempre con fuente oficial)
-- [ ] España · Horarios verificados: seguir añadiendo 10 bibliotecas por tarea (hay 64 con horario, 47/51 provincias; faltan Salamanca, Segovia, Baleares y Cádiz: sus BPE de la capital no están en el archivo o su web no daba el horario de invierno). Priorizar capitales de provincia sin ninguna. Como pista para buscar la fuente oficial puede usarse el campo `oh` de `data/bibliotecas_espana.json` (OpenStreetMap, ODbL), pero nunca publicarlo como verificado. Cada horario nuevo lleva `h.fv` con la fecha (AAAA-MM-DD) en que se comprobó la fuente
+- [ ] España · Horarios verificados: seguir añadiendo 10 bibliotecas por tarea (181 verificadas, 51/51 provincias desde el 27-10; ahora priorizar grandes bibliotecas de capitales con muchos estudiantes y sustituir fuentes no de la biblioteca —Segovia viene de turismodesegovia.com— por la web propia cuando se pueda). Como pista para buscar la fuente oficial puede usarse el campo `oh` de `data/bibliotecas_espana.json` (OpenStreetMap, ODbL), pero nunca publicarlo como verificado. Cada horario nuevo lleva `h.fv` con la fecha (AAAA-MM-DD) en que se comprobó la fuente
 - [ ] Navarra · verificar horario/aforo/recursos de 10 bibliotecas con la web oficial; repetir hasta cubrir las 104
 
 ## Web pública
@@ -70,6 +68,8 @@ empiezan el 1 de diciembre y los de la UPNA el 15), así que la producción debe
 - Ejecutar en Supabase (SQL Editor) el bloque «PRIVACIDAD DE LA PRESENCIA» del final de `supabase/supabase_social.sql` (política select de `presence` con caducidad de 4 h, `updated_at` puesto por el servidor y borrado de la propia fila; ya añadido también al final de `Bibliotime - Documentacion\SQL_PENDIENTE_supabase.sql`). Mientras no se ejecute, la caducidad de 4 h solo la aplica la app
 
 ## Hecho
+- [x] 2026-10-27 · Objetivo 1 · Horario verificado en 13 bibliotecas más (Salamanca, Segovia, Baleares ×2, Cádiz, Málaga ×2, Madrid ×3, Barcelona Arús, Zaragoza, Guadalajara): 47 → 51/51 provincias, 168 → 181. Índice 93 corregido: era la BPE de Guadalajara con datos de Sant Hilari Sacalm (que ya está en el 1653)
+- [x] 2026-10-27 · Objetivo 4 · Páginas temáticas por localidad (domingo, fin de semana, hasta tarde; ≥ 2 verificadas y sin duplicar la provincia) y «abiertas en verano» (España y provincias con ≥ 2 con `h.ver`); `CollectionPage` con `dateModified` y `lastmod` en el sitemap: 308 → 339 páginas
 - [x] 2026-10-27 · Objetivo 1 · Arreglo: el acceso por defecto depende de si la biblioteca es de Navarra (índice < `N_NAVARRA`), no de si tiene horario. Las de fuera ya no citan la Ley Foral 32/2002: públicas, Ley 10/2007; universitarias, «consulta su web»; el resto, «Consulta las condiciones en su web ↗» (enlace si hay `web`). Prueba en `scripts/probar.py`
 - [x] 2026-10-27 · Bosque · Especies de temporada gratis: 🎄 Abeto de Navidad con luces que parpadean y estrella (1 dic – 6 ene) y 🌼 Almendro en flor (1 mar – 30 abr). `enTemporada` admite periodos que cruzan el año (12-01 → 01-06) y una fecha opcional; prueba con fechas simuladas en `scripts/probar.py`
 - [x] 2026-10-27 · SEO · Página propia para las bibliotecas más buscadas: 155 páginas `/bibliotecas/<prov>/<biblioteca>/` (Nacional, Regional de Madrid, grandes y universitarias de capitales y todas las de capitales con horario verificado) con horario verificado con fuente o «sin confirmar», «Ver en el mapa», cercanas, `Library` + `FAQPage` solo con horario verificado; enlazadas desde las tarjetas y en `sitemap.xml`; 146 → 301 páginas SEO

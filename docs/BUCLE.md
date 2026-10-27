@@ -62,4 +62,6 @@ Formato: `AAAA-MM-DD HH:MM · quién · objetivo(s) · resultado (✅ subido / �
 - 2026-10-27 00:45 · director/agente horarios · Objetivo 1 · ✅ · 29a53e0 · provincias 37 → 47/51, bibliotecas con horario 158 → 168
 - 2026-10-27 00:45 · director/agente producto · Objetivo 1 (arreglo ACCESO) + 3 (abeto de Navidad y almendro) · ✅ · fbb0368 · pruebas 12 → 14; app.js gzip 102,3 → 102,8 KB
 - 2026-10-27 00:45 · director/agente SEO · Objetivo 4 · ✅ · 6c2a290 · páginas SEO 146 → 308 (162 fichas propias, 62 con horario); carga 1423 ms
-- 2026-10-27 01:19 · director · ⏳ en curso · Objetivo 1 (horarios), 2 (exámenes Barcelona/Valencia), 4 (SEO por localidad)
+- 2026-10-27 01:19 · director/agente horarios · Objetivo 1 · ✅ · 543977e→cherry-pick · provincias 47 → 51/51, bibliotecas con horario 168 → 181; índice 93 corregido (era la BPE de Guadalajara)
+- 2026-10-27 01:19 · director/agente SEO · Objetivo 4 · ✅ · 9b9bcfe→cherry-pick · páginas SEO 308 → 339 (temáticas por localidad, «abiertas en verano», dateModified/lastmod); caché v60
+- 2026-10-27 01:19 · director/agente exámenes · Objetivo 2 · ⚠️ sin datos nuevos · b25b8f5→cherry-pick · ciudades 3 → 3: Barcelona y Valencia aún no publican (revisar UV ~13-11, UB ~mediados dic); notas en BACKLOG. Carga CPU 4× 3378 ms, pero la base sin cambios da 3487 ms en esta máquina (2 CPU): ruido del entorno, no regresión
