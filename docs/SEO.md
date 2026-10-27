@@ -184,6 +184,17 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
    después del contenido.
 5. Google Play: la ficha enlazando a bibliomapa.es también ayuda.
 
+## Hecho (2026-10-27) · La portada enlaza las páginas por ciudad y horario
+- Antes, desde `index.html` solo había un `<a href>` a `bibliotecas/` (en la lista del mapa). Ahora hay 13 enlaces
+  rastreables en HTML real (no en `<noscript>` ni creados por JS): al final de la pestaña Perfil, un `<nav class="seo-nav">`
+  «🔎 Bibliotecas por ciudad y horario» con el índice, `horarios/`, `abiertas-hoy/`, `salas-de-estudio/`, `universidades/` y
+  las 8 provincias con más población (Madrid, Barcelona, Valencia, Sevilla, Alicante, Málaga, Murcia, Cádiz); y en la lista del
+  mapa, «🕐 Por horario →» junto a «📍 Por provincia y ciudad →».
+- Rutas relativas (`bibliotecas/…`), como el enlace que ya existía: desde la portada en `/` equivalen a `/bibliotecas/…`.
+- Solo HTML y CSS en `index.html` (la app no los usa). Píldoras con `--acento-tx` sobre `--glass-fuerte` (AA en claro y oscuro), sin animación.
+- Las páginas generadas ya enlazaban la portada (marca y «Abrir el mapa» de la cabecera, CTA y «Empezar gratis»): sin cambios en el generador.
+- Pendiente: medir en Search Console cuando el dominio esté conectado.
+
 ## Siguientes mejoras (en el backlog)
 - Más horarios verificados (las páginas con horario rinden mucho mejor: es lo que la gente busca).
 - Ampliar las páginas por biblioteca a grandes ciudades que no son capital (Gijón, Vigo, Cartagena, Jerez…).

@@ -927,7 +927,15 @@
   .levelup{text-align:center}
   .levelup .lv-big{width:96px;height:96px;margin:0 auto 12px;border-radius:50%;display:flex;align-items:center;justify-content:center;
     background:var(--grad-acento);color:#fff;font-size:var(--fs-5xl);font-weight:800;box-shadow:var(--brillo);animation:growIn .8s cubic-bezier(.34,1.56,.64,1)}
-  .list-seo{display:block;margin:0 16px 8px;font-size:var(--fs-s);font-weight:700;color:var(--acento-tx);text-decoration:none}
+  .list-seo{display:flex;flex-wrap:wrap;gap:4px 16px;margin:0 16px 8px;font-size:var(--fs-s);font-weight:700}
+  .list-seo a{color:var(--acento-tx);text-decoration:none}
+  /* Enlaces a las páginas para Google, al final del Perfil (2026-10-27): discretos, sin animación */
+  .seo-nav{margin:28px 0 8px;text-align:center}
+  .seo-nav h2{font-size:var(--fs-s);font-weight:800;color:var(--suave);margin:0 0 10px}
+  .seo-nav ul{list-style:none;margin:0 0 8px;padding:0;display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
+  .seo-nav a{display:inline-flex;align-items:center;min-height:32px;padding:4px 12px;border-radius:var(--r-pill);border:1px solid var(--borde);
+    background:var(--glass-fuerte);color:var(--acento-tx);font-size:var(--fs-xs);font-weight:700;text-decoration:none}
+  .seo-nav a:hover,.seo-nav a:focus-visible{text-decoration:underline}
 
   /* ===== RACHA, MISIONES, TIENDA, HISTORIAS (2026-10-26, segunda tanda) ===== */
   .streak-pill{margin-left:auto;display:inline-flex;align-items:center;gap:4px;padding:7px 12px;border-radius:var(--r-pill);border:1px solid var(--borde);
@@ -1230,7 +1238,7 @@
         <span class="season" id="seasonTag"></span>
       </div>
       <div class="list-search"><input type="search" id="listSearch" placeholder="Buscar biblioteca o ciudad…" autocomplete="off"></div>
-      <a class="list-seo" href="bibliotecas/">📍 Bibliotecas por provincia y ciudad →</a>
+      <div class="list-seo"><a href="bibliotecas/">📍 Por provincia y ciudad →</a><a href="bibliotecas/horarios/">🕐 Por horario →</a></div>
       <div class="list-filters" id="listFilters">
         <button data-f="examenes" hidden>📚 Temporada de exámenes</button>
         <button data-f="abiertas">● Abiertas ahora</button>
@@ -1519,6 +1527,28 @@
         <button class="linkbtn" id="btnDeleteAccount" style="display:block;margin:14px auto 0;color:var(--peligro-tx)">Eliminar mi cuenta y mis datos</button>
         <div style="display:flex;justify-content:center;gap:16px;flex-wrap:wrap;margin-top:10px"><a class="linkbtn" href="privacidad.html" target="_blank" rel="noopener">Política de privacidad</a><a class="linkbtn" href="condiciones.html" target="_blank" rel="noopener">Condiciones de uso</a></div>
       </div>
+
+      <!-- Enlaces rastreables a las páginas para Google (bibliotecas/, generadas). Solo HTML y CSS: la app no los usa. -->
+      <nav class="seo-nav" aria-labelledby="seoNavTit">
+        <h2 id="seoNavTit">🔎 Bibliotecas por ciudad y horario</h2>
+        <ul>
+          <li><a href="bibliotecas/">Todas las provincias</a></li>
+          <li><a href="bibliotecas/horarios/">Por horario</a></li>
+          <li><a href="bibliotecas/abiertas-hoy/">Abiertas hoy</a></li>
+          <li><a href="bibliotecas/salas-de-estudio/">Salas de estudio</a></li>
+          <li><a href="bibliotecas/universidades/">Universidades</a></li>
+        </ul>
+        <ul>
+          <li><a href="bibliotecas/madrid/">Madrid</a></li>
+          <li><a href="bibliotecas/barcelona/">Barcelona</a></li>
+          <li><a href="bibliotecas/valencia/">Valencia</a></li>
+          <li><a href="bibliotecas/sevilla/">Sevilla</a></li>
+          <li><a href="bibliotecas/alicante/">Alicante</a></li>
+          <li><a href="bibliotecas/malaga/">Málaga</a></li>
+          <li><a href="bibliotecas/murcia/">Murcia</a></li>
+          <li><a href="bibliotecas/cadiz/">Cádiz</a></li>
+        </ul>
+      </nav>
     </div>
   </div>
 
