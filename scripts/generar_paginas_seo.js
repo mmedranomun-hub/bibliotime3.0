@@ -11,6 +11,8 @@
        página propia y 2 o más que cumplen)
      bibliotecas/<provincia>/<biblioteca>/index.html (las más buscadas: Nacional, Regional de Madrid, grandes y
        universitarias de capitales y todas las de capitales con horario verificado)
+     bibliotecas/salas-de-estudio/ y bibliotecas/<prov>/[<capital>/]salas-de-estudio/ (capitales con 5 o más universitarias,
+       públicas o grandes y alguna con horario verificado: ranking por horas a la semana, exámenes, acceso y FAQ)
      sitemap.xml y robots.txt
    Uso (desde la raíz del proyecto):  node scripts/generar_paginas_seo.js
    Vuelve a ejecutarlo cada vez que cambien los datos (app.js o bibliotecas-espana.js).
@@ -379,10 +381,11 @@ const CAPITALES = {
 const enCapital = (b) => (CAPITALES[slug(b.p)] || []).includes(slug(b.c));
 const masBuscada = (b) => /^Biblioteca Nacional de España$|^Biblioteca Regional Joaqu[ií]n Leguina/.test(b.n) ||
   (enCapital(b) && (b.t === "mayor" || b.t === "universidad" || verificado(b)));
+const SALAS_SLUG = "salas-de-estudio";
 const paginaDe = new Map(); // índice de la biblioteca → ruta de su página
 const conPaginaPropia = todas.filter(masBuscada).sort((a, b) => a.i - b.i);
 provincias.forEach((p) => {
-  const ps = slug(p), usados = new Set(TEMAS.map((t) => t.slug));
+  const ps = slug(p), usados = new Set(TEMAS.map((t) => t.slug).concat([SALAS_SLUG]));
   porProv[p].forEach((b) => usados.add(slug(b.c))); // no pisar las páginas de localidad
   conPaginaPropia.filter((b) => b.p === p).forEach((b) => {
     let base = slug(b.n) || "biblioteca";
@@ -395,7 +398,49 @@ provincias.forEach((p) => {
   });
 });
 
-const DIAS_LARGOS = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"];
+// ---------- «Salas de estudio en <capital>» ----------
+// Una página por capital de provincia (y Santiago y Mérida) con 5 o más bibliotecas universitarias, públicas o grandes
+// (campo t de los datos) y al menos una con horario verificado con fuente y fecha. Lo propio de la página (no está en
+// la de la localidad): ranking de las de horario verificado por horas de apertura a la semana, cierre entre semana,
+// sábado y domingo; listas separadas de universitarias y públicas con el acceso de cada tipo; ampliaciones de horario
+// por exámenes de temporada-examenes.js (solo las vigentes, con su fuente); y FAQ calculadas con esos datos.
+// Las «otra» (sin clasificar: de barrio, especializadas…) no se listan; se enlaza a la página de la ciudad.
+const MIN_SALAS = 5; // con menos, la página repetiría la de la ciudad
+const ventanaEx = {};
+try { new Function("window", fs.readFileSync(path.join(RAIZ, "temporada-examenes.js"), "utf8"))(ventanaEx); } catch (e) { /* sin exámenes */ }
+const EXAMENES = (ventanaEx.TEMPORADA_EXAMENES || []).filter((e) => e.f && e.fv && e.desde && e.hasta && e.hasta >= HOY);
+const paraEstudiar = (b) => b.t === "universidad" || b.t === "publica" || b.t === "mayor";
+const aMin = (hm) => (hm === "00:00" ? 0 : +hm.slice(0, 2) * 60 + +hm.slice(3));
+// Horas de apertura a la semana según el horario de invierno verificado (cierre «00:00» = medianoche).
+const horasSemana = (b) => Math.round(DIAS.reduce((s, d) => s + (b.h.inv[d] || []).reduce((t, r) => t + ((r[1] === "00:00" ? 1440 : aMin(r[1])) - aMin(r[0])), 0), 0) / 6) / 10;
+const horasTexto = (h) => `${String(h).replace(".", ",")} h`;
+const salas = []; // { p, ciudad, ruta, lista (todas las de la ciudad), est (para estudiar), ver (verificadas) }
+const salasDeLoc = new Map(); // "<provincia>|<localidad>" → entrada de salas
+const salasDeProv = new Map(); // provincia → [entradas]
+provincias.forEach((p) => {
+  const ps = slug(p), alias = CAPITALES[ps] || [], grupos = {};
+  porProv[p].filter(enCapital).forEach((b) => {
+    const sc = slug(b.c), clave = sc === "santiago-de-compostela" || sc === "merida" ? sc : alias[0];
+    (grupos[clave] = grupos[clave] || []).push(b);
+  });
+  Object.keys(grupos).forEach((clave) => {
+    const lista = grupos[clave], est = lista.filter(paraEstudiar), ver = lista.filter(verificado);
+    if (est.length < MIN_SALAS || !ver.length) return;
+    const n = {}; lista.forEach((b) => (n[b.c] = (n[b.c] || 0) + 1));
+    const ciudad = Object.keys(n).sort((a, b) => n[b] - n[a] || a.localeCompare(b, "es"))[0];
+    const nLoc = porProv[p].filter((b) => b.c === ciudad).length;
+    const ruta = tieneLocPagina(p, ciudad, nLoc) ? `/bibliotecas/${ps}/${slug(ciudad)}/${SALAS_SLUG}/` : `/bibliotecas/${ps}/${SALAS_SLUG}/`;
+    if (salas.some((x) => x.ruta === ruta)) return;
+    const s = { p, ciudad, ruta, lista, est, ver, conLoc: ruta.split("/").length > 5 };
+    salas.push(s);
+    Object.keys(n).forEach((c) => salasDeLoc.set(p + "|" + c, s));
+    (salasDeProv[p] = salasDeProv[p] || []).push(s);
+  });
+});
+const navSalas = (l) => (l && l.length ? `<nav class="temas" aria-label="Para estudiar"><span>Para estudiar:</span>${l.map((s) =>
+  `<a href="${s.ruta}">Salas de estudio en ${esc(s.ciudad)} <small>${s.est.length}</small></a>`).join("")}</nav>` : "");
+
+const DIAS_LARGOS = ["lunes","martes", "miércoles", "jueves", "viernes", "sábado", "domingo"];
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 const distKm = (a, b) => { const R = 6371, r = Math.PI / 180, dLa = (b.lat - a.lat) * r, dLo = (b.lon - a.lon) * r;
   const x = Math.sin(dLa / 2) ** 2 + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin(dLo / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(x)); };
@@ -596,7 +641,9 @@ function seccionTemasFicha(b, locConPagina) {
     `<li><a href="/bibliotecas/${ps}/${t.slug}/">Bibliotecas ${esc(t.que)} en ${esc(b.p)}</a> <small>${plural(temaProv[t.slug][b.p].length, "biblioteca", "bibliotecas")} con horario verificado</small></li>`);
   if (locConPagina) TEMAS_LOC.filter((t) => temaLoc[t.slug][b.p + "|" + b.c]).forEach((t) =>
     enl.push(`<li><a href="/bibliotecas/${ps}/${slug(b.c)}/${t.slug}/">Bibliotecas ${esc(t.que)} en ${esc(b.c)}</a> <small>${plural(temaLoc[t.slug][b.p + "|" + b.c].length, "biblioteca", "bibliotecas")} con horario verificado</small></li>`));
-  return enl.length ? `<section class="cerca" aria-labelledby="t-temas"><h2 id="t-temas">Por horario en ${esc(b.p)}</h2><ul>${enl.join("")}</ul></section>` : "";
+  const sl = salasDeLoc.get(b.p + "|" + b.c);
+  if (sl) enl.unshift(`<li><a href="${sl.ruta}">Salas de estudio en ${esc(sl.ciudad)}</a> <small>${plural(sl.est.length, "biblioteca", "bibliotecas")} para estudiar, ordenadas por horas de apertura</small></li>`);
+  return enl.length ? `<section class="cerca" aria-labelledby="t-temas"><h2 id="t-temas">${sl ? "Para estudiar en" : "Por horario en"} ${esc(b.p)}</h2><ul>${enl.join("")}</ul></section>` : "";
 }
 
 provincias.forEach((p) => {
@@ -614,7 +661,7 @@ provincias.forEach((p) => {
     escribe(ruta, pagina({
       ruta, titulo: tl.titulo, descripcion: dl,
       h1: `Bibliotecas en ${esc(c)}`, intro: `${l.length} bibliotecas y salas de estudio en ${esc(c)} (${esc(p)})${k.v ? `, ${k.v} con horario verificado` : ""}. En el mapa de Bibliomapa ves en tiempo real cuáles están abiertas y cuál te pilla más cerca.`,
-      cuerpo: `${navPorHorario(p, c)}<section class="lista">${l.map((b) => tarjeta(b)).join("")}</section>${f.html}${seccionLocalidadesCercanas(p, c)}<p class="volver"><a href="/bibliotecas/${ps}/">← Todas las bibliotecas de ${esc(p)}</a></p>`,
+      cuerpo: `${navPorHorario(p, c)}${navSalas(salasDeLoc.has(p + "|" + c) ? [salasDeLoc.get(p + "|" + c)] : [])}<section class="lista">${l.map((b) => tarjeta(b)).join("")}</section>${f.html}${seccionLocalidadesCercanas(p, c)}<p class="volver"><a href="/bibliotecas/${ps}/">← Todas las bibliotecas de ${esc(p)}</a></p>`,
       migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], [p, `/bibliotecas/${ps}/`], [c, ruta]],
       ld: [ldLugar(ruta, tl.nombre, dl, { mainEntity: { "@type": "ItemList", name: `Bibliotecas en ${c}`, numberOfItems: l.length, itemListElement: l.map((b, k) => ({ "@type": "ListItem", position: k + 1, item: libraryLD(b, DOMINIO + enlaceApp(b)) })) } }), f.ld],
     }));
@@ -664,7 +711,7 @@ provincias.forEach((p) => {
   escribe(ruta, pagina({
     ruta, titulo: tp.titulo, descripcion: dp,
     h1: `Bibliotecas en ${esc(p)}`, intro: `${lista.length} bibliotecas en ${locs.length} ${locs.length === 1 ? "localidad" : "localidades"} de ${esc(p)}${k.v ? `, ${k.v} con horario verificado` : ""}. Elige tu localidad o abre el mapa para ver cuáles están abiertas ahora mismo.`,
-    cuerpo: `${enlTemas}<nav class="locs">${conPagina.map((c) => `<a href="/bibliotecas/${ps}/${slug(c)}/">${esc(c)} <small>${porLoc[c].length}</small></a>`).join("")}</nav>${secciones}${f.html}${seccionProvinciasCercanas(p)}<p class="volver"><a href="/bibliotecas/">← Todas las provincias</a></p>`,
+    cuerpo: `${enlTemas}${navSalas(salasDeProv[p])}<nav class="locs">${conPagina.map((c) => `<a href="/bibliotecas/${ps}/${slug(c)}/">${esc(c)} <small>${porLoc[c].length}</small></a>`).join("")}</nav>${secciones}${f.html}${seccionProvinciasCercanas(p)}<p class="volver"><a href="/bibliotecas/">← Todas las provincias</a></p>`,
     migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], [p, ruta]],
     ld: [ldLugar(ruta, tp.nombre, dp, {}), f.ld],
   }));
@@ -698,12 +745,112 @@ temasEspana.forEach(({ t, l }) => {
 // páginas de cada biblioteca más buscada
 conPaginaPropia.forEach(paginaBiblioteca);
 
+// ---------- Páginas «Salas de estudio en <capital>» y su índice de España ----------
+// «3 bibliotecas universitarias y 4 públicas» sin los tipos en cero.
+const tiposTexto = (u, pub, largo) => enumera([u ? plural(u, "biblioteca universitaria", "bibliotecas universitarias") : "",
+  pub ? plural(pub, largo ? "biblioteca pública o gran biblioteca" : "biblioteca pública", largo ? "bibliotecas públicas o grandes bibliotecas" : (u ? "públicas" : "bibliotecas públicas")) : ""].filter(Boolean));
+const enlaceBib = (b) => `<a href="${paginaDe.get(b.i) || enlaceApp(b)}">${esc(b.n)}</a>`;
+function tituloSalas(ciudad, n) {
+  const cand = [`Salas de estudio en ${ciudad}: ${n} bibliotecas para estudiar`, `Salas de estudio en ${ciudad}: ${n} bibliotecas`,
+    `Salas de estudio en ${ciudad} (${n})`, `Estudiar en ${ciudad}: ${n} salas de estudio`];
+  for (const t of cand) for (const x of [t + MARCA, t]) if (x.length <= MAX_TIT && !titulosUsados.has(x)) { titulosUsados.add(x); return x; }
+  const t = cand.filter((x) => !titulosUsados.has(x)).sort((a, b) => a.length - b.length)[0];
+  titulosUsados.add(t);
+  return t;
+}
+function ranking(ver) {
+  const l = ver.slice().sort((a, b) => horasSemana(b) - horasSemana(a) || a.n.localeCompare(b.n, "es"));
+  const dia = (b, d) => franjas(b.h.inv[d]) || (sinConfirmar(b, d) ? "sin confirmar" : "cerrada");
+  return { l, html: `<section class="ficha" aria-labelledby="t-rank"><h2 id="t-rank">Las que más horas abren</h2>
+<p class="fuente">Horas a la semana según el horario de invierno comprobado en la web oficial de cada una ${textoFechas(l)}. Solo entran las que tienen horario verificado${l.some((b) => DIAS.some((d) => sinConfirmar(b, d))) ? "; los días «sin confirmar» no suman horas" : ""}.</p>
+<ol class="ranking">${l.map((b) => `<li>${enlaceBib(b)} <span class="tipo">${esc(TIPO[b.t] || "Biblioteca")}</span>
+<small><b>${horasTexto(horasSemana(b))} a la semana</b>${cierreMasTarde(b) ? ` · entre semana cierra a las ${quitaCero(cierreMasTarde(b)).replace("24:00", "00:00")}` : " · cerrada entre semana"} · sábado: ${dia(b, "S")} · domingo: ${dia(b, "D")} · <a href="${esc(b.h.f)}" rel="nofollow noopener" target="_blank">fuente</a> (${esc(fechaEs(b.h.fv))})</small></li>`).join("")}</ol></section>` };
+}
+function faqSalas(s, rk, ex) {
+  const { ciudad, est, ver } = s, u = est.filter((b) => b.t === "universidad").length, pub = est.length - u;
+  const top = rk.slice(0, 3).map((b) => `${b.n} (${horasTexto(horasSemana(b))})`);
+  const finde = ver.filter(abreFinde), tarde = ver.filter(cierraTarde).sort((a, b) => cierreMasTarde(b).localeCompare(cierreMasTarde(a)));
+  const masTarde = ver.filter(cierreMasTarde).sort((a, b) => cierreMasTarde(b).localeCompare(cierreMasTarde(a)))[0];
+  const nom = (l) => l.slice(0, 5).map((b) => b.n).join(", ") + (l.length > 5 ? " y otras" : "");
+  const q = [
+    [`¿Dónde estudiar en ${ciudad}?`, `Bibliomapa tiene en ${ciudad} ${tiposTexto(u, pub, true)}. Con horario verificado en su web oficial, las que más horas abren a la semana son ${enumera(top)}.`],
+    [`¿Qué salas de estudio abren el fin de semana en ${ciudad}?`, finde.length
+      ? `Según su horario verificado abren sábado o domingo: ${nom(finde)}. Comprueba festivos en su web.`
+      : `Ninguna de las ${ver.length} con horario verificado en ${ciudad} abre el fin de semana; del resto aún no tenemos el horario confirmado.`],
+    [`¿Qué biblioteca para estudiar cierra más tarde en ${ciudad}?`, tarde.length
+      ? `Entre semana, según su horario verificado, la que cierra más tarde es ${tarde[0].n} (a las ${quitaCero(cierreMasTarde(tarde[0])).replace("24:00", "00:00")}).${tarde.length > 1 ? ` También abren hasta las 21:00 o más: ${nom(tarde.slice(1))}.` : ""}`
+      : masTarde ? `Ninguna de las ${ver.length} con horario verificado en ${ciudad} abre hasta las 21:00 entre semana; la que cierra más tarde es ${masTarde.n} (a las ${quitaCero(cierreMasTarde(masTarde)).replace("24:00", "00:00")}).`
+      : `Ninguna de las que tienen horario verificado en ${ciudad} abre entre semana.`],
+    [`¿Puedo estudiar en una biblioteca universitaria de ${ciudad} sin ser alumno?`, `Depende de cada universidad: el acceso a las bibliotecas universitarias suele estar limitado a su comunidad, sobre todo en época de exámenes, así que consulta su web. Las bibliotecas públicas son de acceso libre y gratuito a sus servicios básicos (Ley 10/2007 de la lectura).`],
+    ...(ex.length ? [[`¿Amplían horario en exámenes las bibliotecas de ${ciudad}?`, `Sí, según su fuente oficial: ${ex.map((e) => `${e.espacio}, del ${fechaEs(e.desde)} al ${fechaEs(e.hasta)}: ${e.horario}`).join(". ")}.`]] : []),
+  ];
+  const ld = { "@context": "https://schema.org", "@type": "FAQPage", mainEntity: q.map(([p, r]) => ({ "@type": "Question", name: p, acceptedAnswer: { "@type": "Answer", text: r } })) };
+  return { html: `<section class="faq"><h2>Preguntas frecuentes</h2>${q.map(([p, r]) => `<details><summary>${esc(p)}</summary><p>${esc(r)}</p></details>`).join("")}</section>`, ld };
+}
+salas.forEach((s) => {
+  const { p, ciudad, ruta, lista, est, ver } = s, ps = slug(p);
+  const uni = est.filter((b) => b.t === "universidad").sort(ordenBib), pub = est.filter((b) => b.t !== "universidad").sort(ordenBib);
+  const otras = lista.length - est.length;
+  const ex = EXAMENES.filter((e) => slug(e.ciudad) === slug(ciudad) && slug(e.provincia) === ps).sort((a, b) => a.desde.localeCompare(b.desde));
+  const rk = ranking(ver), fq = faqSalas(s, rk.l, ex);
+  const finde = ver.filter(abreFinde).length, tarde = ver.filter(cierraTarde).length;
+  const rutaCiudad = s.conLoc ? `/bibliotecas/${ps}/${slug(ciudad)}/` : `/bibliotecas/${ps}/`;
+  const titulo = tituloSalas(ciudad, est.length);
+  const descripcion = `${cap(tiposTexto(uni.length, pub.length))} para estudiar en ${ciudad}: ${ver.length} con horario verificado${finde ? `, ${finde} en fin de semana` : ""}${tarde ? `, ${tarde} hasta las 21:00 o más` : ""}. Horas de apertura y acceso.`;
+  const secExamenes = ex.length ? `<section class="ficha" aria-labelledby="t-ex"><h2 id="t-ex">Temporada de exámenes</h2><ul class="lista-ex">${ex.map((e) =>
+    `<li><b>${esc(e.espacio)}</b> · del ${esc(fechaEs(e.desde))} al ${esc(fechaEs(e.hasta))}: ${esc(e.horario)}.${e.nota ? ` ${esc(e.nota)}` : ""} <small>(<a href="${esc(e.f)}" rel="nofollow noopener" target="_blank">fuente oficial</a>, comprobado el ${esc(fechaEs(e.fv))})</small></li>`).join("")}</ul></section>` : "";
+  const grupo = (id, tit, l, acceso) => (l.length ? `<section class="loc" id="${id}"><h2>${tit} <small>${l.length}</small></h2><p class="nota">${acceso}</p>${l.map((b) => tarjeta(b)).join("")}</section>` : "");
+  const migas = [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], [p, `/bibliotecas/${ps}/`]]
+    .concat(s.conLoc ? [[ciudad, rutaCiudad]] : []).concat([["Salas de estudio", ruta]]);
+  escribe(ruta, pagina({
+    ruta, titulo, descripcion: descripcion.length <= MAX_DESC ? descripcion : descripcion.replace(/ Horas de apertura y acceso\.$/, ""),
+    h1: `Bibliotecas para estudiar y salas de estudio en ${esc(ciudad)}`,
+    intro: `${cap(tiposTexto(uni.length, pub.length, true))} en ${esc(ciudad)}${slug(ciudad) !== ps ? ` (${esc(p)})` : ""}. ` +
+      `${ver.length} tienen el horario comprobado en su web oficial: abajo las ordenamos por horas de apertura a la semana. En el mapa ves cuál está abierta ahora y cuál te pilla más cerca.`,
+    cuerpo: `${rk.html}${secExamenes}
+<nav class="locs" aria-label="Tipos">${uni.length ? `<a href="#universitarias">Universitarias <small>${uni.length}</small></a>` : ""}${pub.length ? `<a href="#publicas">Públicas <small>${pub.length}</small></a>` : ""}</nav>
+${grupo("universitarias", "Bibliotecas universitarias", uni, "El acceso suele estar limitado a la comunidad de cada universidad, sobre todo en exámenes: consulta su web.")}
+${grupo("publicas", "Bibliotecas públicas y grandes bibliotecas", pub, "Las bibliotecas públicas son de acceso libre y gratuito a sus servicios básicos (Ley 10/2007 de la lectura).")}
+${fq.html}
+${otras ? `<p class="mas"><a href="${rutaCiudad}">Ver las ${lista.length} bibliotecas de ${esc(ciudad)} (incluidas ${otras} de barrio, especializadas o sin clasificar) →</a></p>` : ""}
+<p class="volver"><a href="/bibliotecas/${SALAS_SLUG}/">← Salas de estudio en otras ciudades</a> · <a href="${rutaCiudad}">${esc(s.conLoc ? ciudad : p)}</a></p>`,
+    migas,
+    ld: [ldLugar(ruta, titulo.replace(MARCA, ""), descripcion, { ...(ver.length ? { dateModified: fechaMod(ver) } : {}), mainEntity: { "@type": "ItemList", name: `Bibliotecas para estudiar en ${ciudad}`, numberOfItems: est.length,
+      itemListElement: uni.concat(pub).map((b, k) => ({ "@type": "ListItem", position: k + 1, item: libraryLD(b, DOMINIO + (paginaDe.get(b.i) || enlaceApp(b))) })) } }), fq.ld],
+  }));
+  urls.push([ruta, "0.8", fechaMod(ver)]);
+});
+if (salas.length) {
+  const ruta = `/bibliotecas/${SALAS_SLUG}/`;
+  const orden = salas.slice().sort((a, b) => b.est.length - a.est.length || a.ciudad.localeCompare(b.ciudad, "es"));
+  const totU = salas.reduce((t, s) => t + s.est.filter((b) => b.t === "universidad").length, 0), totE = salas.reduce((t, s) => t + s.est.length, 0);
+  const totV = salas.reduce((t, s) => t + s.ver.length, 0);
+  const tBase = `Salas de estudio en España: ${totE} bibliotecas en ${salas.length} ciudades`;
+  const titulo = (tBase + MARCA).length <= MAX_TIT ? tBase + MARCA : tBase;
+  titulosUsados.add(titulo);
+  const descripcion = `Bibliotecas para estudiar en ${salas.length} capitales de España: ${totU} universitarias y ${totE - totU} públicas, ${totV} con horario verificado. Horas de apertura, fin de semana y acceso.`;
+  const todasVer = salas.flatMap((s) => s.ver);
+  escribe(ruta, pagina({
+    ruta, titulo, descripcion,
+    h1: "Salas de estudio y bibliotecas para estudiar en España",
+    intro: `${totE} bibliotecas universitarias y públicas en ${salas.length} capitales de provincia, ${totV} con el horario comprobado en su web oficial. Elige tu ciudad: en cada una están ordenadas por horas de apertura a la semana.`,
+    cuerpo: `<section class="cerca" aria-labelledby="t-ciud"><h2 id="t-ciud">Por ciudad</h2><ul>${orden.map((s) => {
+      const top = s.ver.slice().sort((a, b) => horasSemana(b) - horasSemana(a))[0], f = s.ver.filter(abreFinde).length;
+      return `<li><a href="${s.ruta}">Salas de estudio en ${esc(s.ciudad)}</a> <small>${[[s.est.filter((b) => b.t === "universidad").length, "universitaria", "universitarias"], [s.est.filter((b) => b.t !== "universidad").length, "pública", "públicas"]].filter((x) => x[0]).map((x) => plural(...x)).join(" · ")} · ${s.ver.length} con horario verificado${f ? ` (${f} en fin de semana)` : ""} · más horas: ${esc(top.n)}, ${horasTexto(horasSemana(top))}/semana</small></li>`; }).join("")}</ul></section>
+<p class="volver"><a href="/bibliotecas/">← Todas las provincias</a></p>`,
+    migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], ["Salas de estudio", ruta]],
+    ld: ldLugar(ruta, titulo.replace(MARCA, ""), descripcion, { dateModified: fechaMod(todasVer),
+      hasPart: orden.map((s) => ({ "@type": "CollectionPage", name: `Salas de estudio en ${s.ciudad}`, url: DOMINIO + s.ruta })) }),
+  }));
+  urls.push([ruta, "0.8", fechaMod(todasVer)]);
+}
+
 // índice
 escribe("/bibliotecas/", pagina({
   ruta: "/bibliotecas/", titulo: "Bibliotecas de España por provincia: abiertas ahora y horarios | Bibliomapa",
   descripcion: `Más de ${Math.floor(todas.length / 100) * 100} bibliotecas de toda España por provincia y localidad: horarios verificados, salas de estudio y cuáles están abiertas ahora.`,
   h1: "Bibliotecas de España por provincia", intro: `${todas.length} bibliotecas en ${provincias.length} provincias. Encuentra la tuya y mira en el mapa cuál está abierta ahora.`,
-  cuerpo: `${temasEspana.length ? `<nav class="temas" aria-label="Por horario"><span>Por horario:</span>${temasEspana.map(({ t, l }) => `<a href="/bibliotecas/${t.slug}/">${esc(t.corto)} <small>${l.length}</small></a>`).join("")}</nav>` : ""}<nav class="locs grande">${provincias.map((p) => `<a href="/bibliotecas/${slug(p)}/">${esc(p)} <small>${porProv[p].length}</small></a>`).join("")}</nav>`,
+  cuerpo: `${temasEspana.length ? `<nav class="temas" aria-label="Por horario"><span>Por horario:</span>${temasEspana.map(({ t, l }) => `<a href="/bibliotecas/${t.slug}/">${esc(t.corto)} <small>${l.length}</small></a>`).join("")}</nav>` : ""}${salas.length ? `<nav class="temas" aria-label="Para estudiar"><span>Para estudiar:</span><a href="/bibliotecas/${SALAS_SLUG}/">Salas de estudio <small>${salas.length} ciudades</small></a></nav>` : ""}<nav class="locs grande">${provincias.map((p) => `<a href="/bibliotecas/${slug(p)}/">${esc(p)} <small>${porProv[p].length}</small></a>`).join("")}</nav>`,
   migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"]],
 }));
 

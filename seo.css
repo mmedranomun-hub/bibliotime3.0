@@ -78,3 +78,13 @@ footer{max-width:760px;margin:0 auto;padding:0 16px 32px;font-size:var(--fs-s);c
 .cerca li{background:var(--card);border:1px solid var(--linea);border-radius:var(--r-m);padding:10px 14px;margin:8px 0;font-weight:700}
 .cerca li small{display:block;font-weight:500;color:var(--suave);font-size:var(--fs-s)}
 .bib h3 a{color:inherit;text-decoration-color:var(--acento-tx);text-underline-offset:3px}
+/* Salas de estudio en <ciudad> (bibliotecas/…/salas-de-estudio/) */
+.ranking{margin:8px 0 0;padding-left:22px}
+.ranking li{padding:9px 0;border-top:1px solid var(--linea);font-weight:700}
+.ranking li::marker{color:var(--acento-tx);font-weight:800}
+.ranking li .tipo{margin-left:4px;vertical-align:1px}
+.ranking li small{display:block;font-weight:500;color:var(--suave);font-size:var(--fs-s);margin-top:2px}
+.ranking li small b{color:var(--ok-tx)}
+.lista-ex{list-style:none;padding:0;margin:0}
+.lista-ex li{padding:8px 0;border-top:1px solid var(--linea);font-size:var(--fs-m)}
+.lista-ex li small{color:var(--suave)}

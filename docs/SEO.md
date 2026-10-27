@@ -69,6 +69,24 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
   hasta 4 a ≤ 60 km o 2 a ≤ 150 km; se descartan nombres dobles de la misma ciudad, como Donostia / San Sebastián) y
   «Por horario en <provincia>» en cada ficha de biblioteca (temáticas de su provincia y, si las hay, de su localidad).
 
+## Hecho (2026-10-27) · «Salas de estudio en <capital>» (405 páginas en total, antes 384)
+- 20 páginas `/bibliotecas/<prov>/salas-de-estudio/` (o `/bibliotecas/<prov>/<capital>/salas-de-estudio/` si la capital tiene
+  página de localidad) y el índice `/bibliotecas/salas-de-estudio/`. Para búsquedas como «salas de estudio Madrid» o
+  «bibliotecas para estudiar en Bilbao». Entran las capitales de provincia (y Santiago y Mérida) con 5 o más bibliotecas
+  universitarias, públicas o grandes (campo `t`) y al menos una con horario verificado con fuente y fecha; con menos
+  repetiría la página de la ciudad. Hoy: Madrid, Valencia, Barcelona, Palma, Granada, Sevilla, Málaga, Santiago, A Coruña,
+  Las Palmas, Valladolid, Zaragoza, Badajoz, Murcia, Salamanca, Bilbao, Albacete, Burgos, Oviedo y Santa Cruz de Tenerife.
+- Lo propio (no está en la página de la ciudad): «Las que más horas abren», ranking de las de horario verificado por horas
+  de apertura a la semana (horario de invierno; los días «sin confirmar» no suman), con cierre entre semana, sábado,
+  domingo, fuente y fecha; «Temporada de exámenes» con las entradas vigentes de `temporada-examenes.js` (fuente oficial);
+  universitarias y públicas por separado con el acceso de cada tipo (universitarias: suele limitarse a su comunidad;
+  públicas: libre y gratuito, Ley 10/2007); FAQ calculadas («¿Dónde estudiar en X?», fin de semana, cierra más tarde,
+  acceso sin ser alumno y, si hay, ampliaciones por exámenes). Las «otra» no se listan: se enlaza a la ciudad.
+- `CollectionPage` con `dateModified` (verificación más reciente) e `ItemList` de `Library`, `FAQPage`, migas; título único
+  ≤ 65 («Salas de estudio en <ciudad>: N bibliotecas para estudiar»). Enlazadas desde el índice, la provincia, la localidad
+  («Para estudiar: …») y las fichas de biblioteca de esa ciudad. Crecen solas al verificar horarios o clasificar bibliotecas.
+- Pamplona no sale: el generador no lee aún los horarios de Navarra de `app.js` (`h: null`), así que no tiene ninguna verificada.
+
 ## Lo que tienes que hacer tú (sin esto no sirve de nada)
 1. **Conectar el dominio** en Vercel: proyecto `bibliotime` → Settings → Domains → añadir `bibliomapa.es` y
    `www.bibliomapa.es` (redirigir www → sin www) y poner en tu registrador los DNS que te indique Vercel.
