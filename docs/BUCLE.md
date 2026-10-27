@@ -85,3 +85,4 @@ Formato: `AAAA-MM-DD HH:MM · quién · objetivo(s) · resultado (✅ subido / �
 - 2026-10-27 10:20 · director/agente horarios · Objetivo 1 · ✅ · 8064c1b→cherry-pick · bibliotecas con horario 234 → 244 (US ×3, UM ×2, UA ×2, municipales de Granada ×3); pendientes USAL, UNICAN, UM Psicología, Granada #317/#327
 - 2026-10-27 10:20 · director/agente producto · Objetivo 3 (Rezos · aviso en la Agenda) · ✅ · 95dbdd7→cherry-pick · pruebas 16 → 17; app.js gzip 90,1 → 90,3 KB; sin SQL (lee `prayers` con la política existente)
 - 2026-10-27 10:20 · director/agente SEO · Objetivo 4 · ✅ · 5e00860→cherry-pick · hub /bibliotecas/horarios/, dateModified en todas, comprobador de enlaces (rotos 2 → 0, descripciones repetidas 1 → 0); tras regenerar, páginas SEO 452 → 461; caché v67; carga CPU 4× 2327 ms (máquina cargada); pruebas 17/17, 0 errores
+- 2026-10-27 11:19 · director · ⏳ en curso · Objetivo 1 (datos), 5 (app.js), 4 (SEO generador)
