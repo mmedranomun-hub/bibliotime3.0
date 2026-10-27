@@ -221,16 +221,66 @@ function tarjeta(b, destacado, t) {
 </article>`;
 }
 
+// FAQ de provincia y localidad (las páginas de «bibliotecas abiertas en <lugar>»). Cada respuesta sale de los datos y
+// solo de horarios verificados con fuente y fecha (h.f + h.fv): qué bibliotecas abren el domingo y el sábado (con sus
+// horas), cuál cierra más tarde (con la hora y empates), cuál abre más horas y de dónde salen los horarios. Si en el lugar
+// no hay ningún horario verificado no se pregunta por horarios (nada de respuestas vacías): recuento por tipo y contacto.
 function faq(lugar, lista) {
-  const finde = lista.filter(abreFinde), tarde = lista.filter(cierraTarde), verif = lista.filter((b) => b.h);
-  const nombres = (l) => l.slice(0, 6).map((b) => esc(b.n)).join(", ") + (l.length > 6 ? " y otras" : "");
-  const q = [
-    [`¿Cuántas bibliotecas hay en ${lugar}?`, `Bibliomapa tiene ${lista.length} ${lista.length === 1 ? "biblioteca" : "bibliotecas"} en ${esc(lugar)}${verif.length ? `, ${verif.length} con horario verificado en su web oficial` : ""}.`],
-    [`¿Qué bibliotecas abren el fin de semana en ${lugar}?`, finde.length ? `Según sus horarios verificados: ${nombres(finde)}. Comprueba siempre los festivos en su web.` : `No tenemos todavía horarios verificados de fin de semana en ${esc(lugar)}. En el mapa puedes ver la ficha de cada una y su web.`],
-    [`¿Qué biblioteca cierra más tarde en ${lugar}?`, tarde.length ? `Con horario verificado, abren hasta las 21:00 o más tarde entre semana: ${nombres(tarde)}.` : `No tenemos horarios verificados que cierren a partir de las 21:00 en ${esc(lugar)}.`],
-  ];
-  const ld = { "@context": "https://schema.org", "@type": "FAQPage", mainEntity: q.map(([p, r]) => ({ "@type": "Question", name: p.replace(/<[^>]+>/g, ""), acceptedAnswer: { "@type": "Answer", text: r.replace(/<[^>]+>/g, "") } })) };
-  return { html: `<section class="faq"><h2>Preguntas frecuentes</h2>${q.map(([p, r]) => `<details><summary>${esc(p)}</summary><p>${r}</p></details>`).join("")}</section>`, ld };
+  const v = lista.filter(verificado).sort((a, b) => horasSemana(b) - horasSemana(a) || a.n.localeCompare(b.n, "es"));
+  const varias = (l, f) => l.slice(0, 6).map((b) => `${b.n}${f ? ` (${f(b)})` : ""}`).join(", ") + (l.length > 6 ? ` y ${l.length - 6} más` : "");
+  const tipos = enumera([["universidad", "universitaria", "universitarias"], ["publica", "pública", "públicas"], ["mayor", "gran biblioteca", "grandes bibliotecas"], ["otra", "de otro tipo", "de otro tipo"]]
+    .map(([t, uno, varios]) => { const n = lista.filter((b) => (b.t || "otra") === t).length; return n ? plural(n, uno, varios) : ""; }).filter(Boolean));
+  const q = [[`¿Cuántas bibliotecas hay en ${lugar}?`, `Bibliomapa tiene ${plural(lista.length, "biblioteca", "bibliotecas")} en ${lugar}${tipos ? ` (${tipos})` : ""}` +
+    (v.length ? `, ${v.length} con el horario comprobado en su web oficial.` : `. Ninguna tiene todavía el horario comprobado en una fuente oficial con fecha.`)]];
+  if (v.length) {
+    const dia = (d, nombre) => {
+      const abren = v.filter((b) => (b.h.inv[d] || []).length), dudas = v.filter((b) => sinConfirmar(b, d));
+      const extra = dudas.length ? ` De ${dudas.length === 1 ? "otra" : `otras ${dudas.length}`} la fuente no da horario de ${nombre}.` : "";
+      if (!abren.length && dudas.length === v.length) return null;
+      return [`¿Qué bibliotecas abren el ${nombre} en ${lugar}?`, abren.length
+        ? `Según su horario de invierno verificado, ${abren.length === 1 ? "abre" : "abren"} el ${nombre}: ${varias(abren, (b) => franjas(b.h.inv[d]))}.${extra} Comprueba festivos en su web.`
+        : (v.length - dudas.length === 1 ? `${cap(v.find((b) => !sinConfirmar(b, d)).n)}, la única de ${lugar} con horario verificado${dudas.length ? " ese día" : ""}, no abre el ${nombre}, según su horario de invierno.${extra}`
+          : `Ninguna de las ${v.length - dudas.length} bibliotecas de ${lugar} con horario verificado abre el ${nombre}, según su horario de invierno.${extra}`)];
+    };
+    q.push(...[dia("D", "domingo"), dia("S", "sábado")].filter(Boolean));
+    const cierre = (b) => cierreMasTarde(b), max = v.map(cierre).filter(Boolean).sort().pop();
+    if (max) {
+      const ult = v.filter((b) => cierre(b) === max), hora = quitaCero(max).replace("24:00", "00:00 (medianoche)");
+      q.push([`¿Qué biblioteca cierra más tarde en ${lugar}?`, (ult.length > 6 ? `Entre semana, ${ult.length} de las ${v.length} con horario verificado cierran a las ${hora}, la hora más tardía; entre ellas, ${varias(ult)}.`
+          : `Entre semana, ${ult.length === 1 ? `la que cierra más tarde es ${ult[0].n}` : `las que cierran más tarde son ${varias(ult)}`}, a las ${hora}, según su horario de invierno verificado.`) +
+        (v.filter(cierraTarde).length > ult.length ? ` Cierran a las 21:00 o más tarde algún día entre semana: ${varias(v.filter(cierraTarde))}.` : "")]);
+    }
+    if (v.length >= 2) q.push([`¿Qué biblioteca abre más horas a la semana en ${lugar}?`, `${v[0].n}, con ${horasTexto(horasSemana(v[0]))} a la semana (${horarioTexto(v[0].h.inv)}), ${horasSemana(v[1]) === horasSemana(v[0]) ? "empatada con" : "seguida de"} ${v[1].n} (${horasTexto(horasSemana(v[1]))}). Cuenta el horario de invierno verificado; los días sin confirmar no suman.`]);
+    q.push([`¿De dónde salen estos horarios?`, `Del horario publicado en la web oficial de cada biblioteca, comprobado ${textoFechas(v)}; en cada ficha está el enlace a la fuente. Verano, festivos y época de exámenes pueden cambiarlo. Del resto (${lista.length - v.length}) aún no tenemos horario confirmado.`]);
+  } else {
+    const tel = lista.filter((b) => b.tel).length, web = lista.filter((b) => b.web).length;
+    if (tel || web) q.push([`¿Cómo sé si una biblioteca de ${lugar} está abierta?`, `Mientras no tengamos su horario verificado, consulta su web o llama antes de ir: en esta página tienes ${[web ? `la web oficial de ${web}` : "", tel ? `el teléfono de ${tel}` : ""].filter(Boolean).join(" y ")} de las ${lista.length}.`]);
+  }
+  const ld = { "@context": "https://schema.org", "@type": "FAQPage", mainEntity: q.map(([p, r]) => ({ "@type": "Question", name: p, acceptedAnswer: { "@type": "Answer", text: r } })) };
+  return { html: `<section class="faq"><h2>Preguntas frecuentes</h2>${q.map(([p, r]) => `<details><summary>${esc(p)}</summary><p>${esc(r)}</p></details>`).join("")}</section>`, ld };
+}
+// «Horarios verificados en <lugar>»: tabla (lunes a viernes, sábado, domingo) de las bibliotecas con horario verificado
+// con fuente y fecha, de más a menos horas a la semana. Va arriba en provincias y localidades: es la respuesta directa a
+// «bibliotecas abiertas en <lugar>» y una tabla que Google puede usar como fragmento destacado. Sin verificadas, nada.
+const MAX_FILAS_HORARIO = 15;
+const ESTILO_TABLA_HOR = `<style>.horarios-lugar{overflow-x:auto}.horarios-lugar table{min-width:100%}.horarios-lugar th,.horarios-lugar td{padding:7px 8px 7px 0;vertical-align:top;font-size:var(--fs-s)}
+.horarios-lugar thead th{color:var(--suave);font-weight:700;width:auto}.horarios-lugar tbody th{width:38%;font-weight:600}.horarios-lugar td{font-weight:600}</style>`;
+function tablaHorariosLugar(lugar, lista) {
+  const v = lista.filter(verificado).sort((a, b) => horasSemana(b) - horasSemana(a) || a.n.localeCompare(b.n, "es"));
+  if (!v.length) return "";
+  const celda = (b, d) => franjas(b.h.inv[d]) || (sinConfirmar(b, d) ? "Sin confirmar" : "Cerrada");
+  // Lunes a viernes: si todos los días igual, la franja; si no, por grupos («L–J 8:30–21:00 · V 8:30–14:00»).
+  const semana = (b) => {
+    const g = [];
+    DIAS.slice(0, 5).forEach((d) => { const f = celda(b, d), u = g[g.length - 1]; if (u && u.f === f) u.hasta = d; else g.push({ desde: d, hasta: d, f }); });
+    return g.length === 1 ? g[0].f : g.map((x) => (x.desde === x.hasta ? x.desde : x.desde + "–" + x.hasta) + " " + x.f).join(" · ");
+  };
+  const filas = v.slice(0, MAX_FILAS_HORARIO).map((b) => `<tr><th scope="row"><a href="${paginaDe.get(b.i) || enlaceApp(b)}">${esc(b.n)}</a></th><td>${esc(semana(b))}</td><td>${esc(celda(b, "S"))}</td><td>${esc(celda(b, "D"))}</td></tr>`).join("");
+  const resto = v.length - MAX_FILAS_HORARIO;
+  return `<section class="ficha horarios-lugar" id="horarios" aria-labelledby="t-horarios"><h2 id="t-horarios">Horarios verificados en ${esc(lugar)}</h2>
+<table class="horario"><caption>${plural(v.length, "biblioteca", "bibliotecas")} con horario de invierno comprobado en su web oficial ${esc(textoFechas(v))}, de más a menos horas a la semana</caption>
+<thead><tr><th scope="col">Biblioteca</th><th scope="col">Lunes a viernes</th><th scope="col">Sábado</th><th scope="col">Domingo</th></tr></thead><tbody>${filas}</tbody></table>
+<p class="fuente">${resto > 0 ? `Y ${plural(resto, "más", "más")} con horario verificado en la lista. ` : ""}La fuente y la fecha de cada horario están en su ficha. Verano, festivos y época de exámenes pueden cambiarlo: confírmalo antes de ir.</p></section>`;
 }
 
 // ---------- Escritura ----------
@@ -773,8 +823,8 @@ provincias.forEach((p) => {
     escribe(ruta, pagina({
       ruta, titulo: tl.titulo, descripcion: dl,
       h1: `Bibliotecas en ${esc(c)}`, intro: `${l.length} bibliotecas y salas de estudio en ${esc(c)} (${esc(p)})${k.v ? `, ${k.v} con horario verificado` : ""}. En el mapa de Bibliomapa ves en tiempo real cuáles están abiertas y cuál te pilla más cerca.`,
-      cuerpo: `${navPorHorario(p, c)}${navSalas(salasDeLoc.has(p + "|" + c) ? [salasDeLoc.get(p + "|" + c)] : [])}${navUniversidades((b) => b.p === p && b.c === c)}<section class="lista">${l.map((b) => tarjeta(b)).join("")}</section>${f.html}${seccionLocalidadesCercanas(p, c)}<p class="volver"><a href="/bibliotecas/${ps}/">← Todas las bibliotecas de ${esc(p)}</a></p>`,
-      migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], [p, `/bibliotecas/${ps}/`], [c, ruta]],
+      cuerpo: `${navPorHorario(p, c)}${navSalas(salasDeLoc.has(p + "|" + c) ? [salasDeLoc.get(p + "|" + c)] : [])}${navUniversidades((b) => b.p === p && b.c === c)}${tablaHorariosLugar(c, l)}<section class="lista">${l.map((b) => tarjeta(b)).join("")}</section>${f.html}${seccionLocalidadesCercanas(p, c)}<p class="volver"><a href="/bibliotecas/${ps}/">← Todas las bibliotecas de ${esc(p)}</a></p>`,
+      migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], [p, `/bibliotecas/${ps}/`], [c, ruta]], head: k.v ? ESTILO_TABLA_HOR : "",
       ld: [ldLugar(ruta, tl.nombre, dl, { ...modVerif(l), mainEntity: { "@type": "ItemList", name: `Bibliotecas en ${c}`, numberOfItems: l.length, itemListElement: l.map((b, k) => ({ "@type": "ListItem", position: k + 1, item: libraryLD(b, DOMINIO + enlaceApp(b)) })) } }), f.ld],
     }));
     urls.push([ruta, "0.8", modVerif(l).dateModified]);
@@ -823,8 +873,8 @@ provincias.forEach((p) => {
   escribe(ruta, pagina({
     ruta, titulo: tp.titulo, descripcion: dp,
     h1: `Bibliotecas en ${esc(p)}`, intro: `${lista.length} bibliotecas en ${locs.length} ${locs.length === 1 ? "localidad" : "localidades"} de ${esc(p)}${k.v ? `, ${k.v} con horario verificado` : ""}. Elige tu localidad o abre el mapa para ver cuáles están abiertas ahora mismo.`,
-    cuerpo: `${enlTemas}${navSalas(salasDeProv[p])}${navUniversidades((b) => b.p === p)}<nav class="locs">${conPagina.map((c) => `<a href="/bibliotecas/${ps}/${slug(c)}/">${esc(c)} <small>${porLoc[c].length}</small></a>`).join("")}</nav>${secciones}${f.html}${seccionProvinciasCercanas(p)}<p class="volver"><a href="/bibliotecas/">← Todas las provincias</a></p>`,
-    migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], [p, ruta]],
+    cuerpo: `${enlTemas}${navSalas(salasDeProv[p])}${navUniversidades((b) => b.p === p)}<nav class="locs">${conPagina.map((c) => `<a href="/bibliotecas/${ps}/${slug(c)}/">${esc(c)} <small>${porLoc[c].length}</small></a>`).join("")}</nav>${tablaHorariosLugar(p, lista)}${secciones}${f.html}${seccionProvinciasCercanas(p)}<p class="volver"><a href="/bibliotecas/">← Todas las provincias</a></p>`,
+    migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], [p, ruta]], head: k.v ? ESTILO_TABLA_HOR : "",
     ld: [ldLugar(ruta, tp.nombre, dp, modVerif(lista)), f.ld],
   }));
   urls.push([ruta, "0.8", modVerif(lista).dateModified]);

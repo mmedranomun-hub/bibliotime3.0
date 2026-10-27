@@ -158,6 +158,21 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
   repetidos, 0 huérfanas, sitemap completo.
 - Pendiente (fuera del generador): un enlace desde la portada (`index.html`) a `/bibliotecas/horarios/`.
 
+## Hecho (2026-10-27) · Tabla de horarios y FAQ con datos en provincias y localidades (461 páginas, sin cambio)
+- Las 51 provincias y 73 localidades son las que compiten por «bibliotecas abiertas en <lugar>». Ahora llevan arriba, si hay
+  alguna con horario verificado (fuente `h.f` + fecha `h.fv`; Navarra solo con `fuenteHorario` + `verificadoHorario`), la
+  sección **«Horarios verificados en <lugar>»** (`#horarios`): tabla Biblioteca · Lunes a viernes · Sábado · Domingo (horario de
+  invierno; si los días laborables difieren, por grupos «L–J … · V …»; «Sin confirmar» si la nota de la fuente lo dice), de más
+  a menos horas a la semana, máximo 15 filas, con enlace a la ficha o al mapa y las fechas de verificación en el `caption`.
+  Responde a la búsqueda en la propia página y es una tabla que Google puede usar como fragmento destacado. Hoy, 65 páginas.
+  Estilo en línea (`ESTILO_TABLA_HOR`, mismas variables de color: claro y oscuro) porque `seo.css` no lo genera el script.
+- **FAQ (y `FAQPage`) rehecha** (`faq()`): «¿Cuántas bibliotecas hay en X?» con el reparto por tipo; y, solo si hay horarios
+  verificados, «¿Qué bibliotecas abren el domingo / el sábado en X?» con sus horas (o «ninguna de las N con horario verificado»,
+  separando las que la fuente no confirma), «¿Qué biblioteca cierra más tarde?» con la hora y los empates, «¿Cuál abre más horas
+  a la semana?» (≥ 2 verificadas) y «¿De dónde salen estos horarios?» con las fechas. Sin horarios verificados no se pregunta
+  por horarios: solo el recuento y cómo comprobarlo (cuántas tienen web y teléfono). Antes eran 3 preguntas fijas con respuestas
+  vacías («No tenemos todavía…») y el filtro usaba `b.h` sin exigir fuente y fecha. Preguntas en estas páginas: 372 → 467.
+
 ## Lo que tienes que hacer tú (sin esto no sirve de nada)
 1. **Conectar el dominio** en Vercel: proyecto `bibliotime` → Settings → Domains → añadir `bibliomapa.es` y
    `www.bibliomapa.es` (redirigir www → sin www) y poner en tu registrador los DNS que te indique Vercel.
