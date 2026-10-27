@@ -173,6 +173,31 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
   por horarios: solo el recuento y cómo comprobarlo (cuántas tienen web y teléfono). Antes eran 3 preguntas fijas con respuestas
   vacías («No tenemos todavía…») y el filtro usaba `b.h` sin exigir fuente y fecha. Preguntas en estas páginas: 372 → 467.
 
+## Hecho (2026-10-27) · «Bibliotecas 24 horas y horario ampliado en exámenes» (507 páginas, antes 501)
+- Para «biblioteca 24 horas <ciudad>», «bibliotecas abiertas en exámenes <ciudad>» y «horario ampliado exámenes biblioteca
+  <universidad>» (noviembre-enero). Antes las ampliaciones solo salían dentro de «Salas de estudio en <capital>» (y de la
+  página de la universidad), así que Alcalá de Henares, Guadalajara o Sevilla-UPO no tenían página propia.
+- **`/bibliotecas/examenes/`** (índice, «Bibliotecas 24 horas y horario ampliado en exámenes 2026-27»; «24 horas» solo si
+  alguna entrada lo es) y **`/bibliotecas/examenes/<ciudad>/`**, una por ciudad con entradas de `temporada-examenes.js`
+  **vigentes** (las mismas de `EXAMENES`: `f`, `fv`, `desde`, `hasta` y `hasta` ≥ hoy). Hoy 5: Alcalá de Henares (2, CRAI
+  24 h), Madrid (2, UPM), Guadalajara, Pamplona y Sevilla (1). Sin entradas vigentes en una ciudad no hay página; sin
+  ninguna, no hay índice ni enlaces. Al pasar `hasta`, la entrada sale sola al regenerar (y la página si era la única).
+- Contenido, todo de la entrada: espacio, periodo («Del 03/11/2026 al 24/01/2027»), horario y nota tal cual, «Abierta 24 h»
+  (si `semana` da 00:00–24:00 todos los días o el horario dice «24 horas»), fuente oficial enlazada y fecha de comprobación.
+  Si `bib` casa con un único nombre exacto del mapa: dirección, «Ver en el mapa», su ficha (si tiene página propia) y su
+  horario habitual de invierno solo si está verificado; si no (`bib: null`, CRAI de la UAH), «Aún no está en el mapa». La
+  universidad sale por la de la biblioteca o por su nombre en `espacio` (lista `UNIVERSIDADES`) y enlaza a su página si existe.
+  Más abajo, la página de la ciudad (localidad o provincia), sus salas de estudio, la universidad y el hub.
+- FAQ (y `FAQPage`) solo con esos datos: qué bibliotecas amplían horario y cuándo, si hay alguna 24 h (solo si la hay), el
+  horario de cada una y de dónde salen las fechas (dominios de las fuentes y fechas de comprobación). El índice: cuáles abren
+  24 h, en qué ciudades, cuál empieza antes y cuál acaba más tarde, y la fuente; además, tabla «Calendario de exámenes»
+  (biblioteca, ciudad, desde, hasta). `CollectionPage` con `dateModified` = `fv` más reciente (también `lastmod`), `ItemList`
+  (`Library` del mapa, o solo nombre y localidad si no está), migas. Títulos y descripciones únicos (≤ 65 / ≤ 160).
+- Enlazado: las 51 provincias y 73 localidades, las salas de estudio y su índice, el hub `/bibliotecas/horarios/` y el
+  índice `/bibliotecas/` enlazan al índice de exámenes; la provincia, la localidad (también la de la biblioteca: Dos Hermanas
+  → Sevilla) y las salas de la ciudad, a su página de exámenes («Exámenes: 24 h y horario ampliado en Alcalá de Henares 2 ·
+  Horario ampliado en Madrid 2 · Todas las ciudades»), igual que la «Temporada de exámenes» de las universidades.
+
 ## Lo que tienes que hacer tú (sin esto no sirve de nada)
 1. **Conectar el dominio** en Vercel: proyecto `bibliotime` → Settings → Domains → añadir `bibliomapa.es` y
    `www.bibliomapa.es` (redirigir www → sin www) y poner en tu registrador los DNS que te indique Vercel.
@@ -198,5 +223,6 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
 ## Siguientes mejoras (en el backlog)
 - Más horarios verificados (las páginas con horario rinden mucho mejor: es lo que la gente busca).
 - Ampliar las páginas por biblioteca a grandes ciudades que no son capital (Gijón, Vigo, Cartagena, Jerez…).
-- Páginas «temporada de exámenes / salas 24 h» por ciudad cuando haya fuentes oficiales.
+- Más ciudades en `/bibliotecas/examenes/` en cuanto publiquen su calendario 2026-27 (Barcelona, Valencia…; lista de webs en
+  BACKLOG, tarea «Exámenes ·»): basta con añadir la entrada con fuente y fecha a `temporada-examenes.js` y regenerar.
 - Medir en Search Console qué búsquedas traen visitas y reforzar esas páginas.
