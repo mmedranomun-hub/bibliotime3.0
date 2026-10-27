@@ -17,10 +17,10 @@ semana por usuario activo, con árbol sano. Todo lo demás existe para mover est
 | # | Objetivo | Métrica | Hoy | Meta | Fecha |
 |---|---|---|---|---|---|
 | 1 | **Útil en toda España** (×3): que cualquier estudiante encuentre su biblioteca con horario fiable | provincias con horario verificado | 51/51 ✅ | 51/51 (al menos la capital) | 30-11-2026 |
-| | | bibliotecas con horario verificado | 277 (13/104 de Navarra con fuente) | 300 | 31-12-2026 |
-| 2 | **Temporada de exámenes** (×3): aperturas extraordinarias y salas 24 h (UNAV 1-dic, UPNA 15-dic) | ciudades con calendario de exámenes cargado (solo fuente oficial) | 3 (Pamplona, Madrid, Sevilla) | Pamplona, Madrid, Barcelona, Valencia, Sevilla | 30-11-2026 |
+| | | bibliotecas con horario verificado | 289 (13/104 de Navarra con fuente) | 300 | 31-12-2026 |
+| 2 | **Temporada de exámenes** (×3): aperturas extraordinarias y salas 24 h (UNAV 1-dic, UPNA 15-dic) | ciudades con calendario de exámenes cargado (solo fuente oficial) | 5 (Pamplona, Madrid, Sevilla, Alcalá de Henares, Guadalajara; faltan Barcelona y Valencia) | Pamplona, Madrid, Barcelona, Valencia, Sevilla | 30-11-2026 |
 | 3 | **Hábito y dopamina sana** (×2): volver cada día a estudiar | tareas «Dopamina ·» hechas · pruebas de recompensas en verde | 11 tandas (+ hitos del bosque, próxima especie) | 1 mejora por día | continuo |
-| 4 | **SEO bibliomapa.es** (×2): salir arriba en «bibliotecas abiertas en <ciudad>» | páginas generadas · páginas con horario verificado | 490 (portada con 13 enlaces rastreables a /bibliotecas/) | +1 página por biblioteca con horario | continuo |
+| 4 | **SEO bibliomapa.es** (×2): salir arriba en «bibliotecas abiertas en <ciudad>» | páginas generadas · páginas con horario verificado | 501 (portada con 13 enlaces rastreables a /bibliotecas/) | +1 página por biblioteca con horario | continuo |
 | 5 | **Rápida en móvil** (×1) | carga con CPU 4× (ms) · app.js gzip (KB) | 2589 (mediana de 5, 27-10 14:40; sin markercluster en la prueba: la nube no puede descargarlo, no refleja producción) · 82,5 ✅ | ≤ 1500 · ≤ 95 | 30-11-2026 |
 | 6 | **Lista para Google Play** (×1) | bloqueantes del backlog resueltos | ver «Pendiente del usuario» | 0 que dependan del código | 17-11-2026 |
 
