@@ -76,3 +76,4 @@ Formato: `AAAA-MM-DD HH:MM · quién · objetivo(s) · resultado (✅ subido / �
 - 2026-10-27 06:19 · director/agente producto · Objetivo 3 (Dopamina · liga semanal Bronce/Plata/Oro) · ✅ · 5586649→cherry-pick · pruebas 15 → 16; app.js gzip 90,7 → 91,9 KB; sin SQL
 - 2026-10-27 06:19 · director/agente SEO · Objetivo 4 · ✅ · 6a19687→cherry-pick · páginas «Salas de estudio en <capital>» (20 + índice); tras regenerar con los horarios nuevos, páginas SEO 384 → 412; caché v63; carga CPU 4× 1786 ms; pruebas 16/16, 0 errores
 - 2026-10-27 06:55 · diseño diario · Agenda (calendario de amigos) · ✅ · ver commit «Agenda: botón del calendario de amigos centrado» · aviso y botón alineados; pruebas en verde, 0 errores; caché v64
+- 2026-10-27 07:19 · director · ⏳ en curso · Objetivo 1 (horarios), 5 (app.js más ligero), 4 (SEO con horarios de Navarra)
