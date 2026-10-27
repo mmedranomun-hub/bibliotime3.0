@@ -108,6 +108,33 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
   Simulado: 412 → 431 páginas. Faltan UNAV Ciencias (verano sin fuente) y Facultades Eclesiásticas (sin horario publicado);
   ver BACKLOG. Las páginas se publican cuando el director regenere.
 
+## Hecho (2026-10-27) · «Bibliotecas de la <Universidad>: horarios y salas» (422 páginas en total, antes 412)
+- 9 páginas `/bibliotecas/universidades/<slug-universidad>/` y el índice `/bibliotecas/universidades/`, para búsquedas como
+  «horario biblioteca UCM» o «bibliotecas Universidad de Zaragoza». Hoy: UCM (16 bibliotecas, 11 con horario verificado),
+  USC (10/1), UB (10/4), USAL (8/1), UV (7/1), UPV (6/5), UM (5/1), UPV/EHU (4/4) y UNIZAR (3/1).
+- **Cómo se asigna la universidad** (los datos no traen titularidad): lista explícita `UNIVERSIDADES` en el generador con
+  sigla, nombre oficial, dominios web y una expresión para el nombre. Entra una biblioteca si (1) el host de su `web` es el de
+  la universidad o un subdominio (crai.ub.edu → ub.edu; blanquerna.url.edu no) o (2) su nombre la cita sin ambigüedad (nombre
+  oficial o sigla con límites de palabra; «UPV» no casa con «UPV/EHU»), **y** está en una provincia donde esa universidad
+  tiene campus. Fuera: las que casan con dos universidades, las públicas municipales que solo casan por la web, los
+  hospitales «universitarios» sin web de la universidad y las que no dan ninguna pista («Biblioteca de la Facultad de
+  Educación» sin web, aunque esté en Salamanca). El generador imprime las que no llegan al mínimo y las dudosas.
+- Se publica solo con **3 o más bibliotecas y al menos 1 con horario verificado** (fuente + fecha). Sin página por ahora
+  (les falta un horario verificado): UPM 6, UAB 7, UPC 6, UDC 8, UAM 4, US 4, UAH 3, UNAV 3; con menos de 3 en los datos:
+  UGR, UMA, Uniovi, UC3M, URJC, UA, UPNA. Crecen solas al verificar horarios y regenerar.
+- Contenido: «Horarios verificados» (horario de invierno, nota de la fuente, enlace a la fuente y fecha; si la nota dice que
+  la fuente no da un día, sale «sin confirmar», no «cerrado»), «Temporada de exámenes» si `temporada-examenes.js` tiene
+  entradas vigentes para sus bibliotecas (por `bib` exacto o por el nombre de la universidad en `espacio`; hoy ninguna de las
+  9), sus bibliotecas por ciudad o campus (tarjeta con horario verificado o «sin confirmar», enlace a su ficha si existe y
+  «Ver en el mapa»), y en cada ciudad enlaces a la página de la ciudad, a sus «Salas de estudio» y a «Por horario».
+  Localidades que en los datos son una calle (Rúa…) se agrupan con la biblioteca más cercana de la misma universidad
+  (≤ 20 km); «Valencia» y «València» van juntas.
+- FAQ solo con datos verificados: horario de las verificadas, fin de semana (distingue «cerrada» de «sin confirmar»), cuál
+  cierra más tarde (con empates), acceso sin ser alumno y, si las hay, ampliaciones por exámenes.
+- `CollectionPage` (con `about` `CollegeOrUniversity`, `dateModified` = verificación más reciente, `ItemList` de `Library`),
+  `FAQPage`, migas. Título ≤ 65 y descripción ≤ 160 únicos (con nombre y sigla si caben). Enlazadas desde el índice general
+  («Por universidad»), la provincia y la localidad («Universidades: UCM 16…») y el dato «Universidad» de cada ficha.
+
 ## Lo que tienes que hacer tú (sin esto no sirve de nada)
 1. **Conectar el dominio** en Vercel: proyecto `bibliotime` → Settings → Domains → añadir `bibliomapa.es` y
    `www.bibliomapa.es` (redirigir www → sin www) y poner en tu registrador los DNS que te indique Vercel.

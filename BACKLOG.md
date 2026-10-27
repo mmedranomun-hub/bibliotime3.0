@@ -72,6 +72,9 @@ empiezan el 1 de diciembre y los de la UPNA el 15), así que la producción debe
 - Ejecutar en Supabase (SQL Editor) el bloque «PRIVACIDAD DE LA PRESENCIA» del final de `supabase/supabase_social.sql` (política select de `presence` con caducidad de 4 h, `updated_at` puesto por el servidor y borrado de la propia fila; ya añadido también al final de `Bibliotime - Documentacion\SQL_PENDIENTE_supabase.sql`). Mientras no se ejecute, la caducidad de 4 h solo la aplica la app
 
 ## Hecho
+- [x] 2026-10-27 · Objetivo 4 · Páginas «Bibliotecas de la <Universidad>: horarios y salas» (`/bibliotecas/universidades/<slug>/` + índice): 9 universidades (UCM, USC, UB, USAL, UV, UPV, UM, UPV/EHU, UNIZAR), asignación conservadora por dominio de la web o nombre inequívoco + provincia de campus; enlazadas desde índice, provincia, localidad y fichas. Sin página aún (ninguna con horario verificado): UPM, UAB, UPC, UDC, UAM, US, UAH, UNAV
+- [x] 2026-10-27 · Navarra · 13 de 15 bibliotecas de Pamplona con `fuenteHorario` + `verificadoHorario` (Biblioteca de Navarra corregida: verano jul-ago L-V 8:30-14:30); el generador SEO ya publica su horario. Pendientes UNAV Ciencias y Eclesiásticas (ver la tarea de Objetivo 4)
+- [x] 2026-10-27 · España · +10 horarios (UCM ×4, Biblioteques de Barcelona ×2, Zaragoza municipales ×4): 224 → 234
 - [x] 2026-10-27 · Objetivo 5 · Bienvenida, sala de estudio en grupo y comentarios a `app-extra.js` (app.js 92,0 → 89,6 KB gzip); `probar.py` mide la carga CPU 4× 5 veces y guarda mediana y min/max (`CARGAS`)
 - [x] 2026-10-27 · Objetivo 4 · El generador SEO lee los datos de Navarra de app.js con `vm` y publica su horario solo si traen `fuenteHorario` + `verificadoHorario` (hoy 0 de 104: falta verificarlas)
 - [x] 2026-10-27 · España · +10 horarios de facultades UCM (214 → 224)
