@@ -1100,8 +1100,8 @@ function initCommentEvents(){
 async function socialLoadLeaderboard(){
   var sb=socialClient(); if(!sb||!SOCIAL.user)return;
   var ids=SOCIAL.friends.map(function(f){return f.profile.id;}); ids.push(SOCIAL.user.id);
-  var now=new Date(),day=(now.getDay()+6)%7,monday=new Date(now);monday.setDate(now.getDate()-day);monday.setHours(0,0,0,0);
-  var res=await sb.from("shared_sessions").select("owner_id,minutes,date").in("owner_id",ids).gte("date",ymd(monday));
+  // desde el lunes de la semana PASADA: esta semana para el ranking y la anterior para la liga
+  var res=await sb.from("shared_sessions").select("owner_id,minutes,date").in("owner_id",ids).gte("date",ymd(lunesDe(1)));
   if(res.error){SOCIAL.leaderboard=[];SOCIAL.lbRows=[];return;}
   SOCIAL.lbRows=res.data||[];
   computeLeaderboard();
@@ -1109,29 +1109,73 @@ async function socialLoadLeaderboard(){
 var lbPeriod="week";
 function computeLeaderboard(){
   if(!SOCIAL.user)return;
-  var hoy=ymd(), totals={};
-  (SOCIAL.lbRows||[]).forEach(function(r){if(lbPeriod==="day"&&r.date!==hoy)return;if(isBlocked(r.owner_id))return;totals[r.owner_id]=(totals[r.owner_id]||0)+r.minutes;});
+  var hoy=ymd(), lun=ymd(lunesDe(0)), totals={};
+  computeLiga();
+  (SOCIAL.lbRows||[]).forEach(function(r){if(lbPeriod==="day"?r.date!==hoy:r.date<lun)return;if(isBlocked(r.owner_id))return;totals[r.owner_id]=(totals[r.owner_id]||0)+r.minutes;});
   var arr=Object.keys(totals).map(function(id){return {id:id,min:totals[id],name:id===SOCIAL.user.id?"Tú":socialNameById(id)};});
   arr.sort(function(a,b){return b.min-a.min;});
   SOCIAL.leaderboard=arr;
 }
 function renderLeaderboard(){
   var el=$("leaderboardList"); if(!el)return;
-  if(!socialClient()||!SOCIAL.user){el.innerHTML='<div class="empty-note">'+(socialKeysOk()?'Con una cuenta (opcional) y amigos verás aquí el ranking':'Configura Supabase para ver el ranking con amigos')+'</div>';return;}
-  if(!SOCIAL.leaderboard.length){el.innerHTML='<div class="empty-note">Sin datos '+(lbPeriod==="day"?"de hoy":"de esta semana")+' todavía (necesitas amigos y sesiones compartidas)</div>';return;}
+  if(!socialClient()||!SOCIAL.user){SOCIAL.liga=null;renderLiga();el.innerHTML='<div class="empty-note">'+(socialKeysOk()?'Con una cuenta (opcional) y amigos verás aquí el ranking':'Configura Supabase para ver el ranking con amigos')+'</div>';return;}
+  if(!SOCIAL.liga)computeLiga();
+  var nota=ligaNota();
+  if(!SOCIAL.leaderboard.length){el.innerHTML=nota+'<div class="empty-note">Sin datos '+(lbPeriod==="day"?"de hoy":"de esta semana")+' todavía (necesitas amigos y sesiones compartidas)</div>';renderLiga();return;}
   // Podio (Duolingo/Strava): los tres primeros con medalla y columna proporcional; el resto, con barra.
   var L=SOCIAL.leaderboard, max=L[0].min||1, yo=-1;L.forEach(function(p,i){if(p.id===SOCIAL.user.id)yo=i;});
   var MED=["🥇","🥈","🥉"], orden=[1,0,2].filter(function(k){return L[k];});
   var podio='<div class="podio">'+orden.map(function(k){var p=L[k],alt=40+Math.round(p.min/max*70);
     return '<div class="pd-col'+(p.id===SOCIAL.user.id?' yo':'')+' pd-'+(k+1)+'"><div class="pd-med">'+MED[k]+'</div><div class="pd-av" style="background:'+colorDe(p.id)+'">'+escapeHTML(p.name.charAt(0).toUpperCase())+'</div>'+
-      '<b>'+escapeHTML(p.name.split(" ")[0])+'</b><small>'+hMin(p.min)+'</small><div class="pd-bar" style="--h:'+alt+'px">'+(k+1)+'</div></div>';}).join("")+'</div>';
+      '<b>'+escapeHTML(p.name.split(" ")[0])+'</b>'+ligaBadge(SOCIAL.liga.por[p.id])+'<small>'+hMin(p.min)+'</small><div class="pd-bar" style="--h:'+alt+'px">'+(k+1)+'</div></div>';}).join("")+'</div>';
   var resto=L.slice(3).map(function(p,i){var k=i+3;
-    return '<div class="lb-row'+(p.id===SOCIAL.user.id?' yo':'')+'"><div class="rank">'+(k+1)+'</div><div class="ni"><b>'+escapeHTML(p.name)+'</b><div class="lb-bar"><i style="width:'+Math.max(4,Math.round(p.min/max*100))+'%"></i></div></div><small>'+hMin(p.min)+'</small></div>';}).join("");
+    return '<div class="lb-row'+(p.id===SOCIAL.user.id?' yo':'')+'"><div class="rank">'+(k+1)+'</div><div class="ni"><b>'+escapeHTML(p.name)+'</b> '+ligaBadge(SOCIAL.liga.por[p.id])+'<div class="lb-bar"><i style="width:'+Math.max(4,Math.round(p.min/max*100))+'%"></i></div></div><small>'+hMin(p.min)+'</small></div>';}).join("");
   var pique="";
   if(yo>0){var dif=L[yo-1].min-L[yo].min+1;pique='<div class="lb-pique">⚡ Te faltan <b>'+hMin(dif)+'</b> para adelantar a <b>'+escapeHTML(L[yo-1].name)+'</b></div>';}
   else if(yo===0&&L.length>1){pique='<div class="lb-pique top">👑 ¡Vas primero! '+escapeHTML(L[1].name)+' está a '+hMin(L[0].min-L[1].min)+'</div>';}
   else if(yo<0)pique='<div class="lb-pique">🌱 Estudia y comparte una sesión para entrar en el ranking</div>';
-  el.innerHTML=podio+pique+resto;
+  el.innerHTML=nota+podio+pique+resto;renderLiga();
+}
+/* ===== LIGA SEMANAL (Bronce/Plata/Oro) =====
+   Sale del ranking de amigos de la semana PASADA (lunes-domingo), con las mismas filas que ya carga el
+   ranking (shared_sessions): no hace falta SQL. Dopamina sana: solo entra quien estudió al menos
+   LIGA_MIN minutos, y quien entra tiene como poco Bronce (el primer tercio Oro, el segundo Plata, el resto
+   Bronce). No hay descensos ni avisos: si no llegaste, solo una invitación amable. La primera vez que se ve
+   la liga de la semana nueva hay una pequeña celebración (sin movimiento si el sistema lo pide). */
+var LIGA_MIN=60, LIGAS={oro:"Oro",plata:"Plata",bronce:"Bronce"};
+function lunesDe(atras){var x=new Date();x.setHours(0,0,0,0);x.setDate(x.getDate()-(x.getDay()+6)%7-7*(atras||0));return x;}
+function computeLiga(){
+  var ini=ymd(lunesDe(1)),fin=ymd(lunesDe(0)),t={},por={},yo=SOCIAL.user&&SOCIAL.user.id;
+  SOCIAL.liga={sem:fin,por:por,yo:"",min:0,amigos:SOCIAL.friends.length>0};
+  if(!yo||!SOCIAL.friends.length)return;
+  (SOCIAL.lbRows||[]).forEach(function(r){if(r.date<ini||r.date>=fin||isBlocked(r.owner_id))return;t[r.owner_id]=(t[r.owner_id]||0)+(r.minutes||0);});
+  var ids=Object.keys(t).filter(function(id){return t[id]>=LIGA_MIN;}).sort(function(a,b){return t[b]-t[a];}),n=ids.length;
+  ids.forEach(function(id,i){por[id]=i&&t[id]===t[ids[i-1]]?por[ids[i-1]]:i<Math.ceil(n/3)?"oro":i<Math.ceil(n*2/3)?"plata":"bronce";});
+  SOCIAL.liga.yo=por[yo]||"";SOCIAL.liga.min=t[yo]||0;
+}
+function ligaBadge(t,largo){
+  if(!LIGAS[t])return "";
+  return '<span class="liga liga-'+t+(largo?' largo':'')+'" title="Liga '+LIGAS[t]+' (por la semana pasada)">'+(largo?'🏅 Liga '+LIGAS[t]:LIGAS[t])+'</span>';
+}
+function ligaNota(){
+  var L=SOCIAL.liga||{};if(!L.amigos)return "";
+  if(L.yo)return '<div class="liga-nota">'+ligaBadge(L.yo)+' Esta semana estás en la <b>Liga '+LIGAS[L.yo]+'</b> por tus '+hMin(L.min)+' de la semana pasada</div>';
+  return '<div class="liga-nota">🌱 Estudia '+hMin(LIGA_MIN)+' esta semana y el lunes entras en la liga</div>';
+}
+function renderLiga(){
+  var el=$("profLiga"),L=SOCIAL.liga;if(!el)return;
+  var k="bpna_liga_"+((SOCIAL.user&&SOCIAL.user.id)||""),g=loadJSON(k,{});
+  if(!L||!L.yo){el.innerHTML="";return;}
+  el.innerHTML=ligaBadge(L.yo,true);
+  if(g.sem===L.sem)return;
+  // primera vez que se ve la liga de esta semana: un momento de celebración (y solo si se está viendo)
+  var vis=[el,document.querySelector("#leaderboardList .liga-nota")].filter(function(x){return x&&x.offsetParent;})[0];
+  if(!vis)return;
+  var ord={bronce:1,plata:2,oro:3},sube=g.liga&&ord[L.yo]>ord[g.liga];
+  saveJSON(k,{sem:L.sem,liga:L.yo});
+  el.firstChild.classList.add("nueva");
+  showToast(sube?"🏅 ¡Subes a la Liga "+LIGAS[L.yo]+"! Gracias a lo que estudiaste la semana pasada":"🏅 ¡Semana nueva! Estás en la Liga "+LIGAS[L.yo]);
+  celebrar(vis,["🏅","✨","📚"],12);
 }
 async function socialShareEvent(ev){
   var sb=socialClient(); if(!sb||!SOCIAL.user)return;
@@ -2572,7 +2616,7 @@ function renderSessionFeed(force){
   var act=document.activeElement;
   if(force!==true&&act&&act.dataset&&act.dataset.cmtInput!=null&&el.contains(act))return;
   if(feedTab==="amigos"){
-    if(!socialClient()||!SOCIAL.user){el.innerHTML='<div class="empty-note">'+(socialKeysOk()?'Con una cuenta (opcional) y amigos verás aquí su actividad':'Configura Supabase para ver la actividad de tus amigos')+'</div>';return;}
+    if(!socialClient()||!SOCIAL.user){SOCIAL.liga=null;renderLiga();el.innerHTML='<div class="empty-note">'+(socialKeysOk()?'Con una cuenta (opcional) y amigos verás aquí su actividad':'Configura Supabase para ver la actividad de tus amigos')+'</div>';return;}
     var fses=filterBlocked(SOCIAL.friendSessions,"owner_id");
     if(!fses.length){el.innerHTML='<div class="empty-note">Tus amigos no tienen sesiones compartidas todavía</div>';return;}
     el.innerHTML=fses.map(function(s){

@@ -151,6 +151,39 @@ PRUEBAS = [
         try{localStorage.removeItem(reacLocalKey());}catch(e){}
         socialClient=oc;SOCIAL.user=ou;SOCIAL.friendSessions=of;SOCIAL.reactsOk=ok0;SOCIAL.friends=ofr;SOCIAL.reacts={};SOCIAL.reactsMine={};feedTab=ot;renderSessionFeed(true);
       }"""),
+    ("liga semanal: Oro/Plata por la semana pasada, mínimo de estudio y sin amigos nada", """
+      goView('friends');await new Promise(r=>setTimeout(r,300));
+      var oc=socialClient,ou=SOCIAL.user,ofr=SOCIAL.friends,orw=SOCIAL.lbRows,op=lbPeriod,ol=SOCIAL.liga;
+      var d=n=>{var x=lunesDe(1);x.setDate(x.getDate()+n);return ymd(x);}, k='bpna_liga_prueba-yo';
+      try{
+        try{localStorage.removeItem(k);}catch(e){}
+        socialClient=()=>({});SOCIAL.user={id:'prueba-yo'};lbPeriod='week';
+        SOCIAL.friends=[{profile:{id:'prueba-a',name:'Ana'}},{profile:{id:'prueba-b',name:'Bea'}}];
+        SOCIAL.lbRows=[{owner_id:'prueba-yo',minutes:200,date:d(0)},{owner_id:'prueba-yo',minutes:100,date:d(6)},
+          {owner_id:'prueba-a',minutes:120,date:d(2)},{owner_id:'prueba-b',minutes:30,date:d(3)},
+          {owner_id:'prueba-a',minutes:500,date:d(-1)},{owner_id:'prueba-b',minutes:45,date:ymd()}];
+        computeLeaderboard();renderLeaderboard();
+        var L=SOCIAL.liga;
+        if(L.por['prueba-yo']!=='oro'||L.por['prueba-a']!=='plata')return 'puestos mal: '+JSON.stringify(L.por);
+        if(L.por['prueba-b'])return 'entra sin el mínimo de estudio';
+        if(SOCIAL.leaderboard.length!==1||SOCIAL.leaderboard[0].min!==45)return 'el ranking de esta semana mezcla la pasada';
+        if(!/Liga Oro/.test($('profLiga').innerText))return 'sin insignia en el perfil';
+        if(!document.querySelector('#leaderboardList .liga-nota .liga-oro'))return 'sin nota de liga en el ranking';
+        if(loadJSON(k,{}).sem!==ymd(lunesDe(0)))return 'no recuerda que ya celebró';
+        SOCIAL.lbRows=[{owner_id:'prueba-a',minutes:500,date:d(1)},{owner_id:'prueba-yo',minutes:20,date:d(1)}];
+        computeLeaderboard();renderLeaderboard();
+        if($('profLiga').innerHTML!==''||!/entras en la liga/.test($('leaderboardList').innerText))return 'sin el mínimo no invita con amabilidad';
+        SOCIAL.lbRows=[{owner_id:'prueba-a',minutes:120,date:d(1)},{owner_id:'prueba-b',minutes:90,date:d(2)},{owner_id:'prueba-a',minutes:60,date:ymd()}];
+        computeLeaderboard();renderLeaderboard();
+        if(!document.querySelector('#leaderboardList .pd-col .liga-oro'))return 'sin insignia en la fila del ranking';
+        SOCIAL.friends=[];SOCIAL.lbRows=[{owner_id:'prueba-yo',minutes:300,date:d(1)}];
+        computeLeaderboard();renderLeaderboard();
+        if(document.querySelector('#leaderboardList .liga,#leaderboardList .liga-nota')||$('profLiga').innerHTML!=='')return 'se ve liga sin amigos';
+        return true;
+      }finally{
+        try{localStorage.removeItem(k);}catch(e){}
+        socialClient=oc;SOCIAL.user=ou;SOCIAL.friends=ofr;SOCIAL.lbRows=orw;lbPeriod=op;SOCIAL.liga=ol;SOCIAL.leaderboard=[];renderLeaderboard();
+      }"""),
     ("enlace #bib abre la ficha", """
       location.hash='#bib=104-x';comprobarEnlaceCompartido();await new Promise(r=>setTimeout(r,900));
       return !!document.querySelector('.leaflet-popup-content') || 'no abre la ficha';"""),

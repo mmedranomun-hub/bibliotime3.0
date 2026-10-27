@@ -92,6 +92,10 @@
     --palma:#4ade80; --palma-osc:#15803d; --cactus:#34d399; --cactus-osc:#047857;
     --fuego:linear-gradient(135deg,#f59e0b,#ef4444);          /* racha encendida */
     --cielo:linear-gradient(180deg,#e0f2fe 0%,#f0fdf4 70%); --cesped:linear-gradient(180deg,#86efac,#4ade80);
+    /* Liga semanal (borde · fondo tenue · texto AA) */
+    --liga-oro:#f59e0b; --liga-oro-bg:rgba(245,158,11,.16); --liga-oro-tx:#92400e;
+    --liga-plata:#94a3b8; --liga-plata-bg:rgba(148,163,184,.22); --liga-plata-tx:#334155;
+    --liga-bronce:#c2773e; --liga-bronce-bg:rgba(194,119,62,.16); --liga-bronce-tx:#7c3f16;
     /* Radios */
     --r-xs:6px; --r-s:8px; --r-m:12px; --r-l:16px; --r-xl:20px; --r-pill:999px;
   }
@@ -113,6 +117,9 @@
     --tronco:#a47148; --marchito:#7c6a58; --marchito-osc:#5f5144;
     --luz-a:#fde047; --luz-b:#f87171; --luz-c:#7dd3fc; --estrella:#fcd34d;
     --almendro:#fdf2f8; --almendro-osc:#f9a8d4;
+    --liga-oro-bg:rgba(245,158,11,.2); --liga-oro-tx:#fcd34d;
+    --liga-plata-bg:rgba(148,163,184,.24); --liga-plata-tx:#e2e8f0;
+    --liga-bronce-bg:rgba(194,119,62,.24); --liga-bronce-tx:#f4b183;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%}
@@ -1024,6 +1031,15 @@
   .lb-pique{margin:10px 0 4px;padding:10px 12px;border-radius:var(--r-m);background:var(--acento-tenue);font-size:var(--fs-m);text-align:center}
   .lb-pique.top{background:rgba(245,158,11,.14)}
   .lb-row{display:flex;align-items:center;gap:10px;padding:8px 4px}
+  .liga{display:inline-block;padding:1px 7px;border-radius:var(--r-pill);font-size:var(--fs-2xs);font-weight:800;letter-spacing:.04em;text-transform:uppercase;
+    vertical-align:middle;white-space:nowrap;background:var(--liga-bg);color:var(--liga-tx);box-shadow:inset 0 0 0 1px var(--liga)}
+  .liga-oro{--liga:var(--liga-oro);--liga-bg:var(--liga-oro-bg);--liga-tx:var(--liga-oro-tx)}
+  .liga-plata{--liga:var(--liga-plata);--liga-bg:var(--liga-plata-bg);--liga-tx:var(--liga-plata-tx)}
+  .liga-bronce{--liga:var(--liga-bronce);--liga-bg:var(--liga-bronce-bg);--liga-tx:var(--liga-bronce-tx)}
+  .liga.largo{margin-top:6px;padding:3px 10px;font-size:var(--fs-s);letter-spacing:0;text-transform:none}
+  .liga.nueva{animation:pop .6s 2}
+  .liga-nota{margin:2px 0 10px;padding:9px 12px;border-radius:var(--r-m);background:rgba(var(--blanco),.55);font-size:var(--fs-m);text-align:center}
+  .liga-nota .liga{margin-right:4px}
   .lb-row.yo{background:var(--acento-tenue);border-radius:var(--r-m)}
   .lb-row .ni{flex:1;min-width:0}
   .lb-row small{font-weight:700;color:var(--suave);font-size:var(--fs-s)}
@@ -1393,7 +1409,7 @@
     <div class="container">
       <div class="prof-head">
         <div class="avatar" id="profAvatar">?</div>
-        <div class="pi"><h2 id="profName">—</h2><p id="profEmail">—</p></div>
+        <div class="pi"><h2 id="profName">—</h2><p id="profEmail">—</p><div id="profLiga"></div></div>
       </div>
       <div class="glasscard hidden" id="guestCard" style="margin-bottom:16px">
         <b style="font-size:var(--fs-l)">Estás usando la app sin cuenta</b>
