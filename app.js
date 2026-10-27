@@ -2801,7 +2801,8 @@ function openModal(html,after){
 function closeModal(){
   var hito=!!document.querySelector("#modalRoot .hito-bosque");$("modalRoot").innerHTML="";
   // Si hay un hito del bosque sin celebrar (otra ventana lo tapaba), se enseña al cerrar esa ventana.
-  if(DATA&&DATA.especieAvisoPend)setTimeout(avisoEspecie,700);
+  if(CELEB_DIA)setTimeout(celebrarDia,600);
+  if(DATA&&DATA.especieAvisoPend)setTimeout(avisoEspecie,CELEB_DIA?4600:700);
   if(DATA&&DATA.hitoBosquePend){if(hito){DATA.hitoBosquePend=0;saveUserData();}else setTimeout(function(){if(!$("modalRoot").innerHTML&&DATA.hitoBosquePend)mostrarHitoBosque();},400);}
 }
 function showToast(msg){
@@ -3444,9 +3445,30 @@ function celebrarRacha(){
   o.addEventListener("click",function(){o.remove();});document.body.appendChild(o);
   setTimeout(function(){o.classList.add("out");setTimeout(function(){o.remove();},500);},2300);
 }
+/* ----- Primer árbol del día: +5 🌰 una vez al día (marca en DATA y en localStorage: recargar no lo repite) y
+   UNA sola tarjeta con el saludo y la llama (mostrarPrimerArbol, app-extra.js). Igual que la llama sola, espera
+   a que no haya ventana abierta ni hito pendiente: nunca tapa «Sesión terminada»; closeModal la vuelve a pedir. ----- */
+var CELEB_DIA=null;
+function primerArbolDelDia(s){
+  var hoy=ymd(), k="bpna_primer_arbol_"+CURRENT;
+  if(!s||s.date!==hoy||s.focus==="withered"||DATA.primerArbol===hoy||loadJSON(k,"")===hoy)return false;
+  DATA.primerArbol=hoy;DATA.semillasPremio=(DATA.semillasPremio||0)+5;saveUserData();saveJSON(k,hoy);return true;
+}
+function celebrarDia(){
+  if(!CELEB_DIA)return;
+  // tras cargar app-extra.js: así «Sesión terminada» (que espera a ese mismo archivo) ya está abierta si toca
+  cargarExtra().then(function(){return 1;},function(){return 0;}).then(function(ok){
+    var c=CELEB_DIA; if(!c||$("modalRoot").innerHTML||(DATA&&DATA.hitoBosquePend))return;
+    CELEB_DIA=null;
+    if(!c.arbol)celebrarRacha();
+    else if(ok)mostrarPrimerArbol(c.racha);
+    else showToast("🌱 Primer árbol del día · +5 🌰");
+  });
+}
 function trasGuardarSesion(sesion){
   var hoy=ymd(), deHoy=DATA.sessions.filter(function(s){return s.date===hoy;}).length;
-  if(sesion&&sesion.date===hoy&&deHoy===1)setTimeout(celebrarRacha,350);
+  var arbol=primerArbolDelDia(sesion), racha=!!(sesion&&sesion.date===hoy&&deHoy===1);
+  if(arbol||racha){CELEB_DIA={arbol:arbol,racha:racha};setTimeout(celebrarDia,350);}
   if(sesion&&sesion.focus!=="withered")comprobarHitoBosque();
   comprobarMisiones();comprobarEspecieLista();renderRacha();renderSemillas();
 }
@@ -3498,7 +3520,7 @@ function comprobarEspecieLista(){
   setTimeout(avisoEspecie,3200);
 }
 function avisoEspecie(){
-  if(!DATA||!DATA.especieAvisoPend||$("modalRoot").innerHTML||DATA.hitoBosquePend)return;
+  if(!DATA||!DATA.especieAvisoPend||$("modalRoot").innerHTML||DATA.hitoBosquePend||document.querySelector(".racha-overlay"))return;
   var e=especieDe(DATA.especieAvisoPend);DATA.especieAvisoPend=0;saveUserData();
   if(!especieComprada(e.id))showToast(e.icon+" ¡Ya puedes plantar "+e.pl+"! Están en «Especies» 🌰");
 }

@@ -969,6 +969,16 @@
   .ro-fuego{font-size:140px;line-height:1;animation:growIn .8s cubic-bezier(.34,1.56,.64,1),llama 1.2s ease-in-out .8s infinite}
   .ro-n{font-size:96px;font-weight:800;color:#fff;line-height:1;text-shadow:0 6px 24px rgba(0,0,0,.35);animation:growIn .8s .15s cubic-bezier(.34,1.56,.64,1) both}
   .ro-t{font-size:var(--fs-3xl);font-weight:800;color:#fff;margin-top:8px;animation:fadeUp .6s .3s both}
+  /* Primer árbol del día: saludo + premio en la misma tarjeta que la llama */
+  .primer-arbol{padding:0 16px;text-align:center;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+  .pa-card{margin-top:14px;padding:18px 22px;max-width:340px;border-radius:var(--r-xl);background:var(--glass-fuerte);box-shadow:var(--sombra);
+    animation:fadeUp .6s .3s both}
+  .pa-t{font-size:var(--fs-2xl);font-weight:800;color:var(--texto)}
+  .pa-sub{font-size:var(--fs-base);font-weight:600;color:var(--suave);margin-top:4px;line-height:1.45}
+  .pa-premio{display:inline-block;margin-top:12px;padding:6px 14px;border-radius:var(--r-pill);background:var(--liga-oro-bg);color:var(--liga-oro-tx);
+    font-size:var(--fs-l);font-weight:800;animation:growIn .6s .7s cubic-bezier(.34,1.56,.64,1) both}
+  .primer-arbol~.burst{z-index:5001}
+  @media(prefers-reduced-motion:reduce){.primer-arbol,.primer-arbol *{animation:none!important}}
   @keyframes fadeIn{from{opacity:0}to{opacity:1}}
   @keyframes fadeOut{to{opacity:0;transform:scale(1.05)}}
   /* Misiones */

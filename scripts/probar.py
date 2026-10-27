@@ -161,7 +161,8 @@ PRUEBAS = [
       k.forEach(x=>o[x]=DATA[x]);
       var toasts=[],st=window.showToast,cm=window.comprobarMisiones;window.showToast=m=>toasts.push(m);window.comprobarMisiones=()=>{};
       try{
-        closeModal();var hoy=ymd(),mk=i=>({id:'pe'+i,date:hoy,min:30,ts:Date.now()-(100-i)*1000,bib:NO_BIB,focus:'ok',esp:'roble'});
+        CELEB_DIA=null;closeModal();document.querySelectorAll('.racha-overlay').forEach(x=>x.remove()); // sin la celebración del día de la prueba de sesión
+        var hoy=ymd(),mk=i=>({id:'pe'+i,date:hoy,min:30,ts:Date.now()-(100-i)*1000,bib:NO_BIB,focus:'ok',esp:'roble'});
         DATA.sessions=[mk(0),mk(1)];DATA.semillasPremio=0;DATA.semillasGastadas=0;DATA.especiesCompradas=[];DATA.especiesAvisadas=[];DATA.especieAvisoPend=0;DATA.hitosBosque=[1e9];
         goView('study');renderForest();var b=$('forestCard').querySelector('.prox-esp'),t=(b||{}).innerText||'';
         if(!/Cerezo/.test(t)||!/te faltan 48/.test(t)||!/12\\/60/.test(t))return 'barra mal: '+t;
@@ -183,6 +184,40 @@ PRUEBAS = [
         return true;
       }finally{
         window.showToast=st;window.comprobarMisiones=cm;k.forEach(x=>DATA[x]=o[x]);closeModal();renderForest();renderMisiones();
+      }"""),
+    ("primer árbol del día: saludo y +5 🌰 una sola vez, sin tapar «Sesión terminada»", """
+      var k=['sessions','semillasPremio','primerArbol','misiones','acciones','hitosBosque','hitoBosquePend','especiesAvisadas','especieAvisoPend'],o={};
+      k.forEach(x=>o[x]=DATA[x]);var lk='bpna_primer_arbol_'+CURRENT,lv=localStorage.getItem(lk);
+      var cm=window.comprobarMisiones;window.comprobarMisiones=()=>{};
+      var espera=ms=>new Promise(r=>setTimeout(r,ms)),hoy=ymd(),mk=(i,f)=>({id:'pa'+i,date:hoy,min:30,ts:Date.now()-(100-i)*1000,bib:NO_BIB,focus:f||'ok',esp:'roble'});
+      var limpia=()=>document.querySelectorAll('.racha-overlay').forEach(x=>x.remove());
+      try{
+        closeModal();limpia();DATA.sessions=[];DATA.semillasPremio=0;DATA.primerArbol=0;localStorage.removeItem(lk);
+        DATA.hitosBosque=[1e9];DATA.hitoBosquePend=0;DATA.especiesAvisadas=ESPECIES.map(e=>e.id);DATA.especieAvisoPend=0;
+        openModal('<h3>Sesión terminada</h3>');var s=mk(0);DATA.sessions.push(s);trasGuardarSesion(s);
+        if(DATA.semillasPremio!==5)return 'la primera sesión no da +5: '+DATA.semillasPremio;
+        if(DATA.primerArbol!==hoy||JSON.parse(localStorage.getItem(lk))!==hoy)return 'no guarda la marca del día';
+        await espera(900);
+        if(document.querySelector('.racha-overlay'))return 'la celebración tapa «Sesión terminada»';
+        closeModal();await espera(1000);
+        var c=document.querySelectorAll('.racha-overlay');
+        if(c.length!==1||!c[0].classList.contains('primer-arbol'))return 'no sale una sola tarjeta: '+c.length;
+        var t=c[0].innerText;
+        if(!/¡Buen(os días|as tardes|as noches)/.test(t)||!/Primer árbol del día/.test(t)||!/\\+5 🌰/.test(t)||!/racha/.test(t))return 'texto mal: '+t;
+        limpia();s=mk(1);DATA.sessions.push(s);trasGuardarSesion(s);
+        if(DATA.semillasPremio!==5||CELEB_DIA)return 'la segunda sesión vuelve a dar +5';
+        DATA.primerArbol=0;s=mk(2);DATA.sessions.push(s);trasGuardarSesion(s);   // como al recargar con DATA sin la marca
+        if(DATA.semillasPremio!==5)return 'se duplica al recargar';
+        DATA.sessions=[];DATA.semillasPremio=0;DATA.primerArbol=0;localStorage.removeItem(lk);
+        s=mk(3,'withered');DATA.sessions.push(s);trasGuardarSesion(s);
+        if(DATA.semillasPremio!==0)return 'da +5 por un árbol marchito';
+        CELEB_DIA=null;s=mk(4);DATA.sessions.push(s);trasGuardarSesion(s);
+        if(DATA.semillasPremio!==5||!CELEB_DIA||CELEB_DIA.racha)return 'el primer árbol sano tras uno marchito no da +5 sin repetir la llama';
+        return true;
+      }finally{
+        window.comprobarMisiones=cm;CELEB_DIA=null;limpia();k.forEach(x=>DATA[x]=o[x]);
+        if(lv==null)localStorage.removeItem(lk);else localStorage.setItem(lk,lv);
+        closeModal();renderForest();renderMisiones();renderRacha();renderSemillas();
       }"""),
     ("acceso: la ley foral solo en Navarra", """
       for(var i=N_NAVARRA;i<BIBLIOTECAS.length;i++)if(/Ley Foral/.test(accesoAccesibilidadHTML(BIBLIOTECAS[i])))return 'ley foral fuera de Navarra: '+BIBLIOTECAS[i].nombre;

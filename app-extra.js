@@ -625,6 +625,23 @@ function mostrarHitoBosque(){
   renderSemillas();renderForest();
 }
 
+/* ----- Primer árbol del día: saludo según la hora + «Primer árbol del día 🌱» + «+5 🌰», y la llama de la racha
+   en la MISMA tarjeta si también es la primera sesión del día (una sola celebración, nada que se solape).
+   Las semillas ya se sumaron (primerArbolDelDia, app.js); aquí solo se celebra. Se cierra sola o al tocarla. ----- */
+function saludoHora(h){return h<6||h>=20?"¡Buenas noches":h<14?"¡Buenos días":"¡Buenas tardes";}
+function mostrarPrimerArbol(conRacha){
+  var u=(Brain.getUsers()[CURRENT]||{}).name, nombre=u&&!esInvitado()?", "+u.trim().split(/\s+/)[0]:"", n=streakDays();
+  var o=document.createElement("div");o.className="racha-overlay primer-arbol";o.setAttribute("role","status");
+  o.innerHTML=(conRacha?'<div class="ro-fuego">🔥</div><div class="ro-n">'+n+'</div>':'<div class="ro-fuego">🌱</div>')+
+    '<div class="pa-card"><div class="pa-t">'+saludoHora(new Date().getHours())+escapeHTML(nombre)+'!</div>'+
+    '<div class="pa-sub">Primer árbol del día 🌱'+(conRacha?'<br>'+(n===1?'¡Empieza tu racha!':'Racha de '+n+' días'):'')+'</div>'+
+    '<div class="pa-premio">+5 🌰 de bienvenida</div></div>';
+  var fuera=function(){if(!o.parentNode)return;o.remove();if(DATA&&DATA.especieAvisoPend)setTimeout(avisoEspecie,400);};
+  o.addEventListener("click",fuera);document.body.appendChild(o);renderSemillas();
+  if(!sinMovimiento())setTimeout(function(){celebrar(o.querySelector(".pa-premio"),["🌰","🌱","✨"],10);},500);
+  setTimeout(function(){o.classList.add("out");setTimeout(fuera,450);},3400);
+}
+
 /* ----- Cofre de las misiones y ventana de la racha ----- */
 function abrirCofre(btn){
   var M=misionesDeHoy(); if(M.cofre)return;
