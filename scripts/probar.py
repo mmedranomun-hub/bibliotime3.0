@@ -8,8 +8,10 @@ Uso (desde la raíz del proyecto):
 
 Sale con código 1 si alguna prueba falla: entonces NO se sube nada.
 Necesita Playwright para Python con Chromium (PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers en la nube).
-Las CDN suelen estar bloqueadas en el entorno de pruebas: Leaflet se sirve en local (se descarga de la
-release de GitHub a /tmp la primera vez) y Supabase no se carga (la app entra en modo local).
+Las CDN suelen estar bloqueadas en el entorno de pruebas: Leaflet y leaflet.markercluster se sirven en
+local (se descargan a /tmp la primera vez: Leaflet de la release de GitHub, markercluster del paquete de
+npm o del zip de su etiqueta en GitHub; si markercluster no se puede bajar, avisa y sigue con las
+chinchetas sueltas, y `markercluster.servido_en_local` sale false) y Supabase no se carga (modo local).
 """
 import asyncio, gzip, http.server, json, os, statistics, sys, threading, time, urllib.request, zipfile, functools
 
@@ -17,6 +19,9 @@ RAIZ = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", "/opt/pw-browsers")
 LEAFLET_DIR = os.environ.get("LEAFLET_DIR", "/tmp/leaflet-1.9.4")
 PUERTO = int(os.environ.get("PUERTO", "8765"))
+MC_VERSION = "1.5.3"  # la que pide index.html (unpkg/jsdelivr leaflet.markercluster@1.5.3)
+MC_DIR = os.environ.get("MC_DIR", f"/tmp/leaflet.markercluster-{MC_VERSION}")
+MC_ARCHIVOS = ("leaflet.markercluster.js", "MarkerCluster.css", "MarkerCluster.Default.css")
 CARGAS = int(os.environ.get("CARGAS", "5"))  # repeticiones de la medición de carga con CPU 4×
 
 
@@ -31,6 +36,47 @@ def preparar_leaflet():
         for n in ("dist/leaflet.js", "dist/leaflet.css"):
             with z.open(n) as src, open(os.path.join(LEAFLET_DIR, os.path.basename(n)), "wb") as dst:
                 dst.write(src.read())
+
+
+def preparar_markercluster():
+    """Deja en MC_DIR leaflet.markercluster.js y sus dos CSS, la misma versión que pide index.html.
+
+    Sin markercluster la app pinta las 2616 chinchetas sueltas y la carga CPU 4× mide ~1,3 s de
+    Leaflet que en producción no existen (allí se agrupan). Se prueba el paquete de npm (trae dist/)
+    y el zip de la etiqueta en GitHub; se guarda en disco y no se vuelve a bajar. Si no hay red,
+    avisa y devuelve False: la prueba sigue (con chinchetas sueltas) y lo apunta en el resultado.
+    """
+    js = os.path.join(MC_DIR, "leaflet.markercluster.js")
+    if all(os.path.exists(os.path.join(MC_DIR, n)) for n in MC_ARCHIVOS):
+        return True
+    os.makedirs(MC_DIR, exist_ok=True)
+    fuentes = [  # (url, prefijo de dist/ dentro del archivo)
+        (f"https://registry.npmjs.org/leaflet.markercluster/-/leaflet.markercluster-{MC_VERSION}.tgz", "package/dist/"),
+        (f"https://github.com/Leaflet/Leaflet.markercluster/archive/refs/tags/v{MC_VERSION}.zip", f"Leaflet.markercluster-{MC_VERSION}/dist/"),
+    ]
+    fallos = []
+    for url, pref in fuentes:
+        try:
+            with urllib.request.urlopen(url, timeout=20) as r:
+                datos = r.read()
+            if url.endswith(".tgz"):
+                import io, tarfile
+                with tarfile.open(fileobj=io.BytesIO(datos), mode="r:gz") as t:
+                    sacar = {n: t.extractfile(pref + n).read() for n in MC_ARCHIVOS}
+            else:
+                import io
+                with zipfile.ZipFile(io.BytesIO(datos)) as z:
+                    sacar = {n: z.read(pref + n) for n in MC_ARCHIVOS}
+            for n, b in sacar.items():
+                with open(os.path.join(MC_DIR, n), "wb") as f:
+                    f.write(b)
+            return os.path.exists(js)
+        except Exception as e:  # noqa: sin red, 403 del proxy, archivo sin dist/...
+            fallos.append(f"{url.split('/')[2]}: {str(e)[:80]}")
+    print(f"AVISO: no se pudo descargar leaflet.markercluster {MC_VERSION} ({'; '.join(fallos)}). "
+          f"La prueba sigue con las chinchetas sueltas y la carga CPU 4× NO es comparable con producción. "
+          f"Para arreglarlo, deja {', '.join(MC_ARCHIVOS)} (de dist/) en {MC_DIR}.", file=sys.stderr)
+    return False
 
 
 def servir():
@@ -248,6 +294,7 @@ async def main():
     guardar = "--guardar" in sys.argv
     capt = sys.argv[sys.argv.index("--capturas") + 1] if "--capturas" in sys.argv else None
     preparar_leaflet()
+    hay_mc = preparar_markercluster()
     srv = servir()
     url = f"http://127.0.0.1:{PUERTO}/index.html"
     res = {"fecha": time.strftime("%Y-%m-%d %H:%M"), "pruebas": {}, "errores_js": []}
@@ -266,6 +313,11 @@ async def main():
                     return await r.fulfill(path=os.path.join(LEAFLET_DIR, "leaflet.js"), content_type="application/javascript")
                 if u.endswith("leaflet.css") and "markercluster" not in u:
                     return await r.fulfill(path=os.path.join(LEAFLET_DIR, "leaflet.css"), content_type="text/css")
+                if hay_mc and f"leaflet.markercluster@{MC_VERSION}/dist/" in u:
+                    n = u.split("?")[0].rsplit("/", 1)[-1]
+                    if n in MC_ARCHIVOS:
+                        tipo = "text/css" if n.endswith(".css") else "application/javascript"
+                        return await r.fulfill(path=os.path.join(MC_DIR, n), content_type=tipo)
                 return await r.abort()
             await pg.route("**/*", ruta)
             return ctx, pg
@@ -293,6 +345,15 @@ async def main():
         await pg.goto(url)
         await pg.wait_for_timeout(2000)
         await pg.evaluate("async()=>{" + SALTAR_BIENVENIDA + "}")
+        # ¿Se midió como en producción? Con markercluster el mapa agrupa y pinta pocos iconos.
+        mc = await pg.evaluate("""()=>({cargado:typeof L.markerClusterGroup==='function',
+          agrupa:!!(L.MarkerClusterGroup&&window.__capaBibs instanceof L.MarkerClusterGroup),
+          grupos:document.querySelectorAll('.leaflet-marker-icon .chincheta.grupo').length,
+          iconos:document.querySelectorAll('.leaflet-marker-pane .leaflet-marker-icon').length})""")
+        res["markercluster"] = dict(mc, servido_en_local=hay_mc)
+        if hay_mc:  # si se pudo servir, que de verdad agrupe; si no, solo se avisa (arriba) y se apunta
+            res["pruebas"]["mapa con clústeres (markercluster cargado)"] = (
+                True if mc["cargado"] and mc["agrupa"] and mc["grupos"] > 0 else "sin clústeres: " + json.dumps(mc))
         for nombre, js in PRUEBAS:
             try:
                 r = await pg.evaluate("async()=>{" + js + "}")
