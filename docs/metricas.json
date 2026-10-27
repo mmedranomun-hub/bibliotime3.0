@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-10-27 06:34",
+  "fecha": "2026-10-27 07:38",
   "pruebas": {
     "arranca: datos y vistas": true,
     "marca España (sin «Navarra» en la cabecera)": true,
@@ -19,19 +19,19 @@
     "enlace #bib abre la ficha": true
   },
   "errores_js": [],
-  "carga_ms_cpu4x": 2489,
+  "carga_ms_cpu4x": 1619,
   "carga_ms_cpu4x_min_max": [
-    2200,
-    2636
+    1488,
+    1830
   ],
   "datos": {
     "bibliotecas": 2616,
-    "con_horario_verificado": 224,
+    "con_horario_verificado": 234,
     "provincias_con_horario": 51,
     "provincias_total": 51
   },
   "seo": {
-    "paginas": 412,
+    "paginas": 452,
     "sitemap": true
   },
   "peso": {
@@ -40,12 +40,12 @@
       "kb_gzip": 27.0
     },
     "app.js": {
-      "kb": 304.4,
-      "kb_gzip": 89.6
+      "kb": 306.6,
+      "kb_gzip": 90.1
     },
     "bibliotecas-espana.js": {
-      "kb": 604.4,
-      "kb_gzip": 161.0
+      "kb": 609.2,
+      "kb_gzip": 161.7
     }
   },
   "ok": true
