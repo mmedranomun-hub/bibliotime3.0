@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-10-27 10:48",
+  "fecha": "2026-10-27 11:45",
   "pruebas": {
     "arranca: datos y vistas": true,
     "marca España (sin «Navarra» en la cabecera)": true,
@@ -9,6 +9,7 @@
     "bosque, misiones, racha y nivel": true,
     "marchitar si se sale de la app": true,
     "tienda y semillas": true,
+    "hitos del bosque: al plantar el 10.º árbol, tarjeta y semillas (una sola vez)": true,
     "acceso: la ley foral solo en Navarra": true,
     "especies de temporada (cruzan el año)": true,
     "historias y tips": true,
@@ -21,33 +22,40 @@
     "enlace #bib abre la ficha": true
   },
   "errores_js": [],
-  "carga_ms_cpu4x": 3333,
+  "carga_ms_cpu4x": 3762,
   "carga_ms_cpu4x_min_max": [
-    2888,
-    3414
+    3288,
+    3989
   ],
+  "markercluster": {
+    "cargado": false,
+    "agrupa": false,
+    "grupos": 0,
+    "iconos": 2616,
+    "servido_en_local": false
+  },
   "datos": {
     "bibliotecas": 2616,
-    "con_horario_verificado": 254,
+    "con_horario_verificado": 266,
     "provincias_con_horario": 51,
     "provincias_total": 51
   },
   "seo": {
-    "paginas": 464,
+    "paginas": 479,
     "sitemap": true
   },
   "peso": {
     "index.html": {
-      "kb": 121.6,
-      "kb_gzip": 27.2
+      "kb": 123.2,
+      "kb_gzip": 27.5
     },
     "app.js": {
-      "kb": 278.2,
-      "kb_gzip": 81.2
+      "kb": 280.3,
+      "kb_gzip": 81.9
     },
     "bibliotecas-espana.js": {
-      "kb": 618.1,
-      "kb_gzip": 163.3
+      "kb": 624.9,
+      "kb_gzip": 164.5
     }
   },
   "ok": true
