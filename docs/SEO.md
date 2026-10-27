@@ -43,6 +43,18 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
 - Las tarjetas de provincia, localidad y temáticas enlazan el nombre de la biblioteca a su página. Todas en `sitemap.xml`.
 - Crecen solas: cada horario verificado nuevo en una capital genera su página al regenerar.
 
+## Hecho (2026-10-27) · «Bibliotecas abiertas hoy en <lugar>» (360 páginas en total, antes 339)
+- `/bibliotecas/abiertas-hoy/` (España), `/bibliotecas/<prov>/abiertas-hoy/` y `/bibliotecas/<prov>/<localidad>/abiertas-hoy/`
+  con 2 o más bibliotecas con horario verificado (fuente + fecha): hoy 21 páginas (13 provincias, 7 localidades y España).
+- Lo estático (lo que lee Google): título «Bibliotecas abiertas hoy en X», tabla «¿Cuántas abren cada día?» con el recuento
+  real del horario de invierno verificado, tarjetas con el horario semanal y la fuente, `CollectionPage` + `FAQPage`
+  («¿Qué bibliotecas abren hoy…?», «¿…hoy domingo…?», «¿Cuál cierra más tarde…?»).
+- En el navegador, un script pequeño (en línea, sin dependencias) calcula con la hora de España peninsular o de Canarias
+  (`Intl`, zona `Atlantic/Canary` en Las Palmas y Tenerife) el horario de hoy de cada una, si está abierta ahora, abre
+  más tarde o ya cerró, ordena las abiertas primero y resalta el día en la tabla. Usa el horario de verano solo si está
+  verificado con fechas (`h.ver` + `h.vd`/`h.vh`); los días «sin confirmar» de la nota salen como tales. Sin JS se ve el
+  horario semanal. Es una entrada más de `TEMAS` (`hoy: true`), así que sale en «Por horario» y crece sola.
+
 ## Lo que tienes que hacer tú (sin esto no sirve de nada)
 1. **Conectar el dominio** en Vercel: proyecto `bibliotime` → Settings → Domains → añadir `bibliomapa.es` y
    `www.bibliomapa.es` (redirigir www → sin www) y poner en tu registrador los DNS que te indique Vercel.
