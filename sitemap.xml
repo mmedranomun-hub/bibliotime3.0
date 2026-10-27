@@ -21,6 +21,7 @@
   <url><loc>https://bibliomapa.es/bibliotecas/alicante/san-vicente-del-raspeig/</loc><lastmod>2026-10-27</lastmod><priority>0.8</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/alicante/santa-pola/</loc><lastmod>2026-10-27</lastmod><priority>0.8</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/alicante/elx/</loc><lastmod>2026-10-27</lastmod><priority>0.8</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/alicante/abiertas-hoy/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/alicante/</loc><lastmod>2026-10-27</lastmod><priority>0.8</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/almeria/el-ejido/</loc><lastmod>2026-10-27</lastmod><priority>0.8</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/almeria/</loc><lastmod>2026-10-27</lastmod><priority>0.8</priority></url>
@@ -32,6 +33,7 @@
   <url><loc>https://bibliomapa.es/bibliotecas/asturias/abiertas-hoy/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/asturias/abiertas-domingo/</loc><lastmod>2026-10-15</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/asturias/abiertas-fin-de-semana/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/asturias/abiertas-hasta-tarde/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/asturias/</loc><lastmod>2026-10-27</lastmod><priority>0.8</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/avila/</loc><lastmod>2026-10-27</lastmod><priority>0.8</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/badajoz/merida/</loc><lastmod>2026-10-27</lastmod><priority>0.8</priority></url>
@@ -185,6 +187,8 @@
   <url><loc>https://bibliomapa.es/bibliotecas/valencia/gandia/</loc><lastmod>2026-10-27</lastmod><priority>0.8</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/valencia/abiertas-hoy/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/valencia/abiertas-fin-de-semana/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/valencia/abiertas-hasta-tarde/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/valencia/abiertas-verano/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/valencia/</loc><lastmod>2026-10-27</lastmod><priority>0.8</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/valladolid/abiertas-hoy/</loc><lastmod>2026-10-16</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/valladolid/abiertas-fin-de-semana/</loc><lastmod>2026-10-16</lastmod><priority>0.7</priority></url>
@@ -349,7 +353,9 @@
   <url><loc>https://bibliomapa.es/bibliotecas/malaga/biblioteca-publica-miguel-de-cervantes/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/salamanca/biblioteca-de-la-facultad-de-historia/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/baleares/biblioteca-de-la-uib/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/asturias/biblioteca-de-ciencias-juridicas/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/sevilla/biblioteca-infanta-elena/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/asturias/biblioteca-de-ciencias-de-la-salud/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/a-coruna/biblioteca-anxel-casal/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/bizkaia/universidad-de-deusto-biblioteca/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/valladolid/biblioteca-municipal-rosa-chacel/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
@@ -377,6 +383,7 @@
   <url><loc>https://bibliomapa.es/bibliotecas/a-coruna/biblioteca-xeral-da-usc/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/a-coruna/biblioteca-da-facultade-de-ciencias-da-comunicacion-usc/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/valencia/biblioteca-etsinf-upv/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/valencia/biblioteca-ade-topografia-valencia/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/zaragoza/biblioteca-maria-moliner/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-publica-elena-fortun/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-publica-maria-moliner/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
