@@ -68,4 +68,5 @@ Formato: `AAAA-MM-DD HH:MM · quién · objetivo(s) · resultado (✅ subido / �
 - 2026-10-27 02:19 · director/agente horarios · Objetivo 1 · ✅ · 1c2b965→cherry-pick · bibliotecas con horario 181 → 192 (Oviedo, USC, ULPGC, UMA, UBU, Ágora, UM, Unizar ×2, UV, Ánxel Casal); Segovia con fuente municipal
 - 2026-10-27 02:19 · director/agente producto · Objetivo 3 (Dopamina · reacciones 🔥💪🧠) · ✅ · 56aaccc→cherry-pick · pruebas 14 → 15; app.js gzip 102,8 → 104,2 KB; falta SQL «REACCIONES EN SESIONES» (sin él, solo en local)
 - 2026-10-27 02:19 · director/agente SEO · Objetivo 4 · ✅ · 7bad57b→cherry-pick · páginas SEO 339 → 372 («abiertas hoy» por lugar + regeneración con los horarios nuevos); caché v61; carga CPU 4× 2178 ms (nube)
-- 2026-10-27 03:18 · director · ⏳ en curso · Objetivo 1 (horarios), Objetivo 5 (app.js más ligero), Objetivo 4 (títulos y descripciones SEO)
+- 2026-10-27 03:18 · director · ⚠️ cortada (sin commits; a las 05:18 llevaba 2 h en curso) · Objetivo 1, 5, 4 · — · ninguna
+- 2026-10-27 05:18 · director · ⏳ en curso · Objetivo 1 (horarios), Objetivo 5 (app.js más ligero), Objetivo 4 (títulos y descripciones SEO)
