@@ -55,6 +55,20 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
   verificado con fechas (`h.ver` + `h.vd`/`h.vh`); los días «sin confirmar» de la nota salen como tales. Sin JS se ve el
   horario semanal. Es una entrada más de `TEMAS` (`hoy: true`), así que sale en «Por horario» y crece sola.
 
+## Hecho (2026-10-27) · Títulos de provincia y localidad y enlazado entre vecinas (372 páginas)
+- Título y meta description de las 51 provincias y 73 localidades: empiezan por «Bibliotecas abiertas en <lugar>» con el
+  recuento real (total y con horario verificado con fuente y fecha), p. ej. «Bibliotecas abiertas en Madrid: 208, 9 con
+  horario verificado | Bibliomapa» o «Bibliotecas abiertas en Getafe: 4, sin horario verificado aún». La redacción cambia
+  de forma determinista (`tituloLugar` y `descripcionLugar`: según haya verificadas, domingo o cierre a las 21:00 y un hash
+  de la ruta), así que regenerar con los mismos datos da lo mismo. Título ≤ 65 caracteres (« | Bibliomapa» solo si cabe;
+  los nombres larguísimos usan una forma corta) y descripción ≤ 160. Si una localidad se llama igual que otra o que una
+  provincia, lleva la provincia. Ningún título se repite en todo el sitio (`titulosUsados`; también las fichas de biblioteca
+  con el mismo nombre). og:title/og:description salen de los mismos textos y el JSON-LD `CollectionPage` repite nombre y descripción.
+- «Provincias cercanas» en cada provincia (las 4 más cercanas por distancia entre centroides de sus bibliotecas; 3 si la
+  4.ª está mucho más lejos), «Localidades cercanas» en cada localidad (las que tienen página propia, de cualquier provincia:
+  hasta 4 a ≤ 60 km o 2 a ≤ 150 km; se descartan nombres dobles de la misma ciudad, como Donostia / San Sebastián) y
+  «Por horario en <provincia>» en cada ficha de biblioteca (temáticas de su provincia y, si las hay, de su localidad).
+
 ## Lo que tienes que hacer tú (sin esto no sirve de nada)
 1. **Conectar el dominio** en Vercel: proyecto `bibliotime` → Settings → Domains → añadir `bibliomapa.es` y
    `www.bibliomapa.es` (redirigir www → sin www) y poner en tu registrador los DNS que te indique Vercel.

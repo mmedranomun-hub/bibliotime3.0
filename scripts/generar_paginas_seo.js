@@ -433,6 +433,13 @@ function tablaHorario(b) {
   return `<table class="horario"><caption>Horario de invierno</caption><tbody>${filas}</tbody></table>
 <p class="fuente">Verificado el ${esc(fechaEs(b.h.fv))} en la <a href="${esc(b.h.f)}" rel="nofollow noopener" target="_blank">fuente oficial</a>. En verano, festivos y época de exámenes puede cambiar: confírmalo antes de ir.</p>${b.h.nota ? `<p class="nota">⚠️ ${esc(b.h.nota)}</p>` : ""}`;
 }
+// Dos bibliotecas con el mismo nombre en la misma localidad (p. ej. dos sedes): la segunda cambia el orden del título.
+function tituloBiblioteca(b) {
+  const t = [`${b.n} (${b.c}): horario, dirección y teléfono | Bibliomapa`, `${b.n} en ${b.c}: dirección, teléfono y horario | Bibliomapa`]
+    .find((x) => !titulosUsados.has(x)) || `${b.n} (${b.c}, ${b.dir}) | Bibliomapa`;
+  titulosUsados.add(t);
+  return t;
+}
 function paginaBiblioteca(b) {
   const ruta = paginaDe.get(b.i), ps = slug(b.p), ok = verificado(b);
   const mismaLoc = porProv[b.p].filter((o) => o.c === b.c);
@@ -454,7 +461,7 @@ function paginaBiblioteca(b) {
     .concat(locConPagina ? [[b.c, `/bibliotecas/${ps}/${slug(b.c)}/`]] : []).concat([[b.n, ruta]]);
   const resumen = !ok ? "Horario sin confirmar." : DIAS.some((d) => sinConfirmar(b, d)) ? `Horario verificado el ${fechaEs(b.h.fv)}.` : `Horario verificado: ${horarioTexto(b.h.inv)}.`;
   escribe(ruta, pagina({
-    ruta, titulo: `${b.n} (${b.c}): horario, dirección y teléfono | Bibliomapa`,
+    ruta, titulo: tituloBiblioteca(b),
     descripcion: `${b.n}, ${tipo.toLowerCase()} en ${b.c} (${b.p}). ${resumen} Dirección, teléfono, web y bibliotecas cercanas.`,
     h1: esc(b.n),
     intro: `<span class="tipo">${esc(tipo)}</span> en ${esc(b.c)} (${esc(b.p)}). ${ok ? `Horario comprobado en su web oficial el ${esc(fechaEs(b.h.fv))}.` : "Aún no tenemos su horario verificado."}`,
@@ -463,11 +470,133 @@ function paginaBiblioteca(b) {
 <section class="ficha" aria-labelledby="t-hor"><h2 id="t-hor">Horario</h2>${horario}</section>
 ${fq ? fq.html : ""}
 ${cercanas.length ? `<section class="cerca" aria-labelledby="t-cerca"><h2 id="t-cerca">Otras bibliotecas en ${esc(b.c)}</h2><ul>${lisCerca}</ul></section>` : ""}
-<p class="volver"><a href="${locConPagina ? `/bibliotecas/${ps}/${slug(b.c)}/` : `/bibliotecas/${ps}/`}">← Todas las bibliotecas de ${esc(locConPagina ? b.c : b.p)}</a>${temaProv["abiertas-hoy"][b.p] ? ` · <a href="/bibliotecas/${ps}/abiertas-hoy/">Bibliotecas abiertas hoy en ${esc(b.p)}</a>` : ""}</p>`,
+${seccionTemasFicha(b, locConPagina)}
+<p class="volver"><a href="${locConPagina ? `/bibliotecas/${ps}/${slug(b.c)}/` : `/bibliotecas/${ps}/`}">← Todas las bibliotecas de ${esc(locConPagina ? b.c : b.p)}</a>${locConPagina ? ` · <a href="/bibliotecas/${ps}/">${esc(b.p)}</a>` : ""}</p>`,
     migas,
     ld: [{ "@context": "https://schema.org", ...libraryLD(b, DOMINIO + ruta) }, ...(fq ? [fq.ld] : [])],
   }));
   urls.push([ruta, "0.7"]);
+}
+
+// ---------- Títulos y descripciones de provincia y localidad ----------
+// Empiezan por «Bibliotecas abiertas en <lugar>» con el recuento real (total y con horario verificado). La redacción
+// varía de forma determinista (según haya horario verificado, domingo, cierre tardío… y un hash de la ruta) para que
+// no sea la misma plantilla en todas; nunca se repite un título (si chocara, se prueba la siguiente variante).
+// Límites: título ≤ 65 caracteres (con « | Bibliomapa» solo si cabe) y descripción ≤ 160.
+const MAX_TIT = 65, MAX_DESC = 160, MARCA = " | Bibliomapa";
+const titulosUsados = new Set();
+const hashTexto = (s) => { let h = 0; for (const ch of s) h = (h * 31 + ch.codePointAt(0)) >>> 0; return h; };
+const rota = (lista, semilla) => lista.map((_, k) => lista[(k + semilla) % lista.length]);
+const plural = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`;
+const enumera = (l) => (l.length < 2 ? l.join("") : l.slice(0, -1).join(", ") + " y " + l[l.length - 1]);
+function cuentas(lista) {
+  return { n: lista.length, v: lista.filter(verificado).length, dom: lista.filter(abreDomingo).length,
+    tarde: lista.filter((b) => verificado(b) && cierraTarde(b)).length, finde: lista.filter((b) => verificado(b) && abreFinde(b)).length };
+}
+// Nombres de localidad que aparecen en más de una provincia (o que son a la vez nombre de provincia): llevan la provincia.
+const nombresRepetidos = (() => {
+  const vistos = {};
+  provincias.forEach((p) => { (vistos[slug(p)] = vistos[slug(p)] || new Set()).add("prov"); });
+  provincias.forEach((p) => {
+    const porC = {};
+    porProv[p].forEach((b) => (porC[b.c] = (porC[b.c] || 0) + 1));
+    Object.keys(porC).filter((c) => tieneLocPagina(p, c, porC[c])).forEach((c) => (vistos[slug(c)] = vistos[slug(c)] || new Set()).add(p));
+  });
+  return new Set(Object.keys(vistos).filter((s) => vistos[s].size > 1));
+})();
+function tituloLugar(ruta, lugar, k) {
+  const base = `Bibliotecas abiertas en ${lugar}`, { n, v, dom, tarde } = k;
+  const cand = v ? [
+    `${base}: ${n}, ${v} con horario verificado`,
+    `${base}: ${v} con horario verificado de ${n}`,
+    `${base} (${n}): ${v} con horario comprobado`,
+    ...(dom ? [`${base}: ${n}, ${v} con horario y ${dom} en domingo`] : []),
+    ...(tarde ? [`${base}: ${n}, ${v} con horario y ${tarde} hasta tarde`] : []),
+  ] : [
+    `${base}: ${n} en el mapa, horario por confirmar`,
+    `${base}: ${n}, sin horario verificado aún`,
+    `${base} (${n}): horarios por confirmar`,
+  ];
+  // Respaldo corto para nombres muy largos: siempre lleva el total y los verificados.
+  const corto = v ? [`${base}: ${n}, ${v} con horario`, `${base} (${n}, ${v} verificadas)`, `${base}: ${n} (${v} verif.)`]
+    : [`${base}: ${n}, horario por confirmar`, `${base} (${n}, sin horario)`, `${base}: ${n}`];
+  for (const t of rota(cand, hashTexto(ruta)).concat(corto)) {
+    const opciones = [t + MARCA, t].filter((x) => x.length <= MAX_TIT && !titulosUsados.has(x));
+    if (opciones.length) { titulosUsados.add(opciones[0]); return { titulo: opciones[0], nombre: t }; }
+  }
+  // Nombre larguísimo (L'Hospitalet de Llobregat, Las Palmas de Gran Canaria…): el más corto libre, aunque pase un poco.
+  const t = corto.concat(cand).filter((x) => !titulosUsados.has(x)).sort((x, y) => x.length - y.length)[0] || `${base}: ${n} (${v} verif.) · ${ruta}`;
+  titulosUsados.add(t);
+  return { titulo: t, nombre: t };
+}
+function descripcionLugar(ruta, lugar, prov, k, nLocs) {
+  const s = hashTexto(ruta + "#d"), { n, v, dom, tarde, finde } = k, donde = prov ? `${lugar} (${prov})` : lugar;
+  const bibs = plural(n, "biblioteca", "bibliotecas");
+  const aperturas = rota([
+    `${bibs} y salas de estudio en ${donde}${nLocs > 1 ? `, en ${nLocs} localidades` : ""}`,
+    `Mapa de ${n === 1 ? "la biblioteca" : `las ${n} bibliotecas`} de ${donde}${nLocs > 1 ? ` (${nLocs} localidades)` : ""}`,
+    `En ${donde} hay ${bibs} en Bibliomapa${nLocs > 1 ? `, repartidas en ${nLocs} localidades` : ""}`,
+  ], s)[0];
+  const verif = v ? rota([`${v} con horario verificado en su web oficial`, `${v} con el horario comprobado en su web oficial`], s)[0]
+    : rota([`aún sin horarios verificados`, `horarios todavía por confirmar`], s)[0];
+  const extras = [dom ? `${dom} ${dom === 1 ? "abre" : "abren"} el domingo` : finde ? `${finde} ${finde === 1 ? "abre" : "abren"} el fin de semana` : "",
+    tarde ? `${tarde} ${tarde === 1 ? "cierra" : "cierran"} a las 21:00 o más tarde` : ""].filter(Boolean);
+  const cierres = rota(["Mira cuál está abierta ahora.", "Dirección, teléfono y cómo llegar.", "Abiertas ahora en el mapa, gratis y sin registro."], s);
+  const arma = (ex, cierre) => `${aperturas}: ${enumera([verif, ...ex])}.${cierre ? " " + cierre : ""}`;
+  for (let e = extras.length; e >= 0; e--) for (const c of cierres.concat([""])) {
+    const d = arma(extras.slice(0, e), c);
+    if (d.length <= MAX_DESC) return d;
+  }
+  return arma([], "").slice(0, MAX_DESC - 1).replace(/\s\S*$/, "") + "…";
+}
+// Página propia (CollectionPage) con el mismo nombre y descripción que el título y la meta description.
+const ldLugar = (ruta, nombre, descripcion, extra) => ({ "@context": "https://schema.org", "@type": "CollectionPage", name: nombre,
+  description: descripcion, url: DOMINIO + ruta, inLanguage: "es-ES", isPartOf: { "@type": "WebSite", name: "Bibliomapa", url: DOMINIO + "/" }, ...extra });
+
+// ---------- Vecinas: provincias y localidades cercanas ----------
+// Centroide = media de las coordenadas de sus bibliotecas; distancia entre centroides (km).
+const centro = (l) => ({ lat: l.reduce((a, b) => a + b.lat, 0) / l.length, lon: l.reduce((a, b) => a + b.lon, 0) / l.length });
+const centroProv = {};
+provincias.forEach((p) => (centroProv[p] = centro(porProv[p])));
+// 3-4 provincias: las 4 más cercanas, quitando la 4.ª si está mucho más lejos que la 3.ª (islas, Ceuta, Melilla).
+function provinciasCercanas(p) {
+  const l = provincias.filter((o) => o !== p).map((o) => ({ p: o, d: distKm(centroProv[p], centroProv[o]) })).sort((a, b) => a.d - b.d).slice(0, 4);
+  return l.length === 4 && l[3].d > l[2].d * 1.5 ? l.slice(0, 3) : l;
+}
+const locsConPagina = []; // { p, c, n, centro }
+provincias.forEach((p) => {
+  const porC = {};
+  porProv[p].forEach((b) => (porC[b.c] = porC[b.c] || []).push(b));
+  Object.keys(porC).filter((c) => tieneLocPagina(p, c, porC[c].length)).forEach((c) => locsConPagina.push({ p, c, n: porC[c].length, centro: centro(porC[c]) }));
+});
+// Hasta 4 localidades con página propia (de cualquier provincia) a menos de 60 km; si no hay ninguna, las 2 más cercanas a menos de 150 km.
+function localidadesCercanas(p, c) {
+  const yo = locsConPagina.find((x) => x.p === p && x.c === c);
+  // Fuera los nombres dobles de la misma ciudad en los datos (Donostia / San Sebastián): centroides a menos de 2 km.
+  const l = locsConPagina.filter((x) => x !== yo).map((x) => ({ ...x, d: distKm(yo.centro, x.centro) })).sort((a, b) => a.d - b.d)
+    .filter((x, k, arr) => !arr.slice(0, k).some((o) => distKm(o.centro, x.centro) < 2));
+  const cerca = l.filter((x) => x.d <= 60).slice(0, 4);
+  return cerca.length ? cerca : l.filter((x) => x.d <= 150).slice(0, 2);
+}
+const kmTexto = (d) => `a ${Math.max(1, Math.round(d))} km`;
+function seccionProvinciasCercanas(p) {
+  const l = provinciasCercanas(p);
+  return l.length ? `<section class="cerca" aria-labelledby="t-provs"><h2 id="t-provs">Provincias cercanas</h2><ul>${l.map(({ p: o, d }) =>
+    `<li><a href="/bibliotecas/${slug(o)}/">Bibliotecas en ${esc(o)}</a> <small>${plural(porProv[o].length, "biblioteca", "bibliotecas")} · ${kmTexto(d)}${porProv[o].filter(verificado).length ? ` · ${porProv[o].filter(verificado).length} con horario verificado` : ""}</small></li>`).join("")}</ul></section>` : "";
+}
+function seccionLocalidadesCercanas(p, c) {
+  const l = localidadesCercanas(p, c);
+  return l.length ? `<section class="cerca" aria-labelledby="t-locs"><h2 id="t-locs">Localidades cercanas</h2><ul>${l.map((x) =>
+    `<li><a href="/bibliotecas/${slug(x.p)}/${slug(x.c)}/">Bibliotecas en ${esc(x.c)}</a> <small>${plural(x.n, "biblioteca", "bibliotecas")} · ${kmTexto(x.d)}${x.p !== p ? ` · ${esc(x.p)}` : ""}</small></li>`).join("")}</ul></section>` : "";
+}
+// Desde la ficha de una biblioteca: las páginas temáticas de su provincia (y de su localidad, si las hay).
+function seccionTemasFicha(b, locConPagina) {
+  const ps = slug(b.p);
+  const enl = TEMAS.filter((t) => temaProv[t.slug][b.p]).map((t) =>
+    `<li><a href="/bibliotecas/${ps}/${t.slug}/">Bibliotecas ${esc(t.que)} en ${esc(b.p)}</a> <small>${plural(temaProv[t.slug][b.p].length, "biblioteca", "bibliotecas")} con horario verificado</small></li>`);
+  if (locConPagina) TEMAS_LOC.filter((t) => temaLoc[t.slug][b.p + "|" + b.c]).forEach((t) =>
+    enl.push(`<li><a href="/bibliotecas/${ps}/${slug(b.c)}/${t.slug}/">Bibliotecas ${esc(t.que)} en ${esc(b.c)}</a> <small>${plural(temaLoc[t.slug][b.p + "|" + b.c].length, "biblioteca", "bibliotecas")} con horario verificado</small></li>`));
+  return enl.length ? `<section class="cerca" aria-labelledby="t-temas"><h2 id="t-temas">Por horario en ${esc(b.p)}</h2><ul>${enl.join("")}</ul></section>` : "";
 }
 
 provincias.forEach((p) => {
@@ -479,14 +608,15 @@ provincias.forEach((p) => {
   // páginas de localidad
   conPagina.forEach((c) => {
     const l = porLoc[c].slice().sort(ordenBib), ruta = `/bibliotecas/${ps}/${slug(c)}/`;
-    const f = faq(c, l);
+    const f = faq(c, l), k = cuentas(l);
+    const tl = tituloLugar(ruta, nombresRepetidos.has(slug(c)) ? `${c} (${p})` : c, k);
+    const dl = descripcionLugar(ruta, c, p, k, 0);
     escribe(ruta, pagina({
-      ruta, titulo: `Bibliotecas en ${c}: horarios y salas de estudio abiertas | Bibliomapa`,
-      descripcion: `Las ${l.length} bibliotecas de ${c} (${p}) en un mapa: cuáles están abiertas ahora, horarios verificados, dirección y cómo llegar. Estudia con cronómetro y planta tu bosque.`,
-      h1: `Bibliotecas en ${esc(c)}`, intro: `${l.length} bibliotecas y salas de estudio en ${esc(c)} (${esc(p)})${l.filter((b) => b.h).length ? `, ${l.filter((b) => b.h).length} con horario verificado` : ""}. En el mapa de Bibliomapa ves en tiempo real cuáles están abiertas y cuál te pilla más cerca.`,
-      cuerpo: `${navPorHorario(p, c)}<section class="lista">${l.map((b) => tarjeta(b)).join("")}</section>${f.html}<p class="volver"><a href="/bibliotecas/${ps}/">← Todas las bibliotecas de ${esc(p)}</a></p>`,
+      ruta, titulo: tl.titulo, descripcion: dl,
+      h1: `Bibliotecas en ${esc(c)}`, intro: `${l.length} bibliotecas y salas de estudio en ${esc(c)} (${esc(p)})${k.v ? `, ${k.v} con horario verificado` : ""}. En el mapa de Bibliomapa ves en tiempo real cuáles están abiertas y cuál te pilla más cerca.`,
+      cuerpo: `${navPorHorario(p, c)}<section class="lista">${l.map((b) => tarjeta(b)).join("")}</section>${f.html}${seccionLocalidadesCercanas(p, c)}<p class="volver"><a href="/bibliotecas/${ps}/">← Todas las bibliotecas de ${esc(p)}</a></p>`,
       migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], [p, `/bibliotecas/${ps}/`], [c, ruta]],
-      ld: [ { "@context": "https://schema.org", "@type": "ItemList", name: `Bibliotecas en ${c}`, itemListElement: l.map((b, k) => ({ "@type": "ListItem", position: k + 1, item: libraryLD(b, DOMINIO + enlaceApp(b)) })) }, f.ld ],
+      ld: [ldLugar(ruta, tl.nombre, dl, { mainEntity: { "@type": "ItemList", name: `Bibliotecas en ${c}`, numberOfItems: l.length, itemListElement: l.map((b, k) => ({ "@type": "ListItem", position: k + 1, item: libraryLD(b, DOMINIO + enlaceApp(b)) })) } }), f.ld],
     }));
     urls.push([ruta, "0.8"]);
     // páginas temáticas de la localidad (2 o más que cumplen; ver temaLoc)
@@ -530,13 +660,13 @@ provincias.forEach((p) => {
     const titulo = conPagina.includes(c) ? `<a href="/bibliotecas/${ps}/${slug(c)}/">${esc(c)}</a>` : esc(c);
     return `<section class="loc"><h2>${titulo} <small>${l.length}</small></h2>${(conPagina.includes(c) ? l.slice(0, 4) : l).map((b) => tarjeta(b)).join("")}${conPagina.includes(c) && l.length > 4 ? `<p class="mas"><a href="/bibliotecas/${ps}/${slug(c)}/">Ver las ${l.length} bibliotecas de ${esc(c)} →</a></p>` : ""}</section>`;
   }).join("");
+  const k = cuentas(lista), tp = tituloLugar(ruta, p, k), dp = descripcionLugar(ruta, p, "", k, locs.length);
   escribe(ruta, pagina({
-    ruta, titulo: `Bibliotecas en ${p}: abiertas ahora, horarios y salas de estudio | Bibliomapa`,
-    descripcion: `Mapa de las ${lista.length} bibliotecas de ${p}: cuáles están abiertas ahora, horarios verificados, salas de estudio y cómo llegar. Gratis y sin registro.`,
-    h1: `Bibliotecas en ${esc(p)}`, intro: `${lista.length} bibliotecas en ${locs.length} ${locs.length === 1 ? "localidad" : "localidades"} de ${esc(p)}. Elige tu localidad o abre el mapa para ver cuáles están abiertas ahora mismo.`,
-    cuerpo: `${enlTemas}<nav class="locs">${conPagina.map((c) => `<a href="/bibliotecas/${ps}/${slug(c)}/">${esc(c)} <small>${porLoc[c].length}</small></a>`).join("")}</nav>${secciones}${f.html}<p class="volver"><a href="/bibliotecas/">← Todas las provincias</a></p>`,
+    ruta, titulo: tp.titulo, descripcion: dp,
+    h1: `Bibliotecas en ${esc(p)}`, intro: `${lista.length} bibliotecas en ${locs.length} ${locs.length === 1 ? "localidad" : "localidades"} de ${esc(p)}${k.v ? `, ${k.v} con horario verificado` : ""}. Elige tu localidad o abre el mapa para ver cuáles están abiertas ahora mismo.`,
+    cuerpo: `${enlTemas}<nav class="locs">${conPagina.map((c) => `<a href="/bibliotecas/${ps}/${slug(c)}/">${esc(c)} <small>${porLoc[c].length}</small></a>`).join("")}</nav>${secciones}${f.html}${seccionProvinciasCercanas(p)}<p class="volver"><a href="/bibliotecas/">← Todas las provincias</a></p>`,
     migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], [p, ruta]],
-    ld: f.ld,
+    ld: [ldLugar(ruta, tp.nombre, dp, {}), f.ld],
   }));
   urls.push([ruta, "0.8"]);
 });
@@ -587,4 +717,5 @@ Allow: /
 
 Sitemap: ${DOMINIO}/sitemap.xml
 `);
+console.log(`Vecinas: ${locsConPagina.filter((x) => !localidadesCercanas(x.p, x.c).length).length} de ${locsConPagina.length} localidades sin «Localidades cercanas» (ninguna con página a menos de 150 km)`);
 console.log(`Páginas: ${urls.length - 1} (+ portada) · provincias: ${provincias.length} · bibliotecas: ${todas.length} · con página propia: ${paginaDe.size} (${conPaginaPropia.filter(verificado).length} con horario verificado)`);
