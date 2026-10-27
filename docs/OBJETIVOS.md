@@ -17,11 +17,11 @@ semana por usuario activo, con árbol sano. Todo lo demás existe para mover est
 | # | Objetivo | Métrica | Hoy | Meta | Fecha |
 |---|---|---|---|---|---|
 | 1 | **Útil en toda España** (×3): que cualquier estudiante encuentre su biblioteca con horario fiable | provincias con horario verificado | 51/51 ✅ | 51/51 (al menos la capital) | 30-11-2026 |
-| | | bibliotecas con horario verificado | 192 | 300 | 31-12-2026 |
+| | | bibliotecas con horario verificado | 204 | 300 | 31-12-2026 |
 | 2 | **Temporada de exámenes** (×3): aperturas extraordinarias y salas 24 h (UNAV 1-dic, UPNA 15-dic) | ciudades con calendario de exámenes cargado (solo fuente oficial) | 3 (Pamplona, Madrid, Sevilla) | Pamplona, Madrid, Barcelona, Valencia, Sevilla | 30-11-2026 |
 | 3 | **Hábito y dopamina sana** (×2): volver cada día a estudiar | tareas «Dopamina ·» hechas · pruebas de recompensas en verde | 8 tandas (+ reacciones 🔥💪🧠) | 1 mejora por día | continuo |
-| 4 | **SEO bibliomapa.es** (×2): salir arriba en «bibliotecas abiertas en <ciudad>» | páginas generadas · páginas con horario verificado | 372 | +1 página por biblioteca con horario | continuo |
-| 5 | **Rápida en móvil** (×1) | carga con CPU 4× (ms) · app.js gzip (KB) | 2178 (nube, 2 CPU) · 104,2 ⚠️ sube | ≤ 1500 · ≤ 95 | 30-11-2026 |
+| 4 | **SEO bibliomapa.es** (×2): salir arriba en «bibliotecas abiertas en <ciudad>» | páginas generadas · páginas con horario verificado | 384 | +1 página por biblioteca con horario | continuo |
+| 5 | **Rápida en móvil** (×1) | carga con CPU 4× (ms) · app.js gzip (KB) | 3721 (nube cargada, ±300) · 90,7 ✅ | ≤ 1500 · ≤ 95 | 30-11-2026 |
 | 6 | **Lista para Google Play** (×1) | bloqueantes del backlog resueltos | ver «Pendiente del usuario» | 0 que dependan del código | 17-11-2026 |
 
 ## Cómo elige el director
