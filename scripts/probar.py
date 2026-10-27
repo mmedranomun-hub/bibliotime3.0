@@ -219,6 +219,12 @@ PRUEBAS = [
     ("enlace #bib abre la ficha", """
       location.hash='#bib=104-x';comprobarEnlaceCompartido();await new Promise(r=>setTimeout(r,900));
       return !!document.querySelector('.leaflet-popup-content') || 'no abre la ficha';"""),
+    ("perfil: récord con el nombre bien recortado", """
+      var bad=DATA.sessions.length;DATA.sessions.push({id:'t-rec',date:'2026-01-01',min:9999,bib:'Biblioteca de Navarra'});
+      try{goView('profile');await new Promise(r=>setTimeout(r,300));
+        var lab=[...document.querySelectorAll('.stat .lab')].map(x=>x.textContent).find(t=>/larga/.test(t))||'';
+        return /· Biblioteca de Navarra$/.test(lab) || ('récord: «'+lab+'»');
+      }finally{DATA.sessions.splice(bad,1);goView('map');}"""),
 ]
 
 

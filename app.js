@@ -2652,7 +2652,7 @@ function renderRecords(){
   var el=$("recordsGrid"); if(!el)return;
   if(!DATA.sessions.length){el.innerHTML='<div class="empty-note" style="grid-column:1/-1">Termina tu primera sesión para empezar a ganar récords</div>';return;}
   var maxMin=0,bestBib="—",totalMin=0;
-  DATA.sessions.forEach(function(s){totalMin+=s.min;if(s.min>maxMin){maxMin=s.min;bestBib=s.bib.replace("Biblioteca ","").replace("Pública ","");}});
+  DATA.sessions.forEach(function(s){totalMin+=s.min;if(s.min>maxMin){maxMin=s.min;bestBib=cortoNombre(s.bib||"—");}});
   el.innerHTML=
     '<div class="stat"><div class="num">'+hMin(maxMin)+'</div><div class="lab">Sesión más larga · '+escapeHTML(bestBib)+'</div></div>'+
     '<div class="stat"><div class="num">'+computeBestStreak()+'</div><div class="lab">Mejor racha (días)</div></div>'+
