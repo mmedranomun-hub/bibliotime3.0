@@ -87,7 +87,7 @@ PRUEBAS = [
       FOCUS.hiddenAt=Date.now()-20000;document.dispatchEvent(new Event('visibilitychange'));
       var ok=FOCUS.withered===true;stopStudy(true);return ok||'no se marchita';"""),
     ("tienda y semillas", """
-      DATA.semillasPremio=(DATA.semillasPremio||0)+100;abrirTienda();var n=document.querySelectorAll('.shop-item').length;closeModal();
+      DATA.semillasPremio=(DATA.semillasPremio||0)+100;await abrirTienda();var n=document.querySelectorAll('.shop-item').length;closeModal();
       return n>=6||('solo '+n+' especies');"""),
     ("acceso: la ley foral solo en Navarra", """
       for(var i=N_NAVARRA;i<BIBLIOTECAS.length;i++)if(/Ley Foral/.test(accesoAccesibilidadHTML(BIBLIOTECAS[i])))return 'ley foral fuera de Navarra: '+BIBLIOTECAS[i].nombre;
@@ -102,14 +102,18 @@ PRUEBAS = [
       var c=[[nav,'2026-12-01',1],[nav,'2026-12-15',1],[nav,'2027-01-06',1],[nav,'2027-01-07',0],[nav,'2026-11-30',0],[nav,'2026-06-15',0],
         [alm,'2027-03-01',1],[alm,'2027-04-30',1],[alm,'2027-05-01',0],[especieDe('calabaza'),'2026-11-03',0]];
       for(const x of c)if(enTemporada(x[0],d(x[1]))!==!!x[2])return x[0].id+' mal el '+x[1];
-      var o=ymd;ymd=f=>f?o(f):'2026-12-15';abrirTienda();var t=$('modalRoot').innerText,l=document.querySelectorAll('#modalRoot .luz').length;closeModal();
-      ymd=f=>f?o(f):'2026-07-15';abrirTienda();var t2=$('modalRoot').innerText;closeModal();ymd=o;
+      var o=ymd;ymd=f=>f?o(f):'2026-12-15';await abrirTienda();var t=$('modalRoot').innerText,l=document.querySelectorAll('#modalRoot .luz').length;closeModal();
+      ymd=f=>f?o(f):'2026-07-15';await abrirTienda();var t2=$('modalRoot').innerText;closeModal();ymd=o;
       return t.indexOf('Abeto de Navidad')>=0&&l>0&&t2.indexOf('Abeto de Navidad')<0||'tienda: navidad fuera de fecha o sin luces';"""),
     ("historias y tips", """
       goView('friends');renderStories();var ok=!!document.querySelector('#storiesBar .story.me');
-      abrirTips();ok=ok&&document.querySelectorAll('.tip').length>=20;cerrarTips();return ok;"""),
+      await abrirTips();ok=ok&&document.querySelectorAll('.tip').length>=20;cerrarTips();return ok;"""),
+    ("app-extra.js define todas las funciones de EXTRA_FUNCS", """
+      await cargarExtra();
+      var f=EXTRA_FUNCS.filter(n=>typeof window[n]!=='function'||/cargarExtra\\(\\)\\.then/.test(String(window[n])));
+      return !f.length||'siguen siendo stub: '+f.join(', ');"""),
     ("agenda: añadir examen", """
-      goView('cal');var k=ymd(new Date(Date.now()+3*864e5));openDayModal(k);await new Promise(r=>setTimeout(r,200));
+      goView('cal');var k=ymd(new Date(Date.now()+3*864e5));await openDayModal(k);await new Promise(r=>setTimeout(r,200));
       $('evTitle').value='Examen prueba';$('evAdd').click();await new Promise(r=>setTimeout(r,200));
       var ok=(DATA.events[k]||[]).some(e=>e.title==='Examen prueba');renderStudy();
       return ok && $('examChip').innerText.indexOf('Examen prueba')>=0 || 'no aparece el examen';"""),

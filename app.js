@@ -317,7 +317,8 @@ function estadoBib(b){const now=ahoraEn(b),d=now.getDay(),m=now.getHours()*60+no
 /* ===== CÓDIGO BAJO DEMANDA (app-extra.js) =====
    Las ventanas y acciones que solo se usan al pulsar un botón (denunciar/bloquear, reportar un horario,
    añadir préstamo/evento/meta, avisos, sugerencias, imágenes para stories con canvas, resumen «Wrapped»,
-   bienvenida de la 1.ª visita, sala de estudio en grupo, hilo de comentarios…)
+   bienvenida de la 1.ª visita y la diaria, sala de estudio en grupo, hilo de comentarios, tienda, tips,
+   historias, modo foco, «Sesión terminada», ventana de un día de la agenda…)
    viven en app-extra.js para que app.js pese menos y el primer pintado en móvil sea más rápido.
    Cada nombre de EXTRA_FUNCS es aquí un «stub»: al llamarlo carga app-extra.js una sola vez (que
    redefine la función de verdad con el mismo nombre global) y la ejecuta con los mismos argumentos.
@@ -350,7 +351,23 @@ var EXTRA_FUNCS=[
   "loadRoomMembers",
   "pintarSalaActiva",
   "postComment",
-  "deleteComment"];
+  "deleteComment",
+  // 2026-10-27 (2.ª tanda): tienda, cofre, racha, historias, tips, modo foco, «Sesión terminada»,
+  // editar sesión, ventana de un día de la agenda y ocupación habitual
+  "abrirTienda",
+  "comprarEspecie",
+  "usarEspecie",
+  "abrirCofre",
+  "abrirRacha",
+  "abrirStory",
+  "abrirStoryMia",
+  "mostrarStory",
+  "abrirTips",
+  "abrirFoco",
+  "pedirValoracion",
+  "editarSesion",
+  "openDayModal",
+  "showOccHistory"];
 var _extraP=null;
 function cargarExtra(){
   if(!_extraP)_extraP=new Promise(function(ok,ko){
@@ -1421,33 +1438,7 @@ function occControlsHTML(i){
     '</div>'+
     '<div id="occHist'+i+'" class="occ-hist-wrap"><button class="linkbtn" style="font-size:var(--fs-xs)" onclick="showOccHistory('+i+')">📊 Ver ocupación habitual</button></div>';
 }
-async function showOccHistory(i){
-  var wrap=document.getElementById("occHist"+i); if(!wrap)return;
-  wrap.innerHTML='<div class="occ-empty">Cargando tendencia…</div>';
-  await cargarSupabase();
-  var sb=socialClient();
-  if(!sb){wrap.innerHTML='<div class="occ-empty">Configura Supabase para ver la tendencia histórica</div>';return;}
-  var res=await sb.from("occupancy_reports").select("level,created_at").eq("bib_index",i).limit(500);
-  if(res.error||!res.data||!res.data.length){wrap.innerHTML='<div class="occ-empty">Aún no hay suficientes datos históricos</div>';return;}
-  var buckets={"Mañana":[],"Tarde":[],"Noche":[]};
-  res.data.forEach(function(r){
-    var h=new Date(r.created_at).getHours();
-    var b=h<14?"Mañana":(h<20?"Tarde":"Noche");
-    var sc=OCC_LEVELS[r.level]?OCC_LEVELS[r.level].score:null;
-    if(sc)buckets[b].push(sc);
-  });
-  var html='<div class="occ-title" style="margin-top:8px">Ocupación habitual</div><div class="occ-hist">';
-  ["Mañana","Tarde","Noche"].forEach(function(k){
-    var arr=buckets[k];
-    if(!arr.length){html+='<div class="occ-hist-bar"><div class="ohb-track"></div><small>'+k+'</small></div>';return;}
-    var avg=arr.reduce(function(a,b){return a+b;},0)/arr.length;
-    var pct=Math.max(10,Math.round((avg-1)/2*100));
-    var cls=avg>=2.35?"od-llena":(avg>=1.65?"od-media":"od-libre");
-    html+='<div class="occ-hist-bar"><div class="ohb-track"><div class="ohb-fill '+cls+'" style="height:'+pct+'%"></div></div><small>'+k+'</small></div>';
-  });
-  html+='</div><div class="occ-source">Basado en '+res.data.length+' reportes históricos de todos los usuarios.</div>';
-  wrap.innerHTML=html;
-}
+// showOccHistory (tendencia de ocupación, pide Supabase) → app-extra.js
 async function addOccReport(i,level,silent){
   if(!OCC_LEVELS[level])return;
   var sb=socialClient();
@@ -2078,62 +2069,8 @@ function stopStudy(silent,endTs){
     showToast("Sesión guardada: "+fmtHoras(Math.max(1,min))+" h");
   }
 }
+// «Sesión terminada» (pedirValoracion) y editarSesion → app-extra.js (precargado mucho antes de acabar una sesión)
 function bibIdxDe(sesion){if(!sesion||sesion.bib===NO_BIB)return -1;for(var k=0;k<BIBLIOTECAS.length;k++){if(BIBLIOTECAS[k].nombre===sesion.bib)return k;}return -1;}
-function editarSesion(idx){
-  var s=DATA.sessions[idx]; if(!s)return;
-  openModal('<h3>Editar sesión</h3><div class="sub">'+escapeHTML(fmtFeedDate(s.date))+' · '+escapeHTML(cortoNombre(s.bib))+'</div>'+
-    '<div class="field"><label>Minutos estudiados</label><input type="number" id="edMin" min="1" max="960" value="'+s.min+'"></div>'+
-    '<button class="btn" id="edSave">Guardar</button>'+
-    '<button class="linkbtn" id="edDel" style="display:block;margin:14px auto 0;color:var(--peligro-tx)">Borrar esta sesión</button>',function(){
-    $("edSave").addEventListener("click",function(){
-      var m=parseInt($("edMin").value,10); if(!(m>=1&&m<=960)){showToast("Pon entre 1 y 960 minutos");return;}
-      s.min=m;s.sec=m*60;saveUserData();socialShareSession(s);closeModal();renderStudy();renderProfile();showToast("Sesión actualizada");
-    });
-    $("edDel").addEventListener("click",function(){
-      if(!confirm("¿Borrar esta sesión? Se descontará de tus horas y rachas."))return;
-      DATA.sessions.splice(idx,1);saveUserData();
-      var sb=socialClient(); if(sb&&SOCIAL.user)sb.from("shared_sessions").delete().eq("owner_id",SOCIAL.user.id).eq("local_id",s.id);
-      closeModal();renderStudy();renderProfile();showToast("Sesión borrada");
-    });
-  });
-}
-function pedirValoracion(sesion,horasAntes){
-  var sel={v:0};
-  var plantado=sesion.focus?'<div class="planted'+(sesion.focus==="withered"?' seco':'')+'"><div class="planted-tree">'+arbolSVG(sesion.min,sesion.focus==="withered",sesion.subject||sesion.id,110,sesion.esp)+'</div>'+
-    '<div class="planted-txt">'+(sesion.focus==="withered"?'🥀 Tu árbol se marchitó porque saliste de la app. ¡El próximo crecerá!':'🎉 ¡Has plantado un '+ETAPAS_ARBOL[etapaArbol(sesion.min)][1].toLowerCase()+' en tu bosque!'+(Math.floor(sesion.min/5)?'<span class="planted-seeds">🌰 +'+Math.floor(sesion.min/5)+' semillas</span>':''))+'</div></div>':'';
-  var barraNivel=horasAntes!=null?nivelProgresoHTML(horasAntes):'';
-  openModal(plantado+barraNivel+'<h3>Sesión terminada</h3><div class="sub">'+fmtHoras(sesion.min)+' h en '+escapeHTML(sesion.bib.replace("Biblioteca ","").replace("Pública ",""))+(sesion.verif?' · <span class="badge-ok">✓ verificada</span>':'')+'</div>'+
-    '<label style="font-size:var(--fs-s);font-weight:700;color:var(--suave);text-transform:uppercase;letter-spacing:.05em">¿Qué tal ha ido?</label>'+
-    '<div class="prodstars" id="prodStars">'+[1,2,3,4,5].map(function(n){return '<button data-v="'+n+'">★</button>';}).join("")+'</div>'+
-    (bibIdxDe(sesion)>=0?'<label style="display:block;margin-top:12px;font-size:var(--fs-s);font-weight:700;color:var(--suave);text-transform:uppercase;letter-spacing:.05em">¿Cómo estaba de llena?</label>'+
-      '<div class="occ-quick" id="sessOcc"><button data-l="libre">🟢 Con sitio</button><button data-l="media">🟡 Media</button><button data-l="llena">🔴 Llena</button></div>':'')+
-    '<div class="field" style="margin-top:10px"><input type="text" id="sessNote" placeholder="Nota opcional (ej: terminé el tema 4)"></div>'+
-    '<button class="btn" id="sessSave">Guardar</button>'+
-    (sesion.focus==="ok"?'<button class="btn ghost" style="margin-top:10px" onclick="compartirSesionStory(\''+sesion.id+'\')">📸 Compartir en stories</button>':'')+
-    '<button class="linkbtn" id="sessSkip" style="display:block;margin:12px auto 0">Omitir</button>',
-    function(){
-      var bn=document.querySelector(".np-bar i");if(bn)setTimeout(function(){bn.style.width=bn.dataset.to+"%";},350);
-      if(sesion.focus==="ok"){confeti(sesion.min>=25?90:45);celebrar(document.querySelector(".planted-tree"),["🌱","🍃","✨","🌟"],12);}
-      document.querySelectorAll("#prodStars button").forEach(function(b){
-        b.addEventListener("click",function(){
-          sel.v=parseInt(b.dataset.v);
-          document.querySelectorAll("#prodStars button").forEach(function(x,idx){x.classList.toggle("on",idx<sel.v);if(idx<sel.v){x.classList.remove("pop");void x.offsetWidth;x.classList.add("pop");}});
-        });
-      });
-      var occSel=null;
-      document.querySelectorAll("#sessOcc button").forEach(function(b){
-        b.addEventListener("click",function(){occSel=b.dataset.l;document.querySelectorAll("#sessOcc button").forEach(function(x){x.classList.toggle("on",x===b);});});
-      });
-      $("sessSave").addEventListener("click",function(){
-        // la afluencia solo vale si la sesión acaba de terminar (no se reporta para una sesión antigua)
-        if(occSel&&bibIdxDe(sesion)>=0)addOccReport(bibIdxDe(sesion),occSel,true);
-        sesion.prod=sel.v||null; sesion.note=$("sessNote").value.trim();
-        saveUserData();socialShareSession(sesion);closeModal();renderProfile();renderStudy();showToast("Sesión guardada");
-        if(horasAntes!=null)comprobarSubidaNivel(horasAntes);
-      });
-      $("sessSkip").addEventListener("click",function(){closeModal();if(horasAntes!=null)comprobarSubidaNivel(horasAntes);});
-    });
-}
 function renderStudy(){
   if(!DATA)return;
   checkStreakFreezes();
@@ -2650,45 +2587,7 @@ function renderCalProx(){
   }).join("");
   el.querySelectorAll(".prox-item").forEach(function(x){x.addEventListener("click",function(){openDayModal(x.dataset.k);});});
 }
-function openDayModal(key){
-  var parts=key.split("-");
-  var titulo=parts[2]+" de "+MESES[parseInt(parts[1])-1];
-  var evs=DATA.events[key]||[];
-  var listHTML="";
-  if(evs.length){evs.forEach(function(ev,idx){
-    listHTML+='<div class="ev-item"><span class="tag ev-'+ev.type+'"></span><div class="et"><b>'+escapeHTML(ev.title)+'</b><small>'+ev.type+(ev.shared?' · 👥 compartido con amigos':'')+(ev.type==="examen"&&ev.shared?prayCountMine(ev.id):'')+'</small></div><button class="del" data-i="'+idx+'">×</button></div>';
-  });}else{listHTML='<div class="empty-note">Sin eventos este día</div>';}
-  listHTML+='<div id="dayFriendEvs">'+diaAmigosHTML(key)+'</div>';
-  openModal('<h3>'+titulo+'</h3><div class="sub">Exámenes, tareas y otros eventos</div>'+
-    '<div id="dayEvs" data-k="'+key+'">'+listHTML+'</div>'+
-    '<div style="border-top:1px solid rgba(148,163,184,.3);margin:16px 0 14px"></div>'+
-    '<div class="seg" id="evType"><button data-t="examen" class="on">Examen</button><button data-t="tarea">Tarea</button><button data-t="otro">Otro</button></div>'+
-    '<div class="field"><input type="text" id="evTitle" placeholder="Ej: Examen de Cálculo II"></div>'+
-    '<label id="evShareWrap" style="display:flex;align-items:center;gap:9px;margin:-2px 0 14px;font-size:var(--fs-m);color:var(--suave);font-weight:700"><input type="checkbox" id="evShareExam" checked> Compartir con mis amigos (lo verán en su Agenda)</label>'+
-    '<button class="btn" id="evAdd">Añadir</button>',
-    function(){
-      var selType="examen";
-      $("evShareWrap").style.display=SOCIAL.user?"flex":"none";
-      document.querySelectorAll("#evType button").forEach(function(b){b.addEventListener("click",function(){
-        document.querySelectorAll("#evType button").forEach(function(x){x.classList.remove("on");});
-        b.classList.add("on");selType=b.dataset.t;});});
-      $("evAdd").addEventListener("click",function(){
-        var t=$("evTitle").value.trim();if(!t)return;
-        if(!DATA.events[key])DATA.events[key]=[];
-        var compartir=!!SOCIAL.user&&$("evShareExam").checked;
-        var evObj={id:genId(),title:t,type:selType,shared:compartir};
-        DATA.events[key].push(evObj);saveUserData();closeModal();renderCal();registrarAccion("agenda");
-        if(compartir)socialShareEvent({id:evObj.id,title:evObj.title,type:selType,date:key});
-      });
-      document.querySelectorAll("#dayEvs .del").forEach(function(btn){btn.addEventListener("click",function(){
-        var idx=parseInt(btn.dataset.i);var removed=DATA.events[key][idx];
-        DATA.events[key].splice(idx,1);
-        if(!DATA.events[key].length)delete DATA.events[key];
-        saveUserData();closeModal();renderCal();openDayModal(key);
-        if(removed&&removed.shared)socialDeleteSharedEvent({id:removed.id});
-      });});
-    });
-}
+// La ventana de un día (openDayModal: añadir y borrar eventos) → app-extra.js
 
 /* ===================== PERFIL ===================== */
 function renderProfile(){
@@ -3457,27 +3356,7 @@ function renderSemillas(){
   document.querySelectorAll(".seeds-n").forEach(function(x){if(x.textContent!==String(n)){x.textContent=n;x.classList.remove("pop");void x.offsetWidth;x.classList.add("pop");}});
 }
 function especieComprada(id){return especieDe(id).precio===0||((DATA.especiesCompradas||[]).indexOf(id)!==-1);}
-function abrirTienda(){
-  var n=semillas(), actual=DATA.especie||"roble";
-  openModal('<h3>🌱 Especies para tu bosque</h3><div class="sub">Ganas 🌰 1 semilla por cada 5 min de árbol sano y más con las misiones. Tienes <b class="seeds-n">'+n+'</b> 🌰</div>'+
-    '<div class="shop">'+ESPECIES.filter(function(e){return enTemporada(e)||actual===e.id;}).sort(function(x,y){return (y.desde?1:0)-(x.desde?1:0);}).map(function(e){
-      var mia=especieComprada(e.id), usando=actual===e.id, puede=n>=e.precio;
-      var btn=usando?'<button class="btn sm" disabled>✓ Plantando</button>'
-        :mia?'<button class="btn sm ghost" onclick="usarEspecie(\''+e.id+'\')">Usar</button>'
-        :'<button class="btn sm'+(puede?'':' ghost')+'" '+(puede?'':'disabled ')+'onclick="comprarEspecie(\''+e.id+'\',this)">'+(puede?'Comprar · 🌰 '+e.precio:'🔒 🌰 '+e.precio)+'</button>';
-      var temp=e.desde?'<span class="shop-temp">⏰ Solo hasta el '+(+e.hasta.slice(3))+' de '+MESES[+e.hasta.slice(0,2)-1]+'</span>':'';
-      return '<div class="shop-item'+(usando?' on':'')+(mia?'':' locked')+(e.desde?' temporada':'')+'">'+temp+'<div class="shop-tree">'+arbolSVG(200,false,e.id,96,e.id)+'</div><b>'+e.icon+' '+escapeHTML(e.nombre)+'</b>'+btn+'</div>';
-    }).join("")+'</div>');
-}
-function comprarEspecie(id,btn){
-  var e=especieDe(id); if(especieComprada(id)){usarEspecie(id);return;}
-  if(semillas()<e.precio){showToast("Te faltan "+(e.precio-semillas())+" semillas 🌰");return;}
-  DATA.semillasGastadas=(DATA.semillasGastadas||0)+e.precio;
-  DATA.especiesCompradas=(DATA.especiesCompradas||[]).concat([id]);DATA.especie=id;saveUserData();
-  celebrar(btn,[e.icon,"✨","🌰"],14);confeti(70);showToast("🎉 ¡"+e.nombre+" desbloqueado! Tus próximos árboles serán "+e.icon);
-  setTimeout(abrirTienda,500);renderForest();renderSemillas();
-}
-function usarEspecie(id){DATA.especie=id;saveUserData();showToast(especieDe(id).icon+" Ahora plantas: "+especieDe(id).nombre);abrirTienda();renderFocusPlant();}
+// La tienda (abrirTienda, comprar y usar especie), el cofre (abrirCofre) y la ventana de la racha (abrirRacha) → app-extra.js
 
 /* ----- Misiones diarias (3 al día, una siempre fácil) con cofre al completarlas ----- */
 var MISIONES_POOL=[
@@ -3541,18 +3420,6 @@ function renderMisiones(){
     '<button class="cofre'+(hechas===3&&!M.cofre?' listo':'')+(M.cofre?' abierto':'')+'" onclick="abrirCofre(this)" '+(hechas===3&&!M.cofre?'':'disabled')+'>'+
       '<span class="cofre-ic">'+(M.cofre?'🎁':'🎁')+'</span><span>'+(M.cofre?'Cofre de hoy abierto · vuelve mañana':hechas===3?'¡Abre tu cofre!':'Cofre: completa las 3 misiones ('+hechas+'/3)')+'</span></button>';
 }
-function abrirCofre(btn){
-  var M=misionesDeHoy(); if(M.cofre)return;
-  if(M.ids.some(function(id){return !M.hechas[id];}))return;
-  M.cofre=true;DATA.cofresAbiertos=(DATA.cofresAbiertos||0)+1;var premio=20+(hashStr(ymd()+"cofre")%4)*10; // 20-50 semillas
-  var hielo=(DATA.streakFreezes||0)<3&&hashStr(ymd())%3===0;
-  DATA.semillasPremio=(DATA.semillasPremio||0)+premio;if(hielo)DATA.streakFreezes=(DATA.streakFreezes||0)+1;saveUserData();
-  openModal('<div class="cofre-modal"><div class="cofre-big">🎁</div><h3>¡Misiones completadas!</h3><div class="sub">Has ganado <b>🌰 '+premio+' semillas</b>'+(hielo?' y <b>🧊 un congelador de racha</b>':'')+'.</div>'+
-    '<button class="btn" onclick="closeModal();abrirTienda()">Ver especies</button><button class="linkbtn" onclick="closeModal()" style="display:block;margin:12px auto 0">Seguir</button></div>',function(){
-    var c=document.querySelector(".cofre-big");setTimeout(function(){if(c){c.textContent="✨";c.classList.add("abre");}confeti(140);celebrar(c,["🌰","✨","💎","⭐"],18);},700);
-  });
-  renderMisiones();renderSemillas();
-}
 
 /* ----- Racha con llama (Duolingo): pastilla arriba, ventana con la semana, «en peligro» por la tarde ----- */
 function estudiadoHoy(){var hoy=ymd();return studyTimer.running||DATA.sessions.some(function(s){return s.date===hoy;});}
@@ -3562,21 +3429,6 @@ function renderRacha(){
   el.className="streak-pill"+(hoy?" on":"")+(peligro?" peligro":"");
   el.innerHTML='<span class="fl">🔥</span><b>'+n+'</b>';
   el.title=hoy?"Racha de "+n+" días":(peligro?"¡Tu racha está en peligro! Estudia hoy":"Aún no has estudiado hoy");
-}
-function abrirRacha(){
-  var n=streakDays(), mejor=0;try{mejor=computeBestStreak();}catch(e){}
-  var dias={};DATA.sessions.forEach(function(s){dias[s.date]=(dias[s.date]||0)+s.min;});(DATA.usedFreezeDates||[]).forEach(function(d){if(!dias[d])dias[d]=-1;});
-  // los últimos 7 días acabando hoy (como Duolingo)
-  var hoy=new Date(),LET=["D","L","M","X","J","V","S"];
-  var sem=[6,5,4,3,2,1,0].map(function(atras){var d=new Date(hoy);d.setDate(hoy.getDate()-atras);var key=ymd(d),v=dias[key],l=atras===0?"Hoy":LET[d.getDay()];
-    var cls=v>0?"ok":v===-1?"hielo":(key===ymd()?"hoy":key<ymd()?"falta":"");
-    return '<div class="sd '+cls+'"><span>'+(v>0?"🔥":v===-1?"🧊":"")+'</span><small>'+l+'</small></div>';}).join("");
-  var hoyOk=estudiadoHoy();
-  openModal('<div class="racha-modal"><div class="racha-fuego'+(hoyOk?'':' apagado')+'">🔥</div><div class="racha-n">'+n+'</div><div class="racha-lbl">'+(n===1?"día seguido":"días seguidos")+'</div>'+
-    '<div class="semana-racha">'+sem+'</div>'+
-    '<div class="sub" style="margin-top:12px">'+(hoyOk?"¡Hoy ya cuenta! Vuelve mañana para mantenerla.":n?"Estudia hoy para no perder tu racha de "+n+" días.":"Estudia hoy y empieza una racha.")+'</div>'+
-    '<div class="racha-stats"><div><b>'+mejor+'</b><small>Mejor racha</small></div><div><b>🧊 '+(DATA.streakFreezes||0)+'</b><small>Congeladores</small></div><div><b>🌰 '+semillas()+'</b><small>Semillas</small></div></div>'+
-    (hoyOk?'':'<button class="btn" onclick="closeModal();goView(\'study\')">▶ Estudiar ahora</button>')+'</div>');
 }
 // Primera sesión del día: la llama se enciende (estilo Duolingo)
 function celebrarRacha(){
@@ -3643,69 +3495,6 @@ function renderStories(){
   if(!lista.length)html+='<button class="story invita" onclick="'+(SOCIAL.user?'invitarAmigos()':'abrirLogin(\'reg\')')+'"><span class="st-ring"><span class="st-av">＋</span></span><small>'+(SOCIAL.user?'Invitar':'Amigos')+'</small></button>';
   el.innerHTML=html;
 }
-function slideHTML(s,nombre){
-  var m=s.minutes!=null?s.minutes:s.min, lugar=(s.bib_name||s.bib||"").replace("Biblioteca ","").replace("Pública ","");
-  var hace=s.created_at?(function(){var x=Math.round((Date.now()-Date.parse(s.created_at))/60000);return x<60?"hace "+x+" min":x<1440?"hace "+Math.round(x/60)+" h":"ayer";})():fmtFeedDate(s.date);
-  return '<div class="sv-tree">'+arbolSVG(Math.max(m,1),s.focus==="withered",s.subject||s.local_id||s.id,190,s.esp)+'</div>'+
-    '<div class="sv-min">'+hMin(m)+'</div><div class="sv-where">'+(lugar&&lugar!==NO_BIB?'📍 '+escapeHTML(lugar):'🏠 Fuera de la biblioteca')+(s.subject?' · 📚 '+escapeHTML(s.subject):'')+'</div>'+
-    (s.focus==="withered"?'<div class="sv-tag">🥀 Se le marchitó el árbol</div>':s.focus==="ok"?'<div class="sv-tag">🌳 Árbol plantado</div>':'')+
-    (s.note&&s.note!=="Pomodoro"?'<div class="sv-note">“'+escapeHTML(s.note)+'”</div>':'')+'<div class="sv-hace">'+escapeHTML(hace)+'</div>';
-}
-function abrirStory(k){
-  var s=STORIES.lista[k]; if(!s)return; STORIES.idx=k;STORIES.slide=0;
-  var slides=s.ses.map(function(x){return {html:slideHTML(x,s.nombre),ses:x};});
-  if(s.ahora){var b=BIBLIOTECAS[s.ahora.bib_index];slides.push({html:'<div class="sv-live">🔴 EN DIRECTO</div><div class="sv-min">Estudiando ahora</div><div class="sv-where">'+(b?'📍 '+escapeHTML(cortoNombre(b.nombre)):'')+'</div>'+(s.ahora.started_at?'<div class="sv-hace">empezó hace '+(function(){var x=Math.max(1,Math.round((Date.now()-Date.parse(s.ahora.started_at))/60000));return x<60?x+' min':Math.floor(x/60)+' h '+(x%60)+' min';})()+'</div>':'')+(b?'<button class="btn sm" style="margin-top:16px" onclick="cerrarStory();socialGoFriend(\''+s.id+'\')">Ver en el mapa</button>':''),ses:null});}
-  if(!slides.length)return;
-  if(s.ultima){var v=storiesVistas();v[s.id]=s.ultima;saveJSON("bpna_stories_vistas",v);}
-  mostrarStory(s.nombre,colorDe(s.id),slides,s.id);
-}
-function abrirStoryMia(){
-  var hoy=ymd(), mias=DATA.sessions.filter(function(s){return s.date===hoy;});
-  var slides=mias.map(function(x){return {html:slideHTML(x,"Tú"),ses:null};});
-  var h=statsHoy();
-  slides.push({html:'<div class="sv-min">'+(h.min?hMin(h.min)+' hoy':'Tu día está por empezar')+'</div><div class="sv-where">🔥 Racha de '+streakDays()+' días · 🌰 '+semillas()+' semillas</div>'+
-    '<button class="btn sm" style="margin-top:18px" onclick="compartirStoryDia()">📸 Compartir en stories</button>'+
-    (h.min?'':'<button class="btn sm ghost" style="margin-top:10px;background:#fff" onclick="cerrarStory();goView(\'study\')">▶ Empezar a estudiar</button>'),ses:null});
-  mostrarStory("Tu día",null,slides,"yo");
-}
-function mostrarStory(nombre,color,slides,id){
-  cerrarStory();
-  var o=document.createElement("div");o.className="story-viewer";o.id="storyViewer";
-  if(color)o.style.setProperty("--sv",color);
-  o.innerHTML='<div class="sv-bars">'+slides.map(function(){return '<span><i></i></span>';}).join("")+'</div>'+
-    '<div class="sv-head"><span class="sv-av">'+escapeHTML(nombre.charAt(0).toUpperCase())+'</span><b>'+escapeHTML(nombre)+'</b><button class="sv-x" onclick="cerrarStory()" aria-label="Cerrar">×</button></div>'+
-    '<div class="sv-body"></div><div class="sv-foot"></div><div class="sv-tap izq"></div><div class="sv-tap der"></div>';
-  document.body.appendChild(o);
-  STORIES.slides=slides;STORIES.owner=id;STORIES.slide=0;
-  o.querySelector(".sv-tap.izq").addEventListener("click",function(){irSlide(STORIES.slide-1);});
-  o.querySelector(".sv-tap.der").addEventListener("click",function(){irSlide(STORIES.slide+1);});
-  o.querySelector(".sv-body").addEventListener("dblclick",function(e){var sl=STORIES.slides[STORIES.slide];if(sl&&sl.ses)kudosDoble(e,sl.ses.local_id,sl.ses.owner_id);});
-  document.addEventListener("keydown",teclaStory);
-  irSlide(0);
-}
-function irSlide(n){
-  var o=$("storyViewer"); if(!o)return;
-  if(n<0)n=0;
-  if(n>=STORIES.slides.length){
-    // siguiente amigo con historia, como en Instagram
-    if(STORIES.owner!=="yo"&&STORIES.idx+1<STORIES.lista.length){abrirStory(STORIES.idx+1);return;}
-    cerrarStory();return;
-  }
-  STORIES.slide=n;var sl=STORIES.slides[n];
-  o.querySelectorAll(".sv-bars span").forEach(function(b,k){b.className=k<n?"vista":k===n?"activa":"";});
-  var body=o.querySelector(".sv-body");body.innerHTML=sl.html;body.classList.remove("entra");void body.offsetWidth;body.classList.add("entra");
-  var foot=o.querySelector(".sv-foot");
-  if(sl.ses&&STORIES.owner!=="yo"){
-    var ya=!!SOCIAL.kudosByMe[sl.ses.local_id],nk=SOCIAL.kudosCounts[sl.ses.local_id]||0;
-    foot.innerHTML='<button class="sv-kudos'+(ya?' on':'')+'" onclick="event.stopPropagation();kudosDoble({clientX:innerWidth/2,clientY:innerHeight-120},\''+sl.ses.local_id+'\',\''+sl.ses.owner_id+'\');this.classList.add(\'on\',\'pop\')">👏 '+(ya?'Kudos dados':'Dar kudos')+(nk?' · '+nk:'')+'</button><small>o toca dos veces</small>';
-  }else foot.innerHTML="";
-  clearTimeout(STORIES.timer);
-  var dur=sl.ses?5200:7000;
-  var bar=o.querySelector(".sv-bars span.activa i");if(bar){bar.style.animationDuration=dur+"ms";}
-  STORIES.timer=setTimeout(function(){irSlide(STORIES.slide+1);},dur);
-}
-function teclaStory(e){if(e.key==="Escape")cerrarStory();else if(e.key==="ArrowRight")irSlide(STORIES.slide+1);else if(e.key==="ArrowLeft")irSlide(STORIES.slide-1);}
-function cerrarStory(){clearTimeout(STORIES.timer);var o=$("storyViewer");if(o)o.remove();document.removeEventListener("keydown",teclaStory);renderStories();}
 
 /* ----- Tarjetas para stories (Strava/Instagram): imagen 1080×1920 del bosque o de la sesión → app-extra.js ----- */
 
@@ -3741,59 +3530,7 @@ setInterval(function(){
   });
 },1000);
 
-/* ----- Tips para estudiar mejor, en baraja vertical (como TikTok) ----- */
-// Técnicas con respaldo en la investigación sobre aprendizaje, explicadas con palabras propias.
-var TIPS=[
-  {e:"🧠",t:"Recuerda, no releas",x:"Cierra el libro y escribe lo que recuerdas. Sacar la información de la memoria (recuerdo activo) fija mucho más que volver a leerla."},
-  {e:"📅",t:"Repaso espaciado",x:"Repasa un tema al día siguiente, a los 3 días y a la semana. Espaciar los repasos vence a la curva del olvido mejor que darte un atracón."},
-  {e:"📝",t:"Hazte exámenes",x:"Practicar con preguntas tipo test o de desarrollo es de lo más eficaz que existe. Equivocarte en casa es gratis: en el examen no."},
-  {e:"🔀",t:"Intercala temas",x:"Mezcla tipos de problemas o asignaturas en la misma sesión. Cuesta más, pero aprendes a distinguir cuándo usar cada cosa."},
-  {e:"🧒",t:"Técnica Feynman",x:"Explica el tema como si se lo contaras a un niño de 12 años. Donde te atasques, ahí está lo que todavía no entiendes."},
-  {e:"❓",t:"Pregúntate por qué",x:"Para cada idea, pregúntate «¿por qué es así?» y «¿cómo se relaciona con lo que ya sé?». Conectar ideas las hace durar."},
-  {e:"🖼️",t:"Palabras + dibujos",x:"Acompaña lo que lees con un esquema, un dibujo o un diagrama. Dos vías de entrada a la memoria mejor que una."},
-  {e:"🍅",t:"Bloques con descanso",x:"Trabaja 25-50 min concentrado y descansa 5-10. Los descansos cortos mantienen la atención y el cronómetro te ayuda a no engañarte."},
-  {e:"📵",t:"El móvil, en otra habitación",x:"Solo tenerlo a la vista, aunque esté boca abajo, roba atención. Lejos y en silencio. Aquí, tu árbol te lo agradece 🌳"},
-  {e:"😴",t:"Dormir también es estudiar",x:"Mientras duermes, el cerebro consolida lo aprendido. Una noche en vela antes del examen suele restar más de lo que suma."},
-  {e:"🏃",t:"Muévete",x:"Un paseo o un poco de ejercicio entre bloques despeja la cabeza y ayuda a concentrarte en el siguiente."},
-  {e:"🎯",t:"Objetivo concreto",x:"«Estudiar Bioquímica» es vago. «Hacer los 20 problemas del tema 4» es un plan. Empieza cada sesión sabiendo qué vas a terminar."},
-  {e:"📍",t:"Si… entonces…",x:"Decide cuándo y dónde: «Si son las 16:00, entonces me siento en la biblioteca con Anatomía». Las intenciones concretas se cumplen más."},
-  {e:"⏱️",t:"Regla de los 2 minutos",x:"¿Te cuesta arrancar? Comprométete solo a 2 minutos. Lo difícil es empezar; seguir suele salir solo."},
-  {e:"🖍️",t:"Subrayar no es estudiar",x:"Subrayar y releer dan sensación de dominio, pero enseñan poco. Úsalos solo como paso previo a preguntarte y resumir."},
-  {e:"🧩",t:"Ejemplos concretos",x:"Para cada concepto abstracto, busca o inventa dos ejemplos distintos. Así lo reconocerás aunque te lo pregunten de otra forma."},
-  {e:"👥",t:"Enséñaselo a alguien",x:"Explicar un tema a un compañero es una de las mejores formas de aprenderlo. Una sala de estudio con amigos sirve para eso."},
-  {e:"🗂️",t:"Lo importante primero",x:"Ordena por importancia y urgencia. Lo que más pesa en el examen y peor llevas, al principio del día, cuando tienes más energía."},
-  {e:"🔁",t:"Mismo sitio, misma hora",x:"Estudiar en el mismo lugar y a la misma hora crea un hábito: el cerebro entra antes «en modo estudio». Tu biblioteca habitual ayuda."},
-  {e:"🎧",t:"Ruido, con cuidado",x:"Música con letra compite con la lectura. Si necesitas sonido, mejor algo instrumental o ruido de fondo suave."},
-  {e:"💧",t:"Cuida lo básico",x:"Agua, algo de comer y luz natural. Con hambre o cansancio la concentración cae aunque tengas toda la fuerza de voluntad."},
-  {e:"📈",t:"Mide tu progreso",x:"Ver cuánto has estudiado motiva y te muestra la verdad. Por eso cada sesión planta un árbol: tu bosque es tu historial."},
-  {e:"🙌",t:"Celebra lo pequeño",x:"Cada tema terminado cuenta. Reconocer avances pequeños mantiene la motivación a lo largo de un curso largo."},
-  {e:"🧘",t:"Antes del examen, respira",x:"Unas respiraciones lentas antes de empezar bajan los nervios. Lee todas las preguntas y empieza por las que sabes."}
-];
-function abrirTips(inicio){
-  var gustos=loadJSON("bpna_tips_gustos",{}), guardados=loadJSON("bpna_tips_guardados",{});
-  // orden diario distinto, como un «Para ti»
-  var orden=TIPS.map(function(t,i){return i;}).sort(function(a,b){return hashStr(ymd()+a)-hashStr(ymd()+b);});
-  if(inicio!=null){orden=orden.filter(function(i){return i!==inicio;});orden.unshift(inicio);}
-  var cols=["#5b4bd6","#a21caf","#0e7490","#c2410c","#047857","#be185d","#4338ca","#b45309"];
-  var o=document.createElement("div");o.className="tips-viewer";o.id="tipsViewer";
-  o.innerHTML='<button class="sv-x tips-x" onclick="cerrarTips()" aria-label="Cerrar">×</button><div class="tips-feed">'+orden.map(function(i,k){var t=TIPS[i];
-    return '<section class="tip" data-i="'+i+'" style="--c:'+cols[i%cols.length]+'"><div class="tip-body"><div class="tip-e">'+t.e+'</div><h2>'+escapeHTML(t.t)+'</h2><p>'+escapeHTML(t.x)+'</p>'+(k===0?'<div class="tip-hint">Desliza hacia arriba ↑</div>':'')+'</div>'+
-      '<div class="tip-acts"><button class="tip-like'+(gustos[i]?' on':'')+'" onclick="tipLike('+i+',this)"><span>'+(gustos[i]?'❤️':'🤍')+'</span><small>Me sirve</small></button>'+
-      '<button class="tip-save'+(guardados[i]?' on':'')+'" onclick="tipGuardar('+i+',this)"><span>'+(guardados[i]?'🔖':'📑')+'</span><small>'+(guardados[i]?'Guardado':'Guardar')+'</small></button>'+
-      '<button onclick="tipCompartir('+i+')"><span>↗️</span><small>Enviar</small></button></div></section>';}).join("")+'</div>';
-  document.body.appendChild(o);
-  o.querySelectorAll(".tip").forEach(function(sec){sec.addEventListener("dblclick",function(e){var i=+sec.dataset.i;var b=sec.querySelector(".tip-like");if(!loadJSON("bpna_tips_gustos",{})[i])tipLike(i,b);
-    if(!sinMovimiento()){var c=document.createElement("span");c.className="corazon";c.textContent="❤️";c.style.left=e.clientX+"px";c.style.top=e.clientY+"px";document.body.appendChild(c);setTimeout(function(){c.remove();},900);}});});
-  document.addEventListener("keydown",teclaTips);
-}
-function teclaTips(e){if(e.key==="Escape")cerrarTips();}
-function cerrarTips(){var o=$("tipsViewer");if(o)o.remove();document.removeEventListener("keydown",teclaTips);}
-function tipLike(i,b){var g=loadJSON("bpna_tips_gustos",{});g[i]=!g[i];saveJSON("bpna_tips_gustos",g);
-  if(b){b.classList.toggle("on",!!g[i]);b.querySelector("span").textContent=g[i]?"❤️":"🤍";if(g[i]){b.classList.remove("pop");void b.offsetWidth;b.classList.add("pop");celebrar(b,["❤️","✨"],8);}}}
-function tipGuardar(i,b){var g=loadJSON("bpna_tips_guardados",{});g[i]=!g[i];saveJSON("bpna_tips_guardados",g);
-  if(b){b.classList.toggle("on",!!g[i]);b.querySelector("span").textContent=g[i]?"🔖":"📑";b.querySelector("small").textContent=g[i]?"Guardado":"Guardar";if(g[i])showToast("🔖 Tip guardado");}}
-function tipCompartir(i){var t=TIPS[i],txt=t.e+" "+t.t+": "+t.x+" — bibliomapa.es";
-  if(navigator.share)navigator.share({title:t.t,text:txt}).catch(function(){});else{try{navigator.clipboard.writeText(txt);showToast("Tip copiado");}catch(e){}}}
+/* ----- Tips para estudiar mejor (baraja vertical como TikTok, abrirTips) y visor de historias (abrirStory) → app-extra.js ----- */
 
 /* ----- Próximo examen (cuenta atrás + rezos) y amigos estudiando ahora (prueba social) ----- */
 function proximoExamen(){
@@ -3817,33 +3554,7 @@ function renderAmigosAhora(){
     '<span><b>'+(ps.length===1?escapeHTML(socialNameById(ps[0].user_id).split(" ")[0])+' está estudiando ahora':ps.length+' amigos estudiando ahora')+'</b><small>¡Únete! 🔥</small></span><span class="aa-dot"></span></button>';
 }
 
-/* ----- Pantalla de foco (Forest): el árbol a pantalla completa mientras estudias ----- */
-var FRASES_FOCO=["Un tema más y te tomas un descanso 💪","Tu árbol crece con cada minuto 🌱","Lo difícil era empezar. Ya lo has hecho.","Concéntrate en esta página, no en todo el temario.","Tu yo del examen te lo va a agradecer 🙌","No salgas de la app: tu árbol te necesita 🌳"];
-function abrirFoco(){
-  if(!studyTimer.running&&!(pomo.running&&pomo.phase==="focus")){showToast("Empieza una sesión para entrar en modo foco");return;}
-  var o=document.createElement("div");o.className="foco";o.id="focoView";
-  o.innerHTML='<button class="sv-x foco-x" onclick="cerrarFoco()" aria-label="Salir del modo foco">×</button><div class="foco-tree"></div><div class="foco-time"></div><div class="foco-etapa"></div><div class="foco-frase"></div>'+
-    '<div class="foco-acts"><button class="btn ghost" onclick="cerrarFoco()">Salir del modo foco</button></div>';
-  document.body.appendChild(o);
-  try{if(o.requestFullscreen)o.requestFullscreen().catch(function(){});}catch(e){}
-  FOCO_ETAPA=null;pintarFoco();FOCO_T=setInterval(pintarFoco,1000);
-}
-var FOCO_T=null,FOCO_ETAPA=null;
-function pintarFoco(){
-  var o=$("focoView"); if(!o)return;
-  if(!studyTimer.running&&!(pomo.running&&pomo.phase==="focus")){cerrarFoco();return;}
-  var sec=studyTimer.running?elapsedSec():(POMO_FOCUS_MIN*60-pomo.secondsLeft), min=Math.floor(sec/60), e=etapaArbol(min), clave=e+"|"+FOCUS.withered;
-  o.querySelector(".foco-time").textContent=studyTimer.running?fmtClock(sec):String(Math.floor(pomo.secondsLeft/60)).padStart(2,"0")+":"+String(pomo.secondsLeft%60).padStart(2,"0");
-  if(clave!==FOCO_ETAPA){
-    var subio=FOCO_ETAPA!=null&&!FOCUS.withered;FOCO_ETAPA=clave;
-    o.querySelector(".foco-tree").innerHTML='<div class="fp-tree'+(subio?' grow':'')+'">'+arbolSVG(Math.max(min,1),FOCUS.withered,(DATA&&DATA.currentSubject)||"",240,especieActual())+'</div>';
-    var sig=ETAPAS_ARBOL[e+1];
-    o.querySelector(".foco-etapa").textContent=FOCUS.withered?"🥀 Se ha marchitado":ETAPAS_ARBOL[e][1]+(sig?" · "+sig[1].toLowerCase()+" en "+(sig[0]-min)+" min":"");
-    if(subio)celebrar(o.querySelector(".foco-tree"),["🌱","🍃","✨"],10);
-  }else if(!FOCUS.withered){var sg=ETAPAS_ARBOL[e+1];o.querySelector(".foco-etapa").textContent=ETAPAS_ARBOL[e][1]+(sg?" · "+sg[1].toLowerCase()+" en "+(sg[0]-min)+" min":"");}
-  if(sec%20===0||!o.querySelector(".foco-frase").textContent){var f=o.querySelector(".foco-frase");f.textContent=FRASES_FOCO[Math.floor(sec/20)%FRASES_FOCO.length];f.classList.remove("entra");void f.offsetWidth;f.classList.add("entra");}
-}
-function cerrarFoco(){clearInterval(FOCO_T);var o=$("focoView");if(o)o.remove();try{if(document.fullscreenElement)document.exitFullscreen();}catch(e){}}
+/* ----- Pantalla de foco (Forest), abrirFoco: el árbol a pantalla completa mientras estudias → app-extra.js ----- */
 
 /* ----- «Tu rincón» en la ficha de la biblioteca: lo que has estudiado allí, con mini bosque ----- */
 function rinconHTML(b){
@@ -3866,18 +3577,6 @@ function nivelProgresoHTML(hAntes){
 function bienvenidaDiaria(){
   if(!DATA||DATA.bienvenida===ymd()||estudiadoHoy())return;
   DATA.bienvenida=ymd();saveUserData();
-  setTimeout(function(){
-    if(document.querySelector(".modal-bg")||$("storyViewer"))return;
-    var h=new Date().getHours(), saludo=h<6?"Buenas noches":h<14?"Buenos días":h<21?"Buenas tardes":"Buenas noches";
-    var u=(Brain.getUsers()[CURRENT]||{}).name, nombre=u&&!esInvitado()?", "+u.split(" ")[0]:"";
-    var n=streakDays(), M=misionesDeHoy(), tip=TIPS[hashStr(ymd())%TIPS.length], ex=proximoExamen();
-    var dEx=ex?Math.round((new Date(ex.k+"T00:00:00")-new Date(ymd()+"T00:00:00"))/864e5):null;
-    openModal('<div class="bienvenida"><div class="bv-fuego'+(n?'':' apagado')+'">🔥</div><h3>'+saludo+nombre+'</h3>'+
-      '<div class="sub">'+(n?'Llevas <b>'+n+(n===1?' día':' días')+'</b> de racha. ¡Que no se apague hoy!':'Hoy es un buen día para empezar una racha.')+'</div>'+
-      (ex&&dEx<=14?'<div class="bv-ex">📅 <b>'+escapeHTML(ex.ev.title)+'</b> · '+(dEx===0?'¡es hoy!':dEx===1?'mañana':'en '+dEx+' días')+'</div>':'')+
-      '<div class="bv-mis">🎯 Misiones de hoy: '+M.ids.map(function(id){var d=misionDef(id);return d?d.icon:'';}).join(" ")+' · cofre al completarlas</div>'+
-      '<div class="bv-tip">'+tip.e+' <b>'+escapeHTML(tip.t)+'</b>: '+escapeHTML(tip.x)+'</div>'+
-      '<button class="btn" onclick="closeModal();goView(\'study\');setTimeout(function(){var b=$(\'btnStart\');if(b)b.click();},250)">▶ Estudiar ahora</button>'+
-      '<button class="linkbtn" onclick="closeModal()" style="display:block;margin:12px auto 0">Más tarde</button></div>');
-  },900);
+  // la ventana (y los TIPS que cita) vive en app-extra.js; sin conexión y sin el archivo, simplemente no sale
+  setTimeout(function(){cargarExtra().then(function(){pintarBienvenidaDiaria();},function(){});},900);
 }
