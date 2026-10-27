@@ -54,5 +54,39 @@ window.TEMPORADA_EXAMENES = [
     horario: "todos los días, festivos incluidos, de 8:30 a 21:00 (23 dic, hasta las 15:00); cerrada 24-27 dic y 31 dic-1 ene; el 5 y 6 ene no figuran en el calendario",
     nota: "Fines de semana, festivos, 28-30 dic y 2-4 ene: sin personal de biblioteca, solo autopréstamo.",
     f: "https://www.upo.es/biblioteca/sobre_bib/horario/Horario-extraordinario-examenes/index.html", fv: "2026-10-27"
+  },
+  // Universidad de Alcalá: tabla «Curso Académico 2026-2027» de su página de horarios (sin año en cada fila;
+  // el curso va del 1 oct 2026 al 31 ago 2027, así que dic = 2026 y ene = 2027).
+  {
+    ciudad: "Alcalá de Henares", provincia: "Madrid",
+    espacio: "CRAI-Biblioteca · Universidad de Alcalá (campus histórico)",
+    bib: null,
+    desde: "2026-11-03", hasta: "2027-01-24",
+    horario: "abierta 24 horas todos los días (laborables, a partir de las 20:45 solo la sala de lectura); cerrada 24-25 dic y 31 dic-1 ene",
+    nota: "La UAH avisa de que puede restringir el acceso a las salas a quien no sea de la universidad, sobre todo en exámenes.",
+    f: "https://biblioteca.uah.es/conoce-la-biblioteca/la-biblioteca/horarios/", fv: "2026-10-27",
+    semana: {"L":[["00:00","24:00"]],"M":[["00:00","24:00"]],"X":[["00:00","24:00"]],"J":[["00:00","24:00"]],
+             "V":[["00:00","24:00"]],"S":[["00:00","24:00"]],"D":[["00:00","24:00"]]},
+    cerrado: [["2026-12-24","2026-12-25"],["2026-12-31","2027-01-01"]]
+  },
+  {
+    ciudad: "Alcalá de Henares", provincia: "Madrid",
+    espacio: "Biblioteca de Medicina y Ciencias de la Salud · Universidad de Alcalá (campus científico-tecnológico)",
+    bib: "Biblioteca de Medicina, UAH",
+    desde: "2026-10-19", hasta: "2027-01-24",
+    horario: "laborables de 8:30 a 23:00 (desde las 20:45 solo sala de lectura); fines de semana y festivos, de 8:30 a 22:00 solo sala de lectura; cerrada 24-25 dic, 31 dic-1 ene y 6 ene",
+    nota: "La UAH avisa de que puede restringir el acceso a las salas a quien no sea de la universidad, sobre todo en exámenes.",
+    f: "https://biblioteca.uah.es/conoce-la-biblioteca/la-biblioteca/horarios/", fv: "2026-10-27",
+    cerrado: [["2026-12-24","2026-12-25"],["2026-12-31","2027-01-01"],["2027-01-06","2027-01-06"]]
+  },
+  {
+    ciudad: "Guadalajara", provincia: "Guadalajara",
+    espacio: "Biblioteca de Educación · Universidad de Alcalá (campus de Guadalajara)",
+    bib: "Biblioteca de Educación _ Universidad de Alcalá (UAH)",
+    desde: "2026-10-19", hasta: "2027-01-24",
+    horario: "laborables de 8:30 a 23:00 (desde las 20:45 solo sala de lectura); fines de semana y festivos, de 8:30 a 22:00 solo sala de lectura; cerrada 24-25 dic, 31 dic-1 ene y 6 ene",
+    nota: "La UAH avisa de que puede restringir el acceso a las salas a quien no sea de la universidad, sobre todo en exámenes.",
+    f: "https://biblioteca.uah.es/conoce-la-biblioteca/la-biblioteca/horarios/", fv: "2026-10-27",
+    cerrado: [["2026-12-24","2026-12-25"],["2026-12-31","2027-01-01"],["2027-01-06","2027-01-06"]]
   }
 ];
