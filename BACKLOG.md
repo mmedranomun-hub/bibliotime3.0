@@ -51,7 +51,7 @@ empiezan el 1 de diciembre y los de la UPNA el 15), así que la producción debe
 
 
 ## Datos (por lotes pequeños, siempre con fuente oficial)
-- [ ] España · Horarios verificados: seguir añadiendo 10 bibliotecas por tarea (181 verificadas, 51/51 provincias desde el 27-10; ahora priorizar grandes bibliotecas de capitales con muchos estudiantes y sustituir fuentes no de la biblioteca —Segovia viene de turismodesegovia.com— por la web propia cuando se pueda). Como pista para buscar la fuente oficial puede usarse el campo `oh` de `data/bibliotecas_espana.json` (OpenStreetMap, ODbL), pero nunca publicarlo como verificado. Cada horario nuevo lleva `h.fv` con la fecha (AAAA-MM-DD) en que se comprobó la fuente
+- [ ] España · Horarios verificados: seguir añadiendo 10 bibliotecas por tarea (192 verificadas, 51/51 provincias desde el 27-10; ahora priorizar grandes bibliotecas de capitales con muchos estudiantes y sustituir fuentes no de la biblioteca por la web propia cuando se pueda —Segovia ya cita segovia.es—. Pendientes por web ilegible o ambigua: Biblioteca de Asturias, Biblioteca Insular de Gran Canaria (#996 duplica la #11), Reina Sofía UVa (horario en imagen), ULL, UCM María Zambrano, Hospital Real UGR, CRAI UB, Rector Gabriel Ferraté UPC (sin días), Bidebarrieta). Como pista para buscar la fuente oficial puede usarse el campo `oh` de `data/bibliotecas_espana.json` (OpenStreetMap, ODbL), pero nunca publicarlo como verificado. Cada horario nuevo lleva `h.fv` con la fecha (AAAA-MM-DD) en que se comprobó la fuente
 - [ ] Navarra · verificar horario/aforo/recursos de 10 bibliotecas con la web oficial; repetir hasta cubrir las 104
 
 ## Web pública
