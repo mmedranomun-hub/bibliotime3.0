@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-10-27 00:35",
+  "fecha": "2026-10-27 01:32",
   "pruebas": {
     "arranca: datos y vistas": true,
     "marca España (sin «Navarra» en la cabecera)": true,
@@ -14,32 +14,33 @@
     "historias y tips": true,
     "agenda: añadir examen": true,
     "temporada de exámenes: fuentes, chip y nota": true,
+    "reacciones 🔥💪🧠: ocultas sin sesión, alternan en local sin tabla": true,
     "enlace #bib abre la ficha": true
   },
   "errores_js": [],
-  "carga_ms_cpu4x": 3378,
+  "carga_ms_cpu4x": 2178,
   "datos": {
     "bibliotecas": 2616,
-    "con_horario_verificado": 181,
+    "con_horario_verificado": 192,
     "provincias_con_horario": 51,
     "provincias_total": 51
   },
   "seo": {
-    "paginas": 339,
+    "paginas": 372,
     "sitemap": true
   },
   "peso": {
     "index.html": {
-      "kb": 118.3,
-      "kb_gzip": 26.5
+      "kb": 119.3,
+      "kb_gzip": 26.7
     },
     "app.js": {
-      "kb": 346.8,
-      "kb_gzip": 102.8
+      "kb": 352.0,
+      "kb_gzip": 104.2
     },
     "bibliotecas-espana.js": {
-      "kb": 585.9,
-      "kb_gzip": 157.7
+      "kb": 590.5,
+      "kb_gzip": 159.0
     }
   },
   "ok": true
