@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-10-27 09:31",
+  "fecha": "2026-10-27 10:48",
   "pruebas": {
     "arranca: datos y vistas": true,
     "marca España (sin «Navarra» en la cabecera)": true,
@@ -12,6 +12,7 @@
     "acceso: la ley foral solo en Navarra": true,
     "especies de temporada (cruzan el año)": true,
     "historias y tips": true,
+    "app-extra.js define todas las funciones de EXTRA_FUNCS": true,
     "agenda: añadir examen": true,
     "agenda: aviso «🙏 N amigos rezan por tu examen de mañana» solo con rezos reales": true,
     "temporada de exámenes: fuentes, chip y nota": true,
@@ -20,19 +21,19 @@
     "enlace #bib abre la ficha": true
   },
   "errores_js": [],
-  "carga_ms_cpu4x": 2327,
+  "carga_ms_cpu4x": 3333,
   "carga_ms_cpu4x_min_max": [
-    1960,
-    2583
+    2888,
+    3414
   ],
   "datos": {
     "bibliotecas": 2616,
-    "con_horario_verificado": 244,
+    "con_horario_verificado": 254,
     "provincias_con_horario": 51,
     "provincias_total": 51
   },
   "seo": {
-    "paginas": 461,
+    "paginas": 464,
     "sitemap": true
   },
   "peso": {
@@ -41,12 +42,12 @@
       "kb_gzip": 27.2
     },
     "app.js": {
-      "kb": 307.4,
-      "kb_gzip": 90.3
+      "kb": 278.2,
+      "kb_gzip": 81.2
     },
     "bibliotecas-espana.js": {
-      "kb": 613.5,
-      "kb_gzip": 162.5
+      "kb": 618.1,
+      "kb_gzip": 163.3
     }
   },
   "ok": true

@@ -10,18 +10,18 @@ semana por usuario activo, con árbol sano. Todo lo demás existe para mover est
 ## Puerta de calidad (se comprueba SIEMPRE, antes y después de cada cambio)
 | Métrica | Hoy (27-10-2026) | Exigencia |
 |---|---|---|
-| Pruebas de `scripts/probar.py` | 17/17 | todas en verde; si una falla, arreglarla es la prioridad 1 |
+| Pruebas de `scripts/probar.py` | 18/18 | todas en verde; si una falla, arreglarla es la prioridad 1 |
 | Errores de JavaScript | 0 | 0 |
 
 ## Objetivos (en orden de prioridad; peso entre paréntesis)
 | # | Objetivo | Métrica | Hoy | Meta | Fecha |
 |---|---|---|---|---|---|
 | 1 | **Útil en toda España** (×3): que cualquier estudiante encuentre su biblioteca con horario fiable | provincias con horario verificado | 51/51 ✅ | 51/51 (al menos la capital) | 30-11-2026 |
-| | | bibliotecas con horario verificado | 244 (13/104 de Navarra con fuente) | 300 | 31-12-2026 |
+| | | bibliotecas con horario verificado | 254 (13/104 de Navarra con fuente) | 300 | 31-12-2026 |
 | 2 | **Temporada de exámenes** (×3): aperturas extraordinarias y salas 24 h (UNAV 1-dic, UPNA 15-dic) | ciudades con calendario de exámenes cargado (solo fuente oficial) | 3 (Pamplona, Madrid, Sevilla) | Pamplona, Madrid, Barcelona, Valencia, Sevilla | 30-11-2026 |
 | 3 | **Hábito y dopamina sana** (×2): volver cada día a estudiar | tareas «Dopamina ·» hechas · pruebas de recompensas en verde | 10 tandas (+ aviso de rezos en la Agenda) | 1 mejora por día | continuo |
-| 4 | **SEO bibliomapa.es** (×2): salir arriba en «bibliotecas abiertas en <ciudad>» | páginas generadas · páginas con horario verificado | 461 (11 universidades + hub por horario) | +1 página por biblioteca con horario | continuo |
-| 5 | **Rápida en móvil** (×1) | carga con CPU 4× (ms) · app.js gzip (KB) | 2327 (mediana de 5, 27-10 10:20, máquina cargada) · 90,3 ✅ | ≤ 1500 · ≤ 95 | 30-11-2026 |
+| 4 | **SEO bibliomapa.es** (×2): salir arriba en «bibliotecas abiertas en <ciudad>» | páginas generadas · páginas con horario verificado | 464 (tabla de horarios y FAQ con datos en 65 páginas de lugar) | +1 página por biblioteca con horario | continuo |
+| 5 | **Rápida en móvil** (×1) | carga con CPU 4× (ms) · app.js gzip (KB) | 3333 (mediana de 5, 27-10 11:19; la prueba pinta las chinchetas sin markercluster, no refleja producción) · 81,2 ✅ | ≤ 1500 · ≤ 95 | 30-11-2026 |
 | 6 | **Lista para Google Play** (×1) | bloqueantes del backlog resueltos | ver «Pendiente del usuario» | 0 que dependan del código | 17-11-2026 |
 
 ## Cómo elige el director
