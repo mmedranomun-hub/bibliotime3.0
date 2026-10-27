@@ -367,7 +367,8 @@ var EXTRA_FUNCS=[
   "pedirValoracion",
   "editarSesion",
   "openDayModal",
-  "showOccHistory"];
+  "showOccHistory",
+  "mostrarHitoBosque"];
 var _extraP=null;
 function cargarExtra(){
   if(!_extraP)_extraP=new Promise(function(ok,ko){
@@ -2316,7 +2317,7 @@ function renderForest(){
   var racha=0;try{racha=streakDays();}catch(e){}
   el.innerHTML='<div class="forest-head"><div class="section-title" style="margin:0">🌳 Mi bosque</div>'+
     '<div class="seg mini" id="forestSeg">'+Object.keys(P).map(function(k){return '<button data-p="'+k+'" class="'+(k===FOREST_PERIOD?"on":"")+'">'+P[k]+'</button>';}).join("")+'</div></div>'+
-    '<div class="forest-sum">'+resumenBosque(ses)+(racha>1?' · 🔥 '+racha+' días':'')+'</div>'+
+    '<div class="forest-sum">'+resumenBosque(ses)+(racha>1?' · 🔥 '+racha+' días':'')+'</div>'+proxHitoHTML()+
     bosqueHTML(ses,vacio)+
     '<div class="forest-acts"><button class="btn sm" onclick="abrirTienda()">'+especieDe(DATA.especie).icon+' Especies · 🌰 <span class="seeds-n">'+semillas()+'</span></button>'+(ses.length?'<button class="btn sm ghost" onclick="compartirBosque()">📸 Compartir</button>':'')+'</div>'+
     '<div class="forest-foot">'+(plantarOn()?'Cada sesión planta un árbol: cuanto más estudias, más crece. Si sales de la app más de '+FOCUS_GRACE_SEC+' s, se marchita.':'Plantar árboles está desactivado (actívalo arriba, en «🌳 Plantar árbol»).')+
@@ -2797,7 +2798,11 @@ function openModal(html,after){
   $("modalBg").addEventListener("click",function(e){if(e.target.id==="modalBg")closeModal();});
   if(after)after();
 }
-function closeModal(){$("modalRoot").innerHTML="";}
+function closeModal(){
+  var hito=!!document.querySelector("#modalRoot .hito-bosque");$("modalRoot").innerHTML="";
+  // Si hay un hito del bosque sin celebrar (otra ventana lo tapaba), se enseña al cerrar esa ventana.
+  if(DATA&&DATA.hitoBosquePend){if(hito){DATA.hitoBosquePend=0;saveUserData();}else setTimeout(function(){if(!$("modalRoot").innerHTML&&DATA.hitoBosquePend)mostrarHitoBosque();},400);}
+}
 function showToast(msg){
   var t=document.createElement("div");
   t.className="toast";t.setAttribute("role","status");t.textContent=msg;
@@ -3441,7 +3446,37 @@ function celebrarRacha(){
 function trasGuardarSesion(sesion){
   var hoy=ymd(), deHoy=DATA.sessions.filter(function(s){return s.date===hoy;}).length;
   if(sesion&&sesion.date===hoy&&deHoy===1)setTimeout(celebrarRacha,350);
+  if(sesion&&sesion.focus!=="withered")comprobarHitoBosque();
   comprobarMisiones();renderRacha();renderSemillas();
+}
+
+/* ----- Hitos del bosque: al llegar a 10, 25, 50… árboles sanos, tarjeta de celebración y semillas.
+   Solo se celebra al cruzar el hito con una sesión nueva (no de golpe los ya pasados) y una vez. ----- */
+var HITOS_BOSQUE=[
+  {n:10,nombre:"Arboleda",art:"una",icon:"🌱",premio:20},
+  {n:25,nombre:"Bosquecillo",art:"un",icon:"🌿",premio:30},
+  {n:50,nombre:"Bosque",art:"un",icon:"🌳",premio:50},
+  {n:100,nombre:"Gran bosque",art:"un",icon:"🌲",premio:80},
+  {n:250,nombre:"Selva",art:"una",icon:"🌴",premio:120},
+  {n:500,nombre:"Bosque legendario",art:"un",icon:"🏞️",premio:200}
+];
+function arbolesVivos(){var n=0;((DATA&&DATA.sessions)||[]).forEach(function(s){if(s.focus!=="withered")n++;});return n;}
+function comprobarHitoBosque(){
+  var n=arbolesVivos(), ya=DATA.hitosBosque||[];
+  HITOS_BOSQUE.forEach(function(h){
+    if(n===h.n&&ya.indexOf(h.n)<0){
+      DATA.hitosBosque=ya=ya.concat([h.n]);DATA.semillasPremio=(DATA.semillasPremio||0)+h.premio;DATA.hitoBosquePend=h.n;saveUserData();
+      setTimeout(function(){if(!$("modalRoot").innerHTML&&DATA.hitoBosquePend)mostrarHitoBosque();},1500);
+    }
+  });
+}
+function proxHitoHTML(){
+  var n=arbolesVivos(); if(!n)return "";
+  for(var i=0;i<HITOS_BOSQUE.length;i++){var h=HITOS_BOSQUE[i];if(n<h.n){
+    var ant=i?HITOS_BOSQUE[i-1].n:0, f=h.n-n, pct=Math.max(4,Math.round((n-ant)/(h.n-ant)*100));
+    return '<div class="hito-prox"><div class="hp-txt"><span>'+h.icon+' '+(f===1?'¡<b>1 árbol más</b>':'<b>'+f+' árboles más</b>')+' y tu bosque será '+h.art+' <b>'+h.nombre+'</b>'+(f===1?'!':'')+'</span><span class="hp-n">'+n+'/'+h.n+'</span></div>'+
+      '<div class="hp-bar"><i style="width:'+pct+'%"></i></div></div>';}}
+  return "";
 }
 
 /* ----- Hitos durante la sesión ----- */

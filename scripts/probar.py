@@ -89,6 +89,27 @@ PRUEBAS = [
     ("tienda y semillas", """
       DATA.semillasPremio=(DATA.semillasPremio||0)+100;await abrirTienda();var n=document.querySelectorAll('.shop-item').length;closeModal();
       return n>=6||('solo '+n+' especies');"""),
+    ("hitos del bosque: al plantar el 10.º árbol, tarjeta y semillas (una sola vez)", """
+      var o={s:DATA.sessions,h:DATA.hitosBosque,p:DATA.semillasPremio,m:DATA.misiones,a:DATA.acciones};
+      try{
+        closeModal();DATA.hitosBosque=[];DATA.hitoBosquePend=0;
+        var hoy=ymd(),mk=(i,f)=>({id:'hb'+i,date:hoy,min:30,ts:Date.now()-(100-i)*1000,bib:NO_BIB,focus:f||'ok',esp:'roble'});
+        DATA.sessions=[];for(var i=0;i<9;i++)DATA.sessions.push(mk(i));DATA.sessions.push(mk(50,'withered'));
+        goView('study');renderForest();var t=($('forestCard').querySelector('.hito-prox')||{}).innerText||'';
+        if(!/1 árbol más/.test(t)||!/Arboleda/.test(t)||!/9\\/10/.test(t))return 'próximo hito mal: '+t;
+        var p0=DATA.semillasPremio||0,s=mk(60);DATA.sessions.push(s);trasGuardarSesion(s);
+        if(DATA.hitoBosquePend!==10||(DATA.semillasPremio||0)-p0<20)return 'no da el hito ni las semillas';
+        await mostrarHitoBosque();var m=$('modalRoot').innerText;
+        if(!document.querySelector('#modalRoot .hito-bosque')||!/10 árboles/.test(m)||!/\\+20/.test(m)||!/Bosquecillo/.test(m))return 'tarjeta mal: '+m.slice(0,120);
+        if(document.querySelectorAll('#modalRoot .hb-escena .arbol').length!==5)return 'escena sin los 5 últimos árboles';
+        closeModal();if(DATA.hitoBosquePend)return 'no se da por visto al cerrar';
+        s=mk(61);DATA.sessions.push(s);trasGuardarSesion(s);
+        DATA.sessions=DATA.sessions.filter(x=>x!==s);DATA.sessions.pop();s=mk(62);DATA.sessions.push(s);trasGuardarSesion(s);
+        if(DATA.hitoBosquePend||DATA.hitosBosque.length!==1)return 'repite el hito';
+        return true;
+      }finally{
+        DATA.sessions=o.s;DATA.hitosBosque=o.h;DATA.semillasPremio=o.p;DATA.misiones=o.m;DATA.acciones=o.a;DATA.hitoBosquePend=0;closeModal();renderForest();renderMisiones();
+      }"""),
     ("acceso: la ley foral solo en Navarra", """
       for(var i=N_NAVARRA;i<BIBLIOTECAS.length;i++)if(/Ley Foral/.test(accesoAccesibilidadHTML(BIBLIOTECAS[i])))return 'ley foral fuera de Navarra: '+BIBLIOTECAS[i].nombre;
       var nav=BIBLIOTECAS.slice(0,N_NAVARRA).some(b=>/Ley Foral 32\\/2002/.test(accesoAccesibilidadHTML(b)));

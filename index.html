@@ -850,6 +850,24 @@
   @keyframes sprout{from{transform:scale(0) translateY(10px);opacity:0}to{transform:scale(1);opacity:1}}
   .forest-more{position:relative;z-index:1;align-self:center;font-weight:800;color:var(--acento-tx);padding:0 8px}
   .forest-foot{margin-top:10px;font-size:var(--fs-s);color:var(--suave);line-height:1.5}
+  /* Hitos del bosque (10, 25, 50… árboles): próximo hito en «Mi bosque» y tarjeta de celebración */
+  .hito-prox{margin:-2px 0 10px}
+  .hp-txt{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:var(--fs-s);color:var(--suave);line-height:1.4}
+  .hp-txt b{color:var(--ok-tx);font-weight:800}
+  .hp-n{flex:none;font-weight:700;color:var(--suave)}
+  .hp-bar{height:6px;margin-top:5px;border-radius:var(--r-pill);background:color-mix(in srgb,var(--ok) 18%,transparent);overflow:hidden}
+  .hp-bar i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--ok),var(--ok-osc));transition:width .8s cubic-bezier(.2,.8,.3,1)}
+  .hito-bosque{text-align:center}
+  .hb-escena{position:relative;display:flex;justify-content:center;align-items:flex-end;gap:0 2px;min-height:110px;margin:0 0 14px;padding:14px 10px 10px;
+    border-radius:var(--r-l);background:var(--cielo);overflow:hidden}
+  .hb-escena::after{content:"";position:absolute;left:0;right:0;bottom:0;height:12px;background:var(--cesped)}
+  .hb-escena .arbol{cursor:default;margin-bottom:4px}
+  .hb-num{display:inline-block;padding:6px 16px;border-radius:var(--r-pill);background:var(--grad-acento);color:#fff;font-weight:800;font-size:var(--fs-xl);
+    box-shadow:var(--brillo);animation:growIn .8s cubic-bezier(.34,1.56,.64,1) .3s both}
+  .hito-bosque h3{margin-top:12px}
+  .hb-premio{display:inline-block;margin:12px 0 4px;padding:6px 14px;border-radius:var(--r-pill);font-weight:800;font-size:var(--fs-base);
+    color:var(--aviso-tx);background:color-mix(in srgb,var(--aviso) 16%,transparent)}
+  .hb-sig{margin:6px 0 14px;font-size:var(--fs-s);color:var(--suave)}
   .planted{text-align:center;margin:-6px 0 8px}
   .planted-tree{display:inline-block;transform-origin:50% 100%;animation:growIn .9s cubic-bezier(.34,1.56,.64,1)}
   .planted-txt{font-weight:800;font-size:var(--fs-base);color:var(--ok-tx);margin-top:2px}

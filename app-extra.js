@@ -606,6 +606,25 @@ function comprarEspecie(id,btn){
 }
 function usarEspecie(id){DATA.especie=id;saveUserData();showToast(especieDe(id).icon+" Ahora plantas: "+especieDe(id).nombre);abrirTienda();renderFocusPlant();}
 
+/* ----- Hito del bosque (10, 25, 50… árboles sanos): tarjeta de celebración. Las semillas ya se
+   sumaron al cruzarlo (comprobarHitoBosque, en app.js); aquí solo se celebra. ----- */
+function mostrarHitoBosque(){
+  if(!DATA||!DATA.hitoBosquePend)return;
+  var t=DATA.hitoBosquePend, i=HITOS_BOSQUE.map(function(h){return h.n;}).indexOf(t); if(i<0){DATA.hitoBosquePend=0;saveUserData();return;}
+  var h=HITOS_BOSQUE[i], sig=HITOS_BOSQUE[i+1];
+  var ult=DATA.sessions.filter(function(s){return s.focus!=="withered";}).sort(function(a,b){return (a.ts||0)-(b.ts||0);}).slice(-5);
+  openModal('<div class="hito-bosque"><div class="hb-escena">'+ult.map(function(s,k){return '<span class="arbol" style="--d:'+(k*120)+'ms">'+arbolSVG(s.min,false,s.subject||s.id||k,k===ult.length-1?78:58,s.esp)+'</span>';}).join("")+'</div>'+
+    '<div class="hb-num">'+h.icon+' '+t+' árboles</div><h3>¡Tu bosque ya es '+h.art+' '+escapeHTML(h.nombre)+'!</h3>'+
+    '<div class="sub">Cada sesión que terminas planta un árbol, y ya llevas '+t+'. Lo has hecho tú, sesión a sesión.</div>'+
+    '<div class="hb-premio">+'+h.premio+' 🌰 semillas de regalo</div>'+
+    (sig?'<div class="hb-sig">Siguiente: '+sig.icon+' '+escapeHTML(sig.nombre)+' a los '+sig.n+' árboles</div>':'')+
+    '<button class="btn" onclick="closeModal()">¡A seguir plantando!</button>'+
+    '<button class="linkbtn" onclick="closeModal();abrirTienda()" style="display:block;margin:12px auto 0">Ver especies 🌰</button></div>',function(){
+    var c=document.querySelector(".hb-num");confeti(120);setTimeout(function(){celebrar(c,["🌳","🌰","✨"],16);},300);
+  });
+  renderSemillas();renderForest();
+}
+
 /* ----- Cofre de las misiones y ventana de la racha ----- */
 function abrirCofre(btn){
   var M=misionesDeHoy(); if(M.cofre)return;
