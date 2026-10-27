@@ -75,3 +75,4 @@ Formato: `AAAA-MM-DD HH:MM · quién · objetivo(s) · resultado (✅ subido / �
 - 2026-10-27 06:19 · director/agente horarios · Objetivo 1 · ✅ · 9311fbe→cherry-pick · bibliotecas con horario 204 → 214 (UPV ×5, UPV/EHU ×3, Oviedo ×2); UC3M, UAM, UPM Sur, Extremadura, Unirioja y UMH siguen sin poder leerse
 - 2026-10-27 06:19 · director/agente producto · Objetivo 3 (Dopamina · liga semanal Bronce/Plata/Oro) · ✅ · 5586649→cherry-pick · pruebas 15 → 16; app.js gzip 90,7 → 91,9 KB; sin SQL
 - 2026-10-27 06:19 · director/agente SEO · Objetivo 4 · ✅ · 6a19687→cherry-pick · páginas «Salas de estudio en <capital>» (20 + índice); tras regenerar con los horarios nuevos, páginas SEO 384 → 412; caché v63; carga CPU 4× 1786 ms; pruebas 16/16, 0 errores
+- 2026-10-27 06:55 · diseño diario · Agenda (calendario de amigos) · ✅ · ver commit «Agenda: botón del calendario de amigos centrado» · aviso y botón alineados; pruebas en verde, 0 errores; caché v64

@@ -594,11 +594,11 @@ function renderCalFriendExams(){
   var list=$("friendCalList"); if(!list)return;
   if(!SOCIAL.user){
     list.innerHTML='<div class="empty-note" style="margin-bottom:10px">Aquí verás los exámenes y entregas que compartan tus amigos.'+(socialKeysOk()?' Necesitas una cuenta (gratis y opcional) para añadir amigos.':'')+'</div>'+
-      (socialKeysOk()?'<button class="btn sm" onclick="abrirLogin(\'reg\')">Crear cuenta</button>':'');
+      (socialKeysOk()?'<div style="text-align:center"><button class="btn sm" onclick="abrirLogin(\'reg\')">Crear cuenta</button></div>':'');
     return;
   }
   if(!SOCIAL.friends.length){
-    list.innerHTML='<div class="empty-note" style="margin-bottom:10px">Todavía no tienes amigos en la app. Añádelos con su código y verás aquí su calendario.</div><button class="btn sm" onclick="goView(\'friends\')">Añadir amigos</button>';
+    list.innerHTML='<div class="empty-note" style="margin-bottom:10px">Todavía no tienes amigos en la app. Añádelos con su código y verás aquí su calendario.</div><div style="text-align:center"><button class="btn sm" onclick="goView(\'friends\')">Añadir amigos</button></div>';
     return;
   }
   if(!SOCIAL.events.length){

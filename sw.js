@@ -1,5 +1,5 @@
 // Sube este número cada vez que quieras forzar a los usuarios a coger la versión nueva.
-const CACHE_NAME = "bibliotime-v63";
+const CACHE_NAME = "bibliotime-v64";
 // Librerías del CDN con versión fija en la URL (leaflet@1.9.4…): nunca cambian, así que se guardan en
 // una caché aparte que no se borra al subir CACHE_NAME (cada versión nueva de la app no las vuelve a bajar).
 const CDN_CACHE = "bibliotime-cdn-v1";
