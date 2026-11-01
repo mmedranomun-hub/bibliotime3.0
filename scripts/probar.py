@@ -449,6 +449,50 @@ PRUEBAS = [
         if(vuelos.length!==1)return 'el cofre vuela dos veces';
         return true;
       }finally{window.showToast=st;window.sinMovimiento=sm;window.volarSemillas=vs;k.forEach(x=>DATA[x]=o[x]);closeModal();limpia();renderMisiones();renderSemillas();}"""),
+    ("barrita de misiones bajo el cronómetro: «🎯 2/3 misiones · la siguiente en 7 min» solo si falta ≤ 15 min de una misión de minutos", """
+      var k=['misiones','sessions','acciones'],o={};k.forEach(x=>o[x]=DATA[x]);
+      var t0={running:studyTimer.running,start:studyTimer.start,bibIndex:studyTimer.bibIndex,tick:studyTimer.tick},sh=window.statsHoy,el=$('misCerca');
+      var viejo=new Date(Date.now()-5*3600000).toISOString();
+      var pinta=(min,ids,hechas)=>{studyTimer.running=true;studyTimer.tick=t0.tick||1;studyTimer.bibIndex=-1;studyTimer.start=Date.now()-min*60000-500;
+        DATA.misiones={fecha:ymd(),ids:ids,hechas:hechas,cofre:false};el._clave=null;renderMisCerca();
+        return el.classList.contains('hidden')?'':el.innerText.trim();};
+      try{
+        closeModal();goView('study');DATA.sessions=[];DATA.acciones={fecha:ymd()};
+        if(!el||el.previousElementSibling!==$('studyTimer'))return 'la barrita no va bajo el tiempo';
+        var t=pinta(18,['m25','agenda','social'],{agenda:viejo,social:viejo});
+        if(!/🎯 2\\/3 misiones · la siguiente en 7 min/.test(t))return 'texto mal: '+t;
+        if(el.getAttribute('aria-live')||el.closest('[aria-live]'))return 'anuncia cada minuto con aria-live';
+        var sr=el.querySelector('.sr-solo');if(!sr||!el.querySelector('[aria-hidden="true"]')||/min/.test(sr.textContent))return 'falta el resumen estable para lectores';
+        var c=getComputedStyle(el),rojo=/rgb\\(2[0-5]\\d, [0-9]{1,2}, [0-9]{1,2}\\)/;
+        if(rojo.test(c.color)||rojo.test(getComputedStyle(el.querySelector('b')).color))return 'la barrita es roja';
+        if(!/px/.test(c.borderTopLeftRadius)||parseFloat(c.borderTopLeftRadius)<100)return 'no es una píldora --r-pill';
+        // solo recalcula al cambiar el minuto (va con el tick, sin trabajo extra cada segundo)
+        var n=0;window.statsHoy=function(){n++;return sh.apply(this,arguments);};renderMisCerca();renderMisCerca();window.statsHoy=sh;
+        if(n)return 'recalcula sin cambiar el minuto';
+        if(pinta(11,['m25','agenda','social'],{}).indexOf('0/3')<0)return 'no cuenta 0/3';
+        if(pinta(5,['m25','agenda','social'],{}))return 'sale a 20 min';
+        if(pinta(30,['agenda','social','pomo'],{}))return 'sale sin misión de minutos';
+        if(!/la siguiente en 3 min/.test(pinta(42,['largo','m25','agenda'],{m25:viejo})))return 'no ve la sesión larga a 3 min';
+        // al cumplir una misión durante la sesión lo refleja (3 min) y luego desaparece
+        var hecha=()=>new Date(Date.now()-60000).toISOString();
+        t=pinta(26,['m25','agenda','pomo'],{m25:hecha(),agenda:viejo});
+        if(!/✅ 2\\/3 misiones · ¡una más hecha!/.test(t)||!el.classList.contains('hecha'))return 'no refleja la misión cumplida: '+t;
+        t=pinta(26,['m25','agenda','social'],{m25:hecha(),agenda:viejo,social:viejo});
+        if(!/3\\/3 misiones · tu cofre te espera/.test(t))return 'no avisa del cofre: '+t;
+        if(pinta(30,['m25','agenda','pomo'],{m25:new Date(Date.now()-4*60000).toISOString(),agenda:viejo}))return 'no desaparece tras cumplirla';
+        if(!/la siguiente en 15 min/.test(pinta(75,['m90','m25','agenda'],{m25:viejo})))return 'no sale justo a 15 min';
+        if(/cuenta atrás|pierdes|corre|rápido/i.test(el.innerText))return 'mete presión';
+        studyTimer.running=false;el._clave=null;renderMisCerca();
+        if(!el.classList.contains('hidden'))return 'sigue sin sesión';
+        // el propio tick del cronómetro la pinta
+        studyTimer.running=true;studyTimer.start=Date.now()-18*60000;DATA.misiones={fecha:ymd(),ids:['m25','agenda','social'],hechas:{agenda:viejo,social:viejo},cofre:false};el._clave=null;
+        var si=window.setInterval,nuevos=0;window.setInterval=function(){nuevos++;return si.apply(this,arguments);};
+        try{updateTimers();}finally{window.setInterval=si;}
+        if(nuevos)return 'crea intervalos nuevos';
+        if(!/2\\/3 misiones · la siguiente en 7 min/.test(el.innerText))return 'el tick no la actualiza';
+        return true;
+      }finally{window.statsHoy=sh;studyTimer.running=t0.running;studyTimer.start=t0.start;studyTimer.bibIndex=t0.bibIndex;studyTimer.tick=t0.tick;
+        k.forEach(x=>DATA[x]=o[x]);el&&(el._clave=null);renderStudy();}"""),
     ("acceso: la ley foral solo en Navarra", """
       for(var i=N_NAVARRA;i<BIBLIOTECAS.length;i++)if(/Ley Foral/.test(accesoAccesibilidadHTML(BIBLIOTECAS[i])))return 'ley foral fuera de Navarra: '+BIBLIOTECAS[i].nombre;
       var nav=BIBLIOTECAS.slice(0,N_NAVARRA).some(b=>/Ley Foral 32\\/2002/.test(accesoAccesibilidadHTML(b)));

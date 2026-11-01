@@ -2106,6 +2106,7 @@ function updateTimers(){
   renderFocusPlant();
   var mt=$("miniTime");if(mt){var mm=Math.floor(sec/60),ss=sec%60;mt.textContent=String(mm).padStart(2,"0")+":"+String(ss).padStart(2,"0");}
   updateGoalRing();
+  renderMisCerca();
 }
 function todayMinutes(){
   var today=ymd();
@@ -2209,7 +2210,7 @@ function renderStudy(){
   renderFocusPlant();
   renderForest();
   renderNivel();
-  renderMisiones();renderSemillas();renderRacha();renderExamChip();renderAmigosAhora();
+  renderMisiones();renderSemillas();renderRacha();renderExamChip();renderAmigosAhora();renderMisCerca();
 }
 /* ===== ASIGNATURAS (como YPT: el tiempo se apunta a una asignatura) ===== */
 function renderSubjects(){
@@ -3575,6 +3576,34 @@ function renderMisiones(){
     '<button class="cofre'+(hechas===3&&!M.cofre?' listo':'')+(M.cofre?' abierto':'')+'" onclick="abrirCofre(this)" '+(hechas===3&&!M.cofre?'':'disabled')+'>'+
       '<span class="cofre-ic">🎁</span><span>'+(M.cofre?'Sello del día conseguido · vuelve mañana':hechas===3?'¡Abre tu cofre!':'Cofre: completa las 3 misiones ('+hechas+'/3)')+'</span>'+
       (M.cofre?'<span class="sello-dia" aria-hidden="true">🏵️</span>':'')+'</button>';
+}
+// Barrita bajo el cronómetro: «🎯 2/3 misiones · la siguiente en 7 min» si a una misión de minutos le faltan ≤ 15 min;
+// tras cumplir una en esta sesión lo refleja 3 min. Va con el tick del cronómetro (solo recalcula al cambiar el minuto);
+// sin aria-live: el lector oye un resumen estable que solo cambia al cumplir una misión.
+function misionCerca(){
+  if(!DATA||!studyTimer.running)return null;
+  var M=misionesDeHoy(), h=statsHoy(), hechas=M.ids.filter(function(id){return M.hechas[id];}).length, falta=99, recien=false;
+  M.ids.forEach(function(id){
+    var d=misionDef(id); if(!d)return;
+    if(M.hechas[id]){var t=Date.parse(M.hechas[id]);if(t>=studyTimer.start&&Date.now()-t<180000)recien=true;return;}
+    if(d.min){var r=d.meta-d.val(h);if(r>0&&r<=15)falta=Math.min(falta,r);}
+  });
+  if(falta<=15)return {hechas:hechas,falta:falta};
+  return recien?{hechas:hechas,falta:0}:null;
+}
+function renderMisCerca(){
+  var el=$("misCerca"); if(!el)return;
+  var hechas=DATA&&DATA.misiones?Object.keys(DATA.misiones.hechas||{}).length:0;
+  var clave=studyTimer.running?elapsedMin()+"|"+Math.floor(Date.now()/60000)+"|"+hechas:"";
+  if(el._clave===clave)return; el._clave=clave;
+  var c=misionCerca();
+  if(!c){el.classList.add("hidden");el.innerHTML="";return;}
+  var cofre=c.hechas===3&&!DATA.misiones.cofre;
+  var txt=c.falta?'🎯 <b>'+c.hechas+'/3</b> misiones · la siguiente en '+c.falta+' min':'✅ <b>'+c.hechas+'/3</b> misiones'+(cofre?' · tu cofre te espera 🎁':' · ¡una más hecha!');
+  var lector=c.hechas+" de 3 misiones de hoy cumplidas"+(c.falta?"; la siguiente está cerca":"");
+  el.classList.toggle("hecha",!c.falta);
+  el.innerHTML='<span aria-hidden="true">'+txt+'</span><span class="sr-solo">'+lector+'</span>';
+  el.classList.remove("hidden");
 }
 // Perfil: «N días con todas las misiones» y los últimos sellos (pintarSellos, app-extra.js). Sin sellos no sale nada.
 function renderSellos(){

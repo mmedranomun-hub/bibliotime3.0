@@ -997,6 +997,15 @@
   .mis-bar i{display:block;height:100%;border-radius:var(--r-pill);background:var(--grad-acento);transition:width .8s cubic-bezier(.2,.8,.3,1)}
   .mis.ok .mis-bar i{background:linear-gradient(90deg,var(--ok),var(--ok-osc))}
   .mis-val{font-size:var(--fs-xs);font-weight:800;color:var(--suave);white-space:nowrap;min-width:66px;text-align:right}
+  /* Barrita de misiones bajo el cronómetro: informativa, sin cuenta atrás ni rojo */
+  .mis-cerca{display:inline-flex;align-items:center;gap:6px;margin:4px 0 10px;padding:4px 12px;border-radius:var(--r-pill);
+    background:var(--acento-tenue);border:1px solid var(--borde);font-size:var(--fs-s);font-weight:700;color:var(--suave);
+    font-variant-numeric:tabular-nums;white-space:nowrap;animation:fadeIn .4s ease}
+  .mis-cerca b{color:var(--acento-tx);font-weight:800}
+  .mis-cerca.hecha b{color:var(--ok-tx)}
+  .mis-cerca.hidden{display:none}
+  @media(prefers-reduced-motion:reduce){.mis-cerca{animation:none}}
+  .sr-solo{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
   .cofre{width:100%;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:10px;padding:12px;border-radius:var(--r-m);
     border:2px dashed rgba(148,163,184,.5);background:transparent;color:var(--suave);font-weight:800;font-size:var(--fs-m);cursor:default}
   .cofre .cofre-ic{font-size:var(--fs-3xl);filter:grayscale(.8)}
@@ -1341,6 +1350,7 @@
           <div class="focus-plant hidden" id="focusPlant"></div>
         </div>
         <div class="timer-big" id="studyTimer">00:00:00</div>
+        <div class="mis-cerca hidden" id="misCerca"></div>
         <div class="study-place" id="studyPlace">Sin sesión activa</div>
         <div class="study-controls">
           <button class="btn sm" id="btnStart">▶ Empezar</button>
