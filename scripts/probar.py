@@ -538,6 +538,25 @@ PRUEBAS = [
         if(document.querySelector('.pill-hielo'))return 'la insignia no se va';
         return true;
       }finally{window.sinMovimiento=sm;clearTimeout(abrirRacha.t);k.forEach(x=>DATA[x]=o[x]);closeModal();limpia();renderRacha();}"""),
+    ("la ventana de la racha dice bajo «🧊 Congeladores» cómo se gana uno (cada 7 días seguidos y a veces en el cofre, máx. 3) en --suave; con 3, «Tienes el máximo (3)»", """
+      await cargarExtra();
+      var k=['streakFreezes'],o={};k.forEach(x=>o[x]=DATA[x]);
+      try{
+        closeModal();DATA.streakFreezes=1;abrirRacha("hielo");
+        var l=document.querySelector('#modalRoot .racha-stats .rs-hielo-como'),h=document.querySelector('#modalRoot .rs-hielo');
+        if(!l)return 'no hay línea bajo las cifras';
+        if(l.innerText.trim()!=='Ganas uno cada 7 días seguidos y, a veces, en el cofre del día (máx. 3).')return 'texto: '+l.innerText;
+        if(!h||!h.classList.contains('rs-foco')||h.contains(l))return 'rompe el resaltado de la casilla 🧊';
+        var hr=h.getBoundingClientRect(),lr=l.getBoundingClientRect();if(lr.top<hr.bottom-1)return 'no va debajo de las cifras';
+        var c=document.createElement('i');c.style.color='var(--suave)';document.body.appendChild(c);var suave=getComputedStyle(c).color;c.remove();
+        if(getComputedStyle(l).color!==suave)return 'no es --suave: '+getComputedStyle(l).color;
+        if(document.documentElement.scrollWidth>innerWidth)return 'desborda en horizontal';
+        closeModal();DATA.streakFreezes=3;abrirRacha();
+        l=document.querySelector('#modalRoot .rs-hielo-como');
+        if(!l||!/^Tienes el máximo \(3\)/.test(l.innerText.trim()))return 'con 3: '+(l&&l.innerText);
+        if(/falta|pierdes|perder/i.test(l.innerText))return 'mete presión';
+        return true;
+      }finally{clearTimeout(abrirRacha.t);k.forEach(x=>DATA[x]=o[x]);closeModal();}"""),
     ("barrita de misiones bajo el cronómetro: «🎯 2/3 misiones · la siguiente en 7 min» solo si falta ≤ 15 min de una misión de minutos", """
       var k=['misiones','sessions','acciones'],o={};k.forEach(x=>o[x]=DATA[x]);
       var t0={running:studyTimer.running,start:studyTimer.start,bibIndex:studyTimer.bibIndex,tick:studyTimer.tick},sh=window.statsHoy,el=$('misCerca');

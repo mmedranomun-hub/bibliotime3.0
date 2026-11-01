@@ -681,6 +681,12 @@ function pintarSellos(el,s){
 // abrirRacha("hielo") (tocar la insignia «🧊 N»): la casilla «🧊 Congeladores» se resalta RACHA_FOCO_MS con borde --acento,
 // para que se entienda qué es lo que salva la racha. Con «reducir movimiento», solo el borde, sin transición.
 var RACHA_FOCO_MS=1000;
+// Cómo se gana un 🧊, la regla real: checkStreakFreezes (app.js) da uno al llegar a cada múltiplo de 7 días reales seguidos
+// y abrirCofre, un día de cada tres (hashStr(ymd())%3), uno más con el cofre; los dos solo si tienes menos de 3.
+function comoHielo(){
+  return (DATA.streakFreezes||0)>=3?"Tienes el máximo (3). Cada uno salva un día sin estudiar."
+    :"Ganas uno cada 7 días seguidos y, a veces, en el cofre del día (máx. 3).";
+}
 function abrirRacha(foco){
   var n=streakDays(), mejor=0;try{mejor=computeBestStreak();}catch(e){}
   var dias={};DATA.sessions.forEach(function(s){dias[s.date]=(dias[s.date]||0)+s.min;});(DATA.usedFreezeDates||[]).forEach(function(d){if(!dias[d])dias[d]=-1;});
@@ -693,7 +699,8 @@ function abrirRacha(foco){
   openModal('<div class="racha-modal"><div class="racha-fuego'+(hoyOk?'':' apagado')+'">🔥</div><div class="racha-n">'+n+'</div><div class="racha-lbl">'+(n===1?"día seguido":"días seguidos")+'</div>'+
     '<div class="semana-racha">'+sem+'</div>'+
     '<div class="sub" style="margin-top:12px">'+(hoyOk?"¡Hoy ya cuenta! Vuelve mañana para mantenerla.":n?"Estudia hoy para no perder tu racha de "+n+" días.":"Estudia hoy y empieza una racha.")+'</div>'+
-    '<div class="racha-stats"><div><b>'+mejor+'</b><small>Mejor racha</small></div><div class="rs-hielo'+(foco==="hielo"?' rs-foco':'')+'"><b>🧊 '+(DATA.streakFreezes||0)+'</b><small>Congeladores</small></div><div><b>🌰 '+semillas()+'</b><small>Semillas</small></div></div>'+
+    '<div class="racha-stats"><div><b>'+mejor+'</b><small>Mejor racha</small></div><div class="rs-hielo'+(foco==="hielo"?' rs-foco':'')+'"><b>🧊 '+(DATA.streakFreezes||0)+'</b><small>Congeladores</small></div><div><b>🌰 '+semillas()+'</b><small>Semillas</small></div>'+
+      '<p class="rs-hielo-como">'+comoHielo()+'</p></div>'+
     (hoyOk?'':'<button class="btn" onclick="closeModal();goView(\'study\')">▶ Estudiar ahora</button>')+'</div>');
   if(foco!=="hielo")return;
   clearTimeout(abrirRacha.t);

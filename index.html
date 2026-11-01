@@ -975,13 +975,15 @@
   .semana-racha .sd.hielo span{background:rgba(56,189,248,.25)}
   .semana-racha .sd.hoy span{border:2px dashed var(--aviso)}
   .semana-racha .sd small{font-size:var(--fs-xs);font-weight:800;color:var(--suave)}
-  .racha-stats{display:flex;justify-content:space-around;margin:16px 0 14px;padding:12px;border-radius:var(--r-l);background:var(--acento-tenue)}
+  .racha-stats{display:flex;flex-wrap:wrap;justify-content:space-around;margin:16px 0 14px;padding:12px;border-radius:var(--r-l);background:var(--acento-tenue)}
   .racha-stats b{display:block;font-size:var(--fs-xl);font-weight:800}
   .racha-stats small{font-size:var(--fs-xs);color:var(--suave);font-weight:700}
   /* casilla «🧊 Congeladores» resaltada 1 s al llegar desde la insignia «🧊 N» (abrirRacha("hielo")) */
   .racha-stats .rs-hielo{padding:4px 10px;border-radius:var(--r-s);outline:2px solid transparent;outline-offset:2px;transition:outline-color .35s,background-color .35s}
   .racha-stats .rs-hielo.rs-foco{outline-color:var(--acento);background:var(--acento-tenue)}
   @media (prefers-reduced-motion:reduce){.racha-stats .rs-hielo{transition:none}}
+  /* cómo se gana un 🧊 (comoHielo): una línea --suave a lo ancho, bajo las tres cifras */
+  .racha-stats .rs-hielo-como{flex-basis:100%;margin:10px 0 0;font-size:var(--fs-xs);font-weight:600;color:var(--suave);line-height:1.35}
   .racha-overlay{position:fixed;inset:0;z-index:5000;display:flex;flex-direction:column;align-items:center;justify-content:center;
     background:radial-gradient(circle at 50% 45%,rgba(245,158,11,.55),rgba(15,23,42,.75) 70%);animation:fadeIn .3s both;cursor:pointer}
   .racha-overlay.out{animation:fadeOut .45s both}
