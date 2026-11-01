@@ -2719,6 +2719,7 @@ function renderProfile(){
   // semana
   renderWeekBars();
   renderRecords();
+  renderSellos();
   renderChallenges();
   renderBadges();
   if(socialClient()&&SOCIAL.user){socialLoadLeaderboard().then(renderLeaderboard);}else{renderLeaderboard();}
@@ -3562,7 +3563,14 @@ function renderMisiones(){
         '<div class="mis-bar"><i style="width:'+pct+'%"></i></div></div><div class="mis-val">'+(d.min?hMin(v).replace("0h ",""):v)+'/'+(d.min?hMin(d.meta).replace("0h ",""):d.meta)+'</div></div>';
     }).join("")+
     '<button class="cofre'+(hechas===3&&!M.cofre?' listo':'')+(M.cofre?' abierto':'')+'" onclick="abrirCofre(this)" '+(hechas===3&&!M.cofre?'':'disabled')+'>'+
-      '<span class="cofre-ic">'+(M.cofre?'🎁':'🎁')+'</span><span>'+(M.cofre?'Cofre de hoy abierto · vuelve mañana':hechas===3?'¡Abre tu cofre!':'Cofre: completa las 3 misiones ('+hechas+'/3)')+'</span></button>';
+      '<span class="cofre-ic">🎁</span><span>'+(M.cofre?'Sello del día conseguido · vuelve mañana':hechas===3?'¡Abre tu cofre!':'Cofre: completa las 3 misiones ('+hechas+'/3)')+'</span>'+
+      (M.cofre?'<span class="sello-dia" aria-hidden="true">🏵️</span>':'')+'</button>';
+}
+// Perfil: «N días con todas las misiones» y los últimos sellos (pintarSellos, app-extra.js). Sin sellos no sale nada.
+function renderSellos(){
+  var w=$("sellosWrap"),s=DATA.sellosMisiones||[];if(!w)return;
+  if(!s.length){w.classList.add("hidden");return;}
+  return cargarExtra().then(function(){pintarSellos($("sellosCard"),s);w.classList.remove("hidden");},function(){});
 }
 
 /* ----- Racha con llama (Duolingo): pastilla arriba, ventana con la semana, «en peligro» por la tarde ----- */

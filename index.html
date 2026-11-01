@@ -1002,7 +1002,21 @@
   .cofre .cofre-ic{font-size:var(--fs-3xl);filter:grayscale(.8)}
   .cofre.listo{border:none;background:var(--fuego);color:#fff;cursor:pointer;box-shadow:0 10px 24px rgba(239,68,68,.35);animation:tiembla 1.6s ease-in-out infinite}
   .cofre.listo .cofre-ic{filter:none}
-  .cofre.abierto{opacity:.7}
+  /* abierto: el sello del día 🏵️ queda estampado en la tarjeta (solo lo logrado, en oro) */
+  .cofre.abierto{position:relative;border:2px solid var(--liga-oro);background:var(--liga-oro-bg);color:var(--liga-oro-tx);padding-right:56px}
+  .cofre.abierto .cofre-ic{filter:none}
+  .sello-dia{position:absolute;right:10px;top:50%;margin-top:-20px;width:40px;height:40px;display:grid;place-items:center;border-radius:50%;
+    border:2px dashed var(--liga-oro);font-size:var(--fs-2xl);line-height:1;transform:rotate(-12deg)}
+  .sello-dia.estampa{animation:estampa .55s cubic-bezier(.2,.9,.3,1.2) both}
+  @keyframes estampa{0%{transform:scale(2.6) rotate(-35deg);opacity:0}60%{transform:scale(.88) rotate(-10deg);opacity:1}80%{transform:scale(1.06) rotate(-13deg)}100%{transform:rotate(-12deg)}}
+  .cofre-sello{margin:0 auto 14px;display:inline-block;padding:6px 14px;border-radius:var(--r-pill);background:var(--liga-oro-bg);color:var(--liga-oro-tx);font-weight:800;font-size:var(--fs-m)}
+  .sellos-n{font-size:var(--fs-base);color:var(--suave);margin-bottom:10px}
+  .sellos-n b{font-size:var(--fs-3xl);color:var(--liga-oro-tx);margin-right:2px}
+  .sellos-fila{display:flex;flex-wrap:wrap;gap:8px}
+  .sello{display:flex;flex-direction:column;align-items:center;gap:2px;width:52px;padding:6px 0;border-radius:var(--r-m);background:var(--liga-oro-bg);border:1px solid var(--liga-oro)}
+  .sello i{font-style:normal;font-size:var(--fs-2xl);line-height:1}
+  .sello small{font-size:var(--fs-2xs);font-weight:800;color:var(--liga-oro-tx);white-space:nowrap}
+  @media(prefers-reduced-motion:reduce){.sello-dia.estampa{animation:none}}
   @keyframes tiembla{0%,80%,100%{transform:rotate(0)}84%{transform:rotate(-3deg) scale(1.03)}88%{transform:rotate(3deg) scale(1.03)}92%{transform:rotate(-2deg)}96%{transform:rotate(2deg)}}
   .cofre-modal{text-align:center}
   .cofre-big{font-size:96px;line-height:1.1;display:inline-block;animation:tiembla .7s ease-in-out infinite}
@@ -1482,6 +1496,9 @@
 
       <div class="section-title">🏅 Tus récords</div>
       <div class="stat-grid" id="recordsGrid"></div>
+
+      <div id="sellosWrap" class="hidden"><div class="section-title">🏵️ Sellos del día</div>
+        <div class="glasscard" id="sellosCard"></div></div>
 
       <div class="section-title">🎯 Retos del mes</div>
       <div class="glasscard" id="challengesCard">

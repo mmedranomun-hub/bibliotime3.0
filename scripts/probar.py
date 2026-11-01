@@ -323,6 +323,36 @@ PRUEBAS = [
         window.showToast=st;window.comprobarMisiones=cm;k.forEach(x=>DATA[x]=o[x]);CELEB_DIA=null;closeModal();
         document.querySelectorAll('.racha-overlay').forEach(x=>x.remove());renderRecords();renderForest();renderMisiones();
       }"""),
+    ("sello del día: al abrir el cofre se estampa 🏵️ y el Perfil cuenta solo los días logrados", """
+      var k=['misiones','sellosMisiones','cofresAbiertos','semillasPremio','streakFreezes'],o={};k.forEach(x=>o[x]=DATA[x]);
+      var espera=ms=>new Promise(r=>setTimeout(r,ms)),hoy=ymd();
+      try{
+        await cargarExtra();goView('study');closeModal();
+        DATA.sellosMisiones=['2026-10-20','2026-10-25'];
+        var M=misionesDeHoy();M.cofre=false;M.ids.forEach(id=>M.hechas[id]=new Date().toISOString());renderMisiones();
+        if(document.querySelector('#missionsCard .sello-dia'))return 'sale el sello sin abrir el cofre';
+        abrirCofre();
+        var s=DATA.sellosMisiones;
+        if(s.length!==3||s[2]!==hoy)return 'no guarda la fecha: '+JSON.stringify(s);
+        if(!/Sello del día · ya llevas 3 días con todas las misiones/.test($('modalRoot').innerText))return 'la ventana no cita el sello: '+$('modalRoot').innerText;
+        var sd=document.querySelector('#missionsCard .sello-dia');
+        if(!sd||!/Sello del día conseguido/.test($('missionsCard').innerText))return 'la tarjeta del cofre no lleva el sello';
+        if(sd.classList.contains('estampa'))return 'se estampa debajo de la ventana';
+        closeModal();await espera(50);
+        if(!document.querySelector('#missionsCard .sello-dia.estampa'))return 'no se estampa al cerrar la ventana';
+        abrirCofre();M.cofre=false;abrirCofre();closeModal();
+        if(DATA.sellosMisiones.length!==3)return 'repite el sello del mismo día: '+DATA.sellosMisiones.length;
+        goView('profile');await renderSellos();
+        var t=$('sellosCard').innerText,n=document.querySelectorAll('#sellosCard .sello').length;
+        if($('sellosWrap').classList.contains('hidden')||!/3\\s*días con todas las misiones/.test(t)||n!==3)return 'perfil mal: '+t+' ('+n+')';
+        if(document.querySelectorAll('#sellosCard .sello')[0].innerText.indexOf(+hoy.slice(8)+'')<0)return 'el más reciente no va primero';
+        if(/0 días|falta|perdi/i.test(t))return 'texto negativo';
+        DATA.sellosMisiones=[hoy];await renderSellos();
+        if(!/^1\\s*día con todas/.test($('sellosCard').innerText.trim()))return 'singular mal: '+$('sellosCard').innerText;
+        DATA.sellosMisiones=[];await renderSellos();
+        if(!$('sellosWrap').classList.contains('hidden'))return 'sale sin sellos';
+        return true;
+      }finally{k.forEach(x=>DATA[x]=o[x]);closeModal();renderMisiones();renderSellos();}"""),
     ("acceso: la ley foral solo en Navarra", """
       for(var i=N_NAVARRA;i<BIBLIOTECAS.length;i++)if(/Ley Foral/.test(accesoAccesibilidadHTML(BIBLIOTECAS[i])))return 'ley foral fuera de Navarra: '+BIBLIOTECAS[i].nombre;
       var nav=BIBLIOTECAS.slice(0,N_NAVARRA).some(b=>/Ley Foral 32\\/2002/.test(accesoAccesibilidadHTML(b)));

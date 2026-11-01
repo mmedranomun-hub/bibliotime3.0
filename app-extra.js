@@ -647,13 +647,31 @@ function abrirCofre(btn){
   var M=misionesDeHoy(); if(M.cofre)return;
   if(M.ids.some(function(id){return !M.hechas[id];}))return;
   M.cofre=true;DATA.cofresAbiertos=(DATA.cofresAbiertos||0)+1;var premio=20+(hashStr(ymd()+"cofre")%4)*10; // 20-50 semillas
-  var hielo=(DATA.streakFreezes||0)<3&&hashStr(ymd())%3===0;
+  var hielo=(DATA.streakFreezes||0)<3&&hashStr(ymd())%3===0, n=ponerSello();
   DATA.semillasPremio=(DATA.semillasPremio||0)+premio;if(hielo)DATA.streakFreezes=(DATA.streakFreezes||0)+1;saveUserData();
   openModal('<div class="cofre-modal"><div class="cofre-big">🎁</div><h3>¡Misiones completadas!</h3><div class="sub">Has ganado <b>🌰 '+premio+' semillas</b>'+(hielo?' y <b>🧊 un congelador de racha</b>':'')+'.</div>'+
+    '<div class="cofre-sello">🏵️ Sello del día · '+(n===1?'¡tu primer día con todas las misiones!':'ya llevas '+n+' días con todas las misiones')+'</div>'+
     '<button class="btn" onclick="closeModal();abrirTienda()">Ver especies</button><button class="linkbtn" onclick="closeModal()" style="display:block;margin:12px auto 0">Seguir</button></div>',function(){
     var c=document.querySelector(".cofre-big");setTimeout(function(){if(c){c.textContent="✨";c.classList.add("abre");}confeti(140);celebrar(c,["🌰","✨","💎","⭐"],18);},700);
   });
   renderMisiones();renderSemillas();
+  // el sello «se estampa» en la tarjeta del cofre al cerrar la ventana (debajo no se vería)
+  var root=$("modalRoot");if(!root||typeof MutationObserver!=="function")return;
+  var ob=new MutationObserver(function(){if(root.innerHTML)return;ob.disconnect();
+    var s=document.querySelector("#missionsCard .sello-dia");if(s&&!sinMovimiento())s.classList.add("estampa");});
+  ob.observe(root,{childList:true});
+}
+// Sello del día (una fecha por día, sin repetir) en DATA.sellosMisiones; devuelve cuántos días llevas.
+function ponerSello(){
+  var hoy=ymd(),s=(DATA.sellosMisiones||[]).filter(function(d){return d!==hoy;});
+  s.push(hoy);DATA.sellosMisiones=s.slice(-1000);return s.length;
+}
+// Perfil: solo lo logrado, uno junto a otro (sin huecos ni días vacíos), el más reciente primero.
+function pintarSellos(el,s){
+  if(!el)return;var n=s.length,ult=s.slice(-14).reverse();
+  el.innerHTML='<div class="sellos-n"><b>'+n+'</b> '+(n===1?'día':'días')+' con todas las misiones</div>'+
+    '<div class="sellos-fila">'+ult.map(function(d){var p=d.split("-");
+      return '<span class="sello" title="'+(+p[2])+' de '+MESES[+p[1]-1]+'"><i aria-hidden="true">🏵️</i><small>'+(+p[2])+' '+MESES[+p[1]-1].slice(0,3)+'</small></span>';}).join("")+'</div>';
 }
 function abrirRacha(){
   var n=streakDays(), mejor=0;try{mejor=computeBestStreak();}catch(e){}
