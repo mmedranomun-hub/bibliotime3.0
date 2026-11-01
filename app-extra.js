@@ -881,6 +881,59 @@ function animarCuentaSesion(){
   setTimeout(function(){requestAnimationFrame(paso);},250);
 }
 
+/* ----- Semillas que vuelan al marcador: al cerrar «Sesión terminada» con un árbol sano, las 🌰 ganadas
+   suben desde la tarjeta hasta el contador (.seeds-n del bosque si se ve; si no, un saco flotante) y este
+   cuenta hacia arriba con un rebote. Con «reducir movimiento», la cifra final sin vuelo. ----- */
+function estilosVueloSemillas(){
+  if($("vueloCss"))return;var st=document.createElement("style");st.id="vueloCss";
+  st.textContent='.semilla-vuela{position:fixed;left:0;top:0;z-index:4500;pointer-events:none;font-size:var(--fs-2xl);will-change:transform}'+
+    '.saco-semillas{position:fixed;z-index:4400;top:calc(env(safe-area-inset-top,0px) + 74px);right:16px;display:flex;align-items:center;gap:6px;padding:8px 14px;'+
+      'border-radius:var(--r-pill);background:var(--glass-fuerte);border:1px solid var(--borde);box-shadow:var(--sombra);backdrop-filter:blur(16px);'+
+      'font-size:var(--fs-l);font-weight:800;color:var(--aviso-tx);font-variant-numeric:tabular-nums;animation:fadeIn .25s both;transition:opacity .35s}'+
+    '.saco-semillas.fuera{opacity:0}.seeds-n.sv-rebote{animation:svRebote .5s cubic-bezier(.34,1.56,.64,1)}'+
+    '@keyframes svRebote{0%{transform:scale(1)}40%{transform:scale(1.4)}70%{transform:scale(.92)}100%{transform:scale(1)}}'+
+    '@media (prefers-reduced-motion:reduce){.saco-semillas{animation:none;transition:none}.seeds-n.sv-rebote{animation:none}}';
+  document.head.appendChild(st);
+}
+function marcadorSemillas(){
+  var xs=document.querySelectorAll(".seeds-n");
+  for(var i=0;i<xs.length;i++){var r=xs[i].getBoundingClientRect();if(r.width&&r.top>60&&r.bottom<innerHeight-80)return xs[i];}
+  var p=document.createElement("div");p.className="saco-semillas";p.setAttribute("role","status");
+  p.innerHTML='<span aria-hidden="true">🌰</span><b class="seeds-n"></b>';document.body.appendChild(p);
+  return p.querySelector("b");
+}
+function volarSemillas(desde,ganadas){
+  ganadas=ganadas|0;if(ganadas<1||!DATA)return;
+  estilosVueloSemillas();
+  var total=semillas(),el=marcadorSemillas(),saco=el.closest(".saco-semillas");
+  if(saco)saco.setAttribute("aria-label",total+" semillas");
+  var quitarSaco=function(){if(saco)setTimeout(function(){saco.classList.add("fuera");setTimeout(function(){saco.remove();},sinMovimiento()?0:400);},2000);};
+  if(sinMovimiento()||!el.animate||typeof requestAnimationFrame!=="function"){el.textContent=total;quitarSaco();return;}
+  var desdeN=Math.max(0,total-ganadas);el.textContent=desdeN;
+  var r=el.getBoundingClientRect(),tx=r.left+r.width/2,ty=r.top+r.height/2;
+  var ox=desde&&desde.width?desde.left+desde.width/2:innerWidth/2,oy=desde&&desde.width?desde.top+desde.height/2:innerHeight*.6;
+  var k=Math.min(6,ganadas),empezo=false;
+  function contar(){
+    if(empezo)return;empezo=true;var dur=Math.min(900,300+ganadas*40),t0=0;
+    function paso(t){if(!el.isConnected)return;if(!t0)t0=t;var p=Math.min(1,(t-t0)/dur),e=1-Math.pow(1-p,3);
+      el.textContent=Math.round(desdeN+(total-desdeN)*e);
+      if(p<1)requestAnimationFrame(paso);
+      else{el.textContent=total;el.classList.remove("pop","sv-rebote");void el.offsetWidth;el.classList.add("sv-rebote");celebrar(el,["🌰","✨"],6);quitarSaco();}}
+    requestAnimationFrame(paso);
+  }
+  for(var i=0;i<k;i++){
+    var s=document.createElement("span");s.className="semilla-vuela";s.textContent="🌰";s.setAttribute("aria-hidden","true");document.body.appendChild(s);
+    var lado=(i%2?1:-1)*(20+i*8),mx=(ox+tx)/2+lado,my=Math.min(oy,ty)-60;
+    var a=s.animate([
+      {transform:"translate("+ox+"px,"+oy+"px) translate(-50%,-50%) scale(.6)",opacity:0},
+      {transform:"translate("+ox+"px,"+(oy-14)+"px) translate(-50%,-50%) scale(1.15)",opacity:1,offset:.15},
+      {transform:"translate("+mx+"px,"+my+"px) translate(-50%,-50%) scale(1)",opacity:1,offset:.55},
+      {transform:"translate("+tx+"px,"+ty+"px) translate(-50%,-50%) scale(.55)",opacity:.9}
+    ],{duration:750,delay:i*90,easing:"cubic-bezier(.45,0,.55,1)",fill:"both"});
+    (function(q){a.onfinish=function(){q.remove();contar();};a.oncancel=function(){q.remove();contar();};})(s);
+  }
+}
+
 /* ----- Sesión terminada (valorar, afluencia, nota) y editar una sesión ----- */
 function pedirValoracion(sesion,horasAntes){
   var sel={v:0};
@@ -899,6 +952,10 @@ function pedirValoracion(sesion,horasAntes){
     function(){
       var bn=document.querySelector(".np-bar i");if(bn)setTimeout(function(){bn.style.width=bn.dataset.to+"%";},350);
       animarCuentaSesion();
+      // 🌰 que vuelan al marcador al cerrar (solo árbol sano y con semillas ganadas)
+      var semG=sesion.focus==="ok"?Math.floor(sesion.min/5):0;
+      var vuelo=function(){if(!semG)return null;var o=document.querySelector("#modalRoot .planted-seeds"),r=o&&o.getBoundingClientRect();return function(){volarSemillas(r,semG);};};
+      $("modalBg").addEventListener("click",function(e){if(e.target.id==="modalBg"){var v=vuelo();if(v)setTimeout(v,0);}},true);
       if(sesion.focus==="ok"){confeti(sesion.min>=25?90:45);celebrar(document.querySelector(".planted-tree"),["🌱","🍃","✨","🌟"],12);}
       document.querySelectorAll("#prodStars button").forEach(function(b){
         b.addEventListener("click",function(){
@@ -913,11 +970,11 @@ function pedirValoracion(sesion,horasAntes){
       $("sessSave").addEventListener("click",function(){
         // la afluencia solo vale si la sesión acaba de terminar (no se reporta para una sesión antigua)
         if(occSel&&bibIdxDe(sesion)>=0)addOccReport(bibIdxDe(sesion),occSel,true);
-        sesion.prod=sel.v||null; sesion.note=$("sessNote").value.trim();
-        saveUserData();socialShareSession(sesion);closeModal();renderProfile();renderStudy();showToast("Sesión guardada");
+        sesion.prod=sel.v||null; sesion.note=$("sessNote").value.trim();var v=vuelo();
+        saveUserData();socialShareSession(sesion);closeModal();renderProfile();renderStudy();showToast("Sesión guardada");if(v)v();
         if(horasAntes!=null)comprobarSubidaNivel(horasAntes);
       });
-      $("sessSkip").addEventListener("click",function(){closeModal();if(horasAntes!=null)comprobarSubidaNivel(horasAntes);});
+      $("sessSkip").addEventListener("click",function(){var v=vuelo();closeModal();if(v)v();if(horasAntes!=null)comprobarSubidaNivel(horasAntes);});
     });
 }
 function editarSesion(idx){

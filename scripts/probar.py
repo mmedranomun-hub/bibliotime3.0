@@ -260,6 +260,30 @@ PRUEBAS = [
         closeModal();s=mk(4,0);DATA.sessions=[s];pedirValoracion(s,null);if(ver())return 'sale con 0 minutos';
         return true;
       }finally{DATA.sessions=o;closeModal();}"""),
+    ("semillas que vuelan al marcador (con 🌰 vuelan y el contador acaba en la cifra; sin 🌰 no; con reducir movimiento, cifra directa)", """
+      await cargarExtra();
+      var o=DATA.sessions,sm=window.sinMovimiento,hoy=ymd(),mk=(i,m,f)=>({id:'sv'+i,date:hoy,min:m,ts:Date.now()-(100-i)*1000,bib:NO_BIB,focus:f||'ok',esp:'roble'});
+      var limpia=()=>document.querySelectorAll('.saco-semillas,.semilla-vuela').forEach(x=>x.remove());
+      var cierra=async s=>{limpia();DATA.sessions=[s];pedirValoracion(s,null);await new Promise(r=>setTimeout(r,200));$('sessSkip').click();};
+      try{
+        goView('map');await new Promise(r=>setTimeout(r,200));
+        await cierra(mk(0,30));
+        if(!document.querySelectorAll('.semilla-vuela').length)return 'no vuelan las semillas';
+        var n=document.querySelector('.saco-semillas .seeds-n');if(!n)return 'sin marcador de semillas';
+        if(n.textContent!==String(semillas()-6))return 'no empieza en la cifra de antes: '+n.textContent;
+        await new Promise(r=>setTimeout(r,2000));
+        if(n.textContent!==String(semillas())||semillas()<6)return 'no acaba en '+semillas()+': '+n.textContent;
+        if(document.querySelectorAll('.semilla-vuela').length)return 'quedan semillas volando';
+        if(!/aviso-tx/.test(($('vueloCss')||{}).textContent||'')||!/prefers-reduced-motion/.test($('vueloCss').textContent))return 'sin estilos con tokens o sin reducir movimiento';
+        await cierra(mk(1,4));if(document.querySelector('.semilla-vuela,.saco-semillas'))return 'vuela sin semillas ganadas';
+        await cierra(mk(2,30,'withered'));if(document.querySelector('.semilla-vuela,.saco-semillas'))return 'vuela con el árbol marchito';
+        window.sinMovimiento=()=>true;
+        await cierra(mk(3,30));
+        if(document.querySelector('.semilla-vuela'))return 'vuela con reducir movimiento';
+        n=document.querySelector('.saco-semillas .seeds-n');
+        if(!n||n.textContent!==String(semillas()))return 'con reducir movimiento no da la cifra final: '+(n&&n.textContent);
+        return true;
+      }finally{window.sinMovimiento=sm;DATA.sessions=o;closeModal();limpia();}"""),
     ("«¡Qué alegría verte!» al volver tras ≥ 3 días (horas y árbol más grande, sin hablar de la racha perdida)", """
       await cargarExtra();
       var o=DATA.sessions,uf=DATA.usedFreezeDates,dia=n=>{var d=new Date();d.setDate(d.getDate()-n);return ymd(d);};
