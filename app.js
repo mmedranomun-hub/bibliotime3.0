@@ -3287,6 +3287,29 @@ function compartirEstado(){
       $("shareWa").addEventListener("click",function(){window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank");});
     });
 }
+// Abre la vista de un atajo y quita el hash (al recargar se vuelve a la vista normal). Una acción
+// desconocida o que falle deja la app como siempre: el mapa con «Te recomiendo ahora».
+function abrirAtajo(acc){
+  try{history.replaceState(null,"",location.pathname+location.search);}catch(e){}
+  try{
+    if(acc==="estudiar"){
+      // Solo abre el cronómetro listo: empezar sigue siendo decisión tuya (y si ya hay sesión, la ves en marcha).
+      goView("study");
+      var bt=$("btnStart"), pn=$("studyCronoPanel");
+      if(pn&&pn.scrollIntoView)pn.scrollIntoView({block:"center",behavior:"auto"});
+      if(bt&&!studyTimer.running){try{bt.focus({preventScroll:true});}catch(e){}}
+    }else if(acc==="pronto"){
+      goView("map");
+      LIST_FILTERS.pronto=true;LIST_FILTERS.abiertas=false;LIST_FILTERS.tarde=false;
+      saveJSON("bpna_list_filters",LIST_FILTERS);
+      $("libPanel").classList.remove("hidden");$("libPanel").classList.remove("collapsed");
+      buildList();
+    }else{ // "ahora" y cualquier otra: el mapa con la tarjeta «Te recomiendo ahora»
+      goView("map");
+      if(!$("libPanel").classList.contains("hidden"))cerrarLista(); else renderNowCard();
+    }
+  }catch(e){console.warn("Atajo no disponible:",e);try{goView("map");}catch(e2){}}
+}
 function comprobarEnlaceCompartido(){
   var hash=location.hash;
   // Enlace a una biblioteca (páginas de bibliomapa.es/bibliotecas/… y compartir): #bib=<índice>-<nombre>
@@ -3295,6 +3318,8 @@ function comprobarEnlaceCompartido(){
     if(BIBLIOTECAS[bi]){(function intenta(n){if(window.__map&&window.__selBib){goView("map");window.__selBib(bi);}else if(n<40)setTimeout(function(){intenta(n+1);},250);})(0);}
     return;
   }
+  // Atajos de la app instalada (manifest.json → shortcuts): #accion=estudiar | ahora | pronto
+  if(hash.indexOf("#accion=")===0){abrirAtajo(hash.slice(8));return;}
   if(hash.indexOf("#study=")!==0)return;
   try{
     var code=hash.slice(7);

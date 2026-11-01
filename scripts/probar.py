@@ -529,6 +529,27 @@ async def main():
             except Exception as e:  # noqa
                 r = "excepción: " + str(e)[:160]
             res["pruebas"][nombre] = True if r is True else (r or False)
+        # --- atajos de la app instalada (manifest.json → shortcuts): cargar /#accion=… en limpio ---
+        COMPROBAR_ATAJO = {
+            "estudiar": "!$('viewStudy').classList.contains('hidden') && $('viewMap').classList.contains('hidden')",
+            "ahora": "!$('viewMap').classList.contains('hidden') && !$('nowCard').classList.contains('hidden') && $('nowCard').innerText.length>10",
+            "pronto": "!$('viewMap').classList.contains('hidden') && !$('libPanel').classList.contains('hidden') && LIST_FILTERS.pronto===true && !LIST_FILTERS.abiertas",
+        }
+        fallo_atajo = []
+        manif = json.load(open(os.path.join(RAIZ, "manifest.json"), encoding="utf-8"))
+        urls_manif = sorted(s["url"] for s in manif.get("shortcuts", []))
+        if urls_manif != sorted("./#accion=" + a for a in COMPROBAR_ATAJO):
+            fallo_atajo.append("manifest: " + ",".join(urls_manif))
+        for acc, cond in COMPROBAR_ATAJO.items():
+            c3, p3 = await nueva_pagina()
+            p3.on("pageerror", lambda e: errores.append(str(e)[:200]))
+            await p3.goto(f"http://127.0.0.1:{PUERTO}/#accion={acc}")
+            await p3.wait_for_timeout(2500)
+            ok = await p3.evaluate(f"()=>({cond}) && location.hash===''")
+            if not ok:
+                fallo_atajo.append(acc)
+            await c3.close()
+        res["pruebas"]["atajos de la app instalada (#accion=estudiar|ahora|pronto)"] = True if not fallo_atajo else "fallan: " + ", ".join(fallo_atajo)
         # --- datos y SEO (desde la propia app) ---
         res["datos"] = await pg.evaluate("""()=>{
           var conH=BIBLIOTECAS.filter(b=>!b.sinHorario), prov={}, provH={};
