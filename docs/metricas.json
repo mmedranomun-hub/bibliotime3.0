@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-11-01 13:34",
+  "fecha": "2026-11-01 15:34",
   "pruebas": {
     "arranca: datos y vistas": true,
     "marca España (sin «Navarra» en la cabecera)": true,
@@ -36,13 +36,13 @@
     "atajos de la app instalada (#accion=estudiar|ahora|pronto)": true
   },
   "errores_js": [],
-  "carga_ms_cpu4x": 953,
+  "carga_ms_cpu4x": 748,
   "carga_ms_cpu4x_min_max": [
-    891,
-    1024
+    738,
+    815
   ],
-  "primera_pintura_ms_cpu4x": 248,
-  "todas_las_chinchetas_ms_cpu4x": 966,
+  "primera_pintura_ms_cpu4x": 196,
+  "todas_las_chinchetas_ms_cpu4x": 755,
   "markercluster": {
     "cargado": false,
     "agrupa": false,
@@ -52,12 +52,12 @@
   },
   "datos": {
     "bibliotecas": 2616,
-    "con_horario_verificado": 429,
+    "con_horario_verificado": 439,
     "provincias_con_horario": 51,
     "provincias_total": 51
   },
   "seo": {
-    "paginas": 757,
+    "paginas": 772,
     "sitemap": true
   },
   "peso": {
@@ -70,8 +70,8 @@
       "kb_gzip": 88.1
     },
     "bibliotecas-espana.js": {
-      "kb": 713.5,
-      "kb_gzip": 182.4
+      "kb": 719.2,
+      "kb_gzip": 183.5
     }
   },
   "ok": true
