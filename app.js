@@ -3554,13 +3554,14 @@ function comprobarMisiones(){
 }
 // 🌰 de misiones y cofre que vuelan al marcador (volarSemillas, app-extra.js). Se encolan y salen cuando no hay
 // ventana abierta ni otro vuelo en marcha; M.hechas/M.cofre (guardados) evitan repetirlo al recargar.
-var VUELO={n:0,de:"",t:0},VUELO_FIN=0;
-function encolarVuelo(n,de){VUELO.n+=n;VUELO.de=de;if(!VUELO.t)VUELO.t=setTimeout(soltarVuelo,300);}
+// El 🧊 del cofre (h) va en la misma cola: sale justo detrás de las 🌰, hacia la pastilla de la racha (volarHielo).
+var VUELO={n:0,de:"",t:0,h:0,hr:null},VUELO_FIN=0;
+function encolarVuelo(n,de,h){VUELO.n+=n;VUELO.de=de;if(h)VUELO.h+=h;if(!VUELO.t)VUELO.t=setTimeout(soltarVuelo,300);}
 function soltarVuelo(){
-  VUELO.t=0;if(!VUELO.n)return;
+  VUELO.t=0;if(!VUELO.n&&!VUELO.h)return;
   if($("modalRoot").innerHTML||Date.now()<VUELO_FIN||document.querySelector(".semilla-vuela,.saco-semillas,.racha-overlay")){VUELO.t=setTimeout(soltarVuelo,700);return;}
-  var n=VUELO.n,o=document.querySelector(VUELO.de),r=o&&o.getBoundingClientRect();VUELO.n=0;
-  cargarExtra().then(function(){volarSemillas(r,n);},function(){});
+  var n=VUELO.n,h=VUELO.h,hr=VUELO.hr,o=document.querySelector(VUELO.de),r=o&&o.getBoundingClientRect();VUELO.n=VUELO.h=0;VUELO.hr=null;
+  cargarExtra().then(function(){if(n)volarSemillas(r,n);if(h)volarHielo(hr||r,n?250:0);},function(){});
 }
 function renderMisiones(){
   var el=$("missionsCard"); if(!el||!DATA)return;

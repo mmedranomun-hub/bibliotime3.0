@@ -651,13 +651,15 @@ function abrirCofre(btn){
   var hielo=(DATA.streakFreezes||0)<3&&hashStr(ymd())%3===0, n=ponerSello();
   DATA.semillasPremio=(DATA.semillasPremio||0)+premio;if(hielo)DATA.streakFreezes=(DATA.streakFreezes||0)+1;saveUserData();
   var pista=pistaEspecieSaco(semillas()); // ya con el premio: si te da para la especie, la pista calla (sale «Ya puedes plantar…»)
-  openModal('<div class="cofre-modal"><div class="cofre-big">🎁</div><h3>¡Misiones completadas!</h3><div class="sub">Has ganado <b>🌰 '+premio+' semillas</b>'+(hielo?' y <b>🧊 un congelador de racha</b>':'')+'.</div>'+
+  openModal('<div class="cofre-modal"><div class="cofre-big">🎁</div><h3>¡Misiones completadas!</h3><div class="sub">Has ganado <b>🌰 '+premio+' semillas</b>'+(hielo?' y <b class="cofre-hielo">🧊 un congelador de racha</b>':'')+'.</div>'+
     (pista?'<div class="cofre-pista">'+pista+'</div>':'')+
     '<div class="cofre-sello">🏵️ Sello del día · '+(n===1?'¡tu primer día con todas las misiones!':'ya llevas '+n+' días con todas las misiones')+'</div>'+
     '<button class="btn" onclick="closeModal();abrirTienda()">Ver especies</button><button class="linkbtn" onclick="closeModal()" style="display:block;margin:12px auto 0">Seguir</button></div>',function(){
     var c=document.querySelector(".cofre-big");setTimeout(function(){if(c){c.textContent="✨";c.classList.add("abre");}confeti(140);celebrar(c,["🌰","✨","💎","⭐"],18);},700);
+    // de dónde sale el 🧊 al cerrar: su sitio en la ventana (ya colocada); si se cierra antes, la tarjeta del cofre
+    if(hielo)setTimeout(function(){var b=document.querySelector("#modalRoot .cofre-hielo");if(b&&VUELO.h)VUELO.hr=b.getBoundingClientRect();},450);
   });
-  renderMisiones();renderSemillas();encolarVuelo(premio,"#missionsCard .cofre"); // las 🌰 del cofre vuelan al cerrar la ventana
+  renderMisiones();renderSemillas();encolarVuelo(premio,"#missionsCard .cofre",hielo?1:0); // las 🌰 (y el 🧊) del cofre vuelan al cerrar la ventana
   // el sello «se estampa» en la tarjeta del cofre al cerrar la ventana (debajo no se vería)
   var root=$("modalRoot");if(!root||typeof MutationObserver!=="function")return;
   var ob=new MutationObserver(function(){if(root.innerHTML)return;ob.disconnect();
@@ -951,6 +953,40 @@ function volarSemillas(desde,ganadas){
     ],{duration:750,delay:i*90,easing:"cubic-bezier(.45,0,.55,1)",fill:"both"});
     (function(q){a.onfinish=function(){q.remove();contar();};a.oncancel=function(){q.remove();contar();};})(s);
   }
+}
+
+/* ----- El 🧊 del cofre vuela a la pastilla de la racha (#streakPill): sale de la ventana del cofre al cerrarla,
+   detrás de las 🌰, y la pastilla enseña «🧊 N» un momento con un rebote suave. Con «reducir movimiento», solo la cifra. ----- */
+function estilosVueloHielo(){
+  if($("hieloCss"))return;var st=document.createElement("style");st.id="hieloCss";
+  st.textContent='#streakPill{position:relative}.pill-hielo{position:absolute;top:-9px;right:-8px;display:inline-flex;align-items:center;gap:2px;padding:1px 7px;border-radius:var(--r-pill);'+
+      'background:var(--ev-ta-bg);color:var(--ev-ta-tx);border:1px solid var(--borde);box-shadow:var(--sombra);font-size:var(--fs-s);font-weight:800;line-height:1.4;white-space:nowrap;font-variant-numeric:tabular-nums;pointer-events:none;transition:opacity .35s}'+
+    '.pill-hielo.fuera{opacity:0}.pill-hielo.ph-rebote{animation:svRebote .55s cubic-bezier(.34,1.56,.64,1)}'+
+    '@media (prefers-reduced-motion:reduce){.pill-hielo{transition:none}.pill-hielo.ph-rebote{animation:none}}';
+  document.head.appendChild(st);
+}
+function marcarHieloRacha(p){
+  var c=p.querySelector(".pill-hielo"),f=DATA.streakFreezes||0,quieto=sinMovimiento();
+  if(!c){c=document.createElement("span");c.className="pill-hielo";p.appendChild(c);}
+  c.classList.remove("fuera","ph-rebote");c.textContent="🧊 "+f;p.setAttribute("aria-label","Tu racha · "+f+(f===1?" congelador":" congeladores"));
+  if(!quieto){void c.offsetWidth;c.classList.add("ph-rebote");celebrar(c,["🧊","✨"],6);}
+  clearTimeout(p._hielo);p._hielo=setTimeout(function(){c.classList.add("fuera");setTimeout(function(){c.remove();p.setAttribute("aria-label","Tu racha");},quieto?0:400);},3500);
+}
+function volarHielo(desde,espera){
+  if(!DATA)return;estilosVueloSemillas();estilosVueloHielo();
+  var p=$("streakPill"),pr=p&&p.getBoundingClientRect();if(!pr||!pr.width)return;
+  if(sinMovimiento()||!document.body.animate){marcarHieloRacha(p);return;}
+  var tx=pr.left+pr.width/2,ty=pr.top+pr.height/2,ox=desde&&desde.width?desde.left+desde.width/2:innerWidth/2,oy=desde&&desde.width?desde.top+desde.height/2:innerHeight*.5;
+  var mx=(ox+tx)/2-30,my=Math.max(24,Math.min(oy,ty)-50);espera=espera|0;
+  VUELO_FIN=Math.max(VUELO_FIN,Date.now()+espera+950); // nada más sale de la cola hasta que el 🧊 aterrice
+  var s=document.createElement("span");s.className="semilla-vuela hielo-vuela";s.textContent="🧊";s.setAttribute("aria-hidden","true");document.body.appendChild(s);
+  var a=s.animate([
+    {transform:"translate("+ox+"px,"+oy+"px) translate(-50%,-50%) scale(.6)",opacity:0},
+    {transform:"translate("+ox+"px,"+(oy-16)+"px) translate(-50%,-50%) scale(1.2)",opacity:1,offset:.15},
+    {transform:"translate("+mx+"px,"+my+"px) translate(-50%,-50%) scale(1)",opacity:1,offset:.55},
+    {transform:"translate("+tx+"px,"+ty+"px) translate(-50%,-50%) scale(.5)",opacity:.9}
+  ],{duration:850,delay:espera,easing:"cubic-bezier(.45,0,.55,1)",fill:"both"});
+  var fin=function(){if(!s.parentNode)return;s.remove();marcarHieloRacha(p);};a.onfinish=fin;a.oncancel=fin;
 }
 
 /* ----- Sesión terminada (valorar, afluencia, nota) y editar una sesión ----- */

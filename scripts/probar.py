@@ -449,6 +449,38 @@ PRUEBAS = [
         if(vuelos.length!==1)return 'el cofre vuela dos veces';
         return true;
       }finally{window.showToast=st;window.sinMovimiento=sm;window.volarSemillas=vs;k.forEach(x=>DATA[x]=o[x]);closeModal();limpia();renderMisiones();renderSemillas();}"""),
+    ("el 🧊 del cofre vuela a la pastilla de la racha al cerrar la ventana (una vez, tras las 🌰; con reducir movimiento, solo la cifra)", """
+      await cargarExtra();
+      var k=['misiones','acciones','sellosMisiones','cofresAbiertos','semillasPremio','streakFreezes'],o={};k.forEach(x=>o[x]=DATA[x]);
+      var espera=ms=>new Promise(r=>setTimeout(r,ms)),st=window.showToast,sm=window.sinMovimiento,hs=window.hashStr,vh=window.volarHielo,vuelos=[];
+      var limpia=()=>document.querySelectorAll('.saco-semillas,.semilla-vuela,.pill-hielo').forEach(x=>x.remove());
+      var calma=async()=>{for(var i=0;i<40&&(VUELO.n||VUELO.h||VUELO.t);i++)await espera(250);await espera(2600);limpia();};
+      var cofre=hielo=>{window.hashStr=x=>x===ymd()?(hielo?0:1):hs(x);var M=misionesDeHoy();M.ids.forEach(id=>M.hechas[id]=M.hechas[id]||new Date().toISOString());M.cofre=false;renderMisiones();abrirCofre();window.hashStr=hs;};
+      window.showToast=()=>{};window.volarHielo=function(r,e){vuelos.push([r,e]);return vh.apply(this,arguments);};
+      try{
+        closeModal();goView('study');await calma();vuelos=[];DATA.streakFreezes=0;renderRacha();
+        cofre(true);await espera(700);
+        if(DATA.streakFreezes!==1||!/🧊 un congelador/.test($('modalRoot').innerText))return 'el cofre no regala el congelador';
+        if(vuelos.length||document.querySelector('.hielo-vuela'))return 'vuela debajo de la ventana del cofre';
+        closeModal();await espera(700);
+        if(vuelos.length!==1||!vuelos[0][0]||!vuelos[0][0].width||!(vuelos[0][1]>0))return 'no vuela al cerrar o no va tras las 🌰: '+JSON.stringify(vuelos.map(v=>v[1]));
+        if(!document.querySelector('.hielo-vuela'))return 'no se ve el 🧊 volando';
+        await espera(1300);
+        var c=document.querySelector('#streakPill .pill-hielo');
+        if(!c||c.textContent.trim()!=='🧊 1')return 'la pastilla no enseña 🧊 1: '+(c&&c.textContent);
+        if(document.querySelector('.hielo-vuela'))return 'queda un 🧊 volando';
+        if(!/1 congelador/.test($('streakPill').getAttribute('aria-label')||''))return 'el lector de pantalla no lo oye';
+        var css=($('hieloCss')||{}).textContent||'';
+        if(!/ev-ta-bg/.test(css)||!/prefers-reduced-motion/.test(css)||/(\\bred\\b|#[0-9a-f]{3,6}|--peligro|--fuego)/i.test(css))return 'sin tokens calmados o sin reducir movimiento';
+        await calma();vuelos=[];abrirCofre();closeModal();await espera(1200);
+        if(vuelos.length)return 'el congelador vuela dos veces';
+        await calma();cofre(false);closeModal();await espera(1200);
+        if(vuelos.length||document.querySelector('.hielo-vuela'))return 'vuela sin congelador';
+        await calma();window.sinMovimiento=()=>true;DATA.streakFreezes=2;volarHielo(null,0);
+        if(document.querySelector('.hielo-vuela'))return 'vuela con reducir movimiento';
+        c=document.querySelector('#streakPill .pill-hielo');if(!c||c.textContent.trim()!=='🧊 2'||c.classList.contains('ph-rebote'))return 'con reducir movimiento no da solo la cifra';
+        return true;
+      }finally{window.showToast=st;window.sinMovimiento=sm;window.hashStr=hs;window.volarHielo=vh;k.forEach(x=>DATA[x]=o[x]);closeModal();limpia();renderMisiones();renderSemillas();renderRacha();}"""),
     ("barrita de misiones bajo el cronómetro: «🎯 2/3 misiones · la siguiente en 7 min» solo si falta ≤ 15 min de una misión de minutos", """
       var k=['misiones','sessions','acciones'],o={};k.forEach(x=>o[x]=DATA[x]);
       var t0={running:studyTimer.running,start:studyTimer.start,bibIndex:studyTimer.bibIndex,tick:studyTimer.tick},sh=window.statsHoy,el=$('misCerca');
