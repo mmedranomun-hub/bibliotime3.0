@@ -453,7 +453,8 @@ function navPorHorario(prov, loc) {
 
 // ---------- Página propia de las bibliotecas más buscadas ----------
 // Entran: Biblioteca Nacional y Regional de Madrid; las «mayor»/«universidad» de capitales de provincia
-// (y de Santiago y Mérida, capitales autonómicas); y todas las de capitales con horario verificado (h.f + h.fv).
+// (y de Santiago y Mérida, capitales autonómicas); todas las de horario verificado (h.f + h.fv), estén donde estén;
+// y las que tienen alguna entrada con fuente y fecha en temporada-examenes.js.
 // Ruta: /bibliotecas/<prov>/<slug del nombre>/ (si choca, se añade la localidad). El slug sale del nombre,
 // así que no cambia al regenerar mientras no cambie el nombre.
 const CAPITALES = {
@@ -470,11 +471,29 @@ const CAPITALES = {
   "valencia": ["valencia"], "valladolid": ["valladolid"], "zamora": ["zamora"], "zaragoza": ["zaragoza"],
 };
 const enCapital = (b) => (CAPITALES[slug(b.p)] || []).includes(slug(b.c));
-const masBuscada = (b) => /^Biblioteca Nacional de España$|^Biblioteca Regional Joaqu[ií]n Leguina/.test(b.n) ||
+// Criterio original (hasta 2026-10): Nacional, Regional de Madrid y, en capitales, mayores, universitarias y verificadas.
+const masBuscadaCapital = (b) => /^Biblioteca Nacional de España$|^Biblioteca Regional Joaqu[ií]n Leguina/.test(b.n) ||
   (enCapital(b) && (b.t === "mayor" || b.t === "universidad" || verificado(b)));
+// Desde 2026-11 también: toda biblioteca con horario verificado (h.f + h.fv), esté o no en una capital (Gijón, Vigo,
+// Cartagena, Jerez, Alcalá…), y toda la que tenga alguna entrada en temporada-examenes.js con fuente y fecha (f + fv),
+// vigente o pasada, para que su URL no desaparezca al acabar el periodo. La entrada casa con la biblioteca por `bib`
+// (nombre exacto; si hay varias, la de su provincia), igual que en las páginas de exámenes.
+const ventanaEx = {};
+try { new Function("window", fs.readFileSync(path.join(RAIZ, "temporada-examenes.js"), "utf8"))(ventanaEx); } catch (e) { /* sin exámenes */ }
+const EXAMENES_TODAS = (ventanaEx.TEMPORADA_EXAMENES || []).filter((e) => e.f && e.fv);
+const bibsPorNombre = new Map();
+todas.forEach((b) => (bibsPorNombre.get(b.n) || bibsPorNombre.set(b.n, []).get(b.n)).push(b));
+const bibDeEntrada = (e) => {
+  const cand = e.bib ? bibsPorNombre.get(e.bib) || [] : [], mismas = cand.filter((b) => b.p === e.provincia);
+  return mismas.length === 1 ? mismas[0] : cand.length === 1 ? cand[0] : null;
+};
+const conEntradaEx = new Set(EXAMENES_TODAS.map(bibDeEntrada).filter(Boolean).map((b) => b.i));
+const masBuscada = (b) => masBuscadaCapital(b) || verificado(b) || conEntradaEx.has(b.i);
 const SALAS_SLUG = "salas-de-estudio";
 const paginaDe = new Map(); // índice de la biblioteca → ruta de su página
-const conPaginaPropia = todas.filter(masBuscada).sort((a, b) => a.i - b.i);
+// Orden de asignación del slug: primero las del criterio original y luego las nuevas, para que una ficha nueva nunca le
+// quite el slug a una que ya existía (si chocan, la nueva lleva la localidad o un número).
+const conPaginaPropia = todas.filter(masBuscada).sort((a, b) => (masBuscadaCapital(b) - masBuscadaCapital(a)) || a.i - b.i);
 provincias.forEach((p) => {
   const ps = slug(p), usados = new Set(TEMAS.map((t) => t.slug).concat([SALAS_SLUG]));
   porProv[p].forEach((b) => usados.add(slug(b.c))); // no pisar las páginas de localidad
@@ -497,8 +516,6 @@ provincias.forEach((p) => {
 // por exámenes de temporada-examenes.js (solo las vigentes, con su fuente); y FAQ calculadas con esos datos.
 // Las «otra» (sin clasificar: de barrio, especializadas…) no se listan; se enlaza a la página de la ciudad.
 const MIN_SALAS = 5; // con menos, la página repetiría la de la ciudad
-const ventanaEx = {};
-try { new Function("window", fs.readFileSync(path.join(RAIZ, "temporada-examenes.js"), "utf8"))(ventanaEx); } catch (e) { /* sin exámenes */ }
 const EXAMENES = (ventanaEx.TEMPORADA_EXAMENES || []).filter((e) => e.f && e.fv && e.desde && e.hasta && e.hasta >= HOY);
 const paraEstudiar = (b) => b.t === "universidad" || b.t === "publica" || b.t === "mayor";
 const aMin = (hm) => (hm === "00:00" ? 0 : +hm.slice(0, 2) * 60 + +hm.slice(3));
@@ -605,15 +622,12 @@ const cursosTexto = (l) => enumeraSimple([...new Set(l.map((x) => cursoDe(x.e.de
 const enumeraSimple = (l) => (l.length < 2 ? l.join("") : l.slice(0, -1).join(", ") + " y " + l[l.length - 1]);
 // 24 horas: si `semana` da 00:00–24:00 todos los días o el horario de la fuente lo dice.
 const es24h = (e) => (!!e.semana && DIAS.every((d) => (e.semana[d] || []).some((r) => r[0] === "00:00" && r[1] === "24:00"))) || /\b24 horas\b/i.test(e.horario || "");
-const bibsPorNombre = new Map();
-todas.forEach((b) => (bibsPorNombre.get(b.n) || bibsPorNombre.set(b.n, []).get(b.n)).push(b));
 const exCiudades = []; // { k, ciudad, p, slug, ruta, entradas: [{ e, b, uni, h24 }], locs, h24, curso, fv }
 EXAMENES.forEach((e) => {
   const k = slug(e.provincia) + "|" + slug(e.ciudad);
   let g = exCiudades.find((x) => x.k === k);
   if (!g) exCiudades.push((g = { k, ciudad: e.ciudad, p: e.provincia, entradas: [], locs: new Set([e.provincia + "|" + e.ciudad]) }));
-  const cand = e.bib ? bibsPorNombre.get(e.bib) || [] : [], mismas = cand.filter((b) => b.p === e.provincia);
-  const b = mismas.length === 1 ? mismas[0] : cand.length === 1 ? cand[0] : null;
+  const b = bibDeEntrada(e);
   if (b) g.locs.add(b.p + "|" + b.c);
   const us = b && uniDe.get(b.i) ? [uniDe.get(b.i)] : UNIVERSIDADES.filter((u) => u.provs.includes(e.provincia) && u.re.test(e.espacio));
   g.entradas.push({ e, b, uni: us.length === 1 ? us[0] : null, h24: es24h(e) });
