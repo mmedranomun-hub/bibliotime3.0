@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-10-27 16:48",
+  "fecha": "2026-11-01 00:36",
   "pruebas": {
     "arranca: datos y vistas": true,
     "marca España (sin «Navarra» en la cabecera)": true,
@@ -25,11 +25,13 @@
     "perfil: récord con el nombre bien recortado": true
   },
   "errores_js": [],
-  "carga_ms_cpu4x": 2522,
+  "carga_ms_cpu4x": 1699,
   "carga_ms_cpu4x_min_max": [
-    2033,
-    2605
+    1339,
+    1786
   ],
+  "primera_pintura_ms_cpu4x": 276,
+  "todas_las_chinchetas_ms_cpu4x": 3969,
   "markercluster": {
     "cargado": false,
     "agrupa": false,
@@ -39,12 +41,12 @@
   },
   "datos": {
     "bibliotecas": 2616,
-    "con_horario_verificado": 303,
+    "con_horario_verificado": 313,
     "provincias_con_horario": 51,
     "provincias_total": 51
   },
   "seo": {
-    "paginas": 516,
+    "paginas": 523,
     "sitemap": true
   },
   "peso": {
@@ -53,12 +55,12 @@
       "kb_gzip": 28.1
     },
     "app.js": {
-      "kb": 283.5,
-      "kb_gzip": 82.9
+      "kb": 285.0,
+      "kb_gzip": 83.5
     },
     "bibliotecas-espana.js": {
-      "kb": 643.4,
-      "kb_gzip": 167.6
+      "kb": 647.5,
+      "kb_gzip": 168.5
     }
   },
   "ok": true
