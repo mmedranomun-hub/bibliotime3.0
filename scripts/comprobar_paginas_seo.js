@@ -2,7 +2,7 @@
 /* Comprueba las páginas generadas por scripts/generar_paginas_seo.js (bibliotecas/…):
      - enlaces internos rotos (href="/…" que no llevan a un archivo o a una carpeta con index.html; también los #ancla
        de la misma página o de otra página generada),
-     - títulos y meta descriptions repetidos (y, solo como aviso, los de más de 65 / 160 caracteres),
+     - títulos y meta descriptions repetidos o de más de 65 / 160 caracteres,
      - páginas sin enlace entrante desde otra página (huérfanas) y URL del sitemap que no existen o que faltan en él,
      - JSON-LD que no se puede leer, y horarios especiales (specialOpeningHoursSpecification: verano y exámenes de las
        fichas) mal formados o con tramos por fecha que se solapan.
@@ -27,7 +27,8 @@ const decodifica = (s) => s.replace(/&amp;/g, "&").replace(/&quot;/g, '"').repla
 const ids = (h) => new Set([...h.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]));
 
 const rotos = [], entrantes = new Map(), titulos = new Map(), descs = new Map(), ldMal = [], horEspMal = [];
-// Más largos que esto, Google los corta en los resultados (los mismos límites que usa el generador). Solo aviso.
+// Más largos que esto, Google los corta en los resultados (los mismos límites que usa el generador). Desde el
+// 2026-11-01 todo el sitio cumple (fichas de biblioteca incluidas), así que uno solo hace fallar la comprobación.
 const MAX_TIT = 65, MAX_DESC = 160, largos = [];
 let nHorEsp = 0, nPagHorEsp = 0;
 // Horas HH:MM, fechas AAAA-MM-DD en orden y, en los tramos por fecha (sin dayOfWeek: los de exámenes), ningún solape
@@ -88,10 +89,10 @@ console.log(`Páginas: ${html.size} · enlaces internos: ${nEnlaces}`);
 console.log(`Enlaces rotos: ${rotos.length}${rotos.length ? "\n" + muestra(rotos, ([r, u]) => `  ${r} → ${u}`) : ""}`);
 console.log(`Títulos repetidos: ${dupT.length}${dupT.length ? "\n" + muestra(dupT, ([t, l]) => `  «${t}»: ${l.join(", ")}`) : ""}`);
 console.log(`Descripciones repetidas: ${dupD.length}${dupD.length ? "\n" + muestra(dupD, ([t, l]) => `  «${t.slice(0, 70)}…»: ${l.join(", ")}`) : ""}`);
-console.log(`Títulos > ${MAX_TIT} o descripciones > ${MAX_DESC} caracteres (aviso): ${largos.length}${largos.length ? "\n" + muestra(largos, (r) => "  " + r) : ""}`);
+console.log(`Títulos > ${MAX_TIT} o descripciones > ${MAX_DESC} caracteres: ${largos.length}${largos.length ? "\n" + muestra(largos, (r) => "  " + r) : ""}`);
 console.log(`JSON-LD ilegible: ${ldMal.length}${ldMal.length ? " (" + ldMal.slice(0, 10).join(", ") + ")" : ""}`);
 console.log(`Horarios especiales (verano y exámenes): ${nHorEsp} tramos en ${nPagHorEsp} fichas · mal formados o solapados: ${horEspMal.length}${horEspMal.length ? "\n" + muestra(horEspMal, (r) => "  " + r) : ""}`);
 console.log(`Huérfanas (sin enlace desde otra página generada): ${huerfanas.length}${huerfanas.length ? "\n" + muestra(huerfanas, (r) => "  " + r) : ""}`);
 console.log(`Sitemap: ${enSitemap.size} URL · no existen: ${sitemapRoto.length} · faltan en el sitemap: ${faltanSitemap.length}` +
   (sitemapRoto.length + faltanSitemap.length ? "\n" + muestra(sitemapRoto.concat(faltanSitemap), (r) => "  " + r) : ""));
-if (rotos.length || dupT.length || dupD.length || ldMal.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
+if (rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);

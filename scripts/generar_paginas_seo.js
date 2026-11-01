@@ -919,12 +919,95 @@ function resumenVerif(o) {
   const c = cierreMasTarde(o), dia = (d) => franjas(o.h.inv[d]) || (sinConfirmar(o, d) ? "sin confirmar" : "cerrada");
   return `${!c ? "entre semana cerrada" : c === "24:00" ? "entre semana hasta medianoche" : `entre semana hasta las ${quitaCero(c)}`} · sábado ${dia("S")} · domingo ${dia("D")}`;
 }
-// Dos bibliotecas con el mismo nombre en la misma localidad (p. ej. dos sedes): la segunda cambia el orden del título.
+// ---------- Título (≤ 65) y descripción (≤ 160) de la ficha de biblioteca ----------
+// Google corta hacia los 60-65 / 155-160 caracteres. El título empieza por lo que se busca: nombre y localidad, y
+// «horario» si cabe; la marca solo si sobra sitio. Los nombres largos se abrevian con sentido (`formasNombre`) y, si
+// ni así caben, se cortan por palabra con «…». La URL y el h1 no cambian: llevan el nombre completo.
+const normaTexto = (s) => " " + slug(s).replace(/-/g, " ") + " ";
+const nombraLoc = (n, c) => normaTexto(n).includes(normaTexto(c)); // «Biblioteca Pública de Santiago de Compostela»
+const limpiaNombre = (s) => s.replace(/\s+/g, " ").replace(/^[\s\-·.,_:]+|[\s\-·.,_:]+$/g, "").trim();
+const escapaRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+// Formas del nombre, de la más completa a la más corta; cada paso se suma al anterior.
+function formasNombre(b) {
+  const f = [];
+  const add = (s) => { s = limpiaNombre(s); if (s && !f.includes(s)) f.push(s); return s; };
+  let n = add(b.n);
+  n = n.replace(/ _ /g, " - ");
+  // 1. Nombres con dos rótulos («Biblioteca de Málaga. Biblioteca Pública del Estado…», «Casa de la Lectura - Biblioteca…»,
+  //    «Biblioteca de la Universidad de Zaragoza Biblioteca de la Facultad de…»): el último.
+  const tramos = n.split(/(?=\bBiblioteca\b)/);
+  if (tramos.length > 1 && /^Biblioteca\b/.test(tramos[tramos.length - 1])) n = add(tramos[tramos.length - 1]);
+  // 2. La universidad por su sigla: «Biblioteca de Filosofía - Universidad Complutense de Madrid» → «… - UCM».
+  const u = uniDe.get(b.i);
+  if (u) {
+    const s = u.sigla, se = escapaRe(s);
+    n = add(n.replace(new RegExp(`(de la |de l'|da |de )?${escapaRe(u.nombre)}`, "i"), s)
+      .replace(new RegExp(u.re.source.split("|").filter((x) => !/\\b/.test(x) || !x.includes(s)).join("|") || "(?!)", "g"), s)
+      .replace(new RegExp(`\\b${se}\\b\\s*\\(${se}\\)`, "g"), s).replace(new RegExp(`\\b(${se}) Madrid\\b`), "$1"));
+  }
+  // 3. «Biblioteca de la Facultad de X» / «Biblioteca da Facultade de X» → «Biblioteca de X»; escuelas técnicas por su sigla.
+  n = add(n.replace(/^(Biblioteca(?:-Mediateca)?),? (?:de la |de les |das |da |del |de )?Faculta(?:d|de|des|t|ts) (?:de |da |do |d')?/i,
+    (m, p1) => p1 + (/d'$/.test(m) ? " d'" : " de "))
+    .replace(/Escuela T[eé]cnica Superior de Ingenier(?:os|[ií]a)/i, "ETSI").replace(/Escuela Polit[eé]cnica Superior/i, "EPS"));
+  // 4. Sin «Pública», «Municipal» ni «Central» delante de un nombre propio: «Biblioteca Municipal Central Federico García
+  //    Lorca» → «Biblioteca Federico García Lorca» (no se toca «Biblioteca Pública del Estado» ni «Biblioteca Municipal de X»).
+  n = add(n.replace(/^Biblioteca P[uú]blica Municipal\b/i, "Biblioteca Municipal"));
+  n = add(n.replace(/^Biblioteca (?:P[uú]blica |Municipal |Central )+(?=\p{Lu}\p{Ll})/u, "Biblioteca "));
+  // 5. Sin el último añadido entre paréntesis o tras « - », «. » o « · » (sede, planta o la localidad, que el título lleva aparte).
+  for (let k = 0; k < 2; k++) {
+    const m = n.match(/^(.{12,}?)(?:\s+[-·_]\s+[^-·_.()]+|(?<=\p{L}{4})\.\s+[^-·_.()]+|\s*\([^()]+\))$/u);
+    if (!m) break;
+    n = add(m[1]);
+  }
+  return f;
+}
+// Corta por palabra a ≤ max caracteres y añade «…» (nunca a mitad de palabra).
+function cortaPalabra(s, max) {
+  if (s.length <= max) return s;
+  const m = s.slice(0, max).match(/^(.*\S)\s+\S*$/);
+  return limpiaNombre(m ? m[1] : s.slice(0, max - 1)) + "…";
+}
+// Forma corta y conocida de localidades largas (solo para el título, si con la completa no cabe «horario»).
+// (Nunca una que sea otro municipio: «El Escorial» no es San Lorenzo de El Escorial.)
+const LOC_CORTA = { "Santiago de Compostela": "Santiago", "Las Palmas de Gran Canaria": "Las Palmas", "l'Hospitalet de Llobregat": "L'Hospitalet" };
+const locCorta = (c) => LOC_CORTA[c] || c.split(/\s*\/\s*/)[0];
+// Dos sedes con el mismo nombre en la misma localidad: la segunda lleva la dirección en lugar de la localidad.
+const sedesVistas = new Set();
 function tituloBiblioteca(b) {
-  const t = [`${b.n} (${b.c}): horario, dirección y teléfono | Bibliomapa`, `${b.n} en ${b.c}: dirección, teléfono y horario | Bibliomapa`]
-    .find((x) => !titulosUsados.has(x)) || `${b.n} (${b.c}, ${b.dir}) | Bibliomapa`;
+  const clave = b.n + "|" + b.c, calle = b.dir ? b.dir.split(",")[0].trim() : "";
+  // La calle solo si dice algo más que el código postal y la localidad.
+  const sede = sedesVistas.has(clave) && calle && normaTexto(calle.replace(/\d+/g, "")).trim() !== normaTexto(b.c).trim() ? calle : "";
+  sedesVistas.add(clave);
+  const formas = formasNombre(b), locs = [...new Set([b.c, locCorta(b.c)])];
+  // «Nombre, Localidad» (o solo el nombre si ya la nombra; la sede en vez de la localidad si hace falta distinguir).
+  const base = (n, c) => (sede ? `${n}, ${sede}` : nombraLoc(n, b.c) || nombraLoc(n, c) ? n : `${n}, ${c}`);
+  const cand = [];
+  for (const c of locs) for (const n of formas) cand.push(`${base(n, c)}: horario y dirección${MARCA}`, `${base(n, c)}: horario y dirección`, `${base(n, c)}: horario${MARCA}`, `${base(n, c)}: horario`);
+  for (const c of locs) for (const n of formas) cand.push(base(n, c) + MARCA, base(n, c));
+  // Último recurso: la forma más corta, cortada por palabra con «…».
+  const n = formas[formas.length - 1], c = locs[locs.length - 1], resto = sede || (nombraLoc(n, b.c) || nombraLoc(n, c) ? "" : c);
+  const cola = (resto ? `, ${resto}` : "") + ": horario";
+  cand.push(cortaPalabra(n, MAX_TIT - cola.length) + cola, cortaPalabra(n, MAX_TIT - resto.length - 2) + (resto ? `, ${resto}` : ""));
+  const t = cand.find((x) => x.length <= MAX_TIT && !titulosUsados.has(x))
+    || cortaPalabra(`${n}, ${b.c}, ${b.dir || b.i}`, MAX_TIT);
   titulosUsados.add(t);
   return t;
+}
+const TIPO_DESC = { mayor: "gran biblioteca", universidad: "biblioteca universitaria", publica: "biblioteca pública", otra: "biblioteca" };
+// Descripción: nombre, tipo y localidad; horario verificado (o «sin confirmar»), exámenes si los hay y la dirección real.
+// Se prueba de la más rica a la más corta hasta caber en 160 sin repetir ninguna: primero se quitan añadidos (contacto,
+// dirección) y solo después se abrevia el nombre.
+function descripcionBiblioteca(b, resumenes, colaEx) {
+  const formas = formasNombre(b), dir = b.dir ? `Dirección: ${b.dir.replace(/\.$/, "")}.` : "";
+  const donde = `${TIPO_DESC[b.t] || "biblioteca"} en ${b.c}${b.c !== b.p && !normaTexto(b.c).includes(normaTexto(b.p)) ? ` (${b.p})` : ""}`;
+  const extras = [[colaEx, dir, "Teléfono, web y bibliotecas cercanas."], [colaEx, dir, "Teléfono y web."], [colaEx, dir],
+    [colaEx, "Dirección, teléfono, web y bibliotecas cercanas."], [colaEx, "Dirección, teléfono y web."], [colaEx], [dir], []];
+  const cand = [];
+  for (const r of resumenes) for (const n of formas) for (const e of extras) cand.push([`${n}, ${donde}.`, r, ...e].filter(Boolean).join(" "));
+  const d = cand.find((x) => x.length <= MAX_DESC && !descUsadas.has(x))
+    || cortaPalabra([`${formas[formas.length - 1]}, ${donde}.`, resumenes[resumenes.length - 1], dir].filter(Boolean).join(" "), MAX_DESC);
+  descUsadas.add(d);
+  return d;
 }
 function paginaBiblioteca(b) {
   const ruta = paginaDe.get(b.i), ps = slug(b.p), ok = verificado(b);
@@ -960,13 +1043,10 @@ function paginaBiblioteca(b) {
     .concat(locConPagina ? [[b.c, `/bibliotecas/${ps}/${slug(b.c)}/`]] : []).concat([[b.n, ruta]]);
   const resumen = !ok ? "Horario sin confirmar." : DIAS.some((d) => sinConfirmar(b, d)) ? `Horario verificado el ${fechaEs(b.h.fv)}.` : `Horario verificado: ${horarioTexto(b.h.inv)}.`;
   const titulo = tituloBiblioteca(b);
-  // Dos sedes con el mismo nombre en la misma ciudad (p. ej. «Biblioteca Universidad de Murcia») daban la misma
-  // descripción: la segunda lleva la dirección.
-  // Con temporada de exámenes vigente, la descripción la anuncia (con su periodo) en vez de la coletilla de contacto.
+  // Con temporada de exámenes vigente, la descripción la anuncia con su periodo (`descripcionBiblioteca`, que también
+  // distingue dos sedes con el mismo nombre por su dirección y nunca repite una descripción).
   const colaEx = ex.length ? `Exámenes: horario ampliado del ${fechaEs(ex[0].e.desde).slice(0, 5)} al ${fechaEs(ex[0].e.hasta)}.` : "";
-  let descripcion = `${b.n}, ${tipo.toLowerCase()} en ${b.c} (${b.p}). ${resumen} ${colaEx || "Dirección, teléfono, web y bibliotecas cercanas."}`;
-  if (descUsadas.has(descripcion)) descripcion = `${b.n}, ${tipo.toLowerCase()} en ${b.dir || b.c} (${b.p}). ${resumen} Teléfono, web y bibliotecas cercanas.`;
-  descUsadas.add(descripcion);
+  const descripcion = descripcionBiblioteca(b, [resumen].concat(ok && !resumen.includes(" el ") ? [`Horario verificado el ${fechaEs(b.h.fv)}.`] : []), colaEx);
   const idBib = DOMINIO + ruta + "#biblioteca";
   escribe(ruta, pagina({
     ruta, titulo, descripcion,
@@ -1725,7 +1805,7 @@ ${fq.html}
 
 // índice
 escribe("/bibliotecas/", pagina({
-  ruta: "/bibliotecas/", titulo: "Bibliotecas de España por provincia: abiertas ahora y horarios | Bibliomapa",
+  ruta: "/bibliotecas/", titulo: "Bibliotecas de España por provincia: abiertas ahora | Bibliomapa",
   descripcion: `Más de ${Math.floor(todas.length / 100) * 100} bibliotecas de toda España por provincia y localidad: horarios verificados, salas de estudio y cuáles están abiertas ahora.`,
   h1: "Bibliotecas de España por provincia", intro: `${todas.length} bibliotecas en ${provincias.length} provincias. Encuentra la tuya y mira en el mapa cuál está abierta ahora.`,
   cuerpo: `${temasEspana.length ? `<nav class="temas" aria-label="Por horario"><span>Por horario:</span>${temasEspana.map(({ t, l }) => `<a href="/bibliotecas/${t.slug}/">${esc(t.corto)} <small>${l.length}</small></a>`).join("")}<a href="${HUB}">Por provincia</a></nav>` : ""}${salas.length || exCiudades.length ? `<nav class="temas" aria-label="Para estudiar"><span>Para estudiar:</span>${salas.length ? `<a href="/bibliotecas/${SALAS_SLUG}/">Salas de estudio <small>${salas.length} ciudades</small></a>` : ""}${exCiudades.length ? `<a href="${EX_RUTA}">Exámenes: 24 h y horario ampliado <small>${plural(exCiudades.length, "ciudad", "ciudades")}</small></a>` : ""}</nav>` : ""}${universidades.length ? `<nav class="temas" aria-label="Por universidad"><span>Por universidad:</span><a href="/bibliotecas/${UNIS_SLUG}/">Todas <small>${universidades.length}</small></a>${universidades.map((u) => `<a href="${u.ruta}" title="Bibliotecas de la ${esc(u.nombre)}">${esc(u.sigla)} <small>${u.lista.length}</small></a>`).join("")}</nav>` : ""}<nav class="locs grande">${provincias.map((p) => `<a href="/bibliotecas/${slug(p)}/">${esc(p)} <small>${porProv[p].length}</small></a>`).join("")}</nav>`,

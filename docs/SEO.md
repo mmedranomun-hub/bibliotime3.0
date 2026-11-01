@@ -307,8 +307,31 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
   que abre (temprano y mediodía) o cuántas abren por la tarde en verano. Se prueba de la frase más rica a la más corta hasta
   caber en 160.
 - Resultado: títulos > 65 de 183 → 0, descripciones > 160 de 160 → 0. h1, intro, cuerpo y JSON-LD iguales.
-- `comprobar_paginas_seo.js` avisa (sin fallar) de títulos > 65 y descripciones > 160 en todo el sitio: hoy quedan las 395
-  fichas de biblioteca (395 títulos y 332 descripciones) y 2 títulos de localidad con nombre larguísimo (tarea en el backlog).
+- `comprobar_paginas_seo.js` avisaba (sin fallar) de títulos > 65 y descripciones > 160 en todo el sitio: quedaban las fichas
+  de biblioteca (hechas abajo).
+
+## Hecho (2026-11-01) · Títulos y descripciones de las fichas de biblioteca (772 páginas, sin cambio)
+- Las 416 fichas tenían títulos de 66-151 caracteres («Biblioteca da Facultade de Farmacia (Santiago de Compostela): horario,
+  dirección y teléfono | Bibliomapa») y 351 descripciones de más de 160: Google cortaba justo la localidad o el horario.
+- `tituloBiblioteca`: «Nombre, Localidad: horario y dirección», o «…: horario», con « | Bibliomapa» solo si cabe; si el nombre
+  ya lleva la localidad («Biblioteca Pública de Santiago de Compostela»), no se repite. Se prueba primero el nombre completo y
+  después las formas de `formasNombre`, cada una más corta y con sentido: el último rótulo si el nombre tiene dos («Casa de la
+  Lectura - Biblioteca Municipal Segovia»), la universidad por su sigla («… - Universidad Complutense de Madrid» → «… - UCM»,
+  de `UNIVERSIDADES`), «Biblioteca de la Facultad de X» / «Biblioteca da Facultade de X» → «Biblioteca de X», ETSI y EPS,
+  «Biblioteca Municipal Central Federico García Lorca» → «Biblioteca Federico García Lorca» (solo delante de un nombre propio)
+  y sin la sede o planta del final («- Edificio Moncloa», «(Central)»). Luego la forma corta y conocida de 3 localidades
+  (`LOC_CORTA`: Santiago, Las Palmas, L'Hospitalet; nunca una que sea otro municipio) y, si con «horario» no cabe, sin él.
+  Último recurso: cortar por palabra con «…» (hoy solo 1: «Biblioteca de la ETSI Agronómica, Alimentaria y…, Madrid: horario»).
+- Dos sedes con el mismo nombre en la misma localidad: la segunda lleva la calle si la dirección dice algo más que el código
+  postal y la localidad; si no, la siguiente variante del título (nunca se repite: `titulosUsados`).
+- `descripcionBiblioteca`: «Nombre, biblioteca universitaria/pública en Localidad (Provincia). Horario verificado: L–V …
+  (o sin confirmar). Exámenes: horario ampliado del … al …. Dirección: <la real>. Teléfono y web.»; se prueba de la más rica
+  a la más corta (primero se quitan contacto y dirección, después se abrevia el nombre) hasta caber en 160 sin repetir.
+  La provincia no se repite si coincide con la localidad.
+- No cambian URL, h1, cuerpo ni el `Library` del JSON-LD (el nombre completo sigue ahí); el `WebPage` toma el título nuevo.
+  Índice `/bibliotecas/`: «Bibliotecas de España por provincia: abiertas ahora | Bibliomapa» (antes 75 caracteres).
+- Resultado: títulos > 65 de 417 → 0, descripciones > 160 de 351 → 0 en las 772 páginas. `comprobar_paginas_seo.js` ya
+  falla (código 1) con cualquier título > 65 o descripción > 160.
 
 ## Lo que tienes que hacer tú (sin esto no sirve de nada)
 1. **Conectar el dominio** en Vercel: proyecto `bibliotime` → Settings → Domains → añadir `bibliomapa.es` y
