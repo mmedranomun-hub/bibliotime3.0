@@ -31,7 +31,7 @@ const fs = require("fs");
 const path = require("path");
 const RAIZ = path.resolve(__dirname, "..");
 const DOMINIO = "https://bibliomapa.es";
-const HOY = new Date().toISOString().slice(0, 10);
+const HOY = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Madrid" }); // día de España, no UTC (las h.fv son de España)
 
 // ---------- Datos ----------
 // Navarra: se lee app.js como TEXTO y se evalúa solo el bloque de datos (desde `function h(hh,mm)` hasta el cierre del

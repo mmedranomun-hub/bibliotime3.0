@@ -151,7 +151,7 @@ const sitemap = fs.existsSync(path.join(RAIZ, "sitemap.xml")) ? fs.readFileSync(
 const enSitemap = new Set([...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1].slice(DOMINIO.length)));
 const sitemapRoto = [...enSitemap].filter((r) => r !== "/" && !existe(r));
 const faltanSitemap = [...html.keys()].filter((r) => !enSitemap.has(r));
-const HOY = new Date().toISOString().slice(0, 10), lastmodMal = [], lastmodN = new Map();
+const HOY = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Madrid" }), lastmodMal = [], lastmodN = new Map();
 for (const m of sitemap.matchAll(/<url>([\s\S]*?)<\/url>/g)) {
   const loc = ((m[1].match(/<loc>([^<]+)<\/loc>/) || [])[1] || "").slice(DOMINIO.length), lm = (m[1].match(/<lastmod>([^<]*)<\/lastmod>/) || [])[1];
   if (!lm || !/^\d{4}-\d\d-\d\d$/.test(lm)) { lastmodMal.push(`${loc} sin lastmod válido (${lm || "falta"})`); continue; }
