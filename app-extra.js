@@ -965,12 +965,16 @@ function estilosVueloHielo(){
     '@media (prefers-reduced-motion:reduce){.pill-hielo{transition:none}.pill-hielo.ph-rebote{animation:none}}';
   document.head.appendChild(st);
 }
-function marcarHieloRacha(p){
+function marcarHieloRacha(p,t){
   var c=p.querySelector(".pill-hielo"),f=DATA.streakFreezes||0,quieto=sinMovimiento();
   if(!c){c=document.createElement("span");c.className="pill-hielo";p.appendChild(c);}
-  c.classList.remove("fuera","ph-rebote");c.textContent="🧊 "+f;p.setAttribute("aria-label","Tu racha · "+f+(f===1?" congelador":" congeladores"));
+  c.classList.remove("fuera","ph-rebote");c.textContent=t||"🧊 "+f;p.setAttribute("aria-label",t?"Tu racha sigue a salvo":"Tu racha · "+f+(f===1?" congelador":" congeladores"));
   if(!quieto){void c.offsetWidth;c.classList.add("ph-rebote");celebrar(c,["🧊","✨"],6);}
   clearTimeout(p._hielo);p._hielo=setTimeout(function(){c.classList.add("fuera");setTimeout(function(){c.remove();p.setAttribute("aria-label","Tu racha");},quieto?0:400);},3500);
+}
+// Un congelador ha salvado la racha: la pastilla enseña «🧊 ✓» un instante, en calma (sin hablar del día que faltó).
+function hieloSalva(){
+  if(!DATA)return;estilosVueloHielo();var p=$("streakPill");if(p&&p.offsetWidth)marcarHieloRacha(p,"🧊 ✓");
 }
 function volarHielo(desde,espera){
   if(!DATA)return;estilosVueloSemillas();estilosVueloHielo();

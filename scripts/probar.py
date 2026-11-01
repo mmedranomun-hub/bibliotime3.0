@@ -481,6 +481,32 @@ PRUEBAS = [
         c=document.querySelector('#streakPill .pill-hielo');if(!c||c.textContent.trim()!=='🧊 2'||c.classList.contains('ph-rebote'))return 'con reducir movimiento no da solo la cifra';
         return true;
       }finally{window.showToast=st;window.sinMovimiento=sm;window.hashStr=hs;window.volarHielo=vh;k.forEach(x=>DATA[x]=o[x]);closeModal();limpia();renderMisiones();renderSemillas();renderRacha();}"""),
+    ("cuando un 🧊 salva la racha, la pastilla enseña «🧊 ✓» un instante en azul calmado (sin hablar del día perdido; con reducir movimiento, quieta)", """
+      await cargarExtra();
+      var k=['sessions','streakFreezes','usedFreezeDates','lastFreezeEarnedAtStreak'],o={};k.forEach(x=>o[x]=DATA[x]);
+      var espera=ms=>new Promise(r=>setTimeout(r,ms)),st=window.showToast,sm=window.sinMovimiento,avisos=[];
+      var limpia=()=>document.querySelectorAll('.pill-hielo').forEach(x=>x.remove());
+      var hace=n=>{var d=new Date();d.setDate(d.getDate()-n);return ymd(d);};
+      var salva=()=>{DATA.sessions=[{id:'zh1',date:hace(2),min:40,ts:Date.now()-2*864e5,bib:NO_BIB}];DATA.usedFreezeDates=[];DATA.streakFreezes=1;DATA.lastFreezeEarnedAtStreak=0;renderRacha();checkStreakFreezes();};
+      window.showToast=t=>avisos.push(t);
+      try{
+        closeModal();goView('study');while(VUELO.t||VUELO.n||VUELO.h)await espera(250);await espera(1500);limpia();
+        salva();
+        if(DATA.streakFreezes!==0||DATA.usedFreezeDates.indexOf(hace(1))<0)return 'el congelador no cubre el hueco';
+        await espera(800);
+        var c=document.querySelector('#streakPill .pill-hielo');
+        if(!c||c.textContent.trim()!=='🧊 ✓')return 'la pastilla no enseña 🧊 ✓: '+(c&&c.textContent);
+        if(!/a salvo/.test($('streakPill').getAttribute('aria-label')||''))return 'el lector de pantalla no lo oye';
+        if(/perd|falt|ayer/i.test(c.textContent+$('streakPill').getAttribute('aria-label')))return 'habla del día perdido';
+        var cs=getComputedStyle(c),rojo=/rgb\\(2[0-5]\\d, [0-9]{1,2}, [0-9]{1,2}\\)/;
+        if(rojo.test(cs.color)||rojo.test(cs.backgroundColor))return 'la insignia es roja';
+        await espera(4200);
+        if(document.querySelector('#streakPill .pill-hielo'))return 'la insignia no se va';
+        window.sinMovimiento=()=>true;salva();await espera(800);
+        c=document.querySelector('#streakPill .pill-hielo');
+        if(!c||c.textContent.trim()!=='🧊 ✓'||c.classList.contains('ph-rebote'))return 'con reducir movimiento no queda quieta';
+        return true;
+      }finally{window.showToast=st;window.sinMovimiento=sm;k.forEach(x=>DATA[x]=o[x]);closeModal();limpia();renderRacha();}"""),
     ("barrita de misiones bajo el cronómetro: «🎯 2/3 misiones · la siguiente en 7 min» solo si falta ≤ 15 min de una misión de minutos", """
       var k=['misiones','sessions','acciones'],o={};k.forEach(x=>o[x]=DATA[x]);
       var t0={running:studyTimer.running,start:studyTimer.start,bibIndex:studyTimer.bibIndex,tick:studyTimer.tick},sh=window.statsHoy,el=$('misCerca');

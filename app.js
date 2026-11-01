@@ -2638,6 +2638,7 @@ function checkStreakFreezes(){
     DATA.streakFreezes-=gap.length; gap.forEach(function(k){used.push(k);});
     saveUserData();
     showToast("🧊 Se "+(gap.length===1?"usó un congelador":"usaron "+gap.length+" congeladores")+" para no perder tu racha");
+    VUELO.z=1;if(!VUELO.t)VUELO.t=setTimeout(soltarVuelo,300); // y la pastilla de la racha enseña «🧊 ✓» un instante (hieloSalva)
   }
 }
 
@@ -3555,13 +3556,14 @@ function comprobarMisiones(){
 // 🌰 de misiones y cofre que vuelan al marcador (volarSemillas, app-extra.js). Se encolan y salen cuando no hay
 // ventana abierta ni otro vuelo en marcha; M.hechas/M.cofre (guardados) evitan repetirlo al recargar.
 // El 🧊 del cofre (h) va en la misma cola: sale justo detrás de las 🌰, hacia la pastilla de la racha (volarHielo).
-var VUELO={n:0,de:"",t:0,h:0,hr:null},VUELO_FIN=0;
+// Si un congelador salvó la racha (z), la pastilla enseña «🧊 ✓» cuando no haya ventana abierta (hieloSalva).
+var VUELO={n:0,de:"",t:0,h:0,hr:null,z:0},VUELO_FIN=0;
 function encolarVuelo(n,de,h){VUELO.n+=n;VUELO.de=de;if(h)VUELO.h+=h;if(!VUELO.t)VUELO.t=setTimeout(soltarVuelo,300);}
 function soltarVuelo(){
-  VUELO.t=0;if(!VUELO.n&&!VUELO.h)return;
+  VUELO.t=0;if(!VUELO.n&&!VUELO.h&&!VUELO.z)return;
   if($("modalRoot").innerHTML||Date.now()<VUELO_FIN||document.querySelector(".semilla-vuela,.saco-semillas,.racha-overlay")){VUELO.t=setTimeout(soltarVuelo,700);return;}
-  var n=VUELO.n,h=VUELO.h,hr=VUELO.hr,o=document.querySelector(VUELO.de),r=o&&o.getBoundingClientRect();VUELO.n=VUELO.h=0;VUELO.hr=null;
-  cargarExtra().then(function(){if(n)volarSemillas(r,n);if(h)volarHielo(hr||r,n?250:0);},function(){});
+  var z,n=VUELO.n,h=VUELO.h,hr=VUELO.hr,o=VUELO.de&&document.querySelector(VUELO.de),r=o&&o.getBoundingClientRect();z=VUELO.z;VUELO.n=VUELO.h=VUELO.z=0;VUELO.hr=null;
+  cargarExtra().then(function(){if(n)volarSemillas(r,n);if(h)volarHielo(hr||r,n?250:0);if(z)hieloSalva();},function(){});
 }
 function renderMisiones(){
   var el=$("missionsCard"); if(!el||!DATA)return;
