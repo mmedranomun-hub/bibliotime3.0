@@ -204,7 +204,11 @@ else {
     };
     const casos = [["/bibliotecas/navara/", "¿Buscabas Navarra[/bibliotecas/navarra/]?"], ["/bibliotecas/Sevila/x/", "¿Buscabas Sevilla[/bibliotecas/sevilla/]?"],
       ["/bibliotecas/santa-cruz/", "¿Buscabas Santa Cruz de Tenerife[/bibliotecas/santa-cruz-de-tenerife/]?"],
-      ["/bibliotecas/xqzw/", ""], ["/no-existe", ""], ["/bibliotecas/", ""]];
+      ["/bibliotecas/xqzw/", ""], ["/no-existe", ""], ["/bibliotecas/", ""],
+      // Alias (ALIAS_404 en generar_paginas_seo.js): nombres que la distancia de edición no alcanza.
+      ["/bibliotecas/vizcaya/", "¿Buscabas Bizkaia[/bibliotecas/bizkaia/]?"], ["/bibliotecas/Guip%C3%BAzcoa/x/", "¿Buscabas Gipuzkoa[/bibliotecas/gipuzkoa/]?"],
+      ["/bibliotecas/palma-de-mallorca/", "¿Buscabas Baleares[/bibliotecas/baleares/]?"], ["/bibliotecas/tenerife/", "¿Buscabas Santa Cruz de Tenerife[/bibliotecas/santa-cruz-de-tenerife/]?"],
+      ["/bibliotecas/la-palma/", "¿Buscabas Santa Cruz de Tenerife[/bibliotecas/santa-cruz-de-tenerife/]?"], ["/bibliotecas/gran-canaria/", "¿Buscabas Las Palmas[/bibliotecas/las-palmas/]?"]];
     for (const [ruta, esperado] of casos) { const r = sugiere(ruta); if (r !== esperado) mal404.push(`«¿Buscabas…?» en ${ruta}: «${r}» (esperado «${esperado}»)`); else n404Busca++; }
   }
 }

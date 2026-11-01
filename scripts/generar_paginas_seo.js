@@ -1904,18 +1904,33 @@ escribe("/bibliotecas/", pagina({
 // de 3 letras o más que solo encaja en una provincia; con dos igual de cerca, o ninguna, no muestra nada. El enlace se crea
 // con el DOM (sin href="…" en el código: el HTML no gana enlaces) y el texto va con textContent. Sin librerías ni datos.
 // comprobar_paginas_seo.js lo ejecuta con /bibliotecas/navara/ → «Navarra» y falla si falta el script o #buscabas.
+// Antes de la distancia de edición mira ALIAS_404: nombres castellanos o antiguos, islas y capitales que la distancia no
+// alcanza (vizcaya → bizkaia). Clave = slug sin guiones; valor = slug de una provincia que la página enlaza (se comprueba
+// aquí abajo al generar: si una provincia cambia de slug, el script falla en vez de sugerir un enlace roto).
+const ALIAS_404 = {
+  vizcaya: "bizkaia", bilbao: "bizkaia",
+  guipuzcoa: "gipuzkoa", donostia: "gipuzkoa", sansebastian: "gipuzkoa",
+  araba: "alava", vitoria: "alava", gasteiz: "alava", vitoriagasteiz: "alava",
+  mallorca: "baleares", palma: "baleares", palmademallorca: "baleares", menorca: "baleares", ibiza: "baleares",
+  eivissa: "baleares", formentera: "baleares", illesbalears: "baleares", islasbaleares: "baleares",
+  tenerife: "santa-cruz-de-tenerife", lapalma: "santa-cruz-de-tenerife", lagomera: "santa-cruz-de-tenerife", elhierro: "santa-cruz-de-tenerife",
+  grancanaria: "las-palmas", lanzarote: "las-palmas", fuerteventura: "las-palmas",
+  pamplona: "navarra", iruna: "navarra", nafarroa: "navarra",
+  rioja: "la-rioja", logrono: "la-rioja", oviedo: "asturias", santander: "cantabria",
+};
 const ESTILO_BUSCABAS = `<style>.buscabas{font-size:var(--fs-l);font-weight:700;color:var(--texto);background:var(--acento-tenue);
 border:1px solid var(--linea);border-radius:var(--r-m);padding:10px 14px;margin:6px 0 12px}.buscabas a{color:var(--acento-tx)}</style>`;
 const SCRIPT_BUSCABAS = `<script id="buscabas-js">(function(){
 var m=/^\\/bibliotecas\\/([^\\/]+)/.exec(location.pathname),caja=document.getElementById("buscabas");if(!m||!caja)return;
 function norm(s){try{s=decodeURIComponent(s)}catch(e){}return s.normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}
 function dist(a,b){var f=[],i,j,p,t;for(j=0;j<=b.length;j++)f[j]=j;for(i=1;i<=a.length;i++){p=f[0];f[0]=i;for(j=1;j<=b.length;j++){t=f[j];f[j]=Math.min(f[j]+1,f[j-1]+1,p+(a[i-1]===b[j-1]?0:1));p=t}}return f[b.length]}
-var x=norm(m[1]),xs=x.replace(/-/g,""),mejor=null,dm=9,emp=0,pre=null;if(x.length<2)return;
+var x=norm(m[1]),xs=x.replace(/-/g,""),al=${JSON.stringify(ALIAS_404)}[xs],mejor=null,dm=9,emp=0,pre=null;if(x.length<2)return;
 [].forEach.call(document.querySelectorAll("#prov-404 a"),function(a){var s=(a.getAttribute("href")||"").split("/")[2];if(!s)return;
+if(al){if(s===al)mejor=a;return}
 var d=Math.min(dist(x,s),dist(xs,s.replace(/-/g,""))),lim=s.length<=4?1:2;
 if(d<=lim){if(d<dm){dm=d;mejor=a;emp=0}else if(d===dm)emp=1}
 if(x.length>=3&&(s.indexOf(x)===0||x.indexOf(s+"-")===0))pre=pre?-1:a;});
-if(!mejor&&pre&&pre!==-1)mejor=pre;else if(!mejor||emp)return;
+if(al){if(!mejor)return}else if(!mejor&&pre&&pre!==-1)mejor=pre;else if(!mejor||emp)return;
 var l=document.createElement("a");l.href=mejor.getAttribute("href");l.textContent=(mejor.firstChild&&mejor.firstChild.textContent||"").trim();
 caja.textContent="¿Buscabas ";caja.appendChild(l);caja.appendChild(document.createTextNode("?"));caja.hidden=false;
 })();</script>`;
@@ -1924,6 +1939,11 @@ caja.textContent="¿Buscabas ";caja.appendChild(l);caja.appendChild(document.cre
 // node scripts/comprobar_paginas_seo.js revisa sus enlaces, el noindex y que no esté en el sitemap.
 {
   const hoyT = temasEspana.find(({ t }) => t.slug === "abiertas-hoy");
+  const slugsProv = new Set(provincias.map(slug));
+  for (const [a, s] of Object.entries(ALIAS_404)) {
+    if (!slugsProv.has(s)) throw new Error(`ALIAS_404: «${a}» apunta a «${s}», que no es el slug de ninguna provincia`);
+    if (slugsProv.has(a) || /[^a-z0-9]/.test(a)) throw new Error(`ALIAS_404: «${a}» no vale como alias (es un slug o lleva guiones)`);
+  }
   fs.writeFileSync(path.join(RAIZ, "404.html"), pagina({
     ruta: "/404.html", noindex: true,
     titulo: "Página no encontrada | Bibliomapa",
