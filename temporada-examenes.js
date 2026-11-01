@@ -88,5 +88,64 @@ window.TEMPORADA_EXAMENES = [
     nota: "La UAH avisa de que puede restringir el acceso a las salas a quien no sea de la universidad, sobre todo en exámenes.",
     f: "https://biblioteca.uah.es/conoce-la-biblioteca/la-biblioteca/horarios/", fv: "2026-10-27",
     cerrado: [["2026-12-24","2026-12-25"],["2026-12-31","2027-01-01"],["2027-01-06","2027-01-06"]]
+  },
+  // Ayuntamiento de València: cinco bibliotecas municipales abiertas 24 h en exámenes, «del 10 de diciembre de 2026
+  // al 10 de enero de 2027» (nota del 11-02-2026, contrato de vigilancia; bibliotecas elegidas para 2026-2027).
+  // La nota no menciona festivos (24-25 y 31 dic, 1 y 6 ene): por eso no lleva `semana`.
+  {
+    ciudad: "Valencia", provincia: "Valencia",
+    espacio: "Biblioteca municipal Carola Reig (Benimaclet) · Ayuntamiento de València",
+    bib: "Biblioteca Municipal Carola Reig Salvà",
+    desde: "2026-12-10", hasta: "2027-01-10",
+    horario: "abierta las 24 horas, también los fines de semana",
+    nota: "El Ayuntamiento no detalla qué pasa los festivos (24, 25 y 31 dic, 1 y 6 ene).",
+    f: "https://www.valencia.es/cas/actualidad/-/content/el-ayuntamiento-de-val%C3%A8ncia-abrir%C3%A1-cinco-bibliotecas-24-horas-durante-las-%C3%A9pocas-de-ex%C3%A1menes", fv: "2026-11-01"
+  },
+  {
+    ciudad: "Valencia", provincia: "Valencia",
+    espacio: "Biblioteca municipal Azorín (Patraix) · Ayuntamiento de València",
+    bib: "Biblioteca Municipal Azorín",
+    desde: "2026-12-10", hasta: "2027-01-10",
+    horario: "abierta las 24 horas, también los fines de semana",
+    nota: "El Ayuntamiento no detalla qué pasa los festivos (24, 25 y 31 dic, 1 y 6 ene).",
+    f: "https://www.valencia.es/cas/actualidad/-/content/el-ayuntamiento-de-val%C3%A8ncia-abrir%C3%A1-cinco-bibliotecas-24-horas-durante-las-%C3%A9pocas-de-ex%C3%A1menes", fv: "2026-11-01"
+  },
+  {
+    ciudad: "Valencia", provincia: "Valencia",
+    espacio: "Biblioteca municipal Eduard Escalante (Arrancapins) · Ayuntamiento de València",
+    bib: "Biblioteca d'Arrancapins - Eduard Escalante",
+    desde: "2026-12-10", hasta: "2027-01-10",
+    horario: "abierta las 24 horas, también los fines de semana",
+    nota: "El Ayuntamiento no detalla qué pasa los festivos (24, 25 y 31 dic, 1 y 6 ene).",
+    f: "https://www.valencia.es/cas/actualidad/-/content/el-ayuntamiento-de-val%C3%A8ncia-abrir%C3%A1-cinco-bibliotecas-24-horas-durante-las-%C3%A9pocas-de-ex%C3%A1menes", fv: "2026-11-01"
+  },
+  {
+    ciudad: "Valencia", provincia: "Valencia",
+    espacio: "Biblioteca municipal Joan de Timoneda (Beniferri) · Ayuntamiento de València",
+    bib: "Biblioteca Municipal Joan De Timoneda",
+    desde: "2026-12-10", hasta: "2027-01-10",
+    horario: "abierta las 24 horas, también los fines de semana",
+    nota: "El Ayuntamiento no detalla qué pasa los festivos (24, 25 y 31 dic, 1 y 6 ene).",
+    f: "https://www.valencia.es/cas/actualidad/-/content/el-ayuntamiento-de-val%C3%A8ncia-abrir%C3%A1-cinco-bibliotecas-24-horas-durante-las-%C3%A9pocas-de-ex%C3%A1menes", fv: "2026-11-01"
+  },
+  {
+    ciudad: "Valencia", provincia: "Valencia",
+    espacio: "Biblioteca municipal Clara Santiró i Font (Sant Marcel·lí - Camí Real) · Ayuntamiento de València",
+    bib: "Biblioteca Clara Santiró I Font",
+    desde: "2026-12-10", hasta: "2027-01-10",
+    horario: "abierta las 24 horas, también los fines de semana",
+    nota: "El Ayuntamiento no detalla qué pasa los festivos (24, 25 y 31 dic, 1 y 6 ene).",
+    f: "https://www.valencia.es/cas/actualidad/-/content/el-ayuntamiento-de-val%C3%A8ncia-abrir%C3%A1-cinco-bibliotecas-24-horas-durante-las-%C3%A9pocas-de-ex%C3%A1menes", fv: "2026-11-01"
+  },
+  // UAM: noticia del 19-10-2026 «La Sala Búho también abre los fines de semana». No da fecha de inicio (ya está
+  // en marcha al publicarse), así que `desde` es el día de la comprobación; tampoco da el fin del horario hasta la 1:00.
+  {
+    ciudad: "Madrid", provincia: "Madrid",
+    espacio: "Sala Búho · Biblioteca de Ciencias, Universidad Autónoma de Madrid (Cantoblanco)",
+    bib: null,
+    desde: "2026-11-01", hasta: "2027-01-08",
+    horario: "todos los días, también sábados, domingos y festivos, de 9:00 a 20:30; desde el 8 ene amplía hasta la 1:00 (la UAM aún no dice hasta cuándo)",
+    nota: "Fines de semana y festivos se entra desde el exterior por la rampa. Entrada libre, con prioridad para quien tenga carné UAM en exámenes y horas punta.",
+    f: "https://www.uam.es/uam/vida-uam/bibliotecas/noticias/biblioteca-ciencias/sala-buho-otono-examenes", fv: "2026-11-01"
   }
 ];
