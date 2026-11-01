@@ -650,7 +650,9 @@ function abrirCofre(btn){
   M.cofre=true;DATA.cofresAbiertos=(DATA.cofresAbiertos||0)+1;var premio=20+(hashStr(ymd()+"cofre")%4)*10; // 20-50 semillas
   var hielo=(DATA.streakFreezes||0)<3&&hashStr(ymd())%3===0, n=ponerSello();
   DATA.semillasPremio=(DATA.semillasPremio||0)+premio;if(hielo)DATA.streakFreezes=(DATA.streakFreezes||0)+1;saveUserData();
+  var pista=pistaEspecieSaco(semillas()); // ya con el premio: si te da para la especie, la pista calla (sale «Ya puedes plantar…»)
   openModal('<div class="cofre-modal"><div class="cofre-big">🎁</div><h3>¡Misiones completadas!</h3><div class="sub">Has ganado <b>🌰 '+premio+' semillas</b>'+(hielo?' y <b>🧊 un congelador de racha</b>':'')+'.</div>'+
+    (pista?'<div class="cofre-pista">'+pista+'</div>':'')+
     '<div class="cofre-sello">🏵️ Sello del día · '+(n===1?'¡tu primer día con todas las misiones!':'ya llevas '+n+' días con todas las misiones')+'</div>'+
     '<button class="btn" onclick="closeModal();abrirTienda()">Ver especies</button><button class="linkbtn" onclick="closeModal()" style="display:block;margin:12px auto 0">Seguir</button></div>',function(){
     var c=document.querySelector(".cofre-big");setTimeout(function(){if(c){c.textContent="✨";c.classList.add("abre");}confeti(140);celebrar(c,["🌰","✨","💎","⭐"],18);},700);

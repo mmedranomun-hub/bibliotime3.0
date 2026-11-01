@@ -402,6 +402,22 @@ PRUEBAS = [
         if(!$('sellosWrap').classList.contains('hidden'))return 'sale sin sellos';
         return true;
       }finally{k.forEach(x=>DATA[x]=o[x]);closeModal();renderMisiones();renderSellos();}"""),
+    ("pista en el cofre del día: «¡A N 🌰 de plantar <especie>!» bajo el premio solo si quedas a 1-10 🌰 (y nada si el cofre ya te da para ella)", """
+      var k=['misiones','sellosMisiones','cofresAbiertos','semillasPremio','semillasGastadas','especiesCompradas','streakFreezes','sessions'],o={};k.forEach(x=>o[x]=DATA[x]);
+      var premio=20+(hashStr(ymd()+'cofre')%4)*10;
+      var abre=total=>{closeModal();DATA.sessions=[];DATA.semillasGastadas=0;DATA.semillasPremio=total-premio;var M=misionesDeHoy();M.cofre=false;M.ids.forEach(id=>M.hechas[id]=new Date().toISOString());abrirCofre();var p=document.querySelector('#modalRoot .cofre-pista');return p?p.innerText:'';};
+      try{
+        await cargarExtra();goView('study');DATA.especiesCompradas=[];
+        var t=abre(56); // con el premio, 56 → a 4 del cerezo (60)
+        if(!/🌸/.test(t)||!/A 4 🌰 de plantar cerezos/.test(t))return 'sin la pista a 4: '+t;
+        if(/te faltan/i.test(t))return 'redacción en negativo: '+t;
+        var m=$('modalRoot').innerHTML;if(m.indexOf('cofre-pista')<m.indexOf('semillas</b>')||m.indexOf('cofre-pista')>m.indexOf('cofre-sello'))return 'la pista no va bajo el premio';
+        var c=getComputedStyle(document.querySelector('.cofre-pista'));if(c.animationName!=='none'||/rgb\\(2[0-5]\\d, [0-9]{1,2}, [0-9]{1,2}\\)/.test(c.color))return 'la pista anima o es roja: '+c.color;
+        if(abre(60))return 'sale con la especie ya alcanzada gracias al cofre';
+        if(abre(45))return 'sale a 15 🌰';
+        DATA.especiesCompradas=ESPECIES.filter(e=>e.precio>0).map(e=>e.id);if(abre(56))return 'sale con todas compradas';
+        return true;
+      }finally{k.forEach(x=>DATA[x]=o[x]);closeModal();renderMisiones();renderSemillas();saveUserData();}"""),
     ("las 🌰 de las misiones y del cofre vuelan al marcador (una vez; con reducir movimiento, solo la cifra)", """
       await cargarExtra();
       var k=['misiones','acciones','sellosMisiones','cofresAbiertos','semillasPremio','streakFreezes'],o={};k.forEach(x=>o[x]=DATA[x]);
