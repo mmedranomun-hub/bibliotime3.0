@@ -583,6 +583,43 @@ PRUEBAS = [
       }finally{await new Promise(r=>setTimeout(r,300)); // deja que el mapa haga su invalidateSize (120 ms) mientras se ve
         studyTimer.running=t0.running;studyTimer.start=t0.start;studyTimer.bibIndex=t0.bibIndex;studyTimer.tick=t0.tick;
         k.forEach(x=>DATA[x]=o[x]);el&&(el._clave=null);ms.classList.toggle('hidden',oculto0);renderMisCerca();renderStudy();}"""),
+    ("tocar «🎯 7 min» o la barrita abre Estudio con la fila de la misión cerca resaltada 1 s y a la vista", """
+      var k=['misiones','sessions','acciones'],o={};k.forEach(x=>o[x]=DATA[x]);
+      var t0={running:studyTimer.running,start:studyTimer.start,bibIndex:studyTimer.bibIndex,tick:studyTimer.tick},el=$('misCerca'),mi=$('miniMis'),ms=$('miniStudy');
+      var viejo=new Date(Date.now()-5*3600000).toISOString(),oculto0=ms.classList.contains('hidden'),espera=n=>new Promise(r=>setTimeout(r,n));
+      var prepara=(min,hechas)=>{studyTimer.running=true;studyTimer.tick=t0.tick||1;studyTimer.bibIndex=-1;studyTimer.start=Date.now()-min*60000-500;
+        DATA.misiones={fecha:ymd(),ids:['m25','agenda','social'],hechas:hechas,cofre:false};el._clave=null;renderMisCerca();};
+      var visible=f=>{var r=f.getBoundingClientRect(),v=$('viewStudy').getBoundingClientRect();return r.height>0&&r.top>=v.top-1&&r.bottom<=v.bottom+1;};
+      var comprueba=async(b,quien)=>{
+        if(b.tagName!=='BUTTON'||!/misiones de hoy/i.test(b.getAttribute('aria-label')||''))return quien+' no es un botón con etiqueta clara';
+        var r=b.getBoundingClientRect(),c=getComputedStyle(b,'::before');if(Math.max(r.height,parseFloat(c.height)||0)<44)return quien+' área táctil < 44 px';
+        $('viewStudy').scrollTop=9999;b.click();
+        if($('viewStudy').classList.contains('hidden'))return quien+' no abre Estudio';
+        var f=document.querySelector('#missionsCard [data-m="m25"]');
+        if(!f||!f.classList.contains('mis-foco'))return quien+' no resalta la fila';
+        if(!/108, 92, 231/.test(getComputedStyle(f).outlineColor))return quien+" el borde no es --acento";
+        if(document.querySelectorAll('#missionsCard .mis-foco').length!==1)return quien+' resalta más de una fila';
+        await espera(800);if(!visible(f))return quien+' la fila no queda a la vista';
+        await espera(400);if(f.isConnected&&f.classList.contains('mis-foco')||document.querySelector('#missionsCard .mis-foco'))return quien+' el resaltado dura más de 1 s';
+        return '';};
+      try{
+        closeModal();goView('map');DATA.sessions=[];DATA.acciones={fecha:ymd()};ms.classList.remove('hidden');
+        prepara(18,{agenda:viejo,social:viejo});
+        if(mi.classList.contains('hidden'))return 'no sale «🎯 7 min»';
+        var e=await comprueba(mi,'#miniMis');if(e)return e;
+        goView('study');prepara(18,{agenda:viejo,social:viejo});
+        if(el.classList.contains('hidden'))return 'no sale la barrita';
+        e=await comprueba(el,'#misCerca');if(e)return e;
+        // sin misión cerca («✅ 2/3»): solo lleva a la tarjeta, sin resaltar nada
+        goView('map');prepara(26,{m25:new Date(Date.now()-60000).toISOString(),agenda:viejo});
+        if(!/✅ 2\\/3/.test(mi.innerText))return 'no sale «✅ 2/3»';
+        $('viewStudy').scrollTop=9999;mi.click();await espera(800);
+        if($('viewStudy').classList.contains('hidden'))return '«✅ 2/3» no abre Estudio';
+        if(document.querySelector('#missionsCard .mis-foco'))return 'resalta sin misión cerca';
+        if(!visible($('missionsCard').querySelector('.mis-head')))return 'no lleva a «Misiones de hoy»';
+        return true;
+      }finally{studyTimer.running=t0.running;studyTimer.start=t0.start;studyTimer.bibIndex=t0.bibIndex;studyTimer.tick=t0.tick;MIS_FOCO={id:'',hasta:0};
+        k.forEach(x=>DATA[x]=o[x]);el&&(el._clave=null);ms.classList.toggle('hidden',oculto0);goView('map');await espera(300);renderMisCerca();renderStudy();}"""),
     ("acceso: la ley foral solo en Navarra", """
       for(var i=N_NAVARRA;i<BIBLIOTECAS.length;i++)if(/Ley Foral/.test(accesoAccesibilidadHTML(BIBLIOTECAS[i])))return 'ley foral fuera de Navarra: '+BIBLIOTECAS[i].nombre;
       var nav=BIBLIOTECAS.slice(0,N_NAVARRA).some(b=>/Ley Foral 32\\/2002/.test(accesoAccesibilidadHTML(b)));

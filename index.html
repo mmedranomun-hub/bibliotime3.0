@@ -366,6 +366,11 @@
     color:var(--acento-tx);font-size:var(--fs-xs);font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap;animation:fadeIn .4s ease}
   .mini-mis.hecha{color:var(--ok-tx)}
   .mini-mis.hidden{display:none}
+  /* es un botón: lleva a «🎯 Misiones de hoy»; gana a «.ministudy button» y amplía el área táctil a 44 px sin crecer */
+  .ministudy .mini-mis{position:relative;padding:1px 7px;border-radius:var(--r-pill);background:var(--acento-tenue);border:1px solid var(--borde);
+    color:var(--acento-tx);font-size:var(--fs-xs);font-weight:800;font-family:inherit;line-height:inherit;cursor:pointer}
+  .ministudy .mini-mis.hecha{color:var(--ok-tx)}
+  .mini-mis::before{content:"";position:absolute;left:-4px;right:-4px;top:50%;height:44px;transform:translateY(-50%)}
   @media(prefers-reduced-motion:reduce){.mini-mis{animation:none}}
   .ministudy button{border:none;border-radius:var(--r-m);padding:7px 12px;font-weight:700;font-size:var(--fs-s);cursor:pointer}
   /* Compartir: botón principal (blanco sobre degradado). Parar: tono suave de parar, como .btn.danger */
@@ -1011,6 +1016,13 @@
   .mis-cerca b{color:var(--acento-tx);font-weight:800}
   .mis-cerca.hecha b{color:var(--ok-tx)}
   .mis-cerca.hidden{display:none}
+  /* botón: baja a «🎯 Misiones de hoy»; área táctil de 44 px con un ::before, sin cambiar su tamaño visible */
+  .mis-cerca{position:relative;font-family:inherit;line-height:inherit;cursor:pointer}
+  .mis-cerca::before{content:"";position:absolute;left:0;right:0;top:50%;height:44px;transform:translateY(-50%)}
+  .mis-cerca:hover{border-color:var(--acento)}
+  .missions-card{scroll-margin-top:16px}
+  /* fila de la misión cerca al llegar desde el cronómetro: borde --acento 1 s, sin pulso (estático) */
+  .mis.mis-foco{border-radius:var(--r-s);background:var(--acento-tenue);box-shadow:0 0 0 6px var(--acento-tenue);outline:2px solid var(--acento);outline-offset:6px}
   @media(prefers-reduced-motion:reduce){.mis-cerca{animation:none}}
   .sr-solo{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
   .cofre{width:100%;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:10px;padding:12px;border-radius:var(--r-m);
@@ -1308,7 +1320,7 @@
 
     <div class="ministudy hidden" id="miniStudy">
       <div class="pulse"></div>
-      <div><div class="t-fila"><div class="t" id="miniTime">00:00</div><span class="mini-mis hidden" id="miniMis"></span></div><div class="lbl" id="miniPlace">Estudiando</div></div>
+      <div><div class="t-fila"><div class="t" id="miniTime">00:00</div><button type="button" class="mini-mis hidden" id="miniMis" aria-label="Ver misiones de hoy"></button></div><div class="lbl" id="miniPlace">Estudiando</div></div>
       <button id="miniShare">Compartir</button>
       <button id="miniStop">Parar</button>
     </div>
@@ -1357,7 +1369,7 @@
           <div class="focus-plant hidden" id="focusPlant"></div>
         </div>
         <div class="timer-big" id="studyTimer">00:00:00</div>
-        <div class="mis-cerca hidden" id="misCerca"></div>
+        <button type="button" class="mis-cerca hidden" id="misCerca" aria-label="Ver misiones de hoy"></button>
         <div class="study-place" id="studyPlace">Sin sesión activa</div>
         <div class="study-controls">
           <button class="btn sm" id="btnStart">▶ Empezar</button>
