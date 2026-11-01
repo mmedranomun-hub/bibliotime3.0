@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-11-01 10:32",
+  "fecha": "2026-11-01 11:30",
   "pruebas": {
     "arranca: datos y vistas": true,
     "marca España (sin «Navarra» en la cabecera)": true,
@@ -15,6 +15,7 @@
     "récord personal en «Sesión terminada» (solo si supera la más larga, sin negativos)": true,
     "contador de minutos en «Sesión terminada» (sube hasta los minutos reales; «Hoy llevas» solo con más sesiones hoy)": true,
     "semillas que vuelan al marcador (con 🌰 vuelan y el contador acaba en la cifra; sin 🌰 no; con reducir movimiento, cifra directa)": true,
+    "pista bajo el saco de semillas: «¡A N 🌰 de plantar <especie>!» solo a 1-10 🌰, en positivo, y se repinta al gastar": true,
     "«¡Qué alegría verte!» al volver tras ≥ 3 días (horas y árbol más grande, sin hablar de la racha perdida)": true,
     "biblioteca nueva en tu mapa: aviso suave al cerrar y «📍 bibliotecas exploradas» en el Perfil": true,
     "sello del día: al abrir el cofre se estampa 🏵️ y el Perfil cuenta solo los días logrados": true,
@@ -33,13 +34,13 @@
     "atajos de la app instalada (#accion=estudiar|ahora|pronto)": true
   },
   "errores_js": [],
-  "carga_ms_cpu4x": 775,
+  "carga_ms_cpu4x": 811,
   "carga_ms_cpu4x_min_max": [
-    710,
-    969
+    637,
+    959
   ],
-  "primera_pintura_ms_cpu4x": 224,
-  "todas_las_chinchetas_ms_cpu4x": 785,
+  "primera_pintura_ms_cpu4x": 196,
+  "todas_las_chinchetas_ms_cpu4x": 821,
   "markercluster": {
     "cargado": false,
     "agrupa": false,
@@ -49,12 +50,12 @@
   },
   "datos": {
     "bibliotecas": 2616,
-    "con_horario_verificado": 397,
+    "con_horario_verificado": 408,
     "provincias_con_horario": 51,
     "provincias_total": 51
   },
   "seo": {
-    "paginas": 720,
+    "paginas": 735,
     "sitemap": true
   },
   "peso": {
@@ -67,8 +68,8 @@
       "kb_gzip": 87.5
     },
     "bibliotecas-espana.js": {
-      "kb": 697.9,
-      "kb_gzip": 179.0
+      "kb": 703.2,
+      "kb_gzip": 180.2
     }
   },
   "ok": true
