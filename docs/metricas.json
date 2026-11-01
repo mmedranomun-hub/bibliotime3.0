@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-11-01 15:34",
+  "fecha": "2026-11-01 16:38",
   "pruebas": {
     "arranca: datos y vistas": true,
     "marca España (sin «Navarra» en la cabecera)": true,
@@ -21,6 +21,7 @@
     "sello del día: al abrir el cofre se estampa 🏵️ y el Perfil cuenta solo los días logrados": true,
     "pista en el cofre del día: «¡A N 🌰 de plantar <especie>!» bajo el premio solo si quedas a 1-10 🌰 (y nada si el cofre ya te da para ella)": true,
     "las 🌰 de las misiones y del cofre vuelan al marcador (una vez; con reducir movimiento, solo la cifra)": true,
+    "el 🧊 del cofre vuela a la pastilla de la racha al cerrar la ventana (una vez, tras las 🌰; con reducir movimiento, solo la cifra)": true,
     "barrita de misiones bajo el cronómetro: «🎯 2/3 misiones · la siguiente en 7 min» solo si falta ≤ 15 min de una misión de minutos": true,
     "acceso: la ley foral solo en Navarra": true,
     "especies de temporada (cruzan el año)": true,
@@ -36,13 +37,13 @@
     "atajos de la app instalada (#accion=estudiar|ahora|pronto)": true
   },
   "errores_js": [],
-  "carga_ms_cpu4x": 748,
+  "carga_ms_cpu4x": 1014,
   "carga_ms_cpu4x_min_max": [
-    738,
-    815
+    900,
+    1061
   ],
-  "primera_pintura_ms_cpu4x": 196,
-  "todas_las_chinchetas_ms_cpu4x": 755,
+  "primera_pintura_ms_cpu4x": 208,
+  "todas_las_chinchetas_ms_cpu4x": 1037,
   "markercluster": {
     "cargado": false,
     "agrupa": false,
@@ -52,12 +53,12 @@
   },
   "datos": {
     "bibliotecas": 2616,
-    "con_horario_verificado": 439,
+    "con_horario_verificado": 449,
     "provincias_con_horario": 51,
     "provincias_total": 51
   },
   "seo": {
-    "paginas": 772,
+    "paginas": 793,
     "sitemap": true
   },
   "peso": {
@@ -66,12 +67,12 @@
       "kb_gzip": 28.8
     },
     "app.js": {
-      "kb": 298.9,
-      "kb_gzip": 88.1
+      "kb": 299.1,
+      "kb_gzip": 88.2
     },
     "bibliotecas-espana.js": {
-      "kb": 719.2,
-      "kb_gzip": 183.5
+      "kb": 723.7,
+      "kb_gzip": 184.1
     }
   },
   "ok": true
