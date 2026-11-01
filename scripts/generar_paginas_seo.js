@@ -756,11 +756,18 @@ function tablaHorario(b) {
 // «Otras bibliotecas en <localidad>». Responde a «¿y cuál de aquí al lado sé seguro que abre?» y enlaza fichas de
 // municipios vecinos (Alcorcón ↔ Móstoles, Burjassot ↔ Valencia), que antes solo se enlazaban dentro de su localidad.
 const RADIO_VERIF_KM = 15, MAX_VERIF_CERCA = 4;
-let conHorarioYFicha = null, nFichasVerifCerca = 0, nEnlacesVerifCerca = 0;
+let conHorarioYFicha = null, nFichasVerifCerca = 0, nEnlacesVerifCerca = 0, nLocsVerifCerca = 0, nEnlacesLocVerifCerca = 0;
+// `b`: una biblioteca o cualquier punto { lat, lon } (el centroide de una localidad, que no tiene `i`).
 function cercanasVerificadas(b, ya) {
   conHorarioYFicha = conHorarioYFicha || todas.filter((o) => verificado(o) && paginaDe.has(o.i));
   return conHorarioYFicha.filter((o) => o.i !== b.i && !ya.has(o.i)).map((o) => ({ o, d: distKm(b, o) }))
     .filter((x) => x.d <= RADIO_VERIF_KM).sort((x, y) => x.d - y.d || x.o.i - y.o.i).slice(0, MAX_VERIF_CERCA);
+}
+// Marcado de la sección, común a fichas y páginas de localidad. `c`: localidad de referencia (solo se nombra la
+// localidad de las que son de otra); `intro`: HTML ya escapado o "".
+function seccionVerifCerca(lista, c, intro) {
+  return lista.length ? `<section class="cerca" aria-labelledby="t-verif"><h2 id="t-verif">Cerca, con horario verificado</h2>${intro ? `<p class="intro">${intro}</p>` : ""}<ul>${lista.map(({ o, d }) =>
+    `<li><a href="${paginaDe.get(o.i)}">${esc(o.n)}</a> <small>${distTexto(d)}${o.c !== c ? ` · ${esc(o.c)}` : ""} · ${esc(resumenVerif(o))} · verificado el ${esc(fechaEs(o.h.fv))}</small></li>`).join("")}</ul></section>` : "";
 }
 // «Entre semana hasta las 21:00 · sábado 9:00–14:00 · domingo cerrada» (horario de invierno; «sin confirmar» si la fuente no da el día).
 function resumenVerif(o) {
@@ -802,9 +809,8 @@ function paginaBiblioteca(b) {
     return `<li><a href="${r || enlaceApp(o)}">${esc(o.n)}</a> <small>${distTexto(d)}${verificado(o) ? " · horario verificado" : ""}${r ? "" : " · en el mapa"}</small></li>`; }).join("");
   const verifCerca = cercanasVerificadas(b, new Set(cercanas.map(({ o }) => o.i)));
   if (verifCerca.length) { nFichasVerifCerca++; nEnlacesVerifCerca += verifCerca.length; }
-  const secVerif = verifCerca.length ? `<section class="cerca" aria-labelledby="t-verif"><h2 id="t-verif">Cerca, con horario verificado</h2>${ok ? ""
-    : `<p class="intro">El horario de esta biblioteca aún no está comprobado; el de estas, a menos de ${RADIO_VERIF_KM} km, sí (horario de invierno, en su web oficial).</p>`}<ul>${verifCerca.map(({ o, d }) =>
-    `<li><a href="${paginaDe.get(o.i)}">${esc(o.n)}</a> <small>${distTexto(d)}${o.c !== b.c ? ` · ${esc(o.c)}` : ""} · ${esc(resumenVerif(o))} · verificado el ${esc(fechaEs(o.h.fv))}</small></li>`).join("")}</ul></section>` : "";
+  const secVerif = seccionVerifCerca(verifCerca, b.c, ok ? ""
+    : `El horario de esta biblioteca aún no está comprobado; el de estas, a menos de ${RADIO_VERIF_KM} km, sí (horario de invierno, en su web oficial).`);
   const migas = [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], [b.p, `/bibliotecas/${ps}/`]]
     .concat(locConPagina ? [[b.c, `/bibliotecas/${ps}/${slug(b.c)}/`]] : []).concat([[b.n, ruta]]);
   const resumen = !ok ? "Horario sin confirmar." : DIAS.some((d) => sinConfirmar(b, d)) ? `Horario verificado el ${fechaEs(b.h.fv)}.` : `Horario verificado: ${horarioTexto(b.h.inv)}.`;
@@ -976,12 +982,17 @@ provincias.forEach((p) => {
   conPagina.forEach((c) => {
     const l = porLoc[c].slice().sort(ordenBib), ruta = `/bibliotecas/${ps}/${slug(c)}/`;
     const f = faq(c, l), k = cuentas(l);
+    // Ninguna con horario verificado: las verificadas con ficha más cercanas al centroide (≤ 15 km), para que
+    // «bibliotecas abiertas en <pueblo>» tenga al menos un horario comprobado a mano.
+    const verifCerca = k.v ? [] : cercanasVerificadas(centro(l), new Set());
+    if (verifCerca.length) { nLocsVerifCerca++; nEnlacesLocVerifCerca += verifCerca.length; }
+    const secVerif = seccionVerifCerca(verifCerca, c, `Las de ${esc(c)} aún no tienen el horario comprobado; estas, a menos de ${RADIO_VERIF_KM} km del centro de sus bibliotecas, sí (horario de invierno, en su web oficial).`);
     const tl = tituloLugar(ruta, nombresRepetidos.has(slug(c)) ? `${c} (${p})` : c, k);
     const dl = descripcionLugar(ruta, c, p, k, 0);
     escribe(ruta, pagina({
       ruta, titulo: tl.titulo, descripcion: dl,
       h1: `Bibliotecas en ${esc(c)}`, intro: `${l.length} bibliotecas y salas de estudio en ${esc(c)} (${esc(p)})${k.v ? `, ${k.v} con horario verificado` : ""}. En el mapa de Bibliomapa ves en tiempo real cuáles están abiertas y cuál te pilla más cerca.`,
-      cuerpo: `${navPorHorario(p, c)}${navSalas(salasDeLoc.has(p + "|" + c) ? [salasDeLoc.get(p + "|" + c)] : [])}${navExamenes(exDeLoc(p, c))}${navUniversidades((b) => b.p === p && b.c === c)}${tablaHorariosLugar(c, l)}<section class="lista">${l.map((b) => tarjeta(b)).join("")}</section>${f.html}${seccionLocalidadesCercanas(p, c)}<p class="volver"><a href="/bibliotecas/${ps}/">← Todas las bibliotecas de ${esc(p)}</a></p>`,
+      cuerpo: `${navPorHorario(p, c)}${navSalas(salasDeLoc.has(p + "|" + c) ? [salasDeLoc.get(p + "|" + c)] : [])}${navExamenes(exDeLoc(p, c))}${navUniversidades((b) => b.p === p && b.c === c)}${tablaHorariosLugar(c, l)}<section class="lista">${l.map((b) => tarjeta(b)).join("")}</section>${secVerif}${f.html}${seccionLocalidadesCercanas(p, c)}<p class="volver"><a href="/bibliotecas/${ps}/">← Todas las bibliotecas de ${esc(p)}</a></p>`,
       migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], [p, `/bibliotecas/${ps}/`], [c, ruta]], head: k.v ? ESTILO_TABLA_HOR : "",
       ld: [ldLugar(ruta, tl.nombre, dl, { ...modVerif(l), mainEntity: { "@type": "ItemList", name: `Bibliotecas en ${c}`, numberOfItems: l.length, itemListElement: l.map((b, k) => ({ "@type": "ListItem", position: k + 1, item: libraryLD(b, DOMINIO + enlaceApp(b)) })) } }), f.ld],
     }));
@@ -1518,5 +1529,6 @@ console.log(`Páginas: ${urls.length - 1} (+ portada) · provincias: ${provincia
 console.log(`Universidades: ${universidades.length} con página (${universidades.map((u) => `${u.sigla} ${u.lista.length}/${u.ver.length}`).join(", ")}) · sin página: ${UNIVERSIDADES.filter((u) => !u.ruta).map((u) => `${u.sigla} ${u.lista.length}/${u.lista.filter(verificado).length}`).join(", ")} · dudosas (casan con 2): ${uniDudosas.length}`);
 console.log(`Exámenes: ${exCiudades.length} ciudades con página (${exCiudades.map((g) => `${g.ciudad} ${g.entradas.length}`).join(", ")}) de ${EXAMENES.length} entradas vigentes`);
 console.log(`Fichas con horario especial en JSON-LD (specialOpeningHoursSpecification): ${nFichasEspeciales} · con horario de verano verificado: ${nFichasVerano} · con horario de exámenes: ${nFichasEx} de ${[...exDeBib.keys()].length} bibliotecas del mapa con entrada vigente`);
+console.log(`Localidades sin ninguna verificada con «Cerca, con horario verificado» (≤ ${RADIO_VERIF_KM} km del centroide): ${nLocsVerifCerca} · enlaces: ${nEnlacesLocVerifCerca}`);
 console.log(`Fichas con «Cerca, con horario verificado» (≤ ${RADIO_VERIF_KM} km, otra ficha): ${nFichasVerifCerca} de ${paginaDe.size} · enlaces: ${nEnlacesVerifCerca}`);
 console.log(`Navarra: ${nNavarraConHorario} de ${navarra.length} con horario publicable (fuenteHorario + verificadoHorario en app.js)`);

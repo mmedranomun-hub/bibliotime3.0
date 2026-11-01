@@ -231,6 +231,14 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
 - Hoy: 234 de 323 fichas, 804 enlaces internos nuevos entre fichas (todas a fichas con horario). Constantes
   `RADIO_VERIF_KM` y `MAX_VERIF_CERCA` en el generador.
 
+## Hecho (2026-11-01) · «Cerca, con horario verificado» también en localidades sin ninguna verificada (645 páginas, sin cambio)
+- Las páginas de localidad sin ninguna biblioteca con horario verificado («bibliotecas abiertas en Fuenlabrada») no daban
+  ningún horario comprobado. Ahora llevan la misma sección `#t-verif`, tras la lista y antes de las preguntas frecuentes:
+  hasta 4 verificadas con ficha a ≤ 15 km del centroide de la localidad (media de las coordenadas de sus bibliotecas), con la
+  misma línea (`resumenVerif`) y el mismo marcado que en las fichas (`seccionVerifCerca()`, compartida). Si no hay ninguna a
+  ≤ 15 km, no sale nada. Las localidades con alguna verificada no cambian.
+- Hoy: 18 de las 41 localidades sin verificadas (de 73 con página), 50 enlaces nuevos a fichas. Sin CSS nuevo.
+
 ## Lo que tienes que hacer tú (sin esto no sirve de nada)
 1. **Conectar el dominio** en Vercel: proyecto `bibliotime` → Settings → Domains → añadir `bibliomapa.es` y
    `www.bibliomapa.es` (redirigir www → sin www) y poner en tu registrador los DNS que te indique Vercel.
