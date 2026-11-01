@@ -10,18 +10,18 @@ semana por usuario activo, con árbol sano. Todo lo demás existe para mover est
 ## Puerta de calidad (se comprueba SIEMPRE, antes y después de cada cambio)
 | Métrica | Hoy (01-11-2026) | Exigencia |
 |---|---|---|
-| Pruebas de `scripts/probar.py` | 32/32 | todas en verde; si una falla, arreglarla es la prioridad 1 |
+| Pruebas de `scripts/probar.py` | 33/33 | todas en verde; si una falla, arreglarla es la prioridad 1 |
 | Errores de JavaScript | 0 | 0 |
 
 ## Objetivos (en orden de prioridad; peso entre paréntesis)
 | # | Objetivo | Métrica | Hoy | Meta | Fecha |
 |---|---|---|---|---|---|
 | 1 | **Útil en toda España** (×3): que cualquier estudiante encuentre su biblioteca con horario fiable | provincias con horario verificado | 51/51 ✅ | 51/51 (al menos la capital) | 30-11-2026 |
-| | | bibliotecas con horario verificado | 418 ✅ (24/104 de Navarra con fuente) | 300 | 31-12-2026 |
+| | | bibliotecas con horario verificado | 429 ✅ (24/104 de Navarra con fuente) | 300 | 31-12-2026 |
 | 2 | **Temporada de exámenes** (×3): aperturas extraordinarias y salas 24 h (UNAV 1-dic, UPNA 15-dic) | ciudades con calendario de exámenes cargado (solo fuente oficial) | 6 (Pamplona, Madrid, Sevilla, Alcalá de Henares, Guadalajara, Valencia; falta Barcelona: nada publicado a 01-11 13:18 tras revisar 10 ciudades más, revisar 20-30 nov) | Pamplona, Madrid, Barcelona, Valencia, Sevilla | 30-11-2026 |
-| 3 | **Hábito y dopamina sana** (×2): volver cada día a estudiar | tareas «Dopamina ·» hechas · pruebas de recompensas en verde | 20 tandas (+ pista de especie en el cofre del día, «¡A N 🌰 de plantar <especie>!» en el saco, semillas de misiones y cofre que vuelan, semillas que vuelan al marcador, sello del día, hitos del bosque, próxima especie, primer árbol del día, récord personal, biblioteca nueva en tu mapa, «¡Qué alegría verte!», contador de minutos al terminar) | 1 mejora por día | continuo |
-| 4 | **SEO bibliomapa.es** (×2): salir arriba en «bibliotecas abiertas en <ciudad>» | páginas generadas · páginas con horario verificado | 746 (todas las verificadas tienen ficha; «domingo por la tarde» en España y Madrid; «abren temprano» en España, Sevilla, Valencia y Navarra; «sábado por la tarde» en España, Madrid y Barcelona; «a mediodía» en 13 lugares; 127 con horario de verano/exámenes en JSON-LD; «Cerca, con horario verificado» en 267 fichas y 18 localidades sin verificadas) | +1 página por biblioteca con horario | continuo |
-| 5 | **Rápida en móvil** (×1) | carga con CPU 4× (ms) · app.js gzip (KB) | 1390 ✅ (01-11 13:18, sube; 12:18: 811; chinchetas lejanas en canvas sin markercluster; la prueba sigue sin clústeres, no refleja producción) · 87,5 ✅ | ≤ 1500 · ≤ 95 | 30-11-2026 |
+| 3 | **Hábito y dopamina sana** (×2): volver cada día a estudiar | tareas «Dopamina ·» hechas · pruebas de recompensas en verde | 21 tandas (+ barrita «🎯 2/3 misiones · la siguiente en N min» en el cronómetro, pista de especie en el cofre del día, «¡A N 🌰 de plantar <especie>!» en el saco, semillas de misiones y cofre que vuelan, semillas que vuelan al marcador, sello del día, hitos del bosque, próxima especie, primer árbol del día, récord personal, biblioteca nueva en tu mapa, «¡Qué alegría verte!», contador de minutos al terminar) | 1 mejora por día | continuo |
+| 4 | **SEO bibliomapa.es** (×2): salir arriba en «bibliotecas abiertas en <ciudad>» | páginas generadas · páginas con horario verificado | 757 (todas las verificadas tienen ficha; títulos ≤ 65 y descripciones ≤ 160 en las 183 temáticas, faltan las fichas; «domingo por la tarde» en España y Madrid; «abren temprano» en España, Sevilla, Valencia y Navarra; «sábado por la tarde» en España, Madrid y Barcelona; «a mediodía» en 13 lugares; 127 con horario de verano/exámenes en JSON-LD; «Cerca, con horario verificado» en 267 fichas y 18 localidades sin verificadas) | +1 página por biblioteca con horario | continuo |
+| 5 | **Rápida en móvil** (×1) | carga con CPU 4× (ms) · app.js gzip (KB) | 953 ✅ (01-11 14:19; 13:18: 1390; chinchetas lejanas en canvas sin markercluster; la prueba sigue sin clústeres, no refleja producción) · 88,1 ✅ | ≤ 1500 · ≤ 95 | 30-11-2026 |
 | 6 | **Lista para Google Play** (×1) | bloqueantes del backlog resueltos | ver «Pendiente del usuario» (01-11: atajos de la app instalada hechos) | 0 que dependan del código | 17-11-2026 |
 
 ## Cómo elige el director

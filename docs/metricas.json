@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-11-01 12:43",
+  "fecha": "2026-11-01 13:34",
   "pruebas": {
     "arranca: datos y vistas": true,
     "marca España (sin «Navarra» en la cabecera)": true,
@@ -21,6 +21,7 @@
     "sello del día: al abrir el cofre se estampa 🏵️ y el Perfil cuenta solo los días logrados": true,
     "pista en el cofre del día: «¡A N 🌰 de plantar <especie>!» bajo el premio solo si quedas a 1-10 🌰 (y nada si el cofre ya te da para ella)": true,
     "las 🌰 de las misiones y del cofre vuelan al marcador (una vez; con reducir movimiento, solo la cifra)": true,
+    "barrita de misiones bajo el cronómetro: «🎯 2/3 misiones · la siguiente en 7 min» solo si falta ≤ 15 min de una misión de minutos": true,
     "acceso: la ley foral solo en Navarra": true,
     "especies de temporada (cruzan el año)": true,
     "historias y tips": true,
@@ -35,13 +36,13 @@
     "atajos de la app instalada (#accion=estudiar|ahora|pronto)": true
   },
   "errores_js": [],
-  "carga_ms_cpu4x": 1390,
+  "carga_ms_cpu4x": 953,
   "carga_ms_cpu4x_min_max": [
-    1171,
-    1453
+    891,
+    1024
   ],
-  "primera_pintura_ms_cpu4x": 308,
-  "todas_las_chinchetas_ms_cpu4x": 1416,
+  "primera_pintura_ms_cpu4x": 248,
+  "todas_las_chinchetas_ms_cpu4x": 966,
   "markercluster": {
     "cargado": false,
     "agrupa": false,
@@ -51,26 +52,26 @@
   },
   "datos": {
     "bibliotecas": 2616,
-    "con_horario_verificado": 418,
+    "con_horario_verificado": 429,
     "provincias_con_horario": 51,
     "provincias_total": 51
   },
   "seo": {
-    "paginas": 746,
+    "paginas": 757,
     "sitemap": true
   },
   "peso": {
     "index.html": {
-      "kb": 128.2,
-      "kb_gzip": 28.6
+      "kb": 129.0,
+      "kb_gzip": 28.8
     },
     "app.js": {
-      "kb": 297.1,
-      "kb_gzip": 87.5
+      "kb": 298.9,
+      "kb_gzip": 88.1
     },
     "bibliotecas-espana.js": {
-      "kb": 708.0,
-      "kb_gzip": 181.3
+      "kb": 713.5,
+      "kb_gzip": 182.4
     }
   },
   "ok": true
