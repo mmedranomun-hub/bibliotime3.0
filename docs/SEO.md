@@ -219,6 +219,18 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
 - `comprobar_paginas_seo.js` también comprueba esos horarios (horas HH:MM, fechas AAAA-MM-DD en orden y tramos por fecha sin
   solapes) y falla si hay alguno mal.
 
+## Hecho (2026-11-01) · «Cerca, con horario verificado» en las fichas (634 páginas, sin cambio)
+- La ficha solo enlazaba a las 6 bibliotecas más cercanas **de su misma localidad**, tuvieran o no horario: las fichas de
+  municipios vecinos (Alcorcón ↔ Móstoles, Alfara del Patriarca ↔ Valencia) no se enlazaban entre sí, y quien llegaba a una
+  ficha «Horario sin confirmar» no tenía a mano una alternativa segura.
+- Nueva sección `#t-verif` «Cerca, con horario verificado» bajo «Otras bibliotecas en <localidad>»: hasta 4 bibliotecas con
+  horario verificado (`h.f` + `h.fv`; Navarra con `fuenteHorario` + `verificadoHorario`) y ficha propia a ≤ 15 km, de
+  cualquier localidad o provincia, sin repetir las que ya salen arriba. Cada una con distancia, localidad (si es otra), cierre
+  más tardío entre semana, sábado y domingo del horario de invierno («sin confirmar» si la fuente no da el día) y fecha de
+  verificación. En las fichas sin horario verificado, una línea explica por qué se ofrecen. Sin CSS nuevo (`.cerca`).
+- Hoy: 234 de 323 fichas, 804 enlaces internos nuevos entre fichas (todas a fichas con horario). Constantes
+  `RADIO_VERIF_KM` y `MAX_VERIF_CERCA` en el generador.
+
 ## Lo que tienes que hacer tú (sin esto no sirve de nada)
 1. **Conectar el dominio** en Vercel: proyecto `bibliotime` → Settings → Domains → añadir `bibliomapa.es` y
    `www.bibliomapa.es` (redirigir www → sin www) y poner en tu registrador los DNS que te indique Vercel.
