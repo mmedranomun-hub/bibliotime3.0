@@ -10,18 +10,18 @@ semana por usuario activo, con árbol sano. Todo lo demás existe para mover est
 ## Puerta de calidad (se comprueba SIEMPRE, antes y después de cada cambio)
 | Métrica | Hoy (01-11-2026) | Exigencia |
 |---|---|---|
-| Pruebas de `scripts/probar.py` | 23/23 | todas en verde; si una falla, arreglarla es la prioridad 1 |
+| Pruebas de `scripts/probar.py` | 24/24 | todas en verde; si una falla, arreglarla es la prioridad 1 |
 | Errores de JavaScript | 0 | 0 |
 
 ## Objetivos (en orden de prioridad; peso entre paréntesis)
 | # | Objetivo | Métrica | Hoy | Meta | Fecha |
 |---|---|---|---|---|---|
 | 1 | **Útil en toda España** (×3): que cualquier estudiante encuentre su biblioteca con horario fiable | provincias con horario verificado | 51/51 ✅ | 51/51 (al menos la capital) | 30-11-2026 |
-| | | bibliotecas con horario verificado | 333 ✅ (13/104 de Navarra con fuente) | 300 | 31-12-2026 |
+| | | bibliotecas con horario verificado | 343 ✅ (13/104 de Navarra con fuente) | 300 | 31-12-2026 |
 | 2 | **Temporada de exámenes** (×3): aperturas extraordinarias y salas 24 h (UNAV 1-dic, UPNA 15-dic) | ciudades con calendario de exámenes cargado (solo fuente oficial) | 6 (Pamplona, Madrid, Sevilla, Alcalá de Henares, Guadalajara, Valencia; falta Barcelona: nada publicado a 01-11, revisar 20-30 nov) | Pamplona, Madrid, Barcelona, Valencia, Sevilla | 30-11-2026 |
-| 3 | **Hábito y dopamina sana** (×2): volver cada día a estudiar | tareas «Dopamina ·» hechas · pruebas de recompensas en verde | 13 tandas (+ hitos del bosque, próxima especie, primer árbol del día, récord personal) | 1 mejora por día | continuo |
-| 4 | **SEO bibliomapa.es** (×2): salir arriba en «bibliotecas abiertas en <ciudad>» | páginas generadas · páginas con horario verificado | 552 (con /bibliotecas/examenes/ y 6 ciudades) | +1 página por biblioteca con horario | continuo |
-| 5 | **Rápida en móvil** (×1) | carga con CPU 4× (ms) · app.js gzip (KB) | 1217 ✅ (01-11 03:18; chinchetas lejanas en canvas sin markercluster; la prueba sigue sin clústeres, no refleja producción) · 85,7 ✅ | ≤ 1500 · ≤ 95 | 30-11-2026 |
+| 3 | **Hábito y dopamina sana** (×2): volver cada día a estudiar | tareas «Dopamina ·» hechas · pruebas de recompensas en verde | 14 tandas (+ hitos del bosque, próxima especie, primer árbol del día, récord personal, biblioteca nueva en tu mapa) | 1 mejora por día | continuo |
+| 4 | **SEO bibliomapa.es** (×2): salir arriba en «bibliotecas abiertas en <ciudad>» | páginas generadas · páginas con horario verificado | 556 (76 fichas con horario de verano/exámenes en JSON-LD) | +1 página por biblioteca con horario | continuo |
+| 5 | **Rápida en móvil** (×1) | carga con CPU 4× (ms) · app.js gzip (KB) | 1004 ✅ (01-11 04:18; antes 1217; chinchetas lejanas en canvas sin markercluster; la prueba sigue sin clústeres, no refleja producción) · 86,1 ✅ | ≤ 1500 · ≤ 95 | 30-11-2026 |
 | 6 | **Lista para Google Play** (×1) | bloqueantes del backlog resueltos | ver «Pendiente del usuario» | 0 que dependan del código | 17-11-2026 |
 
 ## Cómo elige el director

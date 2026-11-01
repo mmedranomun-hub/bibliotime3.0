@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-11-01 02:37",
+  "fecha": "2026-11-01 03:35",
   "pruebas": {
     "arranca: datos y vistas": true,
     "marca España (sin «Navarra» en la cabecera)": true,
@@ -13,6 +13,7 @@
     "próxima especie: barra en «Mi bosque» y aviso «ya puedes» una sola vez": true,
     "primer árbol del día: saludo y +5 🌰 una sola vez, sin tapar «Sesión terminada»": true,
     "récord personal en «Sesión terminada» (solo si supera la más larga, sin negativos)": true,
+    "biblioteca nueva en tu mapa: aviso suave al cerrar y «📍 bibliotecas exploradas» en el Perfil": true,
     "acceso: la ley foral solo en Navarra": true,
     "especies de temporada (cruzan el año)": true,
     "historias y tips": true,
@@ -26,13 +27,13 @@
     "perfil: récord con el nombre bien recortado": true
   },
   "errores_js": [],
-  "carga_ms_cpu4x": 1217,
+  "carga_ms_cpu4x": 1004,
   "carga_ms_cpu4x_min_max": [
-    1094,
-    1368
+    915,
+    1172
   ],
-  "primera_pintura_ms_cpu4x": 284,
-  "todas_las_chinchetas_ms_cpu4x": 1242,
+  "primera_pintura_ms_cpu4x": 260,
+  "todas_las_chinchetas_ms_cpu4x": 1067,
   "markercluster": {
     "cargado": false,
     "agrupa": false,
@@ -42,12 +43,12 @@
   },
   "datos": {
     "bibliotecas": 2616,
-    "con_horario_verificado": 333,
+    "con_horario_verificado": 343,
     "provincias_con_horario": 51,
     "provincias_total": 51
   },
   "seo": {
-    "paginas": 552,
+    "paginas": 556,
     "sitemap": true
   },
   "peso": {
@@ -56,12 +57,12 @@
       "kb_gzip": 28.2
     },
     "app.js": {
-      "kb": 290.5,
-      "kb_gzip": 85.7
+      "kb": 291.8,
+      "kb_gzip": 86.1
     },
     "bibliotecas-espana.js": {
-      "kb": 656.1,
-      "kb_gzip": 170.4
+      "kb": 662.7,
+      "kb_gzip": 171.9
     }
   },
   "ok": true
