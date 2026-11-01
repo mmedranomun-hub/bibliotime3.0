@@ -305,7 +305,7 @@
   .pop .hours td:last-child{text-align:right;color:var(--texto)}
   .pop .hours tr.today{background:rgba(108,92,231,.1)}
   .pop .hours tr.today td{font-weight:800;color:var(--texto);border-radius:var(--r-s)}
-  .pop .hours tr.today td:first-child{color:var(--acento-tx);padding-left:6px;border-radius:8px 0 0 8px}
+  .pop .hours tr.today td:first-child{color:var(--acento-tx);padding-left:6px;border-radius:var(--r-s) 0 0 var(--r-s)}
   .pop .hours tr.today td:last-child{padding-right:6px;border-radius:0 8px 8px 0}
   .pop.pop-compact{text-align:center}
   .pop-compact h2{font-size:var(--fs-l)}
@@ -478,7 +478,7 @@
   .occ-hist{display:flex;gap:14px;align-items:flex-end;height:56px;margin-top:6px}
   .occ-hist-bar{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;height:100%;justify-content:flex-end}
   .ohb-track{width:100%;height:40px;background:rgba(148,163,184,.2);border-radius:var(--r-xs);display:flex;align-items:flex-end;overflow:hidden}
-  .ohb-fill{width:100%;border-radius:6px 6px 0 0}
+  .ohb-fill{width:100%;border-radius:var(--r-xs) var(--r-xs) 0 0}
   .occ-hist-bar small{font-size:var(--fs-2xs);color:var(--suave);font-weight:700}
   .kudos-btn{margin-top:12px;border:1px solid rgba(148,163,184,.4);background:rgba(var(--blanco),.5);border-radius:var(--r-pill);
     padding:7px 14px;font-weight:800;font-size:var(--fs-s);cursor:pointer;color:var(--suave)}
@@ -618,7 +618,7 @@
   .bar-fill{height:100%;border-radius:var(--r-pill);background:linear-gradient(90deg,var(--acento),var(--acento2))}
   .week-bars{display:flex;align-items:flex-end;gap:8px;height:120px;margin-top:8px}
   .week-bars .wb{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:flex-end}
-  .week-bars .wb .bar{width:100%;border-radius:8px 8px 0 0;background:linear-gradient(180deg,var(--acento),var(--acento-tx));min-height:3px}
+  .week-bars .wb .bar{width:100%;border-radius:var(--r-s) var(--r-s) 0 0;background:linear-gradient(180deg,var(--acento),var(--acento-tx));min-height:3px}
   .week-bars .wb .d{font-size:var(--fs-2xs);color:var(--suave);font-weight:700}
   .empty-note{font-size:var(--fs-m);color:var(--suave);text-align:center;padding:24px 18px;line-height:1.5}
 
