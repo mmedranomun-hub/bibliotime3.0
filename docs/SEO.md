@@ -292,6 +292,24 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
   cae `/navarra/pamplona/abiertas-temprano/` (las mismas 3 que Navarra). Con todos los temas caerían 16 (Hoy, Domingo, Fin de
   semana y Hasta tarde en Bilbao, Logroño, Las Palmas, Pamplona…); no se aplica a esos porque se buscan con el nombre de la ciudad.
 
+## Hecho (2026-11-01) · Títulos y descripciones de las páginas temáticas (746 páginas, sin cambio)
+- Las 183 temáticas (España, provincias y localidades) tenían títulos de 67-93 caracteres («Bibliotecas abiertas hoy en X:
+  horarios verificados | Bibliomapa») y descripciones de hasta 202 con una coletilla vacía («…: hoy, dirección, teléfono…»).
+  Google corta el título hacia los 60-65 caracteres y la descripción hacia los 155-160: se perdía justo lo que distingue la página.
+- `tituloTema`: «Bibliotecas <tema> en <lugar>» (lo que se busca) y, si cabe, un dato real tras los dos puntos: «15 con
+  horario», «34 en 13 provincias» (España), «sábado y domingo» (fin de semana, que también responde a «abiertas sábado»: en
+  todas las provincias la lista del sábado es la del fin de semana), «cuáles abren ahora» (Hoy; nunca «9 abiertas hoy», que
+  sería falso en domingo). ≤ 65, sin repetir (`titulosUsados`); localidades con nombre repetido llevan la provincia; respaldo
+  «Bibliotecas abiertas sábado y domingo / el finde en <lugar>» para nombres largos (Las Palmas de Gran Canaria).
+- `descripcionTema` + `datoTema`: recuento, «con horario comprobado en su web oficial» y un dato calculado del horario de
+  invierno verificado: cuál cierra más tarde (el domingo, el sábado o entre semana; con su nombre si es una sola, «a
+  medianoche» y «abre las 24 horas» dichos así), cuántas abren el sábado y el domingo, cuántas abren cada día (Hoy), la primera
+  que abre (temprano y mediodía) o cuántas abren por la tarde en verano. Se prueba de la frase más rica a la más corta hasta
+  caber en 160.
+- Resultado: títulos > 65 de 183 → 0, descripciones > 160 de 160 → 0. h1, intro, cuerpo y JSON-LD iguales.
+- `comprobar_paginas_seo.js` avisa (sin fallar) de títulos > 65 y descripciones > 160 en todo el sitio: hoy quedan las 395
+  fichas de biblioteca (395 títulos y 332 descripciones) y 2 títulos de localidad con nombre larguísimo (tarea en el backlog).
+
 ## Lo que tienes que hacer tú (sin esto no sirve de nada)
 1. **Conectar el dominio** en Vercel: proyecto `bibliotime` → Settings → Domains → añadir `bibliomapa.es` y
    `www.bibliomapa.es` (redirigir www → sin www) y poner en tu registrador los DNS que te indique Vercel.

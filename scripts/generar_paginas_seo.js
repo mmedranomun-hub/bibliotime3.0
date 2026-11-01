@@ -1065,6 +1065,81 @@ function descripcionLugar(ruta, lugar, prov, k, nLocs) {
   }
   return arma([], "").slice(0, MAX_DESC - 1).replace(/\s\S*$/, "") + "…";
 }
+// ---------- Títulos y descripciones de las páginas temáticas ----------
+// «Bibliotecas <tema> en <lugar>» al principio (lo que se busca) y, si cabe, un dato real tras los dos puntos (cuántas
+// con horario verificado, «sábado y domingo»…); título ≤ 65 y nunca repetido. La descripción (≤ 160) da el recuento y un
+// dato calculado del horario verificado (cuál cierra más tarde, cuántas abren cada día…), sin coletillas vacías.
+const horaTexto = (c) => (c === "24:00" || c === "00:00" ? "medianoche" : quitaCero(c));
+const cierreDiaTema = (b, d) => (b.h.inv[d] || []).map((r) => (r[1] === "00:00" ? "24:00" : r[1])).sort().pop() || "";
+const de24Dia = (b, d) => (b.h.inv[d] || []).some((r) => r[0] === "00:00" && (r[1] === "24:00" || r[1] === "00:00"));
+function tituloTema(t, lista, lugar, espana) {
+  const n = lista.length, base = `Bibliotecas ${t.que} en ${lugar}`;
+  const nProv = new Set(lista.map((b) => b.p)).size;
+  const extras = {
+    "abiertas-hoy": ["cuáles abren ahora", "horario de hoy"],
+    "abiertas-fin-de-semana": [`sábado y domingo, ${n} con horario`, "sábado y domingo"],
+    "abiertas-verano": [`${n} con horario de verano`],
+  }[t.slug] || [];
+  const todos = extras.concat(espana ? [`${n} en ${nProv} provincias`] : [], [`${n} con horario verificado`, `${n} con horario`]);
+  // «sábado y domingo» o «el finde» como respaldo corto de «el fin de semana» (Las Palmas de Gran Canaria…)
+  const otra = t.slug === "abiertas-fin-de-semana" ? [`Bibliotecas abiertas sábado y domingo en ${lugar}`, `Bibliotecas abiertas el finde en ${lugar}`] : [];
+  const cand = todos.flatMap((x) => [`${base}: ${x}${MARCA}`, `${base}: ${x}`]).concat([base + MARCA, base], otra.flatMap((x) => [x + MARCA, x]));
+  const t1 = cand.find((x) => x.length <= MAX_TIT && !titulosUsados.has(x)) || cand.filter((x) => !titulosUsados.has(x)).sort((a, b) => a.length - b.length)[0];
+  titulosUsados.add(t1);
+  return t1;
+}
+function datoTema(t, lista) {
+  const unica = (l, f) => (l.length === 1 ? f(l[0]) : null);
+  const masTarde = (f, dia, frase) => { // frase(hora) para varias; con una sola, su nombre
+    const max = lista.map(f).filter(Boolean).sort().pop(); if (!max) return [];
+    const ult = lista.filter((b) => f(b) === max);
+    if (dia && ult.every((b) => de24Dia(b, dia))) return [ult.length === 1 ? `${ult[0].n} abre las 24 horas el ${dia === "S" ? "sábado" : "domingo"}.` : `${ult.length} abren las 24 horas el ${dia === "S" ? "sábado" : "domingo"}.`];
+    return [unica(ult, (b) => `La que cierra más tarde${dia ? ` el ${dia === "S" ? "sábado" : "domingo"}` : ""}: ${b.n} (${horaTexto(max)}).`), frase(horaTexto(max) === "medianoche" ? "a medianoche" : `a las ${horaTexto(max)}`, ult.length)].filter(Boolean);
+  };
+  const cuenta = (d) => lista.filter((b) => (b.h.inv[d] || []).length).length;
+  const abre = (k) => (k === 1 ? "abre" : "abren");
+  switch (t.slug) {
+    case "abiertas-hoy": { const lv = Math.max(...DIAS.slice(0, 5).map(cuenta)), num = (k) => (k ? k : "ninguna");
+      return [`Entre semana abren ${lv === lista.length ? "todas" : lv}; el sábado, ${num(cuenta("S"))}; el domingo, ${num(cuenta("D"))}.`]; }
+    case "abiertas-domingo": case "abiertas-domingo-tarde":
+      return masTarde((b) => cierreDiaTema(b, "D"), "D", (h, k) => `El domingo, ${k === 1 ? "la más tardía cierra" : `las más tardías cierran`} ${h}.`);
+    case "abiertas-sabado-tarde":
+      return masTarde((b) => cierreDiaTema(b, "S"), "S", (h, k) => `El sábado, ${k === 1 ? "la más tardía cierra" : `las más tardías cierran`} ${h}.`);
+    case "abiertas-fin-de-semana": { const s = cuenta("S"), d = cuenta("D"), n = lista.length;
+      return [s === n ? (d ? `Todas abren el sábado y ${d === n ? "también todas" : d} el domingo.` : `Todas abren el sábado; el domingo, ninguna.`)
+        : `El sábado ${abre(s)} ${s} y el domingo ${d || "ninguna"}.`]; }
+    case "abiertas-hasta-tarde": return masTarde(cierreMasTarde, null, (h, k) => `Entre semana, ${k === 1 ? "la más tardía cierra" : `las más tardías cierran`} ${h}.`);
+    case "abiertas-mediodia": {
+      const pronto = lista.map(aperturaMasTemprana).sort()[0];
+      return [`Sin cerrar de 14:00 a 16:00; la primera abre a las ${quitaCero(pronto)}.`, `Sin cerrar de 14:00 a 16:00 de lunes a viernes.`];
+    }
+    case "abiertas-temprano": {
+      const resto = lista.filter((b) => !abre24h(b)), n24 = lista.length - resto.length;
+      if (!resto.length) return [`${lista.length} abren las 24 horas algún día entre semana.`];
+      const pronto = resto.map(aperturaMasTemprana).sort()[0], prim = resto.filter((b) => aperturaMasTemprana(b) === pronto);
+      const sufijo = n24 ? ` ${n24 === 1 ? "Otra abre" : `Otras ${n24} abren`} las 24 horas.` : "";
+      return [unica(prim, (b) => `La primera abre a las ${quitaCero(pronto)}: ${b.n}.${sufijo}`), `La primera abre a las ${quitaCero(pronto)}.${sufijo}`, `La primera abre a las ${quitaCero(pronto)}.`].filter(Boolean);
+    }
+    case "abiertas-verano": {
+      const k = lista.filter((b) => DIAS.some((d) => (b.h.ver[d] || []).some((r) => r[1] > "15:00" || r[1] === "00:00"))).length;
+      return [k ? `${k === lista.length ? "Todas abren" : `${k} ${abre(k)}`} por la tarde algún día de verano.` : "En verano, ninguna cierra después de las 15:00."];
+    }
+    default: return [];
+  }
+}
+function descripcionTema(t, lista, donde, espana) {
+  const n = lista.length, nProv = new Set(lista.map((b) => b.p)).size;
+  const inicio = t.hoy
+    ? `${n} bibliotecas de ${espana ? `${nProv} provincias de España` : donde} con horario comprobado en su web oficial: el de hoy y cuáles están abiertas ahora.`
+    : `${n} bibliotecas ${t.que} en ${espana ? `${nProv} provincias de España` : donde}, con horario comprobado en su web oficial.`;
+  const colas = [...(t.hoy ? [] : ["Dirección, teléfono y mapa con las abiertas ahora."]), "Dirección, teléfono y mapa.", ""];
+  for (const dato of datoTema(t, lista).concat([""])) for (const c of colas) {
+    const d = [inicio, dato, c].filter(Boolean).join(" ");
+    if (d.length <= MAX_DESC) return d;
+  }
+  return inicio.length <= MAX_DESC ? inicio : inicio.slice(0, MAX_DESC - 1).replace(/\s\S*$/, "") + "…";
+}
+
 // Página propia (CollectionPage) con el mismo nombre y descripción que el título y la meta description.
 const ldLugar = (ruta, nombre, descripcion, extra) => ({ "@context": "https://schema.org", "@type": "CollectionPage", name: nombre,
   description: descripcion, url: DOMINIO + ruta, inLanguage: "es-ES", isPartOf: { "@type": "WebSite", name: "Bibliomapa", url: DOMINIO + "/" }, ...extra });
@@ -1149,8 +1224,8 @@ provincias.forEach((p) => {
       const lo = lt.slice().sort(ordenBib), rutaT = `${ruta}${t.slug}/`;
       const titulo = `Bibliotecas ${t.que} en ${c}`, ft = faqTema(t, lo, c), enProv = temaProv[t.slug][p];
       escribe(rutaT, pagina({
-        ruta: rutaT, titulo: `${titulo}: horarios verificados | Bibliomapa`,
-        descripcion: `${lo.length} bibliotecas ${t.que} en ${c} (${p}) con horario comprobado en su web oficial: ${t.corto.toLowerCase()}, dirección, teléfono y cómo llegar. Mira en el mapa cuál está abierta ahora.`,
+        ruta: rutaT, titulo: tituloTema(t, lo, nombresRepetidos.has(slug(c)) ? `${c} (${p})` : c),
+        descripcion: descripcionTema(t, lo, `${c} (${p})`),
         h1: esc(titulo), intro: introTema(t, lo, `${c} (${p})`),
         cuerpo: `${navTemas(t.slug, p, c)}${t.antes ? t.antes(lo) : ""}<section class="lista">${lo.map((b) => tarjeta(b, t.destacado(b), t)).join("")}</section>${ft.html}<p class="volver"><a href="${ruta}">← Todas las bibliotecas de ${esc(c)}</a> · <a href="/bibliotecas/${enProv ? `${ps}/${t.slug}` : t.slug}/">${esc(t.corto)} en ${esc(enProv ? p : "toda España")}</a></p>${t.hoy ? SCRIPT_HOY : ""}`, head: t.hoy ? ESTILO_HOY : "",
         migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], [p, `/bibliotecas/${ps}/`], [c, ruta], [t.corto, rutaT]],
@@ -1166,8 +1241,7 @@ provincias.forEach((p) => {
     const titulo = `Bibliotecas ${t.que} en ${p}`, ft = faqTema(t, l, p);
     const locsT = conPagina.filter((c) => temaLoc[t.slug] && temaLoc[t.slug][p + "|" + c]);
     escribe(rutaT, pagina({
-      ruta: rutaT, titulo: `${titulo}: horarios verificados | Bibliomapa`,
-      descripcion: `${l.length} bibliotecas ${t.que} en ${p} con horario comprobado en su web oficial: ${t.corto.toLowerCase()}, dirección, teléfono y cómo llegar. Mira en el mapa cuál está abierta ahora.`,
+      ruta: rutaT, titulo: tituloTema(t, l, p), descripcion: descripcionTema(t, l, p),
       h1: esc(titulo), intro: introTema(t, l, p),
       cuerpo: `${navTemas(t.slug, p)}${locsT.length ? `<nav class="locs" aria-label="Por localidad">${locsT.map((c) => `<a href="/bibliotecas/${ps}/${slug(c)}/${t.slug}/">${esc(c)} <small>${temaLoc[t.slug][p + "|" + c].length}</small></a>`).join("")}</nav>` : ""}${t.antes ? t.antes(l) : ""}<section class="lista">${l.map((b) => tarjeta(b, t.destacado(b), t)).join("")}</section>${ft.html}<p class="volver"><a href="/bibliotecas/${ps}/">← Todas las bibliotecas de ${esc(p)}</a> · <a href="/bibliotecas/${t.slug}/">${esc(t.corto)} en toda España</a></p>${t.hoy ? SCRIPT_HOY : ""}`, head: t.hoy ? ESTILO_HOY : "",
       migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], [p, `/bibliotecas/${ps}/`], [t.corto, rutaT]],
@@ -1208,8 +1282,7 @@ temasEspana.forEach(({ t, l }) => {
   }).join("");
   const ordenados = provs.flatMap((p) => porP[p].slice().sort(ordenBib));
   escribe(rutaT, pagina({
-    ruta: rutaT, titulo: `${titulo}: horarios verificados por provincia | Bibliomapa`,
-    descripcion: `${l.length} bibliotecas ${t.que} en ${provs.length} provincias de España, con el horario comprobado en su web oficial. Dirección, teléfono y mapa con las abiertas ahora.`,
+    ruta: rutaT, titulo: tituloTema(t, l, "España", true), descripcion: descripcionTema(t, l, "España", true),
     h1: esc(titulo), intro: introTema(t, l, "España"),
     cuerpo: `${navTemas(t.slug)}<nav class="locs" aria-label="Provincias">${provs.map((p) => `<a href="#${slug(p)}">${esc(p)} <small>${porP[p].length}</small></a>`).join("")}</nav>${t.antes ? t.antes(l) : ""}${secciones}${ft.html}<p class="volver"><a href="/bibliotecas/">← Todas las provincias</a></p>${t.hoy ? SCRIPT_HOY : ""}`, head: t.hoy ? ESTILO_HOY : "",
     migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], [t.corto, rutaT]],
