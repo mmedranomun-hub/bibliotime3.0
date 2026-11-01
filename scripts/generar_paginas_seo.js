@@ -3,7 +3,7 @@
      bibliotecas/index.html                      → todas las provincias
      bibliotecas/<provincia>/index.html          → bibliotecas de la provincia, por localidad
      bibliotecas/<provincia>/<localidad>/index.html (localidades con 3 o más bibliotecas)
-     bibliotecas/abiertas-hoy|abiertas-domingo|abiertas-fin-de-semana|abiertas-sabado-tarde|abiertas-hasta-tarde|abiertas-mediodia/index.html (España, por provincia;
+     bibliotecas/abiertas-hoy|abiertas-domingo|abiertas-fin-de-semana|abiertas-sabado-tarde|abiertas-hasta-tarde|abiertas-mediodia|abiertas-temprano/index.html (España, por provincia;
        «hoy» calcula en el navegador el horario de hoy y si está abierta ahora)
        y abiertas-verano (solo con horario de verano verificado: h.ver + h.vd/h.vh)
      bibliotecas/<provincia>/<tema>/index.html   (mismos temas, solo con 2 o más bibliotecas que cumplen)
@@ -145,6 +145,18 @@ function entreSemanaTexto(inv) {
 }
 // Hora de apertura más temprana entre semana.
 const aperturaMasTemprana = (b) => DIAS.slice(0, 5).flatMap((d) => (b.h.inv[d] || []).map((r) => r[0])).sort()[0] || "";
+// Temprano: algún día de lunes a viernes con una franja que empieza a las 8:00 o antes (horario de invierno verificado).
+const TEMPRANO = "08:00";
+const empiezaTemprano = (r) => r[0] <= TEMPRANO;
+const abreTemprano = (b) => verificado(b) && DIAS.slice(0, 5).some((d) => (b.h.inv[d] || []).some(empiezaTemprano));
+const abre24h = (b) => aperturaMasTemprana(b) === "00:00";
+// «de lunes a viernes», «L–J, V»… (los días en que abre a su hora más temprana).
+function diasTemprano(b) {
+  const h = aperturaMasTemprana(b), ds = DIAS.slice(0, 5).filter((d) => (b.h.inv[d] || []).some((r) => r[0] === h));
+  if (ds.length === 5) return "de lunes a viernes";
+  const g = []; ds.forEach((d) => { const u = g[g.length - 1]; if (u && DIAS.indexOf(d) === DIAS.indexOf(u.hasta) + 1) u.hasta = d; else g.push({ desde: d, hasta: d }); });
+  return g.map((x) => (x.desde === x.hasta ? x.desde : x.desde + "–" + x.hasta)).join(", ");
+}
 // Verano: horario h.ver con sus fechas h.vd/h.vh («MM-DD», como en bibliotecas-espana.js) y algún día abierto.
 const MMDD = /^\d{2}-\d{2}$/;
 const abreVerano = (b) => verificado(b) && !!b.h.ver && MMDD.test(b.h.vd || "") && MMDD.test(b.h.vh || "") &&
@@ -386,6 +398,35 @@ const TEMAS = [
         [`¿Abren también a mediodía el sábado?`, sab.length
           ? `De estas, ${sab.length === 1 ? "solo 1 abre" : `${sab.length} abren`} también el sábado sin cerrar entre las 14:00 y las 16:00: ${pocas(sab)}.`
           : `Ninguna de estas abre el sábado entre las 14:00 y las 16:00 según su horario verificado.`],
+        [`¿Están actualizados estos horarios?`, `Son los horarios de invierno publicados en la web oficial de cada biblioteca, comprobados ${textoFechas(lista)}. Pueden cambiar en verano, festivos o temporada de exámenes; si ves uno mal, avísanos desde la app.`],
+      ];
+    } },
+  // Abren temprano: algún día de lunes a viernes (horario de invierno verificado) con una franja que empieza a las 8:00 o
+  // antes (abreTemprano). Con 3 o más y nunca si la lista es la misma que «Hoy» o que «Mediodía» del mismo sitio.
+  { slug: "abiertas-temprano", corto: "Abren temprano", que: "que abren temprano", cumple: abreTemprano,
+    min: 3, distintoDe: ["abiertas-hoy", "abiertas-mediodia"],
+    destacado: (b) => `${abre24h(b) ? "Abierta las 24 horas" : `Abre a las ${quitaCero(aperturaMasTemprana(b))}`} ${diasTemprano(b)}: ${entreSemanaTexto(b.h.inv)}`,
+    pregunta: (l) => `¿Qué bibliotecas abren a las 8:00 o antes en ${l}?`,
+    intro: (lista, lugar) => `${lista.length} ${lista.length === 1 ? "biblioteca" : "bibliotecas"} de ${esc(lugar)} que abren a las 8:00 o antes algún día de lunes a viernes, ` +
+      `según el horario de invierno comprobado en la web oficial de cada una ${textoFechas(lista)} (en cada ficha tienes la fecha y la fuente). ` +
+      `En verano, festivos y época de exámenes puede cambiar: confírmalo en su web antes de ir. Solo aparecen las que tienen horario verificado.`,
+    faq: (t, lista, lugar) => {
+      const nombres = lista.slice(0, 6).map((b) => b.n).join(", ") + (lista.length > 6 ? " y otras" : "");
+      const pocas = (l) => l.slice(0, 4).map((b) => b.n).join(", ") + (l.length > 4 ? ` y ${l.length - 4} más` : "");
+      // Las de 24 horas (franja que empieza a las 0:00) se dicen aparte: «abre a las 0:00» confundiría.
+      const de24 = lista.filter(abre24h), resto = lista.filter((b) => !abre24h(b));
+      const pronto = resto.map(aperturaMasTemprana).sort()[0], tempranas = resto.filter((b) => aperturaMasTemprana(b) === pronto);
+      const todos = lista.filter((b) => DIAS.slice(0, 5).every((d) => (b.h.inv[d] || []).some(empiezaTemprano)));
+      const n5 = todos.length;
+      const medio = lista.filter(abreMediodia);
+      return [
+        [t.pregunta(lugar), `Con horario de invierno verificado en su web oficial, abren a las 8:00 o antes algún día de lunes a viernes: ${nombres}.`],
+        [`¿Cuál abre antes en ${lugar}?`, (de24.length ? `${pocas(de24)} ${de24.length === 1 ? "abre" : "abren"} las 24 horas algún día entre semana. ${resto.length ? "Del resto, " : ""}` : "") +
+          (resto.length ? `${de24.length ? "l" : "L"}${tempranas.length === 1 ? "a que abre antes es" : "as que abren antes son"} ${pocas(tempranas)}, a las ${quitaCero(pronto)}, según su horario verificado. ` : "") +
+          (n5 === lista.length ? `Todas abren a las 8:00 o antes los cinco días de lunes a viernes.` : `${n5 === 0 ? "Ninguna" : n5 === 1 ? "Solo 1" : n5} de las ${lista.length} ${n5 > 1 ? "abren" : "abre"} a las 8:00 o antes los cinco días de lunes a viernes.`)],
+        [`¿Abren también a mediodía, sin cerrar para comer?`, medio.length
+          ? `De estas, ${medio.length === 1 ? "solo 1 abre" : `${medio.length} abren`} de lunes a viernes sin cerrar entre las 14:00 y las 16:00: ${pocas(medio)}.`
+          : `Ninguna de estas abre los cinco días de lunes a viernes sin cerrar entre las 14:00 y las 16:00, según su horario verificado.`],
         [`¿Están actualizados estos horarios?`, `Son los horarios de invierno publicados en la web oficial de cada biblioteca, comprobados ${textoFechas(lista)}. Pueden cambiar en verano, festivos o temporada de exámenes; si ves uno mal, avísanos desde la app.`],
       ];
     } },
