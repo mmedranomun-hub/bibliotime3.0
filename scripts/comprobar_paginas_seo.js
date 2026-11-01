@@ -8,11 +8,12 @@
        página (la página diría que cambió después de lo que dice el sitemap),
      - elementos de los ItemList del JSON-LD (temáticas, localidades…) que apuntan a /#bib=… aunque la biblioteca tiene
        ficha, o cuyo @id no es el de su ficha (<ficha>#biblioteca): lista y ficha deben ser la misma entidad,
+     - páginas de provincia o de localidad que enlazan a fichas pero cuyo CollectionPage no lleva mainEntity ItemList,
      - JSON-LD que no se puede leer, y horarios especiales (specialOpeningHoursSpecification: verano y exámenes de las
        fichas) mal formados o con tramos por fecha que se solapan.
    Uso (desde la raíz del proyecto):  node scripts/comprobar_paginas_seo.js
    Sale con código 1 si hay enlaces rotos, títulos o descripciones repetidos, JSON-LD roto, horarios especiales mal o
-   lastmod mal. */
+   lastmod mal, o una provincia o localidad con fichas sin ItemList. */
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -51,6 +52,9 @@ function compruebaEspeciales(ruta, nodo) {
 // Library de cada ficha (con @id) por nombre + coordenadas, para reconocerla en los ItemList de otras páginas.
 const claveLib = (x) => `${x.name}|${x.geo && x.geo.latitude}|${x.geo && x.geo.longitude}`;
 const fichaDe = new Map(), itemsLista = [];
+// Páginas de lugar (provincia: /bibliotecas/<prov>/ con secciones por localidad; localidad: la que «vuelve» a su
+// provincia sin ser temática) → ¿lleva su CollectionPage mainEntity ItemList? y los href que contiene.
+const lugares = new Map();
 let nEnlaces = 0;
 function existe(ruta) {
   const limpia = decodeURIComponent(ruta);
@@ -65,6 +69,9 @@ for (const [ruta, h] of html) {
   if (d) (descs.get(d) || descs.set(d, []).get(d)).push(ruta);
   if (t && decodifica(t).length > MAX_TIT) largos.push(`${ruta} título (${decodifica(t).length}): ${decodifica(t)}`);
   if (d && decodifica(d).length > MAX_DESC) largos.push(`${ruta} descripción (${decodifica(d).length})`);
+  const prov = /^\/bibliotecas\/[^/]+\/$/.test(ruta) && /<section class="loc">/.test(h);
+  const loc = /^\/bibliotecas\/[^/]+\/[^/]+\/$/.test(ruta) && /<section class="lista">/.test(h) && /<p class="volver"><a href="\/bibliotecas\/[^/]+\/">← Todas las bibliotecas de [^<]*<\/a><\/p>/.test(h);
+  if (prov || loc) lugares.set(ruta, { tipo: prov ? "provincia" : "localidad", lista: false, hrefs: [...h.matchAll(/\shref="([^"]+)"/g)].map((m) => decodifica(m[1])) });
   for (const m of h.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)) {
     let j = null;
     try { j = JSON.parse(m[1]); } catch (e) { ldMal.push(ruta); }
@@ -72,6 +79,7 @@ for (const [ruta, h] of html) {
       compruebaEspeciales(ruta, x);
       if (x && x["@type"] === "Library" && x["@id"]) fichaDe.set(claveLib(x), x["@id"]);
       const lista = x && (x["@type"] === "ItemList" ? x : x.mainEntity && x.mainEntity["@type"] === "ItemList" ? x.mainEntity : null);
+      if (x && x["@type"] === "CollectionPage" && lugares.has(ruta) && x.mainEntity && x.mainEntity["@type"] === "ItemList" && (x.mainEntity.itemListElement || []).length) lugares.get(ruta).lista = true;
       if (lista) (lista.itemListElement || []).forEach((el) => el && el.item && el.item["@type"] === "Library" && itemsLista.push([ruta, el.item]));
       if (x && typeof x.dateModified === "string" && !(modPagina.get(ruta) >= x.dateModified)) modPagina.set(ruta, x.dateModified);
     });
@@ -99,6 +107,13 @@ for (const [ruta, it] of itemsLista) {
   if (/#bib=/.test(it.url || "")) { nItemsBib++; if (ficha) bibConFicha.push(`${ruta} → ${it.name} (ficha ${ficha.slice(DOMINIO.length)})`); }
   else if (ficha) { nItemsFicha++; if (it["@id"] !== ficha || it.url + "#biblioteca" !== ficha) idMal.push(`${ruta} → ${it.name} (@id ${it["@id"] || "falta"})`); }
 }
+const fichas = new Set([...fichaDe.values()].map((id) => id.slice(DOMINIO.length).replace(/#biblioteca$/, "")));
+const sinLista = [], nLugarLista = { provincia: [0, 0], localidad: [0, 0] };
+for (const [ruta, x] of lugares) {
+  if (!x.hrefs.some((u) => fichas.has(u.replace(DOMINIO, "")))) continue;
+  nLugarLista[x.tipo][1]++;
+  if (x.lista) nLugarLista[x.tipo][0]++; else sinLista.push(`${ruta} (${x.tipo})`);
+}
 const huerfanas = [...html.keys()].filter((r) => r !== "/bibliotecas/" && !entrantes.has(r));
 const dupT = [...titulos].filter(([, l]) => l.length > 1), dupD = [...descs].filter(([, l]) => l.length > 1);
 const sitemap = fs.existsSync(path.join(RAIZ, "sitemap.xml")) ? fs.readFileSync(path.join(RAIZ, "sitemap.xml"), "utf8") : "";
@@ -124,9 +139,11 @@ console.log(`JSON-LD ilegible: ${ldMal.length}${ldMal.length ? " (" + ldMal.slic
 console.log(`Horarios especiales (verano y exámenes): ${nHorEsp} tramos en ${nPagHorEsp} fichas · mal formados o solapados: ${horEspMal.length}${horEspMal.length ? "\n" + muestra(horEspMal, (r) => "  " + r) : ""}`);
 console.log(`ItemList: ${itemsLista.length} bibliotecas · a su ficha: ${nItemsFicha} · a /#bib=: ${nItemsBib} · /#bib= con ficha: ${bibConFicha.length} · @id distinto del de la ficha: ${idMal.length}` +
   (bibConFicha.length + idMal.length ? "\n" + muestra(bibConFicha.concat(idMal), (r) => "  " + r) : ""));
+console.log(`Lugares con fichas y mainEntity ItemList: provincias ${nLugarLista.provincia.join(" de ")} · localidades ${nLugarLista.localidad.join(" de ")} · sin ItemList: ${sinLista.length}` +
+  (sinLista.length ? "\n" + muestra(sinLista, (r) => "  " + r) : ""));
 console.log(`Huérfanas (sin enlace desde otra página generada): ${huerfanas.length}${huerfanas.length ? "\n" + muestra(huerfanas, (r) => "  " + r) : ""}`);
 console.log(`Sitemap: ${enSitemap.size} URL · no existen: ${sitemapRoto.length} · faltan en el sitemap: ${faltanSitemap.length}` +
   (sitemapRoto.length + faltanSitemap.length ? "\n" + muestra(sitemapRoto.concat(faltanSitemap), (r) => "  " + r) : ""));
 console.log(`Lastmod: ${[...lastmodN].sort().map(([d, n]) => `${d} ×${n}`).join(", ")} · mal (falta, formato, futuro o < dateModified): ${lastmodMal.length}` +
   (lastmodMal.length ? "\n" + muestra(lastmodMal, (r) => "  " + r) : ""));
-if (lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
+if (lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);

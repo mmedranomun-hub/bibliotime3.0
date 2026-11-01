@@ -1317,6 +1317,7 @@ function seccionTemasFicha(b, locConPagina) {
   return enl.length ? `<section class="cerca" aria-labelledby="t-temas"><h2 id="t-temas">${sl ? "Para estudiar en" : "Por horario en"} ${esc(b.p)}</h2><ul>${enl.join("")}</ul></section>` : "";
 }
 
+let nProvItemList = 0, nItemsProv = 0;
 provincias.forEach((p) => {
   const lista = porProv[p], ps = slug(p);
   const porLoc = {};
@@ -1377,18 +1378,27 @@ provincias.forEach((p) => {
   // página de provincia
   const ruta = `/bibliotecas/${ps}/`, f = faq(p, lista);
   const enlTemas = navPorHorario(p);
+  const enPagina = []; // tarjetas visibles, en el orden del HTML (para el ItemList del JSON-LD)
   const secciones = locs.map((c) => {
     const l = porLoc[c].slice().sort(ordenBib);
     const titulo = conPagina.includes(c) ? `<a href="/bibliotecas/${ps}/${slug(c)}/">${esc(c)}</a>` : esc(c);
-    return `<section class="loc"><h2>${titulo} <small>${l.length}</small></h2>${(conPagina.includes(c) ? l.slice(0, 4) : l).map((b) => tarjeta(b)).join("")}${conPagina.includes(c) && l.length > 4 ? `<p class="mas"><a href="/bibliotecas/${ps}/${slug(c)}/">Ver las ${l.length} bibliotecas de ${esc(c)} →</a></p>` : ""}</section>`;
+    const vistas = conPagina.includes(c) ? l.slice(0, 4) : l;
+    enPagina.push(...vistas);
+    return `<section class="loc"><h2>${titulo} <small>${l.length}</small></h2>${vistas.map((b) => tarjeta(b)).join("")}${conPagina.includes(c) && l.length > 4 ? `<p class="mas"><a href="/bibliotecas/${ps}/${slug(c)}/">Ver las ${l.length} bibliotecas de ${esc(c)} →</a></p>` : ""}</section>`;
   }).join("");
   const k = cuentas(lista), tp = tituloLugar(ruta, p, k), dp = descripcionLugar(ruta, p, "", k, locs.length);
+  // mainEntity: las bibliotecas con ficha que se ven en la página, con el @id de su ficha (<ficha>#biblioteca), para que
+  // Google enlace la página de provincia con cada ficha. Sin ficha no entran: su único enlace sería /#bib=… (la portada).
+  const conFicha = enPagina.filter((b) => paginaDe.has(b.i));
+  if (conFicha.length) { nProvItemList++; nItemsProv += conFicha.length; }
+  const mainProv = conFicha.length ? { mainEntity: { "@type": "ItemList", name: `Bibliotecas en ${p}`, numberOfItems: conFicha.length,
+    itemListElement: conFicha.map((b, n) => ({ "@type": "ListItem", position: n + 1, item: itemBib(b) })) } } : {};
   escribe(ruta, pagina({
     ruta, titulo: tp.titulo, descripcion: dp,
     h1: `Bibliotecas en ${esc(p)}`, intro: `${lista.length} bibliotecas en ${locs.length} ${locs.length === 1 ? "localidad" : "localidades"} de ${esc(p)}${k.v ? `, ${k.v} con horario verificado` : ""}. Elige tu localidad o abre el mapa para ver cuáles están abiertas ahora mismo.`,
     cuerpo: `${enlTemas}${navSalas(salasDeProv[p])}${navExamenes(exDeProv(p))}${navUniversidades((b) => b.p === p)}<nav class="locs">${conPagina.map((c) => `<a href="/bibliotecas/${ps}/${slug(c)}/">${esc(c)} <small>${porLoc[c].length}</small></a>`).join("")}</nav>${tablaHorariosLugar(p, lista)}${secciones}${f.html}${seccionProvinciasCercanas(p)}<p class="volver"><a href="/bibliotecas/">← Todas las provincias</a></p>`,
     migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], [p, ruta]], head: k.v ? ESTILO_TABLA_HOR : "",
-    ld: [ldLugar(ruta, tp.nombre, dp, modVerif(lista)), f.ld],
+    ld: [ldLugar(ruta, tp.nombre, dp, { ...modVerif(lista), ...mainProv }), f.ld],
   }));
   urls.push([ruta, "0.8", modVerif(lista).dateModified]);
 });
@@ -1874,6 +1884,7 @@ console.log(`Páginas: ${urls.length - 1} (+ portada) · provincias: ${provincia
 console.log(`Universidades: ${universidades.length} con página (${universidades.map((u) => `${u.sigla} ${u.lista.length}/${u.ver.length}`).join(", ")}) · sin página: ${UNIVERSIDADES.filter((u) => !u.ruta).map((u) => `${u.sigla} ${u.lista.length}/${u.lista.filter(verificado).length}`).join(", ")} · dudosas (casan con 2): ${uniDudosas.length}`);
 console.log(`Exámenes: ${exCiudades.length} ciudades con página (${exCiudades.map((g) => `${g.ciudad} ${g.entradas.length}`).join(", ")}) de ${EXAMENES.length} entradas vigentes`);
 console.log(`Fichas con horario especial en JSON-LD (specialOpeningHoursSpecification): ${nFichasEspeciales} · con horario de verano verificado: ${nFichasVerano} · con horario de exámenes: ${nFichasEx} de ${[...exDeBib.keys()].length} bibliotecas del mapa con entrada vigente`);
+console.log(`Provincias con ItemList de sus fichas en el JSON-LD: ${nProvItemList} de ${provincias.length} · elementos: ${nItemsProv}`);
 console.log(`Localidades sin ninguna verificada con «Cerca, con horario verificado» (≤ ${RADIO_VERIF_KM} km del centroide): ${nLocsVerifCerca} · enlaces: ${nEnlacesLocVerifCerca}`);
 console.log(`Fichas con «Cerca, con horario verificado» (≤ ${RADIO_VERIF_KM} km, otra ficha): ${nFichasVerifCerca} de ${paginaDe.size} · enlaces: ${nEnlacesVerifCerca}`);
 console.log(`Navarra: ${nNavarraConHorario} de ${navarra.length} con horario publicable (fuenteHorario + verificadoHorario en app.js)`);

@@ -343,6 +343,17 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
 - Resultado: títulos > 65 de 417 → 0, descripciones > 160 de 351 → 0 en las 772 páginas. `comprobar_paginas_seo.js` ya
   falla (código 1) con cualquier título > 65 o descripción > 160.
 
+## Hecho (2026-11-01) · `ItemList` de fichas en el JSON-LD de las provincias (827 páginas, sin cambio)
+- El `CollectionPage` de `/bibliotecas/<prov>/` no llevaba `mainEntity` (las localidades sí). Ahora lleva un `ItemList`
+  «Bibliotecas en <provincia>» con las bibliotecas **que tienen ficha y se ven en la página**, en el orden del HTML (en
+  las localidades con página propia solo salen las 4 primeras; el resto está en la lista de su localidad). Cada elemento
+  es `itemBib(b)`: `url` a la ficha y `@id` `<ficha>#biblioteca`, la misma entidad que la ficha. Las que no tienen ficha
+  no entran (su único enlace sería `/#bib=…`, un fragmento de la portada).
+- Medido: provincias con `ItemList` 0 → 51 de 51 (420 elementos); las 56 localidades con fichas ya lo llevaban.
+  Solo cambian las 51 provincias (4 `lastmod` del sitemap movidos a 2026-11-01; las demás ya tenían esa fecha).
+- `comprobar_paginas_seo.js` falla si una página de provincia (`/bibliotecas/<prov>/` con secciones por localidad) o de
+  localidad que enlaza a alguna ficha no lleva `mainEntity` `ItemList` en su `CollectionPage`.
+
 ## Lo que tienes que hacer tú (sin esto no sirve de nada)
 1. **Conectar el dominio** en Vercel: proyecto `bibliotime` → Settings → Domains → añadir `bibliomapa.es` y
    `www.bibliomapa.es` (redirigir www → sin www) y poner en tu registrador los DNS que te indique Vercel.
