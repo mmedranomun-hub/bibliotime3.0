@@ -3543,13 +3543,14 @@ function misionesDeHoy(){
   DATA.misiones={fecha:hoy,ids:ids,hechas:{},cofre:false};saveUserData();
   return DATA.misiones;
 }
+var MIS_PREMIO=10; // 🌰 por misión cumplida (comprobarMisiones y la pista «⏱️ N min más y es tuya»)
 function misionDef(id){return MISIONES_POOL.filter(function(m){return m.id===id;})[0];}
 function comprobarMisiones(){
   if(!DATA)return; var M=misionesDeHoy(), h=statsHoy(), nuevas=[];
   M.ids.forEach(function(id){var d=misionDef(id);if(d&&!M.hechas[id]&&d.val(h)>=d.meta){M.hechas[id]=new Date().toISOString();nuevas.push(d);}});
   if(nuevas.length){
-    DATA.semillasPremio=(DATA.semillasPremio||0)+10*nuevas.length;saveUserData();
-    nuevas.forEach(function(d,k){setTimeout(function(){showToast("✅ Misión cumplida: "+d.txt+" · +10 🌰");celebrar($("missionsCard"),[d.icon,"✨","🌰"],10);encolarVuelo(10,'#missionsCard [data-m="'+d.id+'"]');},k*1400);});
+    DATA.semillasPremio=(DATA.semillasPremio||0)+MIS_PREMIO*nuevas.length;saveUserData();
+    nuevas.forEach(function(d,k){setTimeout(function(){showToast("✅ Misión cumplida: "+d.txt+" · +"+MIS_PREMIO+" 🌰");celebrar($("missionsCard"),[d.icon,"✨","🌰"],10);encolarVuelo(MIS_PREMIO,'#missionsCard [data-m="'+d.id+'"]');},k*1400);});
     renderSemillas();
   }
   renderMisiones();
@@ -3573,9 +3574,9 @@ function renderMisiones(){
   el.innerHTML='<div class="mis-head"><div class="section-title" style="margin:0">🎯 Misiones de hoy</div><span class="mis-time">⏳ '+quedan+'</span></div>'+
     M.ids.map(function(id){
       var d=misionDef(id); if(!d)return "";
-      var v=Math.min(d.meta,d.val(h)), pct=Math.round(v/d.meta*100), ok=!!M.hechas[id];
-      return '<div class="mis'+(ok?' ok':'')+(MIS_FOCO.id===id&&Date.now()<MIS_FOCO.hasta?' mis-foco':'')+'" data-m="'+id+'"><div class="mis-ic">'+(ok?'✅':d.icon)+'</div><div class="mis-main"><div class="mis-txt">'+escapeHTML(d.txt)+'</div>'+
-        '<div class="mis-bar"><i style="width:'+pct+'%"></i></div></div><div class="mis-val">'+(d.min?hMin(v).replace("0h ",""):v)+'/'+(d.min?hMin(d.meta).replace("0h ",""):d.meta)+'</div></div>';
+      var v=Math.min(d.meta,d.val(h)), pct=Math.round(v/d.meta*100), ok=!!M.hechas[id], foco=MIS_FOCO.id===id&&Date.now()<MIS_FOCO.hasta, falta=d.meta-v;
+      return '<div class="mis'+(ok?' ok':'')+(foco?' mis-foco':'')+'" data-m="'+id+'"><div class="mis-ic">'+(ok?'✅':d.icon)+'</div><div class="mis-main"><div class="mis-txt">'+escapeHTML(d.txt)+'</div>'+
+        '<div class="mis-bar"><i style="width:'+pct+'%"></i></div>'+(foco&&!ok&&d.min&&falta>0?'<div class="mis-pista">⏱️ <b>'+falta+' min</b> más y es tuya · <b>+'+MIS_PREMIO+' 🌰</b></div>':'')+'</div><div class="mis-val">'+(d.min?hMin(v).replace("0h ",""):v)+'/'+(d.min?hMin(d.meta).replace("0h ",""):d.meta)+'</div></div>';
     }).join("")+
     '<button class="cofre'+(hechas===3&&!M.cofre?' listo':'')+(M.cofre?' abierto':'')+'" onclick="abrirCofre(this)" '+(hechas===3&&!M.cofre?'':'disabled')+'>'+
       '<span class="cofre-ic">🎁</span><span>'+(M.cofre?'Sello del día conseguido · vuelve mañana':hechas===3?'¡Abre tu cofre!':'Cofre: completa las 3 misiones ('+hechas+'/3)')+'</span>'+
@@ -3596,19 +3597,20 @@ function misionCerca(){
   if(falta<=15)return {hechas:hechas,falta:falta,id:cual};
   return recien?{hechas:hechas,falta:0,id:""}:null;
 }
-// Tocar «🎯 7 min» (#miniMis) o la barrita (#misCerca): abre Estudio, baja hasta «🎯 Misiones de hoy» y resalta 1 s
-// la fila de la misión cerca (borde --acento). Sin misión cerca, solo lleva a la tarjeta. Con «reducir movimiento»,
-// salto directo y resaltado quieto. MIS_FOCO sobrevive al repintado de renderMisiones (cada 30 s con el cronómetro).
-var MIS_FOCO={id:"",hasta:0};
+// Tocar «🎯 7 min» (#miniMis) o la barrita (#misCerca): abre Estudio, baja hasta «🎯 Misiones de hoy» y resalta 2,5 s
+// la fila de la misión cerca (borde --acento) con la pista «⏱️ N min más y es tuya · +10 🌰» (renderMisiones), que se
+// va con el resaltado. Sin misión cerca, solo lleva a la tarjeta. Con «reducir movimiento», salto directo y todo quieto.
+// MIS_FOCO sobrevive al repintado de renderMisiones (cada 30 s con el cronómetro).
+var MIS_FOCO={id:"",hasta:0},MIS_FOCO_MS=2500;
 function irAMision(id){
-  MIS_FOCO={id:id||"",hasta:id?Date.now()+1000:0};
+  MIS_FOCO={id:id||"",hasta:id?Date.now()+MIS_FOCO_MS:0};
   goView("study");
   var card=$("missionsCard"); if(!card)return;
   var fila=id?card.querySelector('[data-m="'+id+'"]'):null;
   card.scrollIntoView({behavior:sinMovimiento()?"auto":"smooth",block:"start"});
   if(!fila)return;
   clearTimeout(irAMision.t);
-  irAMision.t=setTimeout(function(){var f=card.querySelector(".mis-foco");if(f)f.classList.remove("mis-foco");},1000);
+  irAMision.t=setTimeout(function(){var f=card.querySelector(".mis-foco"),p=card.querySelector(".mis-pista");if(f)f.classList.remove("mis-foco");if(p)p.remove();},MIS_FOCO_MS);
 }
 function renderMisCerca(){
   var el=$("misCerca"); if(!el)return;

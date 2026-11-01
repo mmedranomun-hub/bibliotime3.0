@@ -1023,7 +1023,10 @@
   .missions-card{scroll-margin-top:16px}
   /* fila de la misión cerca al llegar desde el cronómetro: borde --acento 1 s, sin pulso (estático) */
   .mis.mis-foco{border-radius:var(--r-s);background:var(--acento-tenue);box-shadow:0 0 0 6px var(--acento-tenue);outline:2px solid var(--acento);outline-offset:6px}
-  @media(prefers-reduced-motion:reduce){.mis-cerca{animation:none}}
+  /* pista bajo la barra de la fila resaltada: recuerda el premio, sin cuenta atrás ni rojo; se va con .mis-foco */
+  .mis-pista{margin-top:5px;font-size:var(--fs-s);font-weight:600;color:var(--suave);animation:fadeIn .3s ease}
+  .mis-pista b{color:var(--ok-tx);font-weight:800;font-variant-numeric:tabular-nums}
+  @media(prefers-reduced-motion:reduce){.mis-cerca,.mis-pista{animation:none}}
   .sr-solo{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
   .cofre{width:100%;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:10px;padding:12px;border-radius:var(--r-m);
     border:2px dashed rgba(148,163,184,.5);background:transparent;color:var(--suave);font-weight:800;font-size:var(--fs-m);cursor:default}

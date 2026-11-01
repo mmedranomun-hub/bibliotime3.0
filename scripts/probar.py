@@ -583,7 +583,7 @@ PRUEBAS = [
       }finally{await new Promise(r=>setTimeout(r,300)); // deja que el mapa haga su invalidateSize (120 ms) mientras se ve
         studyTimer.running=t0.running;studyTimer.start=t0.start;studyTimer.bibIndex=t0.bibIndex;studyTimer.tick=t0.tick;
         k.forEach(x=>DATA[x]=o[x]);el&&(el._clave=null);ms.classList.toggle('hidden',oculto0);renderMisCerca();renderStudy();}"""),
-    ("tocar «🎯 7 min» o la barrita abre Estudio con la fila de la misión cerca resaltada 1 s y a la vista", """
+    ("tocar «🎯 7 min» o la barrita abre Estudio con la fila de la misión cerca resaltada un momento y a la vista", """
       var k=['misiones','sessions','acciones'],o={};k.forEach(x=>o[x]=DATA[x]);
       var t0={running:studyTimer.running,start:studyTimer.start,bibIndex:studyTimer.bibIndex,tick:studyTimer.tick},el=$('misCerca'),mi=$('miniMis'),ms=$('miniStudy');
       var viejo=new Date(Date.now()-5*3600000).toISOString(),oculto0=ms.classList.contains('hidden'),espera=n=>new Promise(r=>setTimeout(r,n));
@@ -600,7 +600,7 @@ PRUEBAS = [
         if(!/108, 92, 231/.test(getComputedStyle(f).outlineColor))return quien+" el borde no es --acento";
         if(document.querySelectorAll('#missionsCard .mis-foco').length!==1)return quien+' resalta más de una fila';
         await espera(800);if(!visible(f))return quien+' la fila no queda a la vista';
-        await espera(400);if(f.isConnected&&f.classList.contains('mis-foco')||document.querySelector('#missionsCard .mis-foco'))return quien+' el resaltado dura más de 1 s';
+        await espera(MIS_FOCO_MS-600);if(f.isConnected&&f.classList.contains('mis-foco')||document.querySelector('#missionsCard .mis-foco'))return quien+' el resaltado no se va';
         return '';};
       try{
         closeModal();goView('map');DATA.sessions=[];DATA.acciones={fecha:ymd()};ms.classList.remove('hidden');
@@ -619,6 +619,41 @@ PRUEBAS = [
         if(!visible($('missionsCard').querySelector('.mis-head')))return 'no lleva a «Misiones de hoy»';
         return true;
       }finally{studyTimer.running=t0.running;studyTimer.start=t0.start;studyTimer.bibIndex=t0.bibIndex;studyTimer.tick=t0.tick;MIS_FOCO={id:'',hasta:0};
+        k.forEach(x=>DATA[x]=o[x]);el&&(el._clave=null);ms.classList.toggle('hidden',oculto0);goView('map');await espera(300);renderMisCerca();renderStudy();}"""),
+    ("junto a la fila resaltada, «⏱️ N min más y es tuya · +10 🌰» con cifras reales, que se va con el resaltado", """
+      var k=['misiones','sessions','acciones'],o={};k.forEach(x=>o[x]=DATA[x]);
+      var t0={running:studyTimer.running,start:studyTimer.start,bibIndex:studyTimer.bibIndex,tick:studyTimer.tick},el=$('misCerca'),mi=$('miniMis'),ms=$('miniStudy');
+      var viejo=new Date(Date.now()-5*3600000).toISOString(),oculto0=ms.classList.contains('hidden'),espera=n=>new Promise(r=>setTimeout(r,n));
+      var prepara=(min,ids,hechas)=>{studyTimer.running=true;studyTimer.tick=t0.tick||1;studyTimer.bibIndex=-1;studyTimer.start=Date.now()-min*60000-500;
+        DATA.misiones={fecha:ymd(),ids:ids,hechas:hechas,cofre:false};el._clave=null;renderMisCerca();};
+      var rgb=v=>{var d=document.createElement('i');d.style.color='var('+v+')';document.body.appendChild(d);var c=getComputedStyle(d).color;d.remove();return c;};
+      try{
+        closeModal();goView('map');DATA.sessions=[];DATA.acciones={fecha:ymd()};ms.classList.remove('hidden');
+        prepara(18,['m25','agenda','social'],{agenda:viejo,social:viejo});
+        var c=misionCerca();if(!c||c.id!=='m25')return 'no hay misión cerca';
+        if(document.querySelector('#missionsCard .mis-pista'))return 'la pista sale sin tocar nada';
+        mi.click();
+        var f=document.querySelector('#missionsCard [data-m="m25"]'),p=f&&f.querySelector('.mis-pista');
+        if(!p)return 'no sale la pista en la fila resaltada';
+        if(document.querySelectorAll('#missionsCard .mis-pista').length!==1)return 'más de una pista';
+        var t=p.textContent.replace(/\\s+/g,' ').trim(),esp='⏱️ '+c.falta+' min más y es tuya · +'+MIS_PREMIO+' 🌰';
+        if(t!==esp)return 'texto: «'+t+'» en vez de «'+esp+'»';
+        var cs=getComputedStyle(p),b=p.querySelectorAll('b');
+        if(cs.color!==rgb('--suave'))return 'la línea no va en --suave';
+        if(b.length!==2||[].some.call(b,x=>getComputedStyle(x).color!==rgb('--ok-tx')))return 'las cifras no van en --ok-tx';
+        var rojo=/rgb\\(2[0-5]\\d, [0-9]{1,2}, [0-9]{1,2}\\)/;if(rojo.test(cs.color))return 'es roja';
+        if(p.getAttribute('aria-live')||p.closest('[aria-live]'))return 'aria-live ruidoso';
+        if(/\\d+:\\d\\d|seg|corre|rápido|pierdes|antes de/i.test(t))return 'cuenta atrás o presión';
+        var r=p.getBoundingClientRect();if(r.right>innerWidth||document.documentElement.scrollWidth>innerWidth)return 'rompe el ancho a '+innerWidth+' px';
+        renderMisiones();if(!document.querySelector('#missionsCard [data-m="m25"] .mis-pista'))return 'se pierde al repintar';
+        await espera(MIS_FOCO_MS+200);
+        if(document.querySelector('#missionsCard .mis-pista'))return 'no se va con el resaltado';
+        renderMisiones();if(document.querySelector('#missionsCard .mis-pista'))return 'vuelve al repintar';
+        // «✅ 2/3» (sin misión cerca): ni resaltado ni pista
+        goView('map');prepara(26,['m25','agenda','pomo'],{m25:new Date(Date.now()-60000).toISOString(),agenda:viejo});
+        mi.click();if(document.querySelector('#missionsCard .mis-pista'))return 'pista sin misión cerca';
+        return true;
+      }finally{clearTimeout(irAMision.t);studyTimer.running=t0.running;studyTimer.start=t0.start;studyTimer.bibIndex=t0.bibIndex;studyTimer.tick=t0.tick;MIS_FOCO={id:'',hasta:0};
         k.forEach(x=>DATA[x]=o[x]);el&&(el._clave=null);ms.classList.toggle('hidden',oculto0);goView('map');await espera(300);renderMisCerca();renderStudy();}"""),
     ("acceso: la ley foral solo en Navarra", """
       for(var i=N_NAVARRA;i<BIBLIOTECAS.length;i++)if(/Ley Foral/.test(accesoAccesibilidadHTML(BIBLIOTECAS[i])))return 'ley foral fuera de Navarra: '+BIBLIOTECAS[i].nombre;
