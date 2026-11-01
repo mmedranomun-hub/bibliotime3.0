@@ -110,6 +110,7 @@
   <url><loc>https://bibliomapa.es/bibliotecas/burgos/</loc><lastmod>2026-11-01</lastmod><priority>0.8</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/caceres/abiertas-hoy/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/caceres/abiertas-hasta-tarde/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/caceres/abiertas-verano/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/caceres/</loc><lastmod>2026-11-01</lastmod><priority>0.8</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/cadiz/jerez-de-la-frontera/</loc><lastmod>2026-11-01</lastmod><priority>0.8</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/cadiz/algeciras/</loc><lastmod>2026-11-01</lastmod><priority>0.8</priority></url>
@@ -122,8 +123,11 @@
   <url><loc>https://bibliomapa.es/bibliotecas/cantabria/abiertas-hoy/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/cantabria/abiertas-fin-de-semana/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/cantabria/abiertas-hasta-tarde/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/cantabria/abiertas-mediodia/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/cantabria/abiertas-verano/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/cantabria/</loc><lastmod>2026-11-01</lastmod><priority>0.8</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/castellon/abiertas-hoy/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/castellon/abiertas-fin-de-semana/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/castellon/abiertas-verano/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/castellon/</loc><lastmod>2026-11-01</lastmod><priority>0.8</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/ceuta/</loc><lastmod>2026-11-01</lastmod><priority>0.8</priority></url>
@@ -359,10 +363,10 @@
   <url><loc>https://bibliomapa.es/bibliotecas/navarra/biblioteca-universidad-de-navarra-ciencias/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/navarra/biblioteca-universidad-de-navarra-facultades-eclesiasticas/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/navarra/biblioteca-upna-campus-de-arrosadia/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-nacional-de-espana/</loc><lastmod>2026-10-15</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-regional-joaquin-leguina/</loc><lastmod>2026-10-15</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-nacional-de-espana/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-regional-joaquin-leguina/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/valencia/biblioteca-valenciana/</loc><lastmod>2026-10-15</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/cantabria/biblioteca-central-de-cantabria/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/cantabria/biblioteca-central-de-cantabria/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/murcia/biblioteca-regional-murcia/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/granada/biblioteca-de-andalucia/</loc><lastmod>2026-10-15</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/malaga/biblioteca-de-malaga-biblioteca-publica-del-estado-provincial-de/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
@@ -373,7 +377,7 @@
   <url><loc>https://bibliomapa.es/bibliotecas/asturias/biblioteca-de-asturias-ramon-perez-de-ayala/</loc><lastmod>2026-10-15</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/toledo/biblioteca-de-castilla-la-mancha/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/badajoz/biblioteca-de-extremadura/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-de-la-facultad-de-filologia-de-la-ucm/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-de-la-facultad-de-filologia-de-la-ucm/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/badajoz/biblioteca-publica-del-estado-bartolome-j-gallardo/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/valladolid/biblioteca-de-castilla-y-leon/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/a-coruna/biblioteca-de-galicia/</loc><lastmod>2026-10-15</lastmod><priority>0.7</priority></url>
@@ -381,7 +385,7 @@
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/crai-biblioteca-del-campus-de-mundet/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/crai-biblioteca-de-fons-antic/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/la-rioja/biblioteca-de-la-rioja/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/zamora/biblioteca-publica-del-estado-en-zamora/</loc><lastmod>2026-10-15</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/zamora/biblioteca-publica-del-estado-en-zamora/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/avila/biblioteca-publica-del-estado-avila/</loc><lastmod>2026-10-15</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/valencia/biblioteca-historica-universitat-de-valencia/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/cuenca/biblioteca-publica-del-estado-en-cuenca/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
@@ -392,7 +396,7 @@
   <url><loc>https://bibliomapa.es/bibliotecas/pontevedra/biblioteca-publica-del-estado-en-pontevedra/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/ciudad-real/biblioteca-publica-del-estado-en-ciudad-real/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/murcia/biblioteca-universidad-de-murcia/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/castellon/biblioteca-publica-del-estado-en-castellon/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/castellon/biblioteca-publica-del-estado-en-castellon/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/sevilla/biblioteca-facultad-psicologia/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/murcia/biblioteca-facultad-de-psicologia/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/a-coruna/biblioteca-da-facultade-de-economia-e-empresa-udc/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
@@ -409,7 +413,7 @@
   <url><loc>https://bibliomapa.es/bibliotecas/bizkaia/biblioteca-universitaria-de-deusto/</loc><lastmod>2026-10-15</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/almeria/biblioteca-municipal-central-jose-maria-artero/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/malaga/biblioteca-facultad-de-psicologia-y-ciencias-de-la-educacion/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/caceres/biblioteca-universidad-de-extremadura/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/caceres/biblioteca-universidad-de-extremadura/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/huelva/biblioteca-universidad-de-huelva/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/granada/biblioteca-publica-municipal-del-salon/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/la-rioja/biblioteca-de-la-universidad-de-la-rioja/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
@@ -442,39 +446,39 @@
   <url><loc>https://bibliomapa.es/bibliotecas/segovia/ie-universidad-biblioteca/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/soria/biblioteca-publica-de-soria/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/alava/biblioteca-municipal-familiar-salburua/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-de-farmacia-ucm/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-de-farmacia-ucm/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/uam-biblioteca-madrid/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-universidad-autonoma-de-madrid/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-universitaria-campus-sur-upm/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-de-ciencias-de-la-informacion-universidad-complutense/</loc><lastmod>2026-10-15</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-universitaria-campus-sur-upm/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-de-ciencias-de-la-informacion-universidad-complutense/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/biblioteca-de-la-facultat-de-matematiques-i-estadistica/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-de-la-facultad-de-bellas-artes-ucm/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-de-educacion-universidad-complutense-de-madrid/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-de-veterinaria-de-la-ucm/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-de-la-facultad-de-bellas-artes-ucm/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-de-educacion-universidad-complutense-de-madrid/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-de-veterinaria-de-la-ucm/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/crai-biblioteca-de-ciencias-de-la-tierra/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-de-la-escuela-politecnica-superior-de-la-uam/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-universidad-nebrija/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/ub-crai-biblioteca-de-farmacia-i-ciencies-de-l-alimentacio/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-escuela-tecnica-superior-de-ingenieros-navales/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-de-filosofia-universidad-complutense-de-madrid/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-de-la-etsi-agronomica-alimentaria-y-de-biosistemas-upm/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-de-geologicas-ucm/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-de-filosofia-universidad-complutense-de-madrid/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-de-la-etsi-agronomica-alimentaria-y-de-biosistemas-upm/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-de-geologicas-ucm/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/crai-biblioteca-de-derecho-universidad-de-barcelona/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-del-inef-upm/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/valencia/biblioteca-crai-ceu-cardenal-herrera/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-de-la-universidad-complutense-de-madrid/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-de-matematicas-universidad-complutense-madrid/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-de-odontologia-ucm/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-de-matematicas-universidad-complutense-madrid/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-de-odontologia-ucm/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/valencia/biblioteca-facultat-de-belles-arts/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/crai-biblioteca-de-informacion-y-medios-audiovisuales/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-publica-latina/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-publica-municipal-mario-vargas-llosa/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-publica-municipal-maria-zambrano/</loc><lastmod>2026-10-15</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-publica-latina/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-publica-municipal-mario-vargas-llosa/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-publica-municipal-maria-zambrano/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/universitat-de-barcelona-biblioteca-campus-de-diagonal-nord-primer/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-publica-ruiz-egea/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-publica-municipal-benito-perez-galdos/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-publica-ruiz-egea/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-publica-municipal-benito-perez-galdos/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-de-la-etsi-de-caminos-canales-y-puertos-upm-edificio/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-publica-hortaleza/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-publica-hortaleza/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-publica-municipal-maria-lejarraga/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/murcia/biblioteca-universidad-de-murcia-murcia/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/biblioteca-publica-arus/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
@@ -482,20 +486,20 @@
   <url><loc>https://bibliomapa.es/bibliotecas/valencia/biblioteca-d-educacio-universitat-de-valencia/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/biblioteca-crai-de-la-ciutadella/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/valencia/biblioteca-publica-de-valencia-pilar-faus/</loc><lastmod>2026-10-15</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-publica-carabanchel-luis-rosales/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-publica-usera-jose-hierro/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-publica-javier-marias/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-publica-carabanchel-luis-rosales/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-publica-usera-jose-hierro/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-publica-javier-marias/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/murcia/universidad-de-murcia-biblioteca-general/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/asturias/biblioteca-de-la-universidad-de-oviedo-buo/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/a-coruna/biblioteca-da-facultade-de-filoloxia/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/a-coruna/biblioteca-de-ciencias-da-comunicacion-usc/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/las-palmas/biblioteca-de-la-universidad-de-las-palmas-de-gran-canaria/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/a-coruna/biblioteca-das-facultades-de-medicina-e-odontoloxia-e-enfermaria/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-centro-pedro-salinas/</loc><lastmod>2026-10-15</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-centro-pedro-salinas/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-publica-municipal-ivan-de-vargas/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/sevilla/biblioteca-publica-municipal-luis-cernuda/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/sevilla/biblioteca-publica-municipal-julia-uceda/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-historica-marques-de-valdecilla/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-historica-marques-de-valdecilla/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/biblioteca-sant-antoni-joan-oliver/</loc><lastmod>2026-10-15</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/biblioteca-joan-miro/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/biblioteca-camp-de-l-arpa/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
@@ -558,7 +562,7 @@
   <url><loc>https://bibliomapa.es/bibliotecas/salamanca/biblioteca-general-historica/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/lugo/biblioteca-intercentros-de-lugo/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/cordoba/biblioteca-grupo-cantico-de-cordoba/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-publica-municipal-eugenio-trias/</loc><lastmod>2026-10-15</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-publica-municipal-eugenio-trias/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/asturias/biblioteca-de-asturias/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/las-palmas/biblioteca-insular-las-palmas-de-gran-canaria/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/huesca/biblioteca-de-la-universidad-de-zaragoza-biblioteca-de-la-universidad/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
@@ -581,7 +585,7 @@
   <url><loc>https://bibliomapa.es/bibliotecas/caceres/biblioteca-derecho-uex/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/granada/biblioteca-mediateca-facultad-de-bellas-artes-alonso-cano/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/huesca/biblioteca-municipal-ramon-j-sender/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-de-medicina-universidad-complutense-de-madrid/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-de-medicina-universidad-complutense-de-madrid/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-maria-zambrano-ucm/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-de-ciencias-economicas-y-empresariales-uam/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/biblioteca-del-pavello-de-la-republica-ub/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
@@ -591,10 +595,10 @@
   <url><loc>https://bibliomapa.es/bibliotecas/valencia/biblioteca-etsinf-upv/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/valencia/biblioteca-ade-topografia-valencia/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/zaragoza/biblioteca-maria-moliner/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-publica-elena-fortun/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-publica-maria-moliner/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-publica-acuna/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-de-estudios-estadisticos-ucm/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-publica-elena-fortun/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-publica-maria-moliner/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-publica-acuna/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-de-estudios-estadisticos-ucm/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/biblioteca-publica-sofia-barat/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-etsi-y-diseno-industrial-upm/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/zaragoza/biblioteca-municipal-santa-orosia/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
@@ -622,13 +626,13 @@
   <url><loc>https://bibliomapa.es/bibliotecas/valencia/biblioteca-municipal-azorin/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/valencia/biblioteca-municipal-joan-de-timoneda/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/valencia/biblioteca-municipal-carola-reig-salva/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-de-medicina-uah/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-de-medicina-uah/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/valencia/biblioteca-campus-gandia/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/valencia/biblioteca-d-arrancapins-eduard-escalante/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/asturias/biblioteca-publica-municipal-alfonso-camin-de-roces/</loc><lastmod>2026-10-16</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-municipal-cardenal-cisneros/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/crai-biblioteca-del-campus-bellvitge/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-de-la-facultad-de-psicologia/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-de-la-facultad-de-psicologia/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/sevilla/biblioteca-de-la-universidad-pablo-de-olavide/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-municipal-pio-baroja/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/pontevedra/biblioteca-publica-juan-companel/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
@@ -650,7 +654,7 @@
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-publica-municipal-princesa-dona-leonor/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/sevilla/biblioteca-publica-pedro-lain-entralgo-de-dos-hermanas/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/cantabria/biblioteca-popular-gabino-teira/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-facultad-cc-economicas-y-empresariales/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-facultad-cc-economicas-y-empresariales/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-municipal-luis-de-gongora/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-municipal-alcorcon-jose-hierro/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/bizkaia/biblioteca-upv-ehu-lejona/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
@@ -687,8 +691,10 @@
   <url><loc>https://bibliomapa.es/bibliotecas/badajoz/biblioteca-municipal-arturo-gazul/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/biblioteca-municipal-l-ateneu/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-municipal-de-morata-de-tajuna/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-publica-municipal-de-chapineria/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/cuenca/biblioteca-municipal-de-villar-de-olalla/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/cuenca/biblioteca-publica-municipal-de-los-hinojosos/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/leon/biblioteca-publica-municipal-santa-maria-del-paramo/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-municipal-marcos-ana-central/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-municipal-de-arroyomolinos/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-municipal-maria-giralt/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
@@ -705,8 +711,10 @@
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-municipal-rafael-alberti/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/biblioteca-districte-3/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/la-rioja/biblioteca-municipal-de-calahorra-pedro-gutierrez/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/caceres/biblioteca-municipal-angel-y-alicia/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/ourense/biblioteca-publica-municipal-de-ribadavia/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/cuenca/biblioteca-publica-municipal-de-villalba-de-la-sierra/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/caceres/biblioteca-municipal-de-coria/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-municipal-pedro-antonio-de-alarcon/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/albacete/biblioteca-publica-municipal-de-pozo-canada/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-municipal-mario-vargas-llosa/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
@@ -745,7 +753,9 @@
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/biblioteca-singuerlin-salvador-cabre/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-municipal-lorenzo-silva/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/badajoz/biblioteca-publica-municipal-francisco-valdes/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/zamora/biblioteca-municipal-de-tabara-zamora/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/murcia/biblioteca-la-manga-del-mar-menor/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/cantabria/biblioteca-municipal-comillas/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/biblioteca-can-pedrals/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/biblioteca-ernest-lluch-i-martin/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/biblioteca-marc-de-vilalba/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
@@ -759,12 +769,13 @@
   <url><loc>https://bibliomapa.es/bibliotecas/cadiz/biblioteca-publica-municipal-blas-infante/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/biblioteca-sant-adria/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/murcia/biblioteca-alfonso-carrion-ingles/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-de-trinitarios/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-de-trinitarios/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-jose-saramago/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/biblioteca-de-teia/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/biblioteca-josep-soler-vidal/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/biblioteca-joan-margarit/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/zaragoza/biblioteca-baltasar-gracian/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/castellon/biblioteca-onda/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/biblioteca-de-taradell/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/biblioteca-d-abrera-josep-roca-i-bros/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/biblioteca-ca-l-oliveres/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
@@ -778,11 +789,13 @@
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/biblioteca-de-montgat/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/alicante/biblioteca-publica-municipal-carmen-jalon-torrevieja/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-almudena-grandes/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/cantabria/biblioteca-reinosa/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/biblioteca-miquel-marti-i-pol-de-sant-joan-despi/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/biblioteca-bac-de-roda/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/biblioteca-d-arenys-de-mar-pare-fidel-fita/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/valladolid/biblioteca-de-boecillo/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/salamanca/biblioteca-etsii-bejar-usal/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/cantabria/biblioteca-conde-de-san-diego/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/biblioteca-canyado-i-casagemes-joan-argente/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/biblioteca-josep-maria-lopez-pico/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/biblioteca-la-grua-montmelo/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
@@ -797,8 +810,9 @@
   <url><loc>https://bibliomapa.es/bibliotecas/huelva/biblioteca-publica-municipal-de-paterna-del-campo/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-municipal-fernando-de-los-rios/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-municipal-rosalia-de-castro/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-ciencias-uah/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-ciencias-uah/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-municipal-jorge-luis-borges/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/castellon/biblioteca-publica-municipal-xilxes/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-enrique-tierno-galvan/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/a-coruna/santiago-de-compostela/salas-de-estudio/</loc><lastmod>2026-11-01</lastmod><priority>0.8</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/a-coruna/salas-de-estudio/</loc><lastmod>2026-11-01</lastmod><priority>0.8</priority></url>

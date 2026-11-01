@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-11-01 19:35",
+  "fecha": "2026-11-01 20:35",
   "pruebas": {
     "arranca: datos y vistas": true,
     "marca España (sin «Navarra» en la cabecera)": true,
@@ -25,7 +25,8 @@
     "cuando un 🧊 salva la racha, la pastilla enseña «🧊 ✓» un instante en azul calmado (sin hablar del día perdido; con reducir movimiento, quieta)": true,
     "barrita de misiones bajo el cronómetro: «🎯 2/3 misiones · la siguiente en 7 min» solo si falta ≤ 15 min de una misión de minutos": true,
     "minicronómetro: «🎯 7 min» junto al tiempo con el mismo dato que la barrita, y nada si no aplica": true,
-    "tocar «🎯 7 min» o la barrita abre Estudio con la fila de la misión cerca resaltada 1 s y a la vista": true,
+    "tocar «🎯 7 min» o la barrita abre Estudio con la fila de la misión cerca resaltada un momento y a la vista": true,
+    "junto a la fila resaltada, «⏱️ N min más y es tuya · +10 🌰» con cifras reales, que se va con el resaltado": true,
     "acceso: la ley foral solo en Navarra": true,
     "especies de temporada (cruzan el año)": true,
     "historias y tips": true,
@@ -40,13 +41,13 @@
     "atajos de la app instalada (#accion=estudiar|ahora|pronto)": true
   },
   "errores_js": [],
-  "carga_ms_cpu4x": 650,
+  "carga_ms_cpu4x": 917,
   "carga_ms_cpu4x_min_max": [
-    599,
-    682
+    862,
+    933
   ],
-  "primera_pintura_ms_cpu4x": 188,
-  "todas_las_chinchetas_ms_cpu4x": 656,
+  "primera_pintura_ms_cpu4x": 248,
+  "todas_las_chinchetas_ms_cpu4x": 928,
   "markercluster": {
     "cargado": false,
     "agrupa": false,
@@ -56,26 +57,26 @@
   },
   "datos": {
     "bibliotecas": 2616,
-    "con_horario_verificado": 479,
+    "con_horario_verificado": 489,
     "provincias_con_horario": 51,
     "provincias_total": 51
   },
   "seo": {
-    "paginas": 842,
+    "paginas": 856,
     "sitemap": true
   },
   "peso": {
     "index.html": {
-      "kb": 130.9,
-      "kb_gzip": 29.3
+      "kb": 131.3,
+      "kb_gzip": 29.4
     },
     "app.js": {
-      "kb": 301.0,
-      "kb_gzip": 88.9
+      "kb": 301.5,
+      "kb_gzip": 89.1
     },
     "bibliotecas-espana.js": {
-      "kb": 738.9,
-      "kb_gzip": 186.7
+      "kb": 744.2,
+      "kb_gzip": 187.7
     }
   },
   "ok": true
