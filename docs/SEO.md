@@ -354,6 +354,21 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
 - `comprobar_paginas_seo.js` falla si una página de provincia (`/bibliotecas/<prov>/` con secciones por localidad) o de
   localidad que enlaza a alguna ficha no lleva `mainEntity` `ItemList` en su `CollectionPage`.
 
+## Hecho (2026-11-01) · 404 útil generada por el script (842 páginas, sin cambio; + `/404.html`)
+- `generar_paginas_seo.js` escribe `/404.html` en la raíz con la misma plantilla (`pagina({ …, noindex: true })`), `seo.css`
+  y tokens que el resto: h1 «Esa página no existe», CTA al mapa, «Por horario» (Abiertas hoy, hub `/bibliotecas/horarios/`,
+  todas las provincias) y las 51 provincias con su número de bibliotecas. Con `noindex`: `<meta name="robots"
+  content="noindex">`, sin `canonical`, sin `og:url` y sin `BreadcrumbList` (se sirve en cualquier URL inexistente).
+  Todos los enlaces son absolutos (`/…`), también `/seo.css`, para que funcione desde `/bibliotecas/x/y/z`.
+- Fuera del sitemap (no pasa por `urls`); no cambia ninguna otra página (lastmod intactos; 842 páginas, 843 URL).
+- Vercel, en un despliegue estático sin `vercel.json`, sirve `/404.html` con estado 404 en las URL que no existen; el
+  `.vercelignore` no lo excluye (solo carpetas de trabajo y docs), así que no hace falta tocar nada. `sw.js` solo guarda
+  en caché respuestas 200: la 404 nunca queda cacheada.
+- `comprobar_paginas_seo.js` falla si falta `404.html`, si no lleva `noindex` o lleva `canonical`, si está en el sitemap,
+  si su título coincide con el de otra página, si algún enlace interno no es absoluto o está roto, o si no enlaza a todas
+  las provincias, al hub y a «abiertas hoy». No cuenta como enlace entrante (no tapa huérfanas). Hoy: 64 enlaces, 51 provincias, 0 mal.
+- Pendiente: tras el despliegue, `curl -I https://bibliomapa.es/no-existe` → `HTTP/2 404` con este HTML.
+
 ## Lo que tienes que hacer tú (sin esto no sirve de nada)
 1. **Conectar el dominio** en Vercel: proyecto `bibliotime` → Settings → Domains → añadir `bibliomapa.es` y
    `www.bibliomapa.es` (redirigir www → sin www) y poner en tu registrador los DNS que te indique Vercel.

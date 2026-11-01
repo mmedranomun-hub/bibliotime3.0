@@ -18,6 +18,7 @@
      bibliotecas/examenes/ y bibliotecas/examenes/<ciudad>/ (solo ciudades con entradas vigentes de temporada-examenes.js con
        fuente y fecha: periodo, horario, nota, fuente oficial y FAQ; enlazadas desde provincias, localidades, salas y el hub)
      bibliotecas/horarios/ (hub: todas las temáticas, salas y universidades por provincia; todas enlazan a él)
+     404.html (noindex, fuera del sitemap: provincias, hub de horarios y «abiertas hoy»)
      sitemap.xml y robots.txt
    Uso (desde la raíz del proyecto):  node scripts/generar_paginas_seo.js  y después  node scripts/comprobar_paginas_seo.js
    Vuelve a ejecutarlo cada vez que cambien los datos (app.js, bibliotecas-espana.js o temporada-examenes.js).
@@ -193,7 +194,9 @@ function itemBib(b) {
 }
 
 // ---------- Plantilla ----------
-function pagina({ ruta, titulo, descripcion, h1, intro, cuerpo, migas, ld, cta, head }) {
+// noindex (la 404): sin canonical ni og:url (se sirve en cualquier URL inexistente), con <meta name="robots" content="noindex">
+// y sin BreadcrumbList; todos los enlaces son absolutos (/…) para que funcionen desde cualquier ruta.
+function pagina({ ruta, titulo, descripcion, h1, intro, cuerpo, migas, ld, cta, head, noindex }) {
   const url = DOMINIO + ruta;
   const migasLD = { "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: migas.map((x, k) => ({ "@type": "ListItem", position: k + 1, name: x[0], item: DOMINIO + x[1] })) };
   return `<!DOCTYPE html>
@@ -203,18 +206,18 @@ function pagina({ ruta, titulo, descripcion, h1, intro, cuerpo, migas, ld, cta, 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${esc(titulo)}</title>
 <meta name="description" content="${esc(descripcion)}">
-<link rel="canonical" href="${url}">
+${noindex ? `<meta name="robots" content="noindex">` : `<link rel="canonical" href="${url}">`}
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Bibliomapa">
 <meta property="og:title" content="${esc(titulo)}">
 <meta property="og:description" content="${esc(descripcion)}">
-<meta property="og:url" content="${url}">
-<meta property="og:locale" content="es_ES">
+${noindex ? "" : `<meta property="og:url" content="${url}">
+`}<meta property="og:locale" content="es_ES">
 <meta name="theme-color" content="#6c5ce7">
 <link rel="icon" href="/icons/favicon-32.png" type="image/png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <link rel="stylesheet" href="/seo.css">
-<script type="application/ld+json">${JSON.stringify(migasLD)}</script>
+${noindex ? "" : `<script type="application/ld+json">${JSON.stringify(migasLD)}</script>`}
 ${ld ? `<script type="application/ld+json">${JSON.stringify(ld)}</script>` : ""}
 ${head || ""}</head>
 <body>
@@ -1866,6 +1869,25 @@ escribe("/bibliotecas/", pagina({
   cuerpo: `${temasEspana.length ? `<nav class="temas" aria-label="Por horario"><span>Por horario:</span>${temasEspana.map(({ t, l }) => `<a href="/bibliotecas/${t.slug}/">${esc(t.corto)} <small>${l.length}</small></a>`).join("")}<a href="${HUB}">Por provincia</a></nav>` : ""}${salas.length || exCiudades.length ? `<nav class="temas" aria-label="Para estudiar"><span>Para estudiar:</span>${salas.length ? `<a href="/bibliotecas/${SALAS_SLUG}/">Salas de estudio <small>${salas.length} ciudades</small></a>` : ""}${exCiudades.length ? `<a href="${EX_RUTA}">Exámenes: 24 h y horario ampliado <small>${plural(exCiudades.length, "ciudad", "ciudades")}</small></a>` : ""}</nav>` : ""}${universidades.length ? `<nav class="temas" aria-label="Por universidad"><span>Por universidad:</span><a href="/bibliotecas/${UNIS_SLUG}/">Todas <small>${universidades.length}</small></a>${universidades.map((u) => `<a href="${u.ruta}" title="Bibliotecas de la ${esc(u.nombre)}">${esc(u.sigla)} <small>${u.lista.length}</small></a>`).join("")}</nav>` : ""}<nav class="locs grande">${provincias.map((p) => `<a href="/bibliotecas/${slug(p)}/">${esc(p)} <small>${porProv[p].length}</small></a>`).join("")}</nav>`,
   migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"]],
 }));
+
+// ---------- 404 (/404.html) ----------
+// Vercel sirve /404.html (con estado 404) en cualquier URL que no existe de un sitio estático. noindex y fuera del
+// sitemap; enlaza a las provincias, al hub de horarios y a «abiertas hoy» (si existe) para no perder la visita.
+// node scripts/comprobar_paginas_seo.js revisa sus enlaces, el noindex y que no esté en el sitemap.
+{
+  const hoyT = temasEspana.find(({ t }) => t.slug === "abiertas-hoy");
+  fs.writeFileSync(path.join(RAIZ, "404.html"), pagina({
+    ruta: "/404.html", noindex: true,
+    titulo: "Página no encontrada | Bibliomapa",
+    descripcion: "Esa página no existe. Busca tu biblioteca por provincia, por horario o mira cuáles están abiertas hoy en el mapa de Bibliomapa.",
+    h1: "Esa página no existe",
+    intro: `Puede que el enlace esté mal escrito o que la página se haya movido. Desde aquí puedes buscar entre las ${todas.length} bibliotecas de ${provincias.length} provincias o abrir el mapa.`,
+    cuerpo: `<nav class="temas" aria-label="Por horario"><span>Por horario:</span>${hoyT ? `<a href="/bibliotecas/abiertas-hoy/">Abiertas hoy <small>${hoyT.l.length}</small></a>` : ""}${temasEspana.length ? `<a href="${HUB}">Todos los horarios por provincia</a>` : ""}<a href="/bibliotecas/">Todas las provincias</a></nav>
+<h2 id="t-prov">Bibliotecas por provincia</h2>
+<nav class="locs grande" aria-labelledby="t-prov">${provincias.map((p) => `<a href="/bibliotecas/${slug(p)}/">${esc(p)} <small>${porProv[p].length}</small></a>`).join("")}</nav>`,
+    migas: [["Bibliomapa", "/"], ["Página no encontrada", "/404.html"]],
+  }));
+}
 
 fs.writeFileSync(path.join(RAIZ, "sitemap.xml"), `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

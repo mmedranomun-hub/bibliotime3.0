@@ -9,11 +9,13 @@
      - elementos de los ItemList del JSON-LD (temáticas, localidades…) que apuntan a /#bib=… aunque la biblioteca tiene
        ficha, o cuyo @id no es el de su ficha (<ficha>#biblioteca): lista y ficha deben ser la misma entidad,
      - páginas de provincia o de localidad que enlazan a fichas pero cuyo CollectionPage no lleva mainEntity ItemList,
+     - la 404 (/404.html, que Vercel sirve en cualquier URL inexistente): que exista, lleve noindex y no canonical, no
+       esté en el sitemap, sus enlaces sean absolutos y no estén rotos, y enlace a las provincias, al hub y a «abiertas hoy»,
      - JSON-LD que no se puede leer, y horarios especiales (specialOpeningHoursSpecification: verano y exámenes de las
        fichas) mal formados o con tramos por fecha que se solapan.
    Uso (desde la raíz del proyecto):  node scripts/comprobar_paginas_seo.js
    Sale con código 1 si hay enlaces rotos, títulos o descripciones repetidos, JSON-LD roto, horarios especiales mal o
-   lastmod mal, o una provincia o localidad con fichas sin ItemList. */
+   lastmod mal, una provincia o localidad con fichas sin ItemList, o la 404 mal. */
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -129,6 +131,32 @@ for (const m of sitemap.matchAll(/<url>([\s\S]*?)<\/url>/g)) {
   if (modPagina.has(loc) && lm < modPagina.get(loc)) lastmodMal.push(`${loc} lastmod ${lm} anterior a su dateModified ${modPagina.get(loc)}`);
 }
 
+// 404: no cuenta como enlace entrante (no quita huérfanas) ni entra en el resto de comprobaciones (no se indexa).
+const f404 = path.join(RAIZ, "404.html"), mal404 = [];
+let n404 = 0, n404Prov = 0;
+if (!fs.existsSync(f404)) mal404.push("falta 404.html");
+else {
+  const h = fs.readFileSync(f404, "utf8");
+  if (!/<meta name="robots" content="noindex">/.test(h)) mal404.push("sin <meta name=\"robots\" content=\"noindex\">");
+  if (/rel="canonical"/.test(h)) mal404.push("lleva canonical");
+  if (enSitemap.has("/404.html") || enSitemap.has("/404")) mal404.push("está en el sitemap");
+  const t = (h.match(/<title>([^<]*)<\/title>/) || [])[1];
+  if (t && titulos.has(t)) mal404.push(`título repetido con ${titulos.get(t).join(", ")}`);
+  const hrefs = [...h.matchAll(/\shref="([^"]+)"/g)].map((m) => decodifica(m[1]));
+  for (const u of hrefs) {
+    if (/^(https?:|mailto:|tel:)/.test(u)) continue;
+    n404++;
+    if (!u.startsWith("/")) { mal404.push(`enlace no absoluto ${u}`); continue; }
+    const d = u.split("#")[0].split("?")[0];
+    if (d !== "/" && !existe(d)) mal404.push(`enlace roto ${u}`);
+  }
+  const provs = [...html.keys()].filter((r) => /^\/bibliotecas\/[^/]+\/$/.test(r) && /<section class="loc">/.test(html.get(r)) && r !== "/bibliotecas/horarios/");
+  if (provs.length < 50) mal404.push(`solo ${provs.length} provincias reconocidas`);
+  const faltan = provs.filter((r) => !hrefs.includes(r)); n404Prov = provs.length - faltan.length;
+  if (faltan.length) mal404.push(`no enlaza ${faltan.length} provincias (${faltan.slice(0, 5).join(", ")})`);
+  for (const r of ["/bibliotecas/horarios/", "/bibliotecas/abiertas-hoy/"]) if (html.has(r) && !hrefs.includes(r)) mal404.push(`no enlaza ${r}`);
+}
+
 const muestra = (l, f) => l.slice(0, 15).map(f).join("\n") + (l.length > 15 ? `\n  … y ${l.length - 15} más` : "");
 console.log(`Páginas: ${html.size} · enlaces internos: ${nEnlaces}`);
 console.log(`Enlaces rotos: ${rotos.length}${rotos.length ? "\n" + muestra(rotos, ([r, u]) => `  ${r} → ${u}`) : ""}`);
@@ -146,4 +174,5 @@ console.log(`Sitemap: ${enSitemap.size} URL · no existen: ${sitemapRoto.length}
   (sitemapRoto.length + faltanSitemap.length ? "\n" + muestra(sitemapRoto.concat(faltanSitemap), (r) => "  " + r) : ""));
 console.log(`Lastmod: ${[...lastmodN].sort().map(([d, n]) => `${d} ×${n}`).join(", ")} · mal (falta, formato, futuro o < dateModified): ${lastmodMal.length}` +
   (lastmodMal.length ? "\n" + muestra(lastmodMal, (r) => "  " + r) : ""));
-if (lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
+console.log(`404: ${n404} enlaces internos · provincias enlazadas: ${n404Prov} · mal: ${mal404.length}${mal404.length ? "\n" + muestra(mal404, (r) => "  " + r) : ""}`);
+if (mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
