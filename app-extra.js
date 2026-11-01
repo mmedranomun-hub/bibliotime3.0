@@ -678,7 +678,10 @@ function pintarSellos(el,s){
     '<div class="sellos-fila">'+ult.map(function(d){var p=d.split("-");
       return '<span class="sello" title="'+(+p[2])+' de '+MESES[+p[1]-1]+'"><i aria-hidden="true">🏵️</i><small>'+(+p[2])+' '+MESES[+p[1]-1].slice(0,3)+'</small></span>';}).join("")+'</div>';
 }
-function abrirRacha(){
+// abrirRacha("hielo") (tocar la insignia «🧊 N»): la casilla «🧊 Congeladores» se resalta RACHA_FOCO_MS con borde --acento,
+// para que se entienda qué es lo que salva la racha. Con «reducir movimiento», solo el borde, sin transición.
+var RACHA_FOCO_MS=1000;
+function abrirRacha(foco){
   var n=streakDays(), mejor=0;try{mejor=computeBestStreak();}catch(e){}
   var dias={};DATA.sessions.forEach(function(s){dias[s.date]=(dias[s.date]||0)+s.min;});(DATA.usedFreezeDates||[]).forEach(function(d){if(!dias[d])dias[d]=-1;});
   // los últimos 7 días acabando hoy (como Duolingo)
@@ -690,8 +693,11 @@ function abrirRacha(){
   openModal('<div class="racha-modal"><div class="racha-fuego'+(hoyOk?'':' apagado')+'">🔥</div><div class="racha-n">'+n+'</div><div class="racha-lbl">'+(n===1?"día seguido":"días seguidos")+'</div>'+
     '<div class="semana-racha">'+sem+'</div>'+
     '<div class="sub" style="margin-top:12px">'+(hoyOk?"¡Hoy ya cuenta! Vuelve mañana para mantenerla.":n?"Estudia hoy para no perder tu racha de "+n+" días.":"Estudia hoy y empieza una racha.")+'</div>'+
-    '<div class="racha-stats"><div><b>'+mejor+'</b><small>Mejor racha</small></div><div><b>🧊 '+(DATA.streakFreezes||0)+'</b><small>Congeladores</small></div><div><b>🌰 '+semillas()+'</b><small>Semillas</small></div></div>'+
+    '<div class="racha-stats"><div><b>'+mejor+'</b><small>Mejor racha</small></div><div class="rs-hielo'+(foco==="hielo"?' rs-foco':'')+'"><b>🧊 '+(DATA.streakFreezes||0)+'</b><small>Congeladores</small></div><div><b>🌰 '+semillas()+'</b><small>Semillas</small></div></div>'+
     (hoyOk?'':'<button class="btn" onclick="closeModal();goView(\'study\')">▶ Estudiar ahora</button>')+'</div>');
+  if(foco!=="hielo")return;
+  clearTimeout(abrirRacha.t);
+  abrirRacha.t=setTimeout(function(){var f=document.querySelector("#modalRoot .rs-foco");if(f)f.classList.remove("rs-foco");},RACHA_FOCO_MS);
 }
 
 /* ----- Visor de historias (Instagram): las de los amigos y «Tu día» ----- */
@@ -959,16 +965,24 @@ function volarSemillas(desde,ganadas){
    detrás de las 🌰, y la pastilla enseña «🧊 N» un momento con un rebote suave. Con «reducir movimiento», solo la cifra. ----- */
 function estilosVueloHielo(){
   if($("hieloCss"))return;var st=document.createElement("style");st.id="hieloCss";
-  st.textContent='#streakPill{position:relative}.pill-hielo{position:absolute;top:-9px;right:-8px;display:inline-flex;align-items:center;gap:2px;padding:1px 7px;border-radius:var(--r-pill);'+
-      'background:var(--ev-ta-bg);color:var(--ev-ta-tx);border:1px solid var(--borde);box-shadow:var(--sombra);font-size:var(--fs-s);font-weight:800;line-height:1.4;white-space:nowrap;font-variant-numeric:tabular-nums;pointer-events:none;transition:opacity .35s}'+
-    '.pill-hielo.fuera{opacity:0}.pill-hielo.ph-rebote{animation:svRebote .55s cubic-bezier(.34,1.56,.64,1)}'+
+  // <button> hermano de #streakPill (no dentro: un botón no puede ir dentro de otro), colocado sobre su esquina.
+  // El ::before invisible da el área táctil de 44 px sin cambiar el aspecto de la insignia.
+  st.textContent='.pill-hielo{position:absolute;z-index:1;margin:0;display:inline-flex;align-items:center;gap:2px;padding:1px 7px;border-radius:var(--r-pill);font-family:inherit;cursor:pointer;-webkit-appearance:none;appearance:none;'+
+      'background:var(--ev-ta-bg);color:var(--ev-ta-tx);border:1px solid var(--borde);box-shadow:var(--sombra);font-size:var(--fs-s);font-weight:800;line-height:1.4;white-space:nowrap;font-variant-numeric:tabular-nums;transition:opacity .35s}'+
+    '.pill-hielo::before{content:"";position:absolute;left:50%;top:50%;width:max(100%,44px);height:max(100%,44px);transform:translate(-50%,-50%)}'+
+    '.pill-hielo:focus-visible{outline:2px solid var(--acento);outline-offset:2px}'+
+    '.pill-hielo.fuera{opacity:0;pointer-events:none}.pill-hielo.ph-rebote{animation:svRebote .55s cubic-bezier(.34,1.56,.64,1)}'+
     '@media (prefers-reduced-motion:reduce){.pill-hielo{transition:none}.pill-hielo.ph-rebote{animation:none}}';
   document.head.appendChild(st);
 }
 function marcarHieloRacha(p,t){
-  var c=p.querySelector(".pill-hielo"),f=DATA.streakFreezes||0,quieto=sinMovimiento();
-  if(!c){c=document.createElement("span");c.className="pill-hielo";p.appendChild(c);}
+  var c=document.querySelector(".pill-hielo"),f=DATA.streakFreezes||0,quieto=sinMovimiento();
+  if(!c){c=document.createElement("button");c.type="button";c.className="pill-hielo";p.parentNode.insertBefore(c,p.nextSibling);
+    c.addEventListener("click",function(){abrirRacha("hielo");});}
   c.classList.remove("fuera","ph-rebote");c.textContent=t||"🧊 "+f;p.setAttribute("aria-label",t?"Tu racha sigue a salvo":"Tu racha · "+f+(f===1?" congelador":" congeladores"));
+  c.setAttribute("aria-label",t?"Tu racha sigue a salvo: ver racha":"Tienes "+f+(f===1?" congelador":" congeladores")+": ver racha");
+  // misma esquina que antes (arriba a la derecha de la pastilla): 9 px por encima y 8 px por fuera
+  c.style.top=(p.offsetTop-9)+"px";c.style.left=(p.offsetLeft+p.offsetWidth+8-c.offsetWidth)+"px";
   if(!quieto){void c.offsetWidth;c.classList.add("ph-rebote");celebrar(c,["🧊","✨"],6);}
   clearTimeout(p._hielo);p._hielo=setTimeout(function(){c.classList.add("fuera");setTimeout(function(){c.remove();p.setAttribute("aria-label","Tu racha");},quieto?0:400);},3500);
 }

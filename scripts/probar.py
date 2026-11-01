@@ -466,7 +466,7 @@ PRUEBAS = [
         if(vuelos.length!==1||!vuelos[0][0]||!vuelos[0][0].width||!(vuelos[0][1]>0))return 'no vuela al cerrar o no va tras las 🌰: '+JSON.stringify(vuelos.map(v=>v[1]));
         if(!document.querySelector('.hielo-vuela'))return 'no se ve el 🧊 volando';
         await espera(1300);
-        var c=document.querySelector('#streakPill .pill-hielo');
+        var c=document.querySelector('.pill-hielo');
         if(!c||c.textContent.trim()!=='🧊 1')return 'la pastilla no enseña 🧊 1: '+(c&&c.textContent);
         if(document.querySelector('.hielo-vuela'))return 'queda un 🧊 volando';
         if(!/1 congelador/.test($('streakPill').getAttribute('aria-label')||''))return 'el lector de pantalla no lo oye';
@@ -478,7 +478,7 @@ PRUEBAS = [
         if(vuelos.length||document.querySelector('.hielo-vuela'))return 'vuela sin congelador';
         await calma();window.sinMovimiento=()=>true;DATA.streakFreezes=2;volarHielo(null,0);
         if(document.querySelector('.hielo-vuela'))return 'vuela con reducir movimiento';
-        c=document.querySelector('#streakPill .pill-hielo');if(!c||c.textContent.trim()!=='🧊 2'||c.classList.contains('ph-rebote'))return 'con reducir movimiento no da solo la cifra';
+        c=document.querySelector('.pill-hielo');if(!c||c.textContent.trim()!=='🧊 2'||c.classList.contains('ph-rebote'))return 'con reducir movimiento no da solo la cifra';
         return true;
       }finally{window.showToast=st;window.sinMovimiento=sm;window.hashStr=hs;window.volarHielo=vh;k.forEach(x=>DATA[x]=o[x]);closeModal();limpia();renderMisiones();renderSemillas();renderRacha();}"""),
     ("cuando un 🧊 salva la racha, la pastilla enseña «🧊 ✓» un instante en azul calmado (sin hablar del día perdido; con reducir movimiento, quieta)", """
@@ -494,19 +494,50 @@ PRUEBAS = [
         salva();
         if(DATA.streakFreezes!==0||DATA.usedFreezeDates.indexOf(hace(1))<0)return 'el congelador no cubre el hueco';
         await espera(800);
-        var c=document.querySelector('#streakPill .pill-hielo');
+        var c=document.querySelector('.pill-hielo');
         if(!c||c.textContent.trim()!=='🧊 ✓')return 'la pastilla no enseña 🧊 ✓: '+(c&&c.textContent);
         if(!/a salvo/.test($('streakPill').getAttribute('aria-label')||''))return 'el lector de pantalla no lo oye';
         if(/perd|falt|ayer/i.test(c.textContent+$('streakPill').getAttribute('aria-label')))return 'habla del día perdido';
         var cs=getComputedStyle(c),rojo=/rgb\\(2[0-5]\\d, [0-9]{1,2}, [0-9]{1,2}\\)/;
         if(rojo.test(cs.color)||rojo.test(cs.backgroundColor))return 'la insignia es roja';
         await espera(4200);
-        if(document.querySelector('#streakPill .pill-hielo'))return 'la insignia no se va';
+        if(document.querySelector('.pill-hielo'))return 'la insignia no se va';
         window.sinMovimiento=()=>true;salva();await espera(800);
-        c=document.querySelector('#streakPill .pill-hielo');
+        c=document.querySelector('.pill-hielo');
         if(!c||c.textContent.trim()!=='🧊 ✓'||c.classList.contains('ph-rebote'))return 'con reducir movimiento no queda quieta';
         return true;
       }finally{window.showToast=st;window.sinMovimiento=sm;k.forEach(x=>DATA[x]=o[x]);closeModal();limpia();renderRacha();}"""),
+    ("tocar la insignia «🧊 N» abre la racha con «🧊 Congeladores» resaltada 1 s con borde --acento (botón accesible de 44 px; con reducir movimiento, sin transición)", """
+      await cargarExtra();
+      var k=['streakFreezes'],o={};k.forEach(x=>o[x]=DATA[x]);
+      var espera=ms=>new Promise(r=>setTimeout(r,ms)),sm=window.sinMovimiento;
+      var limpia=()=>document.querySelectorAll('.pill-hielo').forEach(x=>x.remove());
+      try{
+        closeModal();goView('study');while(VUELO.t||VUELO.n||VUELO.h)await espera(250);limpia();
+        window.sinMovimiento=()=>true;DATA.streakFreezes=2;renderRacha();volarHielo(null,0);
+        var b=document.querySelector('.pill-hielo'),p=$('streakPill');
+        if(!b||b.tagName!=='BUTTON'||p.contains(b))return 'la insignia no es un botón propio (fuera de #streakPill)';
+        if(!/^Tienes 2 congeladores: ver racha$/.test(b.getAttribute('aria-label')||''))return 'aria-label: '+b.getAttribute('aria-label');
+        var r=b.getBoundingClientRect(),q=p.getBoundingClientRect(),c=getComputedStyle(b,'::before');
+        if(Math.min(parseFloat(c.width)||0,parseFloat(c.height)||0)<44)return 'área táctil < 44 px';
+        if(r.height>30||Math.abs(r.right-(q.right+8))>1.5||Math.abs(r.top-(q.top-9))>1.5)return 'cambia de aspecto o de sitio: '+[r.height,r.right-q.right,r.top-q.top];
+        if(getComputedStyle(b).pointerEvents==='none')return 'no se puede tocar';
+        b.click();await espera(50);
+        var f=document.querySelector('#modalRoot .racha-modal .rs-hielo');
+        if(!f||!/Congeladores/.test(f.innerText)||!/🧊 2/.test(f.innerText))return 'no abre la racha con la fila de congeladores';
+        if(!f.classList.contains('rs-foco'))return 'la fila no está resaltada';
+        if(!/108, 92, 231/.test(getComputedStyle(f).outlineColor))return 'el borde no es --acento: '+getComputedStyle(f).outlineColor;
+        var rm=[].some.call(document.styleSheets,sh=>{try{return [].some.call(sh.cssRules,x=>x.media&&/reduced-motion/.test(x.media.mediaText)&&/rs-hielo[^}]*transition:\\s*none/.test(x.cssText));}catch(e){return false;}});
+        if(!rm)return 'sin regla de reducir movimiento para el resaltado';
+        var rojo=/rgb\\(2[0-5]\\d, [0-9]{1,2}, [0-9]{1,2}\\)/;if(rojo.test(getComputedStyle(f).backgroundColor))return 'es roja';
+        await espera(RACHA_FOCO_MS+150);
+        if(f.classList.contains('rs-foco'))return 'el resaltado no se va';
+        closeModal();abrirRacha();
+        if(document.querySelector('#modalRoot .rs-foco'))return 'se resalta al abrir la racha desde la pastilla';
+        closeModal();await espera(3600);
+        if(document.querySelector('.pill-hielo'))return 'la insignia no se va';
+        return true;
+      }finally{window.sinMovimiento=sm;clearTimeout(abrirRacha.t);k.forEach(x=>DATA[x]=o[x]);closeModal();limpia();renderRacha();}"""),
     ("barrita de misiones bajo el cronómetro: «🎯 2/3 misiones · la siguiente en 7 min» solo si falta ≤ 15 min de una misión de minutos", """
       var k=['misiones','sessions','acciones'],o={};k.forEach(x=>o[x]=DATA[x]);
       var t0={running:studyTimer.running,start:studyTimer.start,bibIndex:studyTimer.bibIndex,tick:studyTimer.tick},sh=window.statsHoy,el=$('misCerca');
