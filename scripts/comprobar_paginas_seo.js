@@ -4,9 +4,10 @@
        de la misma página o de otra página generada),
      - títulos y meta descriptions repetidos,
      - páginas sin enlace entrante desde otra página (huérfanas) y URL del sitemap que no existen o que faltan en él,
-     - JSON-LD que no se puede leer.
+     - JSON-LD que no se puede leer, y horarios especiales (specialOpeningHoursSpecification: verano y exámenes de las
+       fichas) mal formados o con tramos por fecha que se solapan.
    Uso (desde la raíz del proyecto):  node scripts/comprobar_paginas_seo.js
-   Sale con código 1 si hay enlaces rotos, títulos o descripciones repetidos o JSON-LD roto. */
+   Sale con código 1 si hay enlaces rotos, títulos o descripciones repetidos, JSON-LD roto o horarios especiales mal. */
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -25,7 +26,19 @@ const html = new Map(paginas.map((f) => [rutaDe(f), fs.readFileSync(f, "utf8")])
 const decodifica = (s) => s.replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
 const ids = (h) => new Set([...h.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]));
 
-const rotos = [], entrantes = new Map(), titulos = new Map(), descs = new Map(), ldMal = [];
+const rotos = [], entrantes = new Map(), titulos = new Map(), descs = new Map(), ldMal = [], horEspMal = [];
+let nHorEsp = 0, nPagHorEsp = 0;
+// Horas HH:MM, fechas AAAA-MM-DD en orden y, en los tramos por fecha (sin dayOfWeek: los de exámenes), ningún solape
+// (si dos tramos se pisan, Google no dice cuál vale).
+function compruebaEspeciales(ruta, nodo) {
+  const l = (nodo && nodo.specialOpeningHoursSpecification) || [];
+  if (!l.length) return;
+  nHorEsp += l.length; nPagHorEsp++;
+  const HM = /^\d\d:\d\d$/, F = /^\d{4}-\d\d-\d\d$/;
+  l.forEach((x) => { if (!HM.test(x.opens) || !HM.test(x.closes) || !F.test(x.validFrom) || !F.test(x.validThrough) || x.validThrough < x.validFrom) horEspMal.push(`${ruta} ${JSON.stringify(x)}`); });
+  const rangos = [...new Map(l.filter((x) => !x.dayOfWeek).map((x) => [x.validFrom + "|" + x.validThrough, x])).values()].sort((a, b) => a.validFrom.localeCompare(b.validFrom));
+  rangos.forEach((x, k) => { if (k && x.validFrom <= rangos[k - 1].validThrough) horEspMal.push(`${ruta} solape ${rangos[k - 1].validFrom}–${rangos[k - 1].validThrough} y ${x.validFrom}–${x.validThrough}`); });
+}
 let nEnlaces = 0;
 function existe(ruta) {
   const limpia = decodeURIComponent(ruta);
@@ -39,7 +52,9 @@ for (const [ruta, h] of html) {
   if (t) (titulos.get(t) || titulos.set(t, []).get(t)).push(ruta);
   if (d) (descs.get(d) || descs.set(d, []).get(d)).push(ruta);
   for (const m of h.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)) {
-    try { JSON.parse(m[1]); } catch (e) { ldMal.push(ruta); }
+    let j = null;
+    try { j = JSON.parse(m[1]); } catch (e) { ldMal.push(ruta); }
+    if (j) [].concat(j).forEach((x) => compruebaEspeciales(ruta, x));
   }
   const misIds = ids(h);
   for (const m of h.matchAll(/\shref="([^"]+)"/g)) {
@@ -70,7 +85,8 @@ console.log(`Enlaces rotos: ${rotos.length}${rotos.length ? "\n" + muestra(rotos
 console.log(`Títulos repetidos: ${dupT.length}${dupT.length ? "\n" + muestra(dupT, ([t, l]) => `  «${t}»: ${l.join(", ")}`) : ""}`);
 console.log(`Descripciones repetidas: ${dupD.length}${dupD.length ? "\n" + muestra(dupD, ([t, l]) => `  «${t.slice(0, 70)}…»: ${l.join(", ")}`) : ""}`);
 console.log(`JSON-LD ilegible: ${ldMal.length}${ldMal.length ? " (" + ldMal.slice(0, 10).join(", ") + ")" : ""}`);
+console.log(`Horarios especiales (verano y exámenes): ${nHorEsp} tramos en ${nPagHorEsp} fichas · mal formados o solapados: ${horEspMal.length}${horEspMal.length ? "\n" + muestra(horEspMal, (r) => "  " + r) : ""}`);
 console.log(`Huérfanas (sin enlace desde otra página generada): ${huerfanas.length}${huerfanas.length ? "\n" + muestra(huerfanas, (r) => "  " + r) : ""}`);
 console.log(`Sitemap: ${enSitemap.size} URL · no existen: ${sitemapRoto.length} · faltan en el sitemap: ${faltanSitemap.length}` +
   (sitemapRoto.length + faltanSitemap.length ? "\n" + muestra(sitemapRoto.concat(faltanSitemap), (r) => "  " + r) : ""));
-if (rotos.length || dupT.length || dupD.length || ldMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
+if (rotos.length || dupT.length || dupD.length || ldMal.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);

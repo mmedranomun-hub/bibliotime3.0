@@ -198,6 +198,27 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
   → Sevilla) y las salas de la ciudad, a su página de exámenes («Exámenes: 24 h y horario ampliado en Alcalá de Henares 2 ·
   Horario ampliado en Madrid 2 · Todas las ciudades»), igual que la «Temporada de exámenes» de las universidades.
 
+## Hecho (2026-11-01) · Fichas con horario de verano y de exámenes, y sus horarios especiales en JSON-LD (552 páginas, sin cambio)
+- Para «horario de verano <biblioteca>» y «<biblioteca> horario exámenes»: la ficha solo enseñaba el horario de invierno,
+  aunque 75 tenían el de verano verificado (`h.ver` + `h.vd`/`h.vh`, la misma fuente y fecha que `h.f`/`h.fv`) y 4 tenían
+  una entrada vigente de `temporada-examenes.js`. El JSON-LD daba el horario de invierno como si valiera todo el año.
+- **Verano**: tabla «Horario de verano (del 30/06 al 31/08)» bajo la de invierno y pregunta «¿Qué horario tiene … en
+  verano?» en la FAQ. Un día que la fuente deja «sin confirmar» sigue saliendo así (ni en la tabla ni en el JSON-LD se da
+  por cerrado).
+- **Exámenes**: sección «Horario en época de exámenes» (`#examenes`) con periodo, horario y nota tal cual de la entrada,
+  fuente oficial y fecha de comprobación, y enlace a `/bibliotecas/examenes/<ciudad>/`; pregunta «¿Amplía su horario … en
+  época de exámenes?»; la meta description cambia la coletilla de contacto por «Exámenes: horario ampliado del 01/12 al
+  31/12/2026.»; `dateModified` y `lastmod` = la fecha más reciente entre la del horario y la de la entrada. Hoy: UNAV Central,
+  UPM Campus Sur, ETSI Agronómica (UPM) y Educación (UAH, Guadalajara). Las otras 7 bibliotecas del mapa con entrada vigente
+  (Valencia ×5, Medicina UAH, UPO) no tienen ficha propia (tarea en el backlog).
+- **JSON-LD**: la `Library` de la ficha lleva `specialOpeningHoursSpecification` (76 fichas, 551 tramos): el verano como
+  semana con `validFrom`/`validThrough` del periodo en curso o el siguiente (un día cerrado = `opens` y `closes` 00:00, como
+  pide Google), y los exámenes **solo si la entrada trae `semana`** (si no, el horario es texto y no se estructura), resueltos
+  día a día (cierre > día suelto de `dias` > `semana`) y agrupados en tramos de fechas que no se solapan. UNAV Central:
+  1-2 dic 8–21, 3 dic 8–20, …, 23-31 dic cerrada.
+- `comprobar_paginas_seo.js` también comprueba esos horarios (horas HH:MM, fechas AAAA-MM-DD en orden y tramos por fecha sin
+  solapes) y falla si hay alguno mal.
+
 ## Lo que tienes que hacer tú (sin esto no sirve de nada)
 1. **Conectar el dominio** en Vercel: proyecto `bibliotime` → Settings → Domains → añadir `bibliomapa.es` y
    `www.bibliomapa.es` (redirigir www → sin www) y poner en tu registrador los DNS que te indique Vercel.

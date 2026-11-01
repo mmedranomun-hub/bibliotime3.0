@@ -117,10 +117,10 @@ const DIAS_SCHEMA = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Sa
 const quitaCero = (t) => t.replace(/^0(\d)/, "$1");
 function franjas(lista) { return (lista || []).map((r) => quitaCero(r[0]) + "–" + quitaCero(r[1])).join(", "); }
 // «L–V 9:00–21:00 · S 9:00–14:00 · D cerrado»
-function horarioTexto(inv) {
+function horarioTexto(inv, vacio) { // vacio(d): texto de un día sin franjas (por defecto «cerrado»)
   const grupos = [];
   DIAS.forEach((d) => {
-    const f = franjas(inv[d]) || "cerrado";
+    const f = franjas(inv[d]) || (vacio ? vacio(d) : "cerrado");
     const ult = grupos[grupos.length - 1];
     if (ult && ult.f === f) ult.hasta = d; else grupos.push({ desde: d, hasta: d, f });
   });
@@ -642,6 +642,49 @@ function navExamenes(l) {
 const exDeProv = (p) => exCiudades.filter((g) => g.p === p);
 const exDeLoc = (p, c) => exCiudades.filter((g) => g.locs.has(p + "|" + c));
 
+// ---------- Ficha: horario de verano y de exámenes (con fuente) y sus horarios especiales en JSON-LD ----------
+// Entradas vigentes de exámenes de cada biblioteca del mapa (solo si `bib` casa con una): índice → [{ e, g }].
+const fechasFv = (l) => { const f = [...new Set(l.map((x) => x.e.fv))].sort(); return f.length === 1 ? `el ${fechaEs(f[0])}` : `entre el ${fechaEs(f[0])} y el ${fechaEs(f[f.length - 1])}`; };
+const conPunto = (s) => (/[.!?]$/.test(s) ? s : s + ".");
+const exDeBib = new Map();
+exCiudades.forEach((g) => g.entradas.forEach((x) => { if (x.b) (exDeBib.get(x.b.i) || exDeBib.set(x.b.i, []).get(x.b.i)).push({ e: x.e, g }); }));
+// Verano verificado (con fuente y fecha del horario, y periodo h.vd/h.vh); puede estar cerrada todo el verano.
+const tieneVerano = (b) => verificado(b) && !!b.h.ver && MMDD.test(b.h.vd || "") && MMDD.test(b.h.vh || "");
+// Periodo de verano en curso o el siguiente, en AAAA-MM-DD (también si cruza el año: 12-20 → 01-10).
+function periodoVerano(b) {
+  const y = +HOY.slice(0, 4), md = HOY.slice(5), vd = b.h.vd, vh = b.h.vh;
+  if (vd <= vh) { const a = md > vh ? y + 1 : y; return { desde: `${a}-${vd}`, hasta: `${a}-${vh}` }; }
+  return md <= vh ? { desde: `${y - 1}-${vd}`, hasta: `${y}-${vh}` } : { desde: `${y}-${vd}`, hasta: `${y + 1}-${vh}` };
+}
+const ohs = (o) => ({ "@type": "OpeningHoursSpecification", ...o });
+// Una semana ({"L":[[…]],…}) válida entre dos fechas. Día sin franjas = cerrado (opens = closes = 00:00, como pide Google),
+// salvo los días que la fuente deja «sin confirmar» (`saltar`), que no se publican.
+const semanaLD = (sem, desde, hasta, saltar) => DIAS.flatMap((d, k) => (saltar && saltar(d) && !(sem[d] || []).length ? []
+  : ((sem[d] || []).length ? sem[d] : [["00:00", "00:00"]]).map((r) => ohs({ dayOfWeek: DIAS_SCHEMA[k], opens: r[0], closes: r[1] === "24:00" ? "23:59" : r[1], validFrom: desde, validThrough: hasta }))));
+// Periodo de exámenes con la semana entera (`semana`), días sueltos (`dias`) y cierres (`cerrado`): se resuelve día a día
+// (cierre > día suelto > semana) y se agrupan los días seguidos con el mismo horario en un tramo validFrom–validThrough,
+// para que no haya tramos que se pisen (Google no dice cuál gana si se solapan).
+function examenLD(e) {
+  const tramos = [], dia = new Date(e.desde + "T12:00:00Z"), fin = new Date(e.hasta + "T12:00:00Z");
+  const cerrado = (f) => (e.cerrado || []).some(([a, z]) => f >= a && f <= z);
+  for (; dia <= fin; dia.setUTCDate(dia.getUTCDate() + 1)) {
+    const f = dia.toISOString().slice(0, 10);
+    const h = cerrado(f) ? [] : (e.dias && e.dias[f]) || e.semana[DIAS[(dia.getUTCDay() + 6) % 7]] || [];
+    const k = JSON.stringify(h), u = tramos[tramos.length - 1];
+    if (u && u.k === k) u.hasta = f; else tramos.push({ k, h, desde: f, hasta: f });
+  }
+  return tramos.flatMap((t) => (t.h.length ? t.h : [["00:00", "00:00"]]).map((r) =>
+    ohs({ opens: r[0], closes: r[1] === "24:00" ? "23:59" : r[1], validFrom: t.desde, validThrough: t.hasta })));
+}
+// specialOpeningHoursSpecification de la ficha: el verano verificado y los periodos de exámenes que dan la semana entera.
+// Las entradas de exámenes solo con texto (sin `semana`) no van al JSON-LD.
+function horariosEspecialesLD(b) {
+  const l = [];
+  if (tieneVerano(b)) { const v = periodoVerano(b); l.push(...semanaLD(b.h.ver, v.desde, v.hasta, (d) => sinConfirmar(b, d))); }
+  (exDeBib.get(b.i) || []).forEach(({ e }) => { if (e.semana) l.push(...examenLD(e)); });
+  return l;
+}
+
 const DIAS_LARGOS = ["lunes","martes", "miércoles", "jueves", "viernes", "sábado", "domingo"];
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 const distKm = (a, b) => { const R = 6371, r = Math.PI / 180, dLa = (b.lat - a.lat) * r, dLo = (b.lon - a.lon) * r;
@@ -664,21 +707,35 @@ function textoCierre(b) {
   return g.map((x) => `${rangoDias(x.desde, x.hasta)} ${x.c === "?" ? "no está confirmado" : x.c ? `cierra a las ${x.c}` : "está cerrada"}`).join("; ");
 }
 function faqBiblioteca(b) {
+  const q = [];
+  if (verificado(b)) {
   const segun = `Según su horario verificado en la web oficial el ${fechaEs(b.h.fv)}`;
   const nota = b.h.nota ? ` Aviso de la fuente: ${b.h.nota}` : "";
   const dom = b.h.inv.D || [];
-  const q = [
+  q.push(
     [`¿Abre los domingos ${laBib(b.n)}?`, dom.length ? `Sí. ${segun}, los domingos abre de ${franjas(dom)}.${nota} Comprueba festivos y verano en su web.`
       : sinConfirmar(b, "D") ? `No está confirmado: la fuente oficial no da horario de domingo.${nota}` : `No. ${segun}, los domingos está cerrada.${nota}`],
-    [`¿A qué hora cierra ${laBib(b.n)}?`, `${segun}: ${textoCierre(b)}.${nota} En verano, festivos y época de exámenes puede cambiar.`],
-  ];
+    [`¿A qué hora cierra ${laBib(b.n)}?`, `${segun}: ${textoCierre(b)}.${nota} ${tieneVerano(b) ? "En festivos" : "En verano, festivos"} y época de exámenes puede cambiar.`]);
+  if (tieneVerano(b)) {
+    const abre = DIAS.filter((d) => (b.h.ver[d] || []).length);
+    q.push([`¿Qué horario tiene ${laBib(b.n)} en verano?`, `${segun}, del ${fechaDM(b.h.vd)} al ${fechaDM(b.h.vh)} ${abre.length
+      ? `abre así: ${horarioTexto(b.h.ver, (d) => (sinConfirmar(b, d) ? "sin confirmar" : "cerrado")).replace(/ · /g, "; ")}` : "está cerrada"}.${nota}`]);
+  }
+  }
+  const ex = exDeBib.get(b.i) || [];
+  if (ex.length) q.push([`¿Amplía su horario ${laBib(b.n)} en época de exámenes?`, ex.map(({ e }) =>
+    `Del ${fechaEs(e.desde)} al ${fechaEs(e.hasta)}: ${e.horario}.${e.nota ? " " + conPunto(e.nota) : ""}`).join(" ") +
+    ` Fuente oficial: ${enumera([...new Set(ex.map(({ e }) => hostDe(e.f).replace(/^www\./, "")))])}, comprobada ${fechasFv(ex)}.`]);
+  if (!q.length) return null;
   const ld = { "@context": "https://schema.org", "@type": "FAQPage", mainEntity: q.map(([p, r]) => ({ "@type": "Question", name: p, acceptedAnswer: { "@type": "Answer", text: r } })) };
   return { html: `<section class="faq"><h2>Preguntas frecuentes</h2>${q.map(([p, r]) => `<details><summary>${esc(p)}</summary><p>${esc(r)}</p></details>`).join("")}</section>`, ld };
 }
 function tablaHorario(b) {
   const filas = DIAS.map((d, k) => `<tr><th scope="row">${cap(DIAS_LARGOS[k])}</th><td>${franjas(b.h.inv[d]) || (sinConfirmar(b, d) ? "Sin confirmar" : "Cerrada")}</td></tr>`).join("");
-  return `<table class="horario"><caption>Horario de invierno</caption><tbody>${filas}</tbody></table>
-<p class="fuente">Verificado el ${esc(fechaEs(b.h.fv))} en la <a href="${esc(b.h.f)}" rel="nofollow noopener" target="_blank">fuente oficial</a>. En verano, festivos y época de exámenes puede cambiar: confírmalo antes de ir.</p>${b.h.nota ? `<p class="nota">⚠️ ${esc(b.h.nota)}</p>` : ""}`;
+  const ver = tieneVerano(b) ? `<table class="horario" style="margin-top:16px"><caption>Horario de verano (del ${fechaDM(b.h.vd)} al ${fechaDM(b.h.vh)})</caption><tbody>${DIAS.map((d, k) =>
+    `<tr><th scope="row">${cap(DIAS_LARGOS[k])}</th><td>${franjas(b.h.ver[d]) || (sinConfirmar(b, d) ? "Sin confirmar" : "Cerrada")}</td></tr>`).join("")}</tbody></table>` : "";
+  return `<table class="horario"><caption>Horario de invierno</caption><tbody>${filas}</tbody></table>${ver}
+<p class="fuente">Verificado el ${esc(fechaEs(b.h.fv))} en la <a href="${esc(b.h.f)}" rel="nofollow noopener" target="_blank">fuente oficial</a>. ${ver ? "En festivos" : "En verano, festivos"} y época de exámenes puede cambiar: confírmalo antes de ir.</p>${b.h.nota ? `<p class="nota">⚠️ ${esc(b.h.nota)}</p>` : ""}`;
 }
 // Dos bibliotecas con el mismo nombre en la misma localidad (p. ej. dos sedes): la segunda cambia el orden del título.
 function tituloBiblioteca(b) {
@@ -693,7 +750,15 @@ function paginaBiblioteca(b) {
   const locConPagina = mismaLoc.length >= 3 && slug(b.c) && slug(b.c) !== ps;
   const cercanas = mismaLoc.filter((o) => o.i !== b.i).map((o) => ({ o, d: distKm(b, o) })).sort((x, y) => x.d - y.d).slice(0, 6);
   const tipo = TIPO[b.t] || "Biblioteca";
-  const fq = ok ? faqBiblioteca(b) : null;
+  const fq = faqBiblioteca(b); // null si no hay horario verificado ni entrada de exámenes
+  const ex = exDeBib.get(b.i) || [];
+  const mod = [ok ? b.h.fv : ""].concat(ex.map(({ e }) => e.fv)).filter(Boolean).sort().pop();
+  const especiales = horariosEspecialesLD(b);
+  // Temporada de exámenes (temporada-examenes.js): periodo, horario y nota tal cual de la fuente oficial, con fecha.
+  const secEx = ex.length ? `<section class="ficha" id="examenes" aria-labelledby="t-ex"><h2 id="t-ex">Horario en época de exámenes</h2>${ex.map(({ e }) =>
+    `<p class="hor"><strong>Del ${esc(fechaEs(e.desde))} al ${esc(fechaEs(e.hasta))}</strong>: ${esc(e.horario)}.</p>${e.nota ? `<p class="nota">⚠️ ${esc(e.nota)}</p>` : ""}` +
+    `<p class="fuente">Comprobado el ${esc(fechaEs(e.fv))} en la <a href="${esc(e.f)}" rel="nofollow noopener" target="_blank">fuente oficial</a>.</p>`).join("")}` +
+    `<p><a href="${ex[0].g.ruta}">Bibliotecas con horario ampliado en exámenes en ${esc(ex[0].g.ciudad)} →</a></p></section>` : "";
   const datos = [
     b.dir ? `<dt>Dirección</dt><dd>${esc(b.dir)}</dd>` : "",
     `<dt>Localidad</dt><dd>${locConPagina ? `<a href="/bibliotecas/${ps}/${slug(b.c)}/">${esc(b.c)}</a>` : esc(b.c)} (<a href="/bibliotecas/${ps}/">${esc(b.p)}</a>)</dd>`,
@@ -711,7 +776,9 @@ function paginaBiblioteca(b) {
   const titulo = tituloBiblioteca(b);
   // Dos sedes con el mismo nombre en la misma ciudad (p. ej. «Biblioteca Universidad de Murcia») daban la misma
   // descripción: la segunda lleva la dirección.
-  let descripcion = `${b.n}, ${tipo.toLowerCase()} en ${b.c} (${b.p}). ${resumen} Dirección, teléfono, web y bibliotecas cercanas.`;
+  // Con temporada de exámenes vigente, la descripción la anuncia (con su periodo) en vez de la coletilla de contacto.
+  const colaEx = ex.length ? `Exámenes: horario ampliado del ${fechaEs(ex[0].e.desde).slice(0, 5)} al ${fechaEs(ex[0].e.hasta)}.` : "";
+  let descripcion = `${b.n}, ${tipo.toLowerCase()} en ${b.c} (${b.p}). ${resumen} ${colaEx || "Dirección, teléfono, web y bibliotecas cercanas."}`;
   if (descUsadas.has(descripcion)) descripcion = `${b.n}, ${tipo.toLowerCase()} en ${b.dir || b.c} (${b.p}). ${resumen} Teléfono, web y bibliotecas cercanas.`;
   descUsadas.add(descripcion);
   const idBib = DOMINIO + ruta + "#biblioteca";
@@ -721,18 +788,22 @@ function paginaBiblioteca(b) {
     intro: `<span class="tipo">${esc(tipo)}</span> en ${esc(b.c)} (${esc(b.p)}). ${ok ? `Horario comprobado en su web oficial el ${esc(fechaEs(b.h.fv))}.` : "Aún no tenemos su horario verificado."}`,
     cta: `<a class="cta" href="${enlaceApp(b)}">📍 Ver en el mapa</a>`,
     cuerpo: `<section class="ficha" aria-labelledby="t-datos"><h2 id="t-datos">Datos de contacto</h2><dl>${datos}</dl></section>
-<section class="ficha" aria-labelledby="t-hor"><h2 id="t-hor">Horario</h2>${horario}</section>
+<section class="ficha" aria-labelledby="t-hor"><h2 id="t-hor">Horario</h2>${horario}</section>${secEx ? "\n" + secEx : ""}
 ${fq ? fq.html : ""}
 ${cercanas.length ? `<section class="cerca" aria-labelledby="t-cerca"><h2 id="t-cerca">Otras bibliotecas en ${esc(b.c)}</h2><ul>${lisCerca}</ul></section>` : ""}
 ${seccionTemasFicha(b, locConPagina)}
 <p class="volver"><a href="${locConPagina ? `/bibliotecas/${ps}/${slug(b.c)}/` : `/bibliotecas/${ps}/`}">← Todas las bibliotecas de ${esc(locConPagina ? b.c : b.p)}</a>${locConPagina ? ` · <a href="/bibliotecas/${ps}/">${esc(b.p)}</a>` : ""}</p>`,
     migas,
     // Library no admite dateModified: va en el WebPage que la describe (fecha = verificación del horario).
-    ld: [{ "@context": "https://schema.org", "@id": idBib, ...libraryLD(b, DOMINIO + ruta) },
+    // Horarios especiales (verano verificado y exámenes con `semana`) en specialOpeningHoursSpecification con sus fechas.
+    ld: [{ "@context": "https://schema.org", "@id": idBib, ...libraryLD(b, DOMINIO + ruta), ...(especiales.length ? { specialOpeningHoursSpecification: especiales } : {}) },
       { "@context": "https://schema.org", "@type": "WebPage", name: titulo.replace(MARCA, ""), description: descripcion, url: DOMINIO + ruta,
-        inLanguage: "es-ES", about: { "@id": idBib }, ...(ok ? { dateModified: b.h.fv } : {}) }, ...(fq ? [fq.ld] : [])],
+        inLanguage: "es-ES", about: { "@id": idBib }, ...(mod ? { dateModified: mod } : {}) }, ...(fq ? [fq.ld] : [])],
   }));
-  urls.push([ruta, "0.7", ok ? b.h.fv : undefined]);
+  if (especiales.length) nFichasEspeciales++;
+  if (tieneVerano(b)) nFichasVerano++;
+  if (ex.length) nFichasEx++;
+  urls.push([ruta, "0.7", mod]);
 }
 
 // ---------- Títulos y descripciones de provincia y localidad ----------
@@ -742,6 +813,7 @@ ${seccionTemasFicha(b, locConPagina)}
 // Límites: título ≤ 65 caracteres (con « | Bibliomapa» solo si cabe) y descripción ≤ 160.
 const MAX_TIT = 65, MAX_DESC = 160, MARCA = " | Bibliomapa";
 const titulosUsados = new Set();
+let nFichasEspeciales = 0, nFichasVerano = 0, nFichasEx = 0; // fichas con horarios especiales en JSON-LD, con verano y con exámenes
 const descUsadas = new Set(); // fichas de biblioteca y universidades: ninguna meta description repetida
 const hashTexto = (s) => { let h = 0; for (const ch of s) h = (h * 31 + ch.codePointAt(0)) >>> 0; return h; };
 const rota = (lista, semilla) => lista.map((_, k) => lista[(k + semilla) % lista.length]);
@@ -1207,11 +1279,9 @@ if (universidades.length) {
 // se comprobó. Si la biblioteca está en el mapa, su ficha, «Ver en el mapa» y su horario habitual solo si está verificado.
 // FAQ solo con esos datos. dateModified y lastmod = la comprobación (fv) más reciente.
 const periodoEx = (e) => `del ${fechaEs(e.desde)} al ${fechaEs(e.hasta)}`;
-const fechasFv = (l) => { const f = [...new Set(l.map((x) => x.e.fv))].sort(); return f.length === 1 ? `el ${fechaEs(f[0])}` : `entre el ${fechaEs(f[0])} y el ${fechaEs(f[f.length - 1])}`; };
 const fuentesEx = (l) => enumera([...new Set(l.map((x) => hostDe(x.e.f).replace(/^www\./, "")))]);
 const faqDe = (q) => ({ html: `<section class="faq"><h2>Preguntas frecuentes</h2>${q.map(([p, r]) => `<details><summary>${esc(p)}</summary><p>${esc(r)}</p></details>`).join("")}</section>`,
   ld: { "@context": "https://schema.org", "@type": "FAQPage", mainEntity: q.map(([p, r]) => ({ "@type": "Question", name: p, acceptedAnswer: { "@type": "Answer", text: r } })) } });
-const conPunto = (s) => (/[.!?]$/.test(s) ? s : s + ".");
 function tarjetaEx(x) {
   const { e, b, uni, h24 } = x, ficha = b ? paginaDe.get(b.i) : null;
   const habitual = b && verificado(b) ? `<div class="hor">Fuera de exámenes (horario de invierno): ${esc(horarioTexto(b.h.inv))} <small>(verificado el ${esc(fechaEs(b.h.fv))}, <a href="${esc(b.h.f)}" rel="nofollow noopener" target="_blank">fuente</a>)</small></div>` : "";
@@ -1412,4 +1482,5 @@ console.log(`Vecinas: ${locsConPagina.filter((x) => !localidadesCercanas(x.p, x.
 console.log(`Páginas: ${urls.length - 1} (+ portada) · provincias: ${provincias.length} · bibliotecas: ${todas.length} · con página propia: ${paginaDe.size} (${conPaginaPropia.filter(verificado).length} con horario verificado)`);
 console.log(`Universidades: ${universidades.length} con página (${universidades.map((u) => `${u.sigla} ${u.lista.length}/${u.ver.length}`).join(", ")}) · sin página: ${UNIVERSIDADES.filter((u) => !u.ruta).map((u) => `${u.sigla} ${u.lista.length}/${u.lista.filter(verificado).length}`).join(", ")} · dudosas (casan con 2): ${uniDudosas.length}`);
 console.log(`Exámenes: ${exCiudades.length} ciudades con página (${exCiudades.map((g) => `${g.ciudad} ${g.entradas.length}`).join(", ")}) de ${EXAMENES.length} entradas vigentes`);
+console.log(`Fichas con horario especial en JSON-LD (specialOpeningHoursSpecification): ${nFichasEspeciales} · con horario de verano verificado: ${nFichasVerano} · con horario de exámenes: ${nFichasEx} de ${[...exDeBib.keys()].length} bibliotecas del mapa con entrada vigente`);
 console.log(`Navarra: ${nNavarraConHorario} de ${navarra.length} con horario publicable (fuenteHorario + verificadoHorario en app.js)`);
