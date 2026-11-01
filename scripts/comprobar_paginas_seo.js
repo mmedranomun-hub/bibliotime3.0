@@ -9,13 +9,17 @@
      - elementos de los ItemList del JSON-LD (temáticas, localidades…) que apuntan a /#bib=… aunque la biblioteca tiene
        ficha, o cuyo @id no es el de su ficha (<ficha>#biblioteca): lista y ficha deben ser la misma entidad,
      - páginas de provincia o de localidad que enlazan a fichas pero cuyo CollectionPage no lleva mainEntity ItemList,
+     - el índice /bibliotecas/ sin CollectionPage (con dateModified y mainEntity ItemList de las provincias, cada una una
+       página que existe y que el índice enlaza),
+     - hasPart de los CollectionPage que apunta a una página que no existe o que la página no enlaza en su HTML,
      - la 404 (/404.html, que Vercel sirve en cualquier URL inexistente): que exista, lleve noindex y no canonical, no
        esté en el sitemap, sus enlaces sean absolutos y no estén rotos, y enlace a las provincias, al hub y a «abiertas hoy»,
      - JSON-LD que no se puede leer, y horarios especiales (specialOpeningHoursSpecification: verano y exámenes de las
        fichas) mal formados o con tramos por fecha que se solapan.
    Uso (desde la raíz del proyecto):  node scripts/comprobar_paginas_seo.js
    Sale con código 1 si hay enlaces rotos, títulos o descripciones repetidos, JSON-LD roto, horarios especiales mal o
-   lastmod mal, una provincia o localidad con fichas sin ItemList, o la 404 mal. */
+   lastmod mal, una provincia o localidad con fichas sin ItemList, el índice sin su CollectionPage, un hasPart roto o la
+   404 mal. */
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -57,6 +61,8 @@ const fichaDe = new Map(), itemsLista = [];
 // Páginas de lugar (provincia: /bibliotecas/<prov>/ con secciones por localidad; localidad: la que «vuelve» a su
 // provincia sin ser temática) → ¿lleva su CollectionPage mainEntity ItemList? y los href que contiene.
 const lugares = new Map();
+const indiceMal = [], hasPartMal = [];
+let nIndiceProvs = 0, nHasPart = 0, nPagHasPart = 0, indiceCP = false;
 let nEnlaces = 0;
 function existe(ruta) {
   const limpia = decodeURIComponent(ruta);
@@ -83,6 +89,27 @@ for (const [ruta, h] of html) {
       const lista = x && (x["@type"] === "ItemList" ? x : x.mainEntity && x.mainEntity["@type"] === "ItemList" ? x.mainEntity : null);
       if (x && x["@type"] === "CollectionPage" && lugares.has(ruta) && x.mainEntity && x.mainEntity["@type"] === "ItemList" && (x.mainEntity.itemListElement || []).length) lugares.get(ruta).lista = true;
       if (lista) (lista.itemListElement || []).forEach((el) => el && el.item && el.item["@type"] === "Library" && itemsLista.push([ruta, el.item]));
+      if (x && x["@type"] === "CollectionPage" && Array.isArray(x.hasPart)) {
+        nPagHasPart++;
+        const enlaza = new Set([...h.matchAll(/\shref="([^"]+)"/g)].map((m2) => decodifica(m2[1]).split("#")[0]));
+        x.hasPart.forEach((hp) => {
+          nHasPart++;
+          const u = ((hp && hp.url) || "").replace(DOMINIO, "");
+          if (!u.startsWith("/") || !existe(u)) hasPartMal.push(`${ruta} hasPart roto ${hp && hp.url}`);
+          else if (!enlaza.has(u)) hasPartMal.push(`${ruta} hasPart ${u} no enlazado en el HTML`);
+        });
+      }
+      if (ruta === "/bibliotecas/" && x && x["@type"] === "CollectionPage") {
+        indiceCP = true;
+        const el = (x.mainEntity && x.mainEntity["@type"] === "ItemList" && x.mainEntity.itemListElement) || [];
+        if (!x.dateModified) indiceMal.push("CollectionPage sin dateModified");
+        if (el.length < 50) indiceMal.push(`mainEntity ItemList con ${el.length} provincias`);
+        const enlaza = new Set([...h.matchAll(/\shref="([^"]+)"/g)].map((m2) => decodifica(m2[1])));
+        el.forEach((it) => {
+          const u = ((it && it.item && it.item.url) || "").replace(DOMINIO, "");
+          if (!/^\/bibliotecas\/[^/]+\/$/.test(u) || !existe(u) || !enlaza.has(u)) indiceMal.push(`provincia mal: ${it && it.item && it.item.url}`); else nIndiceProvs++;
+        });
+      }
       if (x && typeof x.dateModified === "string" && !(modPagina.get(ruta) >= x.dateModified)) modPagina.set(ruta, x.dateModified);
     });
   }
@@ -116,6 +143,7 @@ for (const [ruta, x] of lugares) {
   nLugarLista[x.tipo][1]++;
   if (x.lista) nLugarLista[x.tipo][0]++; else sinLista.push(`${ruta} (${x.tipo})`);
 }
+if (!indiceCP) indiceMal.push("/bibliotecas/ sin CollectionPage en su JSON-LD");
 const huerfanas = [...html.keys()].filter((r) => r !== "/bibliotecas/" && !entrantes.has(r));
 const dupT = [...titulos].filter(([, l]) => l.length > 1), dupD = [...descs].filter(([, l]) => l.length > 1);
 const sitemap = fs.existsSync(path.join(RAIZ, "sitemap.xml")) ? fs.readFileSync(path.join(RAIZ, "sitemap.xml"), "utf8") : "";
@@ -169,10 +197,12 @@ console.log(`ItemList: ${itemsLista.length} bibliotecas · a su ficha: ${nItemsF
   (bibConFicha.length + idMal.length ? "\n" + muestra(bibConFicha.concat(idMal), (r) => "  " + r) : ""));
 console.log(`Lugares con fichas y mainEntity ItemList: provincias ${nLugarLista.provincia.join(" de ")} · localidades ${nLugarLista.localidad.join(" de ")} · sin ItemList: ${sinLista.length}` +
   (sinLista.length ? "\n" + muestra(sinLista, (r) => "  " + r) : ""));
+console.log(`Índice /bibliotecas/: CollectionPage ${indiceCP ? "sí" : "NO"} · provincias en su ItemList: ${nIndiceProvs} · mal: ${indiceMal.length}${indiceMal.length ? "\n" + muestra(indiceMal, (r) => "  " + r) : ""}`);
+console.log(`hasPart: ${nHasPart} en ${nPagHasPart} páginas · rotos o sin enlace en el HTML: ${hasPartMal.length}${hasPartMal.length ? "\n" + muestra(hasPartMal, (r) => "  " + r) : ""}`);
 console.log(`Huérfanas (sin enlace desde otra página generada): ${huerfanas.length}${huerfanas.length ? "\n" + muestra(huerfanas, (r) => "  " + r) : ""}`);
 console.log(`Sitemap: ${enSitemap.size} URL · no existen: ${sitemapRoto.length} · faltan en el sitemap: ${faltanSitemap.length}` +
   (sitemapRoto.length + faltanSitemap.length ? "\n" + muestra(sitemapRoto.concat(faltanSitemap), (r) => "  " + r) : ""));
 console.log(`Lastmod: ${[...lastmodN].sort().map(([d, n]) => `${d} ×${n}`).join(", ")} · mal (falta, formato, futuro o < dateModified): ${lastmodMal.length}` +
   (lastmodMal.length ? "\n" + muestra(lastmodMal, (r) => "  " + r) : ""));
 console.log(`404: ${n404} enlaces internos · provincias enlazadas: ${n404Prov} · mal: ${mal404.length}${mal404.length ? "\n" + muestra(mal404, (r) => "  " + r) : ""}`);
-if (mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
+if (indiceMal.length || hasPartMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);

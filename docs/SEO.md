@@ -369,6 +369,20 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
   las provincias, al hub y a «abiertas hoy». No cuenta como enlace entrante (no tapa huérfanas). Hoy: 64 enlaces, 51 provincias, 0 mal.
 - Pendiente: tras el despliegue, `curl -I https://bibliomapa.es/no-existe` → `HTTP/2 404` con este HTML.
 
+## Hecho (2026-11-01) · `CollectionPage` del índice y `hasPart` de provincias y localidades (856 páginas, sin cambio)
+- `/bibliotecas/` solo llevaba `BreadcrumbList`. Ahora lleva también un `CollectionPage` (`ldLugar`: mismo nombre y
+  descripción que el título sin « | Bibliomapa» y la meta description; `dateModified` = la verificación más reciente de
+  toda España) con `mainEntity` `ItemList` «Bibliotecas de España por provincia»: las 51 provincias como `WebPage`
+  («Bibliotecas en <provincia>», `url` `/bibliotecas/<prov>/`), en el mismo orden que su lista de provincias. La entrada
+  del sitemap del índice usa ese `dateModified` como suelo de su `lastmod`.
+- `partesLugar()`: el `CollectionPage` de cada provincia y localidad lleva `hasPart` con las páginas que su HTML ya
+  enlaza: localidades con página (solo provincias), temáticas «Por horario», salas de estudio, exámenes y universidades
+  (mismos datos que `navPorHorario`/`navSalas`/`navExamenes`/`navUniversidades`). No se enlaza nada nuevo. 77 páginas
+  y 349 partes (las que no enlazan a ninguna no lo llevan).
+- `comprobar_paginas_seo.js` falla si el índice no lleva `CollectionPage` con `dateModified` y un `ItemList` de 50 o más
+  provincias que existan y estén enlazadas en su HTML, o si un `hasPart` de cualquier página (también hub, salas,
+  universidades y exámenes) no existe o la página no lo enlaza. Hoy: 51 provincias; 547 `hasPart` en 81 páginas, 0 mal.
+
 ## Lo que tienes que hacer tú (sin esto no sirve de nada)
 1. **Conectar el dominio** en Vercel: proyecto `bibliotime` → Settings → Domains → añadir `bibliomapa.es` y
    `www.bibliomapa.es` (redirigir www → sin www) y poner en tu registrador los DNS que te indique Vercel.
