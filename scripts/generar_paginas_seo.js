@@ -196,7 +196,8 @@ function itemBib(b) {
 // ---------- Plantilla ----------
 // noindex (la 404): sin canonical ni og:url (se sirve en cualquier URL inexistente), con <meta name="robots" content="noindex">
 // y sin BreadcrumbList; todos los enlaces son absolutos (/…) para que funcionen desde cualquier ruta.
-function pagina({ ruta, titulo, descripcion, h1, intro, cuerpo, migas, ld, cta, head, noindex }) {
+// trasH1: HTML opcional entre el <h1> y la intro (la 404 pone ahí su «¿Buscabas…?»).
+function pagina({ ruta, titulo, descripcion, h1, intro, cuerpo, migas, ld, cta, head, noindex, trasH1 }) {
   const url = DOMINIO + ruta;
   const migasLD = { "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: migas.map((x, k) => ({ "@type": "ListItem", position: k + 1, name: x[0], item: DOMINIO + x[1] })) };
   return `<!DOCTYPE html>
@@ -225,7 +226,7 @@ ${head || ""}</head>
 <main>
 <nav class="migas" aria-label="Estás en">${migas.map((x, k) => (k < migas.length - 1 ? `<a href="${x[1]}">${esc(x[0])}</a> › ` : `<span>${esc(x[0])}</span>`)).join("")}</nav>
 <h1>${h1}</h1>
-<p class="intro">${intro}</p>
+${trasH1 || ""}<p class="intro">${intro}</p>
 ${cta || `<a class="cta" href="/">📍 ¿Cuál está abierta ahora cerca de ti? Abrir el mapa</a>`}
 ${cuerpo}
 <section class="app-pitch">
@@ -1897,6 +1898,27 @@ escribe("/bibliotecas/", pagina({
 }
 
 // ---------- 404 (/404.html) ----------
+// «¿Buscabas…?»: si la URL es /bibliotecas/<algo>/…, el script compara <algo> (sin tildes, en minúsculas) con los slugs de
+// las provincias que la propia página enlaza en #prov-404 (no lleva lista aparte: si cambia el nav, cambia la sugerencia).
+// Vale el slug igual, una distancia de edición ≤ 2 (≤ 1 en los de 4 letras o menos; también sin guiones) o un prefijo
+// de 3 letras o más que solo encaja en una provincia; con dos igual de cerca, o ninguna, no muestra nada. El enlace se crea
+// con el DOM (sin href="…" en el código: el HTML no gana enlaces) y el texto va con textContent. Sin librerías ni datos.
+// comprobar_paginas_seo.js lo ejecuta con /bibliotecas/navara/ → «Navarra» y falla si falta el script o #buscabas.
+const ESTILO_BUSCABAS = `<style>.buscabas{font-size:var(--fs-l);font-weight:700;color:var(--texto);background:var(--acento-tenue);
+border:1px solid var(--linea);border-radius:var(--r-m);padding:10px 14px;margin:6px 0 12px}.buscabas a{color:var(--acento-tx)}</style>`;
+const SCRIPT_BUSCABAS = `<script id="buscabas-js">(function(){
+var m=/^\\/bibliotecas\\/([^\\/]+)/.exec(location.pathname),caja=document.getElementById("buscabas");if(!m||!caja)return;
+function norm(s){try{s=decodeURIComponent(s)}catch(e){}return s.normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}
+function dist(a,b){var f=[],i,j,p,t;for(j=0;j<=b.length;j++)f[j]=j;for(i=1;i<=a.length;i++){p=f[0];f[0]=i;for(j=1;j<=b.length;j++){t=f[j];f[j]=Math.min(f[j]+1,f[j-1]+1,p+(a[i-1]===b[j-1]?0:1));p=t}}return f[b.length]}
+var x=norm(m[1]),xs=x.replace(/-/g,""),mejor=null,dm=9,emp=0,pre=null;if(x.length<2)return;
+[].forEach.call(document.querySelectorAll("#prov-404 a"),function(a){var s=(a.getAttribute("href")||"").split("/")[2];if(!s)return;
+var d=Math.min(dist(x,s),dist(xs,s.replace(/-/g,""))),lim=s.length<=4?1:2;
+if(d<=lim){if(d<dm){dm=d;mejor=a;emp=0}else if(d===dm)emp=1}
+if(x.length>=3&&(s.indexOf(x)===0||x.indexOf(s+"-")===0))pre=pre?-1:a;});
+if(!mejor&&pre&&pre!==-1)mejor=pre;else if(!mejor||emp)return;
+var l=document.createElement("a");l.href=mejor.getAttribute("href");l.textContent=(mejor.firstChild&&mejor.firstChild.textContent||"").trim();
+caja.textContent="¿Buscabas ";caja.appendChild(l);caja.appendChild(document.createTextNode("?"));caja.hidden=false;
+})();</script>`;
 // Vercel sirve /404.html (con estado 404) en cualquier URL que no existe de un sitio estático. noindex y fuera del
 // sitemap; enlaza a las provincias, al hub de horarios y a «abiertas hoy» (si existe) para no perder la visita.
 // node scripts/comprobar_paginas_seo.js revisa sus enlaces, el noindex y que no esté en el sitemap.
@@ -1910,7 +1932,10 @@ escribe("/bibliotecas/", pagina({
     intro: `Puede que el enlace esté mal escrito o que la página se haya movido. Desde aquí puedes buscar entre las ${todas.length} bibliotecas de ${provincias.length} provincias o abrir el mapa.`,
     cuerpo: `<nav class="temas" aria-label="Por horario"><span>Por horario:</span>${hoyT ? `<a href="/bibliotecas/abiertas-hoy/">Abiertas hoy <small>${hoyT.l.length}</small></a>` : ""}${temasEspana.length ? `<a href="${HUB}">Todos los horarios por provincia</a>` : ""}<a href="/bibliotecas/">Todas las provincias</a></nav>
 <h2 id="t-prov">Bibliotecas por provincia</h2>
-<nav class="locs grande" aria-labelledby="t-prov">${provincias.map((p) => `<a href="/bibliotecas/${slug(p)}/">${esc(p)} <small>${porProv[p].length}</small></a>`).join("")}</nav>`,
+<nav class="locs grande" id="prov-404" aria-labelledby="t-prov">${provincias.map((p) => `<a href="/bibliotecas/${slug(p)}/">${esc(p)} <small>${porProv[p].length}</small></a>`).join("")}</nav>
+${SCRIPT_BUSCABAS}`,
+    head: ESTILO_BUSCABAS,
+    trasH1: `<p id="buscabas" class="buscabas" hidden></p>\n`,
     migas: [["Bibliomapa", "/"], ["Página no encontrada", "/404.html"]],
   }));
 }

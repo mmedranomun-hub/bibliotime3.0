@@ -354,6 +354,21 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
 - `comprobar_paginas_seo.js` falla si una página de provincia (`/bibliotecas/<prov>/` con secciones por localidad) o de
   localidad que enlaza a alguna ficha no lleva `mainEntity` `ItemList` en su `CollectionPage`.
 
+## Hecho (2026-11-01) · «¿Buscabas…?» en la 404 (solo cambia `/404.html`)
+- La 404 lleva bajo el h1 `<p id="buscabas" class="buscabas" hidden>` y, tras el nav de provincias (`id="prov-404"`), un
+  `<script id="buscabas-js">` inline sin librerías (`SCRIPT_BUSCABAS` en el generador). Si la ruta es `/bibliotecas/<algo>/…`,
+  normaliza `<algo>` igual que `slug()` (decodifica `%…`, quita tildes, minúsculas, guiones) y lo compara con los slugs que
+  enlaza `#prov-404`: igual, distancia de edición ≤ 2 (≤ 1 si el slug tiene 4 letras o menos; se mira también sin guiones)
+  o prefijo único de 3 letras o más (`sevilla-capital` → Sevilla, `santa-cruz` → Santa Cruz de Tenerife). Si hay empate o
+  ninguna, el párrafo sigue oculto. La provincia sale de la propia página: no hay lista duplicada que mantener.
+- Accesible: texto normal «¿Buscabas <a>Navarra</a>?» con enlace real (creado con el DOM y `textContent`; el código no
+  contiene `href="`, así que el HTML no gana enlaces). Estilos en un `<style>` del `<head>` con tokens de `seo.css`.
+- No hay CSP (ni `vercel.json` ni `<meta http-equiv>`), igual que el script inline de «Abiertas hoy».
+- `comprobar_paginas_seo.js` falla si falta el contenedor, el script o `#prov-404`, si el script lleva `href="`, o si al
+  ejecutarlo en `vm` con un DOM mínimo no da: `navara` → Navarra, `Sevila/x` → Sevilla, `santa-cruz` → Santa Cruz de
+  Tenerife, y nada para `xqzw`, `/no-existe` y `/bibliotecas/`.
+- Sin alcance hoy: nombres en castellano lejanos del slug (`vizcaya`, `guipuzcoa`) y localidades/temáticas (ver BACKLOG).
+
 ## Hecho (2026-11-01) · 404 útil generada por el script (842 páginas, sin cambio; + `/404.html`)
 - `generar_paginas_seo.js` escribe `/404.html` en la raíz con la misma plantilla (`pagina({ …, noindex: true })`), `seo.css`
   y tokens que el resto: h1 «Esa página no existe», CTA al mapa, «Por horario» (Abiertas hoy, hub `/bibliotecas/horarios/`,

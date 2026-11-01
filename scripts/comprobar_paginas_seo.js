@@ -13,7 +13,8 @@
        página que existe y que el índice enlaza),
      - hasPart de los CollectionPage que apunta a una página que no existe o que la página no enlaza en su HTML,
      - la 404 (/404.html, que Vercel sirve en cualquier URL inexistente): que exista, lleve noindex y no canonical, no
-       esté en el sitemap, sus enlaces sean absolutos y no estén rotos, y enlace a las provincias, al hub y a «abiertas hoy»,
+       esté en el sitemap, sus enlaces sean absolutos y no estén rotos, y enlace a las provincias, al hub y a «abiertas hoy»;
+       y que su «¿Buscabas…?» (#buscabas + <script id="buscabas-js">) exista y sugiera bien (se ejecuta con un DOM mínimo),
      - JSON-LD que no se puede leer, y horarios especiales (specialOpeningHoursSpecification: verano y exámenes de las
        fichas) mal formados o con tramos por fecha que se solapan.
    Uso (desde la raíz del proyecto):  node scripts/comprobar_paginas_seo.js
@@ -161,7 +162,7 @@ for (const m of sitemap.matchAll(/<url>([\s\S]*?)<\/url>/g)) {
 
 // 404: no cuenta como enlace entrante (no quita huérfanas) ni entra en el resto de comprobaciones (no se indexa).
 const f404 = path.join(RAIZ, "404.html"), mal404 = [];
-let n404 = 0, n404Prov = 0;
+let n404 = 0, n404Prov = 0, n404Busca = 0;
 if (!fs.existsSync(f404)) mal404.push("falta 404.html");
 else {
   const h = fs.readFileSync(f404, "utf8");
@@ -183,6 +184,29 @@ else {
   const faltan = provs.filter((r) => !hrefs.includes(r)); n404Prov = provs.length - faltan.length;
   if (faltan.length) mal404.push(`no enlaza ${faltan.length} provincias (${faltan.slice(0, 5).join(", ")})`);
   for (const r of ["/bibliotecas/horarios/", "/bibliotecas/abiertas-hoy/"]) if (html.has(r) && !hrefs.includes(r)) mal404.push(`no enlaza ${r}`);
+  // «¿Buscabas…?»: contenedor oculto + script inline que lee las provincias de #prov-404. Se ejecuta con un DOM mínimo
+  // (vm, sin dependencias) para varias rutas: si se pierde el script, el contenedor o el nav, o sugiere mal, falla.
+  if (!/<p id="buscabas" class="buscabas" hidden><\/p>/.test(h)) mal404.push("falta el contenedor <p id=\"buscabas\" hidden>");
+  const js = (h.match(/<script id="buscabas-js">([\s\S]*?)<\/script>/) || [])[1];
+  const navProv = (h.match(/<nav [^>]*id="prov-404"[^>]*>([\s\S]*?)<\/nav>/) || [])[1];
+  if (!js) mal404.push("falta el script «¿Buscabas…?» (<script id=\"buscabas-js\">)");
+  else if (/href="/.test(js)) mal404.push("el script «¿Buscabas…?» escribe href= en el HTML");
+  if (!navProv) mal404.push("falta el nav de provincias #prov-404 que usa «¿Buscabas…?»");
+  if (js && navProv) {
+    const enlaces = [...navProv.matchAll(/<a href="([^"]+)">([^<]*)</g)].map((m) => ({ getAttribute: () => m[1], firstChild: { textContent: m[2] } }));
+    const sugiere = (ruta) => {
+      const caja = { textContent: "", hidden: true, hijos: [], appendChild(n) { this.hijos.push(n); } };
+      const document = { getElementById: (id) => (id === "buscabas" ? caja : null), querySelectorAll: () => enlaces,
+        createElement: () => ({ href: "", textContent: "" }), createTextNode: (t) => ({ textContent: t }) };
+      try { require("vm").runInNewContext(js, { location: { pathname: ruta }, document }, { timeout: 1000 }); }
+      catch (e) { return `ERROR ${e.message}`; }
+      return caja.hidden ? "" : caja.textContent + caja.hijos.map((n) => n.textContent + (n.href ? `[${n.href}]` : "")).join("");
+    };
+    const casos = [["/bibliotecas/navara/", "¿Buscabas Navarra[/bibliotecas/navarra/]?"], ["/bibliotecas/Sevila/x/", "¿Buscabas Sevilla[/bibliotecas/sevilla/]?"],
+      ["/bibliotecas/santa-cruz/", "¿Buscabas Santa Cruz de Tenerife[/bibliotecas/santa-cruz-de-tenerife/]?"],
+      ["/bibliotecas/xqzw/", ""], ["/no-existe", ""], ["/bibliotecas/", ""]];
+    for (const [ruta, esperado] of casos) { const r = sugiere(ruta); if (r !== esperado) mal404.push(`«¿Buscabas…?» en ${ruta}: «${r}» (esperado «${esperado}»)`); else n404Busca++; }
+  }
 }
 
 const muestra = (l, f) => l.slice(0, 15).map(f).join("\n") + (l.length > 15 ? `\n  … y ${l.length - 15} más` : "");
@@ -204,5 +228,5 @@ console.log(`Sitemap: ${enSitemap.size} URL · no existen: ${sitemapRoto.length}
   (sitemapRoto.length + faltanSitemap.length ? "\n" + muestra(sitemapRoto.concat(faltanSitemap), (r) => "  " + r) : ""));
 console.log(`Lastmod: ${[...lastmodN].sort().map(([d, n]) => `${d} ×${n}`).join(", ")} · mal (falta, formato, futuro o < dateModified): ${lastmodMal.length}` +
   (lastmodMal.length ? "\n" + muestra(lastmodMal, (r) => "  " + r) : ""));
-console.log(`404: ${n404} enlaces internos · provincias enlazadas: ${n404Prov} · mal: ${mal404.length}${mal404.length ? "\n" + muestra(mal404, (r) => "  " + r) : ""}`);
+console.log(`404: ${n404} enlaces internos · provincias enlazadas: ${n404Prov} · «¿Buscabas…?» ${n404Busca} casos ok · mal: ${mal404.length}${mal404.length ? "\n" + muestra(mal404, (r) => "  " + r) : ""}`);
 if (indiceMal.length || hasPartMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
