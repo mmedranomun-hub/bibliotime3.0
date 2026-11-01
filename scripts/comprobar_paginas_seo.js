@@ -6,6 +6,8 @@
      - páginas sin enlace entrante desde otra página (huérfanas) y URL del sitemap que no existen o que faltan en él,
      - <lastmod> del sitemap que falta, no es AAAA-MM-DD, es posterior a hoy o anterior al dateModified del JSON-LD de su
        página (la página diría que cambió después de lo que dice el sitemap),
+     - elementos de los ItemList del JSON-LD (temáticas, localidades…) que apuntan a /#bib=… aunque la biblioteca tiene
+       ficha, o cuyo @id no es el de su ficha (<ficha>#biblioteca): lista y ficha deben ser la misma entidad,
      - JSON-LD que no se puede leer, y horarios especiales (specialOpeningHoursSpecification: verano y exámenes de las
        fichas) mal formados o con tramos por fecha que se solapan.
    Uso (desde la raíz del proyecto):  node scripts/comprobar_paginas_seo.js
@@ -46,6 +48,9 @@ function compruebaEspeciales(ruta, nodo) {
   const rangos = [...new Map(l.filter((x) => !x.dayOfWeek).map((x) => [x.validFrom + "|" + x.validThrough, x])).values()].sort((a, b) => a.validFrom.localeCompare(b.validFrom));
   rangos.forEach((x, k) => { if (k && x.validFrom <= rangos[k - 1].validThrough) horEspMal.push(`${ruta} solape ${rangos[k - 1].validFrom}–${rangos[k - 1].validThrough} y ${x.validFrom}–${x.validThrough}`); });
 }
+// Library de cada ficha (con @id) por nombre + coordenadas, para reconocerla en los ItemList de otras páginas.
+const claveLib = (x) => `${x.name}|${x.geo && x.geo.latitude}|${x.geo && x.geo.longitude}`;
+const fichaDe = new Map(), itemsLista = [];
 let nEnlaces = 0;
 function existe(ruta) {
   const limpia = decodeURIComponent(ruta);
@@ -65,6 +70,9 @@ for (const [ruta, h] of html) {
     try { j = JSON.parse(m[1]); } catch (e) { ldMal.push(ruta); }
     if (j) [].concat(j).forEach((x) => {
       compruebaEspeciales(ruta, x);
+      if (x && x["@type"] === "Library" && x["@id"]) fichaDe.set(claveLib(x), x["@id"]);
+      const lista = x && (x["@type"] === "ItemList" ? x : x.mainEntity && x.mainEntity["@type"] === "ItemList" ? x.mainEntity : null);
+      if (lista) (lista.itemListElement || []).forEach((el) => el && el.item && el.item["@type"] === "Library" && itemsLista.push([ruta, el.item]));
       if (x && typeof x.dateModified === "string" && !(modPagina.get(ruta) >= x.dateModified)) modPagina.set(ruta, x.dateModified);
     });
   }
@@ -83,6 +91,13 @@ for (const [ruta, h] of html) {
     if (ancla && html.has(destino) && !ids(html.get(destino)).has(ancla)) rotos.push([ruta, u]);
     if (html.has(destino) && destino !== ruta) (entrantes.get(destino) || entrantes.set(destino, new Set()).get(destino)).add(ruta);
   }
+}
+const bibConFicha = [], idMal = [];
+let nItemsBib = 0, nItemsFicha = 0;
+for (const [ruta, it] of itemsLista) {
+  const ficha = fichaDe.get(claveLib(it));
+  if (/#bib=/.test(it.url || "")) { nItemsBib++; if (ficha) bibConFicha.push(`${ruta} → ${it.name} (ficha ${ficha.slice(DOMINIO.length)})`); }
+  else if (ficha) { nItemsFicha++; if (it["@id"] !== ficha || it.url + "#biblioteca" !== ficha) idMal.push(`${ruta} → ${it.name} (@id ${it["@id"] || "falta"})`); }
 }
 const huerfanas = [...html.keys()].filter((r) => r !== "/bibliotecas/" && !entrantes.has(r));
 const dupT = [...titulos].filter(([, l]) => l.length > 1), dupD = [...descs].filter(([, l]) => l.length > 1);
@@ -107,9 +122,11 @@ console.log(`Descripciones repetidas: ${dupD.length}${dupD.length ? "\n" + muest
 console.log(`Títulos > ${MAX_TIT} o descripciones > ${MAX_DESC} caracteres: ${largos.length}${largos.length ? "\n" + muestra(largos, (r) => "  " + r) : ""}`);
 console.log(`JSON-LD ilegible: ${ldMal.length}${ldMal.length ? " (" + ldMal.slice(0, 10).join(", ") + ")" : ""}`);
 console.log(`Horarios especiales (verano y exámenes): ${nHorEsp} tramos en ${nPagHorEsp} fichas · mal formados o solapados: ${horEspMal.length}${horEspMal.length ? "\n" + muestra(horEspMal, (r) => "  " + r) : ""}`);
+console.log(`ItemList: ${itemsLista.length} bibliotecas · a su ficha: ${nItemsFicha} · a /#bib=: ${nItemsBib} · /#bib= con ficha: ${bibConFicha.length} · @id distinto del de la ficha: ${idMal.length}` +
+  (bibConFicha.length + idMal.length ? "\n" + muestra(bibConFicha.concat(idMal), (r) => "  " + r) : ""));
 console.log(`Huérfanas (sin enlace desde otra página generada): ${huerfanas.length}${huerfanas.length ? "\n" + muestra(huerfanas, (r) => "  " + r) : ""}`);
 console.log(`Sitemap: ${enSitemap.size} URL · no existen: ${sitemapRoto.length} · faltan en el sitemap: ${faltanSitemap.length}` +
   (sitemapRoto.length + faltanSitemap.length ? "\n" + muestra(sitemapRoto.concat(faltanSitemap), (r) => "  " + r) : ""));
 console.log(`Lastmod: ${[...lastmodN].sort().map(([d, n]) => `${d} ×${n}`).join(", ")} · mal (falta, formato, futuro o < dateModified): ${lastmodMal.length}` +
   (lastmodMal.length ? "\n" + muestra(lastmodMal, (r) => "  " + r) : ""));
-if (lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
+if (lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);

@@ -184,6 +184,13 @@ function libraryLD(b, url) {
   }
   return o;
 }
+// Biblioteca dentro de un ItemList (temáticas, localidades, salas de estudio, universidades, exámenes): si tiene ficha,
+// `url` a la ficha (no a /#bib=…, un fragmento que Google lee como la portada) y el mismo `@id` que la ficha
+// (<ficha>#biblioteca), para que lista y ficha describan la misma entidad. Sin ficha, sigue el enlace a la app.
+function itemBib(b) {
+  const f = paginaDe.get(b.i);
+  return f ? { "@id": DOMINIO + f + "#biblioteca", ...libraryLD(b, DOMINIO + f) } : libraryLD(b, DOMINIO + enlaceApp(b));
+}
 
 // ---------- Plantilla ----------
 function pagina({ ruta, titulo, descripcion, h1, intro, cuerpo, migas, ld, cta, head }) {
@@ -561,7 +568,7 @@ const modVerif = (lista) => { const v = lista.filter(verificado); return v.lengt
 // JSON-LD de una página temática: CollectionPage (admite dateModified) con la lista como entidad principal.
 const ldTema = (ruta, nombre, l) => ({ "@context": "https://schema.org", "@type": "CollectionPage", name: nombre, url: DOMINIO + ruta,
   inLanguage: "es-ES", dateModified: fechaMod(l), mainEntity: { "@type": "ItemList", name: nombre, numberOfItems: l.length,
-    itemListElement: l.map((b, k) => ({ "@type": "ListItem", position: k + 1, item: libraryLD(b, DOMINIO + enlaceApp(b)) })) } });
+    itemListElement: l.map((b, k) => ({ "@type": "ListItem", position: k + 1, item: itemBib(b) })) } });
 function textoFechas(lista) {
   const f = [...new Set(lista.map((b) => b.h.fv))].sort();
   return f.length === 1 ? `el ${fechaEs(f[0])}` : `entre el ${fechaEs(f[0])} y el ${fechaEs(f[f.length - 1])}`;
@@ -1332,7 +1339,7 @@ provincias.forEach((p) => {
       h1: `Bibliotecas en ${esc(c)}`, intro: `${l.length} bibliotecas y salas de estudio en ${esc(c)} (${esc(p)})${k.v ? `, ${k.v} con horario verificado` : ""}. En el mapa de Bibliomapa ves en tiempo real cuáles están abiertas y cuál te pilla más cerca.`,
       cuerpo: `${navPorHorario(p, c)}${navSalas(salasDeLoc.has(p + "|" + c) ? [salasDeLoc.get(p + "|" + c)] : [])}${navExamenes(exDeLoc(p, c))}${navUniversidades((b) => b.p === p && b.c === c)}${tablaHorariosLugar(c, l)}<section class="lista">${l.map((b) => tarjeta(b)).join("")}</section>${secVerif}${f.html}${seccionLocalidadesCercanas(p, c)}<p class="volver"><a href="/bibliotecas/${ps}/">← Todas las bibliotecas de ${esc(p)}</a></p>`,
       migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], [p, `/bibliotecas/${ps}/`], [c, ruta]], head: k.v ? ESTILO_TABLA_HOR : "",
-      ld: [ldLugar(ruta, tl.nombre, dl, { ...modVerif(l), mainEntity: { "@type": "ItemList", name: `Bibliotecas en ${c}`, numberOfItems: l.length, itemListElement: l.map((b, k) => ({ "@type": "ListItem", position: k + 1, item: libraryLD(b, DOMINIO + enlaceApp(b)) })) } }), f.ld],
+      ld: [ldLugar(ruta, tl.nombre, dl, { ...modVerif(l), mainEntity: { "@type": "ItemList", name: `Bibliotecas en ${c}`, numberOfItems: l.length, itemListElement: l.map((b, k) => ({ "@type": "ListItem", position: k + 1, item: itemBib(b) })) } }), f.ld],
     }));
     urls.push([ruta, "0.8", modVerif(l).dateModified]);
     // páginas temáticas de la localidad (2 o más que cumplen; ver temaLoc)
@@ -1483,7 +1490,7 @@ ${otras ? `<p class="mas"><a href="${rutaCiudad}">Ver las ${lista.length} biblio
 <p class="volver"><a href="/bibliotecas/${SALAS_SLUG}/">← Salas de estudio en otras ciudades</a> · <a href="${rutaCiudad}">${esc(s.conLoc ? ciudad : p)}</a> · ${enlaceHub}</p>`,
     migas,
     ld: [ldLugar(ruta, titulo.replace(MARCA, ""), descripcion, { ...(ver.length ? { dateModified: fechaMod(ver) } : {}), mainEntity: { "@type": "ItemList", name: `Bibliotecas para estudiar en ${ciudad}`, numberOfItems: est.length,
-      itemListElement: uni.concat(pub).map((b, k) => ({ "@type": "ListItem", position: k + 1, item: libraryLD(b, DOMINIO + (paginaDe.get(b.i) || enlaceApp(b))) })) } }), fq.ld],
+      itemListElement: uni.concat(pub).map((b, k) => ({ "@type": "ListItem", position: k + 1, item: itemBib(b) })) } }), fq.ld],
   }));
   urls.push([ruta, "0.8", fechaMod(ver)]);
 });
@@ -1629,7 +1636,7 @@ ${navExamenes(exCiudades.filter((g) => g.entradas.some((x) => ex.includes(x.e)))
     ld: [ldLugar(ruta, titulo.replace(MARCA, ""), descripcion, { dateModified: fechaMod(ver),
       about: { "@type": "CollegeOrUniversity", name: u.nombre, alternateName: u.sigla },
       mainEntity: { "@type": "ItemList", name: `Bibliotecas de la ${u.nombre}`, numberOfItems: lista.length,
-        itemListElement: claves.flatMap((k) => porC[k].slice().sort(ordenBib)).map((b, k) => ({ "@type": "ListItem", position: k + 1, item: libraryLD(b, DOMINIO + (paginaDe.get(b.i) || enlaceApp(b))) })) } }), fq.ld],
+        itemListElement: claves.flatMap((k) => porC[k].slice().sort(ordenBib)).map((b, k) => ({ "@type": "ListItem", position: k + 1, item: itemBib(b) })) } }), fq.ld],
   }));
   urls.push([ruta, "0.8", fechaMod(ver)]);
 });
@@ -1734,7 +1741,7 @@ ${fq.html}
     migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], ["Exámenes", EX_RUTA], [ciudad, ruta]],
     ld: [ldLugar(ruta, titulo.replace(MARCA, ""), descripcion, { dateModified: g.fv,
       mainEntity: { "@type": "ItemList", name: `Bibliotecas con horario de exámenes en ${ciudad}`, numberOfItems: entradas.length,
-        itemListElement: entradas.map((x, k) => ({ "@type": "ListItem", position: k + 1, item: x.b ? libraryLD(x.b, DOMINIO + (paginaDe.get(x.b.i) || enlaceApp(x.b)))
+        itemListElement: entradas.map((x, k) => ({ "@type": "ListItem", position: k + 1, item: x.b ? itemBib(x.b)
           : { "@type": "Library", name: x.e.espacio, address: { "@type": "PostalAddress", addressLocality: ciudad, addressRegion: p, addressCountry: "ES" } } })) } }), fq.ld],
   }));
   urls.push([ruta, "0.8", g.fv]);
