@@ -836,13 +836,40 @@ function recordSesionHTML(sesion){
   return '<div class="record-ses" role="status"><span class="rs-ic" aria-hidden="true">🏅</span><span><b>¡Nuevo récord personal!</b>'+hm(sesion.min)+' seguidos · tu sesión más larga hasta hoy (antes '+hm(r.antes)+')</span></div>';
 }
 
+/* ----- Contador de minutos en «Sesión terminada»: la cifra de la sesión sube de 0 a sus minutos (~1 s,
+   frenando al final) y, si hoy ya habías estudiado antes, «Hoy llevas 2h 10m». Solo suma: nada de metas
+   no cumplidas ni comparaciones. Con «reducir movimiento» sale la cifra final, quieta. ----- */
+function cuentaSesionHTML(sesion){
+  var m=Math.round(sesion&&sesion.min||0); if(m<1)return "";
+  var hoy=0;(DATA.sessions||[]).forEach(function(s){if(s.date===sesion.date)hoy+=s.min||0;});
+  if(!(hoy>m))hoy=0;
+  if(!$("cuentaCss")){var st=document.createElement("style");st.id="cuentaCss";
+    st.textContent='.ses-cuenta{text-align:center;margin:0 0 12px}.ses-cuenta .sc-num{display:block;font-size:var(--fs-5xl);font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums;background:linear-gradient(90deg,var(--marca-a),var(--marca-b));-webkit-background-clip:text;background-clip:text;color:transparent}'+
+      '.ses-cuenta .sc-num.fin{animation:pop .45s both}.ses-cuenta .sc-lbl{font-size:var(--fs-s);font-weight:700;color:var(--suave);text-transform:uppercase;letter-spacing:.05em}'+
+      '.ses-cuenta .sc-hoy{margin-top:4px;font-size:var(--fs-m);color:var(--ok-tx);font-weight:700}'+
+      '@media (prefers-reduced-motion:reduce){.ses-cuenta .sc-num.fin{animation:none}}';
+    document.head.appendChild(st);}
+  return '<div class="ses-cuenta" role="status" aria-label="'+m+' minutos de estudio'+(hoy?', hoy llevas '+hMin(Math.round(hoy)):'')+'">'+
+    '<span class="sc-num" data-to="'+m+'" aria-hidden="true">'+m+'</span><span class="sc-lbl" aria-hidden="true">'+(m===1?'minuto':'minutos')+' de estudio</span>'+
+    (hoy?'<div class="sc-hoy" aria-hidden="true">📈 Hoy llevas '+hMin(Math.round(hoy)).replace(/^0h /,"")+'</div>':'')+'</div>';
+}
+function animarCuentaSesion(){
+  var el=document.querySelector("#modalRoot .ses-cuenta .sc-num"); if(!el)return;
+  var to=+el.dataset.to||0;
+  if(sinMovimiento()||to<2||typeof requestAnimationFrame!=="function"){el.textContent=to;return;}
+  var dur=Math.min(1400,600+to*8),t0=0;el.textContent="0";
+  function paso(t){if(!el.isConnected)return;if(!t0)t0=t;var p=Math.min(1,(t-t0)/dur),e=1-Math.pow(1-p,3);
+    el.textContent=Math.round(to*e);if(p<1)requestAnimationFrame(paso);else el.classList.add("fin");}
+  setTimeout(function(){requestAnimationFrame(paso);},250);
+}
+
 /* ----- Sesión terminada (valorar, afluencia, nota) y editar una sesión ----- */
 function pedirValoracion(sesion,horasAntes){
   var sel={v:0};
   var plantado=sesion.focus?'<div class="planted'+(sesion.focus==="withered"?' seco':'')+'"><div class="planted-tree">'+arbolSVG(sesion.min,sesion.focus==="withered",sesion.subject||sesion.id,110,sesion.esp)+'</div>'+
     '<div class="planted-txt">'+(sesion.focus==="withered"?'🥀 Tu árbol se marchitó porque saliste de la app. ¡El próximo crecerá!':'🎉 ¡Has plantado un '+ETAPAS_ARBOL[etapaArbol(sesion.min)][1].toLowerCase()+' en tu bosque!'+(Math.floor(sesion.min/5)?'<span class="planted-seeds">🌰 +'+Math.floor(sesion.min/5)+' semillas</span>':''))+'</div></div>':'';
   var barraNivel=horasAntes!=null?nivelProgresoHTML(horasAntes):'';
-  openModal(plantado+recordSesionHTML(sesion)+barraNivel+'<h3>Sesión terminada</h3><div class="sub">'+fmtHoras(sesion.min)+' h en '+escapeHTML(sesion.bib.replace("Biblioteca ","").replace("Pública ",""))+(sesion.verif?' · <span class="badge-ok">✓ verificada</span>':'')+'</div>'+
+  openModal(plantado+recordSesionHTML(sesion)+cuentaSesionHTML(sesion)+barraNivel+'<h3>Sesión terminada</h3><div class="sub">'+fmtHoras(sesion.min)+' h en '+escapeHTML(sesion.bib.replace("Biblioteca ","").replace("Pública ",""))+(sesion.verif?' · <span class="badge-ok">✓ verificada</span>':'')+'</div>'+
     '<label style="font-size:var(--fs-s);font-weight:700;color:var(--suave);text-transform:uppercase;letter-spacing:.05em">¿Qué tal ha ido?</label>'+
     '<div class="prodstars" id="prodStars">'+[1,2,3,4,5].map(function(n){return '<button data-v="'+n+'">★</button>';}).join("")+'</div>'+
     (bibIdxDe(sesion)>=0?'<label style="display:block;margin-top:12px;font-size:var(--fs-s);font-weight:700;color:var(--suave);text-transform:uppercase;letter-spacing:.05em">¿Cómo estaba de llena?</label>'+
@@ -853,6 +880,7 @@ function pedirValoracion(sesion,horasAntes){
     '<button class="linkbtn" id="sessSkip" style="display:block;margin:12px auto 0">Omitir</button>',
     function(){
       var bn=document.querySelector(".np-bar i");if(bn)setTimeout(function(){bn.style.width=bn.dataset.to+"%";},350);
+      animarCuentaSesion();
       if(sesion.focus==="ok"){confeti(sesion.min>=25?90:45);celebrar(document.querySelector(".planted-tree"),["🌱","🍃","✨","🌟"],12);}
       document.querySelectorAll("#prodStars button").forEach(function(b){
         b.addEventListener("click",function(){

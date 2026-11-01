@@ -242,6 +242,24 @@ PRUEBAS = [
         pedirValoracion(s,null);if(document.querySelector('#modalRoot .record-ses'))return 'sale sin récord';
         return true;
       }finally{DATA.sessions=o;closeModal();}"""),
+    ("contador de minutos en «Sesión terminada» (sube hasta los minutos reales; «Hoy llevas» solo con más sesiones hoy)", """
+      await cargarExtra();
+      var o=DATA.sessions,hoy=ymd(),mk=(i,m,d)=>({id:'cm'+i,date:d||hoy,min:m,ts:Date.now()-(100-i)*1000,bib:NO_BIB,focus:'ok',esp:'roble'});
+      var ver=()=>{var c=document.querySelector('#modalRoot .ses-cuenta');return c?{n:c.querySelector('.sc-num'),t:c.innerText,a:c.getAttribute('aria-label')}:null;};
+      try{
+        DATA.sessions=[mk(0,40,'2026-01-01')];var s=mk(1,45);DATA.sessions.push(s);
+        pedirValoracion(s,null);var c=ver();
+        if(!c||c.n.dataset.to!=='45'||!/minutos de estudio/i.test(c.t))return 'no sale el contador: '+(c&&c.t);
+        if(/Hoy llevas/.test(c.t))return '«Hoy llevas» con una sola sesión hoy';
+        await new Promise(r=>setTimeout(r,2200));
+        if(c.n.textContent!=='45')return 'no termina en 45: '+c.n.textContent;
+        closeModal();DATA.sessions=[mk(2,85)];s=mk(3,45);DATA.sessions.push(s);
+        pedirValoracion(s,null);c=ver();
+        if(!c||!/Hoy llevas 2h 10m/.test(c.t)||!/hoy llevas 2h 10m/.test(c.a))return 'no suma lo de hoy: '+(c&&c.t);
+        if(!/marca-a/.test(($('cuentaCss')||{}).textContent||'')||!/prefers-reduced-motion/.test($('cuentaCss').textContent))return 'sin estilos con tokens o sin reducir movimiento';
+        closeModal();s=mk(4,0);DATA.sessions=[s];pedirValoracion(s,null);if(ver())return 'sale con 0 minutos';
+        return true;
+      }finally{DATA.sessions=o;closeModal();}"""),
     ("«¡Qué alegría verte!» al volver tras ≥ 3 días (horas y árbol más grande, sin hablar de la racha perdida)", """
       await cargarExtra();
       var o=DATA.sessions,uf=DATA.usedFreezeDates,dia=n=>{var d=new Date();d.setDate(d.getDate()-n);return ymd(d);};
