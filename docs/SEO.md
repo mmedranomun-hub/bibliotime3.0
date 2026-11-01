@@ -252,6 +252,19 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
 - Recuento (el generador lo imprime en «Tema abiertas-sabado-tarde: …»): cumplen en 14 provincias, 2 con 3 o más (Madrid 6,
   Barcelona 11) y en 13 localidades con página, ninguna con 3 o más; en España, 34. Crece sola al verificar horarios.
 
+## Hecho (2026-11-01) · «Bibliotecas abiertas a mediodía en <lugar>» (682 páginas, antes 669)
+- Para «biblioteca abierta a mediodía / horario continuo <ciudad>»: `/bibliotecas/abiertas-mediodia/` (España) y
+  `/bibliotecas/<prov>/[<loc>/]abiertas-mediodia/`. Entra una biblioteca si su horario de invierno verificado (`h.f` + `h.fv`;
+  Navarra con `fuenteHorario` + `verificadoHorario`) tiene, los 5 días de lunes a viernes, una franja que cubre de 14:00 a
+  16:00 sin cortar (`abreMediodia`). Un día cerrado o «sin confirmar» la deja fuera.
+- Entrada de `TEMAS` con `min: 3` y `distintoDe: ["abiertas-hoy", "abiertas-hasta-tarde"]`: `distintoDe` admite ahora una
+  lista; si la lista del sitio es exactamente la de «Hoy» (todas las verificadas) o la de «Hasta tarde», no se crea. Tarjeta con
+  «Lunes a viernes, sin cerrar a mediodía: 8:00–21:00» (`entreSemanaTexto`), intro y FAQ propias (cuáles, cuál abre antes y
+  cuál cierra más tarde con empates, cuántas abren también el sábado a mediodía, de dónde salen los horarios). Sin CSS nuevo.
+- Recuento (el generador lo imprime en «Tema abiertas-mediodia: …»): cumplen en 47 provincias, 14 con 3 o más, 10 con página
+  (Madrid 44, Navarra 23, Barcelona 13, Alicante 8, A Coruña 7, Sevilla 7, Murcia 6, Asturias 5, Málaga 4, Zaragoza 3; las
+  otras 4 coinciden con «Hoy» o «Hasta tarde»); 2 localidades (Pamplona 13, Alcalá de Henares 3); España 186.
+
 ## Lo que tienes que hacer tú (sin esto no sirve de nada)
 1. **Conectar el dominio** en Vercel: proyecto `bibliotime` → Settings → Domains → añadir `bibliomapa.es` y
    `www.bibliomapa.es` (redirigir www → sin www) y poner en tu registrador los DNS que te indique Vercel.

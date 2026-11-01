@@ -3,7 +3,7 @@
      bibliotecas/index.html                      → todas las provincias
      bibliotecas/<provincia>/index.html          → bibliotecas de la provincia, por localidad
      bibliotecas/<provincia>/<localidad>/index.html (localidades con 3 o más bibliotecas)
-     bibliotecas/abiertas-hoy|abiertas-domingo|abiertas-fin-de-semana|abiertas-sabado-tarde|abiertas-hasta-tarde/index.html (España, por provincia;
+     bibliotecas/abiertas-hoy|abiertas-domingo|abiertas-fin-de-semana|abiertas-sabado-tarde|abiertas-hasta-tarde|abiertas-mediodia/index.html (España, por provincia;
        «hoy» calcula en el navegador el horario de hoy y si está abierta ahora)
        y abiertas-verano (solo con horario de verano verificado: h.ver + h.vd/h.vh)
      bibliotecas/<provincia>/<tema>/index.html   (mismos temas, solo con 2 o más bibliotecas que cumplen)
@@ -132,6 +132,19 @@ function cierraTarde(b) { return b.h && b.h.inv && DIAS.slice(0, 5).some((d) => 
 const verificado = (b) => !!(b.h && b.h.inv && b.h.f && b.h.fv);
 const abreDomingo = (b) => verificado(b) && (b.h.inv.D || []).length > 0;
 const abreSabadoTarde = (b) => verificado(b) && (b.h.inv.S || []).some((r) => r[1] >= "17:00" || r[1] === "00:00");
+// Mediodía: los 5 días de lunes a viernes (horario de invierno verificado) con una franja que cubre de 14:00 a 16:00 sin
+// cortar. Un día sin franjas (cerrado o «sin confirmar») la deja fuera: solo se afirma lo que dice la fuente.
+const MEDIODIA = ["14:00", "16:00"];
+const cubreMediodia = (r) => r[0] <= MEDIODIA[0] && (r[1] >= MEDIODIA[1] || r[1] === "00:00");
+const abreMediodia = (b) => verificado(b) && DIAS.slice(0, 5).every((d) => (b.h.inv[d] || []).some(cubreMediodia));
+// «L–J 8:30–21:00 · V 8:30–20:00» (solo lunes a viernes, días iguales agrupados).
+function entreSemanaTexto(inv) {
+  const g = [];
+  DIAS.slice(0, 5).forEach((d) => { const f = franjas(inv[d]) || "cerrado", u = g[g.length - 1]; if (u && u.f === f) u.hasta = d; else g.push({ desde: d, hasta: d, f }); });
+  return g.length === 1 ? g[0].f : g.map((x) => (x.desde === x.hasta ? x.desde : x.desde + "–" + x.hasta) + " " + x.f).join(" · ");
+}
+// Hora de apertura más temprana entre semana.
+const aperturaMasTemprana = (b) => DIAS.slice(0, 5).flatMap((d) => (b.h.inv[d] || []).map((r) => r[0])).sort()[0] || "";
 // Verano: horario h.ver con sus fechas h.vd/h.vh («MM-DD», como en bibliotecas-espana.js) y algún día abierto.
 const MMDD = /^\d{2}-\d{2}$/;
 const abreVerano = (b) => verificado(b) && !!b.h.ver && MMDD.test(b.h.vd || "") && MMDD.test(b.h.vh || "") &&
@@ -351,6 +364,31 @@ const TEMAS = [
   { slug: "abiertas-hasta-tarde", corto: "Hasta tarde", que: "abiertas hasta tarde", cumple: (b) => verificado(b) && cierraTarde(b),
     destacado: (b) => `Entre semana cierra a las ${quitaCero(cierreMasTarde(b)).replace("24:00", "00:00 (medianoche)")}`,
     pregunta: (l) => `¿Qué bibliotecas cierran a las 21:00 o más tarde en ${l}?` },
+  // Mediodía / horario continuo: de lunes a viernes sin cerrar entre las 14:00 y las 16:00 (abreMediodia). Con 3 o más y
+  // nunca si la lista es la misma que «Hoy» (todas las verificadas del sitio) o que «Hasta tarde»: sería una página repetida.
+  { slug: "abiertas-mediodia", corto: "Mediodía", que: "abiertas a mediodía", cumple: abreMediodia,
+    min: 3, distintoDe: ["abiertas-hoy", "abiertas-hasta-tarde"],
+    destacado: (b) => `Lunes a viernes, sin cerrar a mediodía: ${entreSemanaTexto(b.h.inv)}`,
+    pregunta: (l) => `¿Qué bibliotecas abren a mediodía, sin cerrar para comer, en ${l}?`,
+    intro: (lista, lugar) => `${lista.length} ${lista.length === 1 ? "biblioteca" : "bibliotecas"} de ${esc(lugar)} con horario continuo: de lunes a viernes abren sin cerrar entre las 14:00 y las 16:00, ` +
+      `según el horario de invierno comprobado en la web oficial de cada una ${textoFechas(lista)} (en cada ficha tienes la fecha y la fuente). ` +
+      `En verano, festivos y época de exámenes puede cambiar: confírmalo en su web antes de ir. Solo aparecen las que tienen horario verificado.`,
+    faq: (t, lista, lugar) => {
+      const nombres = lista.slice(0, 6).map((b) => b.n).join(", ") + (lista.length > 6 ? " y otras" : "");
+      const pronto = lista.map(aperturaMasTemprana).sort()[0], tempranas = lista.filter((b) => aperturaMasTemprana(b) === pronto);
+      const tarde = lista.map(cierreMasTarde).sort().pop(), tardias = lista.filter((b) => cierreMasTarde(b) === tarde);
+      const pocas = (l) => l.slice(0, 4).map((b) => b.n).join(", ") + (l.length > 4 ? ` y ${l.length - 4} más` : "");
+      const sab = lista.filter((b) => (b.h.inv.S || []).some(cubreMediodia));
+      return [
+        [t.pregunta(lugar), `Con horario de invierno verificado en su web oficial, abren de lunes a viernes sin cerrar entre las 14:00 y las 16:00: ${nombres}.`],
+        [`¿Cuál abre antes y cuál cierra más tarde?`, `De estas, ${tempranas.length === 1 ? "la que abre antes es" : "las que abren antes son"} ${pocas(tempranas)} (a las ${quitaCero(pronto)}) y ` +
+          `${tardias.length === 1 ? "la que cierra más tarde es" : "las que cierran más tarde son"} ${pocas(tardias)} (a las ${quitaCero(tarde).replace("24:00", "00:00 (medianoche)")}), algún día entre semana.`],
+        [`¿Abren también a mediodía el sábado?`, sab.length
+          ? `De estas, ${sab.length === 1 ? "solo 1 abre" : `${sab.length} abren`} también el sábado sin cerrar entre las 14:00 y las 16:00: ${pocas(sab)}.`
+          : `Ninguna de estas abre el sábado entre las 14:00 y las 16:00 según su horario verificado.`],
+        [`¿Están actualizados estos horarios?`, `Son los horarios de invierno publicados en la web oficial de cada biblioteca, comprobados ${textoFechas(lista)}. Pueden cambiar en verano, festivos o temporada de exámenes; si ves uno mal, avísanos desde la app.`],
+      ];
+    } },
   // Verano: solo las que tienen horario de verano verificado (h.ver con sus fechas h.vd/h.vh «MM-DD») y abren algún día.
   // Va solo a nivel España y provincia (local: false); intro y FAQ propias porque no es el horario de invierno.
   { slug: "abiertas-verano", corto: "Verano", que: "abiertas en verano", cumple: abreVerano, local: false,
@@ -373,8 +411,9 @@ const TEMAS = [
 ];
 const temaProv = {}; // temaProv[slug][provincia] = lista (solo si se genera página)
 // ¿La lista es exactamente la del tema «distintoDe» en el mismo sitio? (entonces la página sería duplicada y no se crea)
-const igualQue = (t, l, mapa, k) => { const o = t.distintoDe && mapa[t.distintoDe] && mapa[t.distintoDe][k];
-  return !!o && o.length === l.length && l.every((b) => o.includes(b)); };
+// «distintoDe» puede ser un slug o una lista de slugs (todos de temas anteriores en TEMAS).
+const igualQue = (t, l, mapa, k) => [].concat(t.distintoDe || []).some((s) => { const o = mapa[s] && mapa[s][k];
+  return !!o && o.length === l.length && l.every((b) => o.includes(b)); });
 TEMAS.forEach((t) => {
   temaProv[t.slug] = {};
   provincias.forEach((p) => { const l = porProv[p].filter(t.cumple); if (l.length >= (t.min || MIN_TEMA_PROV) && !igualQue(t, l, temaProv, p)) temaProv[t.slug][p] = l; });
