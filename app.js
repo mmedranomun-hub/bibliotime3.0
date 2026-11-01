@@ -1465,12 +1465,14 @@ function refreshOccUI(i){
   if(markers&&markers.length){
     // Los popups se generan al abrirse: solo hay que refrescar el que esté abierto.
     if(typeof i==="number"&&markers[i]){
+      if(window.__pinEnDom)window.__pinEnDom(i);
       if(markers[i].setIcon)markers[i].setIcon(chinchetaIcon(i));
       if(window.__map&&window.__map.hasLayer(markers[i])){if(markers[i].isPopupOpen())markers[i].getPopup().update();else markers[i].openPopup();}
     }else{
       // los iconos se reutilizan por variante: solo se repinta la chincheta cuyo estado ha cambiado
       markers.forEach(function(mk,j){var ic=chinchetaIcon(j);if(mk.setIcon&&mk.options.icon!==ic)mk.setIcon(ic);if(mk.isPopupOpen())mk.getPopup().update();});
     }
+    if(window.__repintarPines)window.__repintarPines();
   }
 }
 
@@ -1647,6 +1649,8 @@ function actualizarAcciones(b){
 }
 window.__selBib=function(i){
   var b=BIBLIOTECAS[i];actualizarAcciones(b);
+  // Sin clústeres, las chinchetas lejanas se dibujan en un canvas: la elegida pasa a ser L.marker en el mapa
+  if(window.__pinEnDom&&markers[i])window.__pinEnDom(i,true);
   markers.forEach(function(mk,j){var el=mk&&mk.getElement&&mk.getElement();
     if(el){var ch=el.querySelector(".chincheta");if(ch)ch.classList.toggle("sel",j===i);}});
   document.querySelectorAll("#list .card").forEach(function(c){c.classList.toggle("active",+c.dataset.i===i);});
@@ -1751,7 +1755,8 @@ function chinchetaIcon(i){
   var occClass="";
   if(abierto){var o=occSummary(i); if(o)occClass=" occ-"+o.level;}
   var cls="chincheta"+(b.sinHorario?" unk":(abierto?"":" closed"))+occClass;
-  return _iconosChincheta[cls]||(_iconosChincheta[cls]=L.divIcon({className:"",html:'<div class="'+cls+'"><div class="cuerpo"></div><div class="punta"></div></div>',iconSize:[34,44],iconAnchor:[17,44],popupAnchor:[0,-44]}));
+  if(!_iconosChincheta[cls]){_iconosChincheta[cls]=L.divIcon({className:"",html:'<div class="'+cls+'"><div class="cuerpo"></div><div class="punta"></div></div>',iconSize:[34,44],iconAnchor:[17,44],popupAnchor:[0,-44]});_iconosChincheta[cls]._cls=cls;}
+  return _iconosChincheta[cls];
 }
 // "Mi ubicación": la pinta en el propio mapa, nunca abre Google Maps ni ninguna app externa.
 window.__userPos=null;
@@ -1848,19 +1853,98 @@ function initMap(){
   });
   socialRenderFriendMarkers();
   if(capaBibs.addLayers){setTimeout(function(){capaBibs.addLayers(markers);},0);return;}
-  // Sin markercluster: por lotes, primero las que caen en la vista actual, para que el navegador
-  // pinte y responda entre lote y lote en vez de quedarse ~1 s bloqueado con 2616 iconos. Lotes
-  // de 12 ms: con lotes mayores (50 ms o crecientes) la app vuelve a tardar ~2,8 s en responder.
-  var vista=map.getBounds().pad(0.2), orden=[], resto=[];
-  markers.forEach(function(mk){(vista.contains(mk.getLatLng())?orden:resto).push(mk);});
-  orden=orden.concat(resto);
-  var pos=0;
-  function lote(){
-    var t0=Date.now();
-    while(pos<orden.length&&Date.now()-t0<12)capaBibs.addLayer(orden[pos++]);
-    if(pos<orden.length)setTimeout(lote,0);else marcadoresListos();
+  // Sin markercluster (las 2616 sueltas): cada L.marker en el DOM es su propia capa de pintado (~2600
+  // Paint y segundos de Layerize con CPU 4×). Las lejanas se dibujan en un solo canvas con el mismo
+  // aspecto; solo son L.marker las de la vista ampliada a partir del zoom 11, la elegida y la del popup.
+  setTimeout(function(){pinesLigeros(map,capaBibs);marcadoresListos();},0);
+}
+// Canvas con las chinchetas que no están en el DOM. Cada variante (abierta, cerrada, sin horario, afluencia)
+// se dibuja una vez como sprite copiando el CSS de .chincheta (colores leídos de los tokens del tema).
+function pinesLigeros(map,capa){
+  var ZDOM=11, dom={}, fija=-1, conPopup=-1, sprites={}, raf=0, dib=[];
+  var dpr=Math.min(window.devicePixelRatio||1,3), M=8;   // M: margen del sprite para la sombra
+  map.createPane("pinesLigeros").style.zIndex=590;        // bajo las chinchetas (600), sobre el plano
+  var cv=L.DomUtil.create("canvas","",map.getPane("pinesLigeros")), ctx=cv.getContext("2d");
+  cv.style.pointerEvents="none";
+  markers.forEach(function(mk,i){mk._bi=i;});
+  var LIBRO=["M2 5c2-1.5 5-2 7-1v14c-2-1-5-.5-7 1V5z","M22 5c-2-1.5-5-2-7-1v14c2-1 5-.5 7 1V5z"];
+  function sprite(cls){
+    if(sprites[cls])return sprites[cls];
+    var m=document.createElement("div");m.style.cssText="position:absolute;visibility:hidden;left:-99px";
+    m.innerHTML='<div class="'+cls+'"><div class="cuerpo"></div><div class="punta"></div></div>';
+    map.getContainer().appendChild(m);
+    var cs=getComputedStyle(m.querySelector(".cuerpo")), fondo=cs.backgroundImage, base=cs.backgroundColor,
+      punta=getComputedStyle(m.querySelector(".punta"),"::after").borderTopColor;
+    m.remove();
+    var c=document.createElement("canvas");c.width=(34+2*M)*dpr;c.height=(44+2*M)*dpr;
+    var g=c.getContext("2d");g.scale(dpr,dpr);g.translate(M,M);
+    // cuerpo: círculo blanco de 34 px (borde de 3) con box-shadow 0 4px 6px, y dentro el degradado de 28 px
+    g.save();g.shadowColor="rgba(2,6,23,.35)";g.shadowOffsetY=4*dpr;g.shadowBlur=6*dpr;
+    g.beginPath();g.arc(17,17,17,0,7);g.fillStyle="#fff";g.fill();g.restore();
+    var col=(fondo||"").match(/rgba?\([^)]*\)/g), ang=+(((fondo||"").match(/(-?[\d.]+)deg/)||[])[1]||180)*Math.PI/180;
+    var fill=base;
+    if(col&&col.length>1){var dx=Math.sin(ang),dy=-Math.cos(ang),L2=(Math.abs(28*dx)+Math.abs(28*dy))/2;
+      fill=g.createLinearGradient(17-dx*L2,17-dy*L2,17+dx*L2,17+dy*L2);
+      col.forEach(function(k,n){fill.addColorStop(n/(col.length-1),k);});}
+    g.beginPath();g.arc(17,17,14,0,7);g.fillStyle=fill;g.fill();
+    // libro (el mismo trazo que .cuerpo:empty::before): 17 px centrado
+    g.save();g.translate(8.5,8.5);g.scale(17/24,17/24);g.strokeStyle="#fff";g.lineWidth=2.1;g.lineCap=g.lineJoin="round";
+    LIBRO.forEach(function(d){g.stroke(new Path2D(d));});g.restore();
+    // punta: triángulo blanco 12×12 y dentro el de color 8×9
+    g.fillStyle="#fff";g.beginPath();g.moveTo(11,32);g.lineTo(23,32);g.lineTo(17,44);g.fill();
+    g.fillStyle=punta;g.beginPath();g.moveTo(13,32);g.lineTo(21,32);g.lineTo(17,41);g.fill();
+    return (sprites[cls]=c);
   }
-  setTimeout(lote,0);
+  function quiere(i,z,bb){return i===fija||i===conPopup||(z>=ZDOM&&bb.contains(markers[i].getLatLng()));}
+  function poner(i,si){
+    if(si&&!dom[i]){dom[i]=1;capa.addLayer(markers[i]);}
+    else if(!si&&dom[i]){delete dom[i];capa.removeLayer(markers[i]);}
+  }
+  function pintar(ev){
+    raf=0;
+    var s=map.getSize(), pw=Math.round(s.x*.1), ph=Math.round(s.y*.1), w=s.x+2*pw, h=s.y+2*ph;
+    var o=map.containerPointToLayerPoint([-pw,-ph]);
+    L.DomUtil.setPosition(cv,o);
+    if(cv.width!==w*dpr||cv.height!==h*dpr){cv.width=w*dpr;cv.height=h*dpr;cv.style.width=w+"px";cv.style.height=h+"px";}
+    ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,cv.width,cv.height);ctx.setTransform(dpr,0,0,dpr,0,0);
+    dib=[];
+    for(var i=0;i<markers.length;i++){
+      if(dom[i])continue;
+      var ll=markers[i].getLatLng(), p=(ev&&ev.center?map._latLngToNewLayerPoint(ll,ev.zoom,ev.center):map.latLngToLayerPoint(ll)).round();
+      var x=p.x-o.x, y=p.y-o.y;
+      if(x<-20||y<-4||x>w+20||y>h+48)continue;
+      dib.push([y,x,i]);
+    }
+    dib.sort(function(a,c){return a[0]-c[0];});   // como Leaflet: más abajo, encima (z-index = y)
+    dib.forEach(function(d){var ic=markers[d[2]].options.icon;
+      ctx.drawImage(sprite(ic._cls||"chincheta"),d[1]-17-M,d[0]-44-M,34+2*M,44+2*M);});
+    dib.o=o;
+  }
+  function pedir(){if(!raf)raf=requestAnimationFrame(function(){pintar();});}
+  function actualizar(){
+    var z=map.getZoom(), bb=map.getBounds().pad(.5);
+    for(var i=0;i<markers.length;i++)poner(i,quiere(i,z,bb));
+    pintar();
+  }
+  // Toque en una chincheta del canvas: la de más arriba bajo el dedo (rectángulo del icono, 34×44)
+  function bajo(e){
+    if(!dib.o)return -1;
+    var p=map.containerPointToLayerPoint(e.containerPoint), x=p.x-dib.o.x, y=p.y-dib.o.y;
+    for(var k=dib.length-1;k>=0;k--){var d=dib[k];if(x>=d[1]-17&&x<=d[1]+17&&y>=d[0]-44&&y<=d[0])return d[2];}
+    return -1;
+  }
+  map.on("click",function(e){var i=bajo(e);if(i>=0)window.__selBib(i);});
+  map.on("mousemove",function(e){map.getContainer().style.cursor=bajo(e)>=0?"pointer":"";});
+  map.on("zoomanim",function(e){if(raf){cancelAnimationFrame(raf);raf=0;}pintar(e);});
+  map.on("moveend",actualizar);
+  map.on("zoom viewreset resize",pedir);
+  map.on("popupopen",function(e){var s=e.popup._source;if(s&&typeof s._bi==="number")conPopup=s._bi;});
+  map.on("popupclose",function(e){var s=e.popup._source;if(s&&s._bi===conPopup){conPopup=-1;pedir();}});
+  // Los colores salen de los tokens: si cambia el tema, se rehacen los sprites
+  new MutationObserver(function(){sprites={};pedir();}).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+  window.__pinEnDom=function(i,elegida){if(elegida)fija=i;if(!dom[i]){poner(i,true);pedir();}};
+  window.__repintarPines=pedir;
+  actualizar();
 }
 
 /* ===================== MODO ESTUDIO ===================== */
