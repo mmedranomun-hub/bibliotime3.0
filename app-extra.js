@@ -603,6 +603,7 @@ function comprarEspecie(id,btn){
   DATA.especiesCompradas=(DATA.especiesCompradas||[]).concat([id]);DATA.especie=id;saveUserData();
   celebrar(btn,[e.icon,"✨","🌰"],14);confeti(70);showToast("🎉 ¡"+e.nombre+" desbloqueado! Tus próximos árboles serán "+e.icon);
   setTimeout(abrirTienda,500);renderForest();renderSemillas();
+  pintarPistaSaco(document.querySelector(".saco-semillas"),semillas());
 }
 function usarEspecie(id){DATA.especie=id;saveUserData();showToast(especieDe(id).icon+" Ahora plantas: "+especieDe(id).nombre);abrirTienda();renderFocusPlant();}
 
@@ -890,6 +891,7 @@ function estilosVueloSemillas(){
     '.saco-semillas{position:fixed;z-index:4400;top:calc(env(safe-area-inset-top,0px) + 74px);right:16px;display:flex;align-items:center;gap:6px;padding:8px 14px;'+
       'border-radius:var(--r-pill);background:var(--glass-fuerte);border:1px solid var(--borde);box-shadow:var(--sombra);backdrop-filter:blur(16px);'+
       'font-size:var(--fs-l);font-weight:800;color:var(--aviso-tx);font-variant-numeric:tabular-nums;animation:fadeIn .25s both;transition:opacity .35s}'+
+    '.saco-semillas{flex-wrap:wrap;justify-content:flex-end;max-width:calc(100vw - 32px)}.saco-semillas.con-pista{border-radius:var(--r-xl);row-gap:2px}.saco-pista{flex-basis:100%;text-align:right;font-size:var(--fs-s);font-weight:700;color:var(--suave);line-height:1.3}.saco-pista b{color:var(--ok-tx);font-weight:800}'+
     '.saco-semillas.fuera{opacity:0}.seeds-n.sv-rebote{animation:svRebote .5s cubic-bezier(.34,1.56,.64,1)}'+
     '@keyframes svRebote{0%{transform:scale(1)}40%{transform:scale(1.4)}70%{transform:scale(.92)}100%{transform:scale(1)}}'+
     '@media (prefers-reduced-motion:reduce){.saco-semillas{animation:none;transition:none}.seeds-n.sv-rebote{animation:none}}';
@@ -902,12 +904,26 @@ function marcadorSemillas(){
   p.innerHTML='<span aria-hidden="true">🌰</span><b class="seeds-n"></b>';document.body.appendChild(p);
   return p.querySelector("b");
 }
+/* «🌸 ¡A 4 🌰 de plantar cerezos!»: bajo el saco, solo si la próxima especie de la tienda queda a 1-10 🌰
+   (informativo y en positivo; con todas compradas o más lejos, nada). Se repinta al ganar y al gastar. */
+function pistaEspecieSaco(n){
+  var e=typeof proxEspecie==="function"?proxEspecie():null,f=e?e.precio-n:0;
+  return f>=1&&f<=10?e.icon+' ¡A <b>'+f+' 🌰</b> de plantar '+e.pl+'!':"";
+}
+function pintarPistaSaco(saco,n){
+  if(!saco)return false;var h=pistaEspecieSaco(n),p=saco.querySelector(".saco-pista");
+  saco.setAttribute("aria-label",n+" semillas"+(h?". "+h.replace(/<[^>]+>/g,""):""));
+  saco.classList.toggle("con-pista",!!h);
+  if(!h){if(p)p.remove();return false;}
+  if(!p){p=document.createElement("small");p.className="saco-pista";saco.appendChild(p);}
+  p.innerHTML=h;return true;
+}
 function volarSemillas(desde,ganadas){
   ganadas=ganadas|0;if(ganadas<1||!DATA)return;
   estilosVueloSemillas();
   var total=semillas(),el=marcadorSemillas(),saco=el.closest(".saco-semillas");
   if(saco)saco.setAttribute("aria-label",total+" semillas");
-  var quitarSaco=function(){if(saco)setTimeout(function(){saco.classList.add("fuera");setTimeout(function(){saco.remove();},sinMovimiento()?0:400);},2000);};
+  var quitarSaco=function(){if(saco)setTimeout(function(){saco.classList.add("fuera");setTimeout(function(){saco.remove();},sinMovimiento()?0:400);},pintarPistaSaco(saco,total)?3500:2000);};
   if(sinMovimiento()||!el.animate||typeof requestAnimationFrame!=="function"){el.textContent=total;quitarSaco();return;}
   var desdeN=Math.max(0,total-ganadas);el.textContent=desdeN;
   var r=el.getBoundingClientRect(),tx=r.left+r.width/2,ty=r.top+r.height/2;

@@ -284,6 +284,31 @@ PRUEBAS = [
         if(!n||n.textContent!==String(semillas()))return 'con reducir movimiento no da la cifra final: '+(n&&n.textContent);
         return true;
       }finally{window.sinMovimiento=sm;DATA.sessions=o;closeModal();limpia();}"""),
+    ("pista bajo el saco de semillas: «¡A N 🌰 de plantar <especie>!» solo a 1-10 🌰, en positivo, y se repinta al gastar", """
+      await cargarExtra();
+      var k=['sessions','semillasPremio','semillasGastadas','especiesCompradas','especiesAvisadas','especieAvisoPend','especie'],o={};k.forEach(x=>o[x]=DATA[x]);
+      var sm=window.sinMovimiento,st=window.showToast,at=window.abrirTienda,hoy=ymd(),mk=i=>({id:'ps'+i,date:hoy,min:30,ts:Date.now()-(100-i)*1000,bib:NO_BIB,focus:'ok',esp:'roble'});
+      var limpia=()=>document.querySelectorAll('.saco-semillas,.semilla-vuela').forEach(x=>x.remove());
+      var pista=()=>{var p=document.querySelector('.saco-semillas .saco-pista');return p?p.innerText:'';};
+      var cierra=async(i,premio)=>{limpia();DATA.semillasPremio=premio;DATA.especieAvisoPend=0;var s=mk(i);DATA.sessions=[s];pedirValoracion(s,null);await new Promise(r=>setTimeout(r,200));$('sessSkip').click();await new Promise(r=>setTimeout(r,50));};
+      try{
+        window.sinMovimiento=()=>true;window.showToast=()=>{};window.abrirTienda=()=>{};
+        DATA.semillasGastadas=0;DATA.especiesCompradas=[];DATA.especiesAvisadas=['cerezo','abeto','arce','palmera','cactus'];
+        goView('map');await new Promise(r=>setTimeout(r,200));
+        await cierra(0,50); // 50 + 6 = 56 → faltan 4 para el cerezo (60)
+        var t=pista();if(!/🌸/.test(t)||!/A 4 🌰 de plantar cerezos/.test(t))return 'sin la pista a 4: '+t;
+        if(/te faltan/i.test(t))return 'redacción en negativo: '+t;
+        if(!/4 🌰 de plantar cerezos/.test(document.querySelector('.saco-semillas').getAttribute('aria-label')||''))return 'el lector de pantalla no la oye';
+        var css=($('vueloCss')||{}).textContent||'';if(!/\\.saco-pista\\{[^}]*var\\(--suave\\)/.test(css)||/saco-pista[^}]*(red|#[0-9a-f]{3,6}|--peligro|--error)/i.test(css))return 'la pista no usa tokens neutros';
+        await cierra(1,40);if(pista())return 'sale a 14 🌰: '+pista();
+        await cierra(2,54);if(pista())return 'sale con la especie ya alcanzable: '+pista();
+        DATA.especiesCompradas=ESPECIES.filter(e=>e.precio>0).map(e=>e.id);await cierra(3,50);if(pista())return 'sale con todas compradas';
+        DATA.especiesCompradas=[];await cierra(4,138); // 144: nada que mostrar; al comprar el cerezo quedan 84 → a 6 del abeto (90)
+        if(pista())return 'sale sin estar a ≤ 10';
+        comprarEspecie('cerezo',document.querySelector('.saco-semillas'));
+        if(!/🌲/.test(pista())||!/A 6 🌰 de plantar abetos nevados/.test(pista()))return 'no se repinta al gastar: '+pista();
+        return true;
+      }finally{window.sinMovimiento=sm;window.showToast=st;window.abrirTienda=at;k.forEach(x=>DATA[x]=o[x]);closeModal();limpia();renderForest();renderSemillas();saveUserData();}"""),
     ("«¡Qué alegría verte!» al volver tras ≥ 3 días (horas y árbol más grande, sin hablar de la racha perdida)", """
       await cargarExtra();
       var o=DATA.sessions,uf=DATA.usedFreezeDates,dia=n=>{var d=new Date();d.setDate(d.getDate()-n);return ymd(d);};
