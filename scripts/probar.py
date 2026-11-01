@@ -157,13 +157,13 @@ PRUEBAS = [
         DATA.sessions=o.s;DATA.hitosBosque=o.h;DATA.semillasPremio=o.p;DATA.misiones=o.m;DATA.acciones=o.a;DATA.hitoBosquePend=0;closeModal();renderForest();renderMisiones();
       }"""),
     ("próxima especie: barra en «Mi bosque» y aviso «ya puedes» una sola vez", """
-      var k=['sessions','semillasPremio','semillasGastadas','especiesCompradas','especiesAvisadas','especieAvisoPend','misiones','acciones','hitosBosque','hitoBosquePend'],o={};
+      var k=['sessions','semillasPremio','semillasGastadas','especiesCompradas','especiesAvisadas','especieAvisoPend','misiones','acciones','hitosBosque','hitoBosquePend','bibNuevaPend'],o={};
       k.forEach(x=>o[x]=DATA[x]);
       var toasts=[],st=window.showToast,cm=window.comprobarMisiones;window.showToast=m=>toasts.push(m);window.comprobarMisiones=()=>{};
       try{
         CELEB_DIA=null;closeModal();document.querySelectorAll('.racha-overlay').forEach(x=>x.remove()); // sin la celebración del día de la prueba de sesión
         var hoy=ymd(),mk=i=>({id:'pe'+i,date:hoy,min:30,ts:Date.now()-(100-i)*1000,bib:NO_BIB,focus:'ok',esp:'roble'});
-        DATA.sessions=[mk(0),mk(1)];DATA.semillasPremio=0;DATA.semillasGastadas=0;DATA.especiesCompradas=[];DATA.especiesAvisadas=[];DATA.especieAvisoPend=0;DATA.hitosBosque=[1e9];
+        DATA.sessions=[mk(0),mk(1)];DATA.semillasPremio=0;DATA.semillasGastadas=0;DATA.especiesCompradas=[];DATA.especiesAvisadas=[];DATA.especieAvisoPend=0;DATA.bibNuevaPend=0;AVISO_T=0;DATA.hitosBosque=[1e9];
         goView('study');renderForest();var b=$('forestCard').querySelector('.prox-esp'),t=(b||{}).innerText||'';
         if(!/Cerezo/.test(t)||!/te faltan 48/.test(t)||!/12\\/60/.test(t))return 'barra mal: '+t;
         if(b.querySelector('.hp-bar i').style.width!=='20%')return 'ancho mal: '+b.querySelector('.hp-bar i').style.width;
