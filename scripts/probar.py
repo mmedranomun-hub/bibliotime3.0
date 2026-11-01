@@ -686,6 +686,37 @@ PRUEBAS = [
         return true;
       }finally{clearTimeout(irAMision.t);studyTimer.running=t0.running;studyTimer.start=t0.start;studyTimer.bibIndex=t0.bibIndex;studyTimer.tick=t0.tick;MIS_FOCO={id:'',hasta:0};
         k.forEach(x=>DATA[x]=o[x]);el&&(el._clave=null);ms.classList.toggle('hidden',oculto0);goView('map');await espera(300);renderMisCerca();renderStudy();}"""),
+    ("misión de minutos cumplida a la vista: la barra termina de llenarse antes del ✅ (sin vista o con reducir movimiento, ✅ directo)", """
+      var k=['misiones','sessions','acciones','semillasPremio'],o={};k.forEach(x=>o[x]=DATA[x]);
+      var st=window.showToast,ev=window.encolarVuelo,ce=window.celebrar,sm=window.sinMovimiento,espera=n=>new Promise(r=>setTimeout(r,n)),hoy=ymd();
+      window.showToast=()=>{};window.encolarVuelo=()=>{};window.celebrar=()=>{};
+      var fila=()=>document.querySelector('#missionsCard [data-m="m25"]');
+      var prepara=min=>{DATA.sessions=[{id:'ml0',date:hoy,min:min,ts:Date.now()-3600000,bib:NO_BIB,focus:'ok',esp:'roble'}];
+        DATA.misiones={fecha:hoy,ids:['m25','agenda','social'],hechas:{},cofre:false};DATA.acciones={fecha:hoy};renderMisiones();};
+      try{
+        closeModal();goView('study');$('missionsCard').scrollIntoView({block:'center'});await espera(200);
+        prepara(20);if(fila().querySelector('.mis-bar i').style.width!=='80%')return 'barra inicial mal: '+fila().querySelector('.mis-bar i').style.width;
+        DATA.sessions[0].min=25;comprobarMisiones();await espera(120);
+        var f=fila(),i=f.querySelector('.mis-bar i'),bw=f.querySelector('.mis-bar').getBoundingClientRect().width,w=i.getBoundingClientRect().width;
+        if(!DATA.misiones.hechas.m25)return 'no se cumple la misión';
+        if(f.classList.contains('ok')||f.querySelector('.mis-ic').textContent==='✅')return 'salta a ✅ sin llenar la barra';
+        if(i.style.width!=='100%')return 'la barra no va a 100 %';
+        if(!(w>bw*0.79&&w<bw-1))return 'no se ve llenándose: '+Math.round(w)+'/'+Math.round(bw);
+        if(/(0\\/3|1\\/3)/.test($('missionsCard').innerText)===false)return 'el cofre cuenta la misión antes del ✅';
+        renderMisiones();if(fila().classList.contains('ok'))return 'un repintado a medias la pasa a ✅';
+        await espera(MIS_LLENA_MS+150);f=fila();
+        if(!f.classList.contains('ok')||f.querySelector('.mis-ic').textContent!=='✅')return 'no pasa a ✅ al acabar de llenarse';
+        if(f.querySelector('.mis-bar i').style.width!=='100%'||f.classList.contains('mis-llena'))return 'estado final mal';
+        // misión que no es de minutos: ✅ directo
+        registrarAccion('agenda');if(!document.querySelector('#missionsCard [data-m="agenda"]').classList.contains('ok'))return 'la de agenda espera sin barra que llenar';
+        // fuera de la vista: ✅ directo
+        prepara(20);goView('map');DATA.sessions[0].min=25;comprobarMisiones();goView('study');
+        if(!fila().classList.contains('ok'))return 'espera aunque no estaba a la vista';
+        // con reducir movimiento: ✅ directo
+        $('missionsCard').scrollIntoView({block:'center'});prepara(20);window.sinMovimiento=()=>true;DATA.sessions[0].min=25;comprobarMisiones();
+        if(!fila().classList.contains('ok')||fila().classList.contains('mis-llena'))return 'se anima con reducir movimiento';
+        return true;
+      }finally{window.showToast=st;window.encolarVuelo=ev;window.celebrar=ce;window.sinMovimiento=sm;MIS_LLENA={};k.forEach(x=>DATA[x]=o[x]);goView('map');renderMisiones();}"""),
     ("acceso: la ley foral solo en Navarra", """
       for(var i=N_NAVARRA;i<BIBLIOTECAS.length;i++)if(/Ley Foral/.test(accesoAccesibilidadHTML(BIBLIOTECAS[i])))return 'ley foral fuera de Navarra: '+BIBLIOTECAS[i].nombre;
       var nav=BIBLIOTECAS.slice(0,N_NAVARRA).some(b=>/Ley Foral 32\\/2002/.test(accesoAccesibilidadHTML(b)));
