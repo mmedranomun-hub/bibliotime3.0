@@ -963,6 +963,32 @@ async function showOccHistory(i){
   wrap.innerHTML=html;
 }
 
+/* ----- «¡Qué alegría verte!»: si vuelves tras ≥ 3 días sin estudiar, la bienvenida cambia la racha por un
+   saludo cálido con lo que ya has logrado (horas totales y tu árbol más grande o tu sesión más larga).
+   Solo premia: nunca dice cuántos días faltaste ni que la racha se perdió (sin llama apagada). ----- */
+function vueltaBienvenida(){
+  var L=(DATA&&DATA.sessions)||[]; if(!L.length)return null;
+  var ult="",tot=0,larga=0,arbol=null;
+  L.forEach(function(s){if(s.date>ult)ult=s.date;tot+=s.min||0;if(s.min>larga)larga=s.min;if(s.focus!=="withered"&&(!arbol||s.min>arbol.min))arbol=s;});
+  var dias=Math.round((new Date(ymd()+"T00:00:00")-new Date(ult+"T00:00:00"))/864e5);
+  return dias>=3?{tot:tot,larga:larga,arbol:arbol}:null;
+}
+function vueltaBienvenidaHTML(nombre){
+  var V=vueltaBienvenida(); if(!V)return "";
+  var hm=function(m){return hMin(Math.round(m)).replace(/^0h /,"").replace(/h 0m$/,"h");};
+  if(!$("bvVueltaCss")){var st=document.createElement("style");st.id="bvVueltaCss";
+    st.textContent='.bv-arbol{display:inline-block;margin-bottom:8px;animation:growIn .8s cubic-bezier(.34,1.56,.64,1)}.bv-arbol svg{display:block}.bv-arbol.emoji{font-size:var(--fs-5xl);line-height:1}.bv-bosque .nw{white-space:nowrap}'+
+      '.bv-bosque{margin:10px 0;padding:10px 12px;border-radius:var(--r-m);font-size:var(--fs-m);text-align:left;background:var(--ev-ot-bg);color:var(--ev-ot-tx);line-height:1.45}'+
+      '@media (prefers-reduced-motion:reduce){.bv-arbol{animation:none}}';
+    document.head.appendChild(st);}
+  var A=V.arbol, icono=A&&A.min>=10?'<div class="bv-arbol" aria-hidden="true">'+arbolSVG(A.min,false,A.subject||A.id,96,A.esp)+'</div>':'<div class="bv-arbol emoji" aria-hidden="true">🌱</div>';
+  var hito=A&&A.min>=10?'🌳 Tu árbol más grande: <b>'+ETAPAS_ARBOL[etapaArbol(A.min)][1].toLowerCase()+'</b> de <span class="nw">'+hm(A.min)+'</span>. ¡Tu bosque te espera!'
+    :'⏱️ Tu sesión más larga: <b>'+hm(V.larga)+'</b>. ¡Tu bosque te espera!';
+  return icono+'<h3>¡Qué alegría verte'+nombre+'!</h3>'+
+    '<div class="sub">Ya llevas <b>'+hm(V.tot)+'</b> estudiadas con Bibliomapa. ¡Cada minuto suma!</div>'+
+    '<div class="bv-bosque">'+hito+'</div>';
+}
+
 /* ----- Bienvenida diaria (Duolingo): la ventana; bienvenidaDiaria() de app.js decide si toca y la pide a los 900 ms ----- */
 function pintarBienvenidaDiaria(){
   if(document.querySelector(".modal-bg")||$("storyViewer"))return;
@@ -970,8 +996,9 @@ function pintarBienvenidaDiaria(){
   var u=(Brain.getUsers()[CURRENT]||{}).name, nombre=u&&!esInvitado()?", "+u.split(" ")[0]:"";
   var n=streakDays(), M=misionesDeHoy(), tip=TIPS[hashStr(ymd())%TIPS.length], ex=proximoExamen();
   var dEx=ex?Math.round((new Date(ex.k+"T00:00:00")-new Date(ymd()+"T00:00:00"))/864e5):null;
-  openModal('<div class="bienvenida"><div class="bv-fuego'+(n?'':' apagado')+'">🔥</div><h3>'+saludo+nombre+'</h3>'+
-    '<div class="sub">'+(n?'Llevas <b>'+n+(n===1?' día':' días')+'</b> de racha. ¡Que no se apague hoy!':'Hoy es un buen día para empezar una racha.')+'</div>'+
+  var cab=vueltaBienvenidaHTML(nombre)||'<div class="bv-fuego'+(n?'':' apagado')+'">🔥</div><h3>'+saludo+nombre+'</h3>'+
+    '<div class="sub">'+(n?'Llevas <b>'+n+(n===1?' día':' días')+'</b> de racha. ¡Que no se apague hoy!':'Hoy es un buen día para empezar una racha.')+'</div>';
+  openModal('<div class="bienvenida">'+cab+
     (ex&&dEx<=14?'<div class="bv-ex">📅 <b>'+escapeHTML(ex.ev.title)+'</b> · '+(dEx===0?'¡es hoy!':dEx===1?'mañana':'en '+dEx+' días')+'</div>':'')+
     '<div class="bv-mis">🎯 Misiones de hoy: '+M.ids.map(function(id){var d=misionDef(id);return d?d.icon:'';}).join(" ")+' · cofre al completarlas</div>'+
     '<div class="bv-tip">'+tip.e+' <b>'+escapeHTML(tip.t)+'</b>: '+escapeHTML(tip.x)+'</div>'+

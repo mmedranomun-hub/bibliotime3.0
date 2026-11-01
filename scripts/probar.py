@@ -242,6 +242,31 @@ PRUEBAS = [
         pedirValoracion(s,null);if(document.querySelector('#modalRoot .record-ses'))return 'sale sin récord';
         return true;
       }finally{DATA.sessions=o;closeModal();}"""),
+    ("«¡Qué alegría verte!» al volver tras ≥ 3 días (horas y árbol más grande, sin hablar de la racha perdida)", """
+      await cargarExtra();
+      var o=DATA.sessions,uf=DATA.usedFreezeDates,dia=n=>{var d=new Date();d.setDate(d.getDate()-n);return ymd(d);};
+      var mk=(i,n,m,f)=>({id:'qa'+i,date:dia(n),min:m,ts:Date.now()-n*864e5,bib:NO_BIB,focus:f||'ok',esp:'roble'});
+      var ver=()=>{closeModal();pintarBienvenidaDiaria();var m=document.querySelector('#modalRoot .bienvenida');return m?m.innerText:'';};
+      try{
+        DATA.usedFreezeDates=[];
+        DATA.sessions=[mk(0,9,40),mk(1,6,95),mk(2,4,120,'withered')];
+        var t=ver();
+        if(!/¡Qué alegría verte/.test(t))return 'no saluda: '+t;
+        if(!/4h 15m/.test(t))return 'sin el total de horas: '+t;
+        if(!/gran árbol/.test(t)||!/1h 35m/.test(t)||!/bosque te espera/.test(t))return 'sin el árbol más grande: '+t;
+        var cab=[...document.querySelectorAll('#modalRoot .bienvenida > h3, #modalRoot .bienvenida > .sub, #modalRoot .bv-bosque')].map(x=>x.innerText).join(' ');
+        if(/racha|días sin|perdi|apag/i.test(cab))return 'habla de la racha o de los días sin estudiar: '+cab;
+        if(document.querySelector('#modalRoot .bv-fuego'))return 'sale la llama';
+        if(!document.querySelector('#modalRoot .bv-arbol svg'))return 'sin el dibujo del árbol';
+        if(!/ev-ot-bg/.test(($('bvVueltaCss')||{}).textContent||'')||!/prefers-reduced-motion/.test($('bvVueltaCss').textContent))return 'sin estilos con tokens o sin reduced-motion';
+        DATA.sessions=[mk(0,5,50,'withered')];t=ver();
+        if(!/¡Qué alegría verte/.test(t)||!/sesión más larga/.test(t)||!/50m/.test(t))return 'sin árbol sano no cita la sesión más larga: '+t;
+        DATA.sessions=[mk(0,9,40),mk(1,2,30)];t=ver();
+        if(/Qué alegría/.test(t)||!/racha/.test(t))return 'saluda con solo 2 días sin estudiar: '+t;
+        DATA.sessions=[];t=ver();
+        if(/Qué alegría/.test(t)||!/racha/.test(t))return 'cambia la bienvenida sin sesiones: '+t;
+        return true;
+      }finally{DATA.sessions=o;DATA.usedFreezeDates=uf;closeModal();}"""),
     ("biblioteca nueva en tu mapa: aviso suave al cerrar y «📍 bibliotecas exploradas» en el Perfil", """
       var k=['sessions','misiones','acciones','hitosBosque','hitoBosquePend','especiesAvisadas','especieAvisoPend','bibNuevaPend','primerArbol','semillasPremio'],o={};
       k.forEach(x=>o[x]=DATA[x]);
