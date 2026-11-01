@@ -219,6 +219,29 @@ PRUEBAS = [
         if(lv==null)localStorage.removeItem(lk);else localStorage.setItem(lk,lv);
         closeModal();renderForest();renderMisiones();renderRacha();renderSemillas();
       }"""),
+    ("récord personal en «Sesión terminada» (solo si supera la más larga, sin negativos)", """
+      await cargarExtra();
+      var o=DATA.sessions,hoy=ymd(),mk=(i,m,f)=>({id:'rp'+i,date:hoy,min:m,ts:Date.now()-(100-i)*1000,bib:NO_BIB,focus:f||'ok',esp:'roble'});
+      var txt=s=>{DATA.sessions=DATA.sessions.concat([s]);var h=recordSesionHTML(s);DATA.sessions.pop();return h;};
+      try{
+        DATA.sessions=[mk(0,30),mk(1,50),mk(2,20)];
+        var t=txt(mk(3,65));
+        if(!/Nuevo récord personal/.test(t)||!/1h 5m seguidos/.test(t)||!/antes 50m/.test(t))return 'no celebra el récord: '+t;
+        if(txt(mk(4,50)))return 'celebra un empate';
+        if(txt(mk(5,40)))return 'sale algo sin récord';
+        if(txt(mk(6,70,'withered')))return 'celebra un árbol marchito';
+        DATA.sessions=[mk(0,5),mk(1,8)];
+        if(txt(mk(7,60)))return 'celebra con menos de 3 sesiones previas';
+        DATA.sessions=[mk(0,5),mk(1,8),mk(2,9)];
+        if(txt(mk(8,12)))return 'celebra una sesión de menos de 15 min';
+        DATA.sessions=[mk(0,30),mk(1,50),mk(2,20)];var s=mk(9,90);DATA.sessions.push(s);
+        pedirValoracion(s,null);var c=document.querySelector('#modalRoot .record-ses');
+        if(!c||!/1h 30m seguidos/.test(c.innerText))return 'no sale en «Sesión terminada»';
+        if(!/liga-oro/.test(($('recordCss')||{}).textContent||''))return 'sin estilos con tokens';
+        closeModal();DATA.sessions=[mk(0,30),mk(1,50),mk(2,20),mk(3,10)];s=DATA.sessions[3];
+        pedirValoracion(s,null);if(document.querySelector('#modalRoot .record-ses'))return 'sale sin récord';
+        return true;
+      }finally{DATA.sessions=o;closeModal();}"""),
     ("acceso: la ley foral solo en Navarra", """
       for(var i=N_NAVARRA;i<BIBLIOTECAS.length;i++)if(/Ley Foral/.test(accesoAccesibilidadHTML(BIBLIOTECAS[i])))return 'ley foral fuera de Navarra: '+BIBLIOTECAS[i].nombre;
       var nav=BIBLIOTECAS.slice(0,N_NAVARRA).some(b=>/Ley Foral 32\\/2002/.test(accesoAccesibilidadHTML(b)));

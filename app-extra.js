@@ -817,13 +817,32 @@ function pintarFoco(){
 }
 function cerrarFoco(){clearInterval(FOCO_T);var o=$("focoView");if(o)o.remove();try{if(document.fullscreenElement)document.exitFullscreen();}catch(e){}}
 
+/* ----- Récord personal: si la sesión (árbol sano, ≥ 15 min) supera la más larga de las anteriores (y ya
+   había al menos 3), «Sesión terminada» lo dice con la marca anterior. Solo premia: si no hay récord no
+   sale nada (ni «te faltan», ni comparaciones). El CSS va aquí para no tocar index.html. ----- */
+function recordSesion(sesion){
+  if(!sesion||sesion.focus==="withered"||!(sesion.min>=15))return null;
+  var antes=0,n=0;(DATA.sessions||[]).forEach(function(s){if(s===sesion||s.id===sesion.id)return;n++;if(s.min>antes)antes=s.min;});
+  return n>=3&&sesion.min>antes?{antes:antes}:null;
+}
+function recordSesionHTML(sesion){
+  var r=recordSesion(sesion); if(!r)return "";
+  var hm=function(m){return hMin(Math.round(m)).replace(/^0h /,"");};
+  if(!$("recordCss")){var st=document.createElement("style");st.id="recordCss";
+    st.textContent='.record-ses{display:flex;align-items:center;gap:10px;margin:0 0 12px;padding:10px 12px;border-radius:var(--r-m);background:var(--liga-oro-bg);color:var(--liga-oro-tx);border:1px solid var(--liga-oro);font-size:var(--fs-s);line-height:1.35;animation:pop .6s .4s both}'+
+      '.record-ses .rs-ic{font-size:var(--fs-2xl);line-height:1}.record-ses b{display:block;font-size:var(--fs-base)}'+
+      '@media (prefers-reduced-motion:reduce){.record-ses{animation:none}}';
+    document.head.appendChild(st);}
+  return '<div class="record-ses" role="status"><span class="rs-ic" aria-hidden="true">🏅</span><span><b>¡Nuevo récord personal!</b>'+hm(sesion.min)+' seguidos · tu sesión más larga hasta hoy (antes '+hm(r.antes)+')</span></div>';
+}
+
 /* ----- Sesión terminada (valorar, afluencia, nota) y editar una sesión ----- */
 function pedirValoracion(sesion,horasAntes){
   var sel={v:0};
   var plantado=sesion.focus?'<div class="planted'+(sesion.focus==="withered"?' seco':'')+'"><div class="planted-tree">'+arbolSVG(sesion.min,sesion.focus==="withered",sesion.subject||sesion.id,110,sesion.esp)+'</div>'+
     '<div class="planted-txt">'+(sesion.focus==="withered"?'🥀 Tu árbol se marchitó porque saliste de la app. ¡El próximo crecerá!':'🎉 ¡Has plantado un '+ETAPAS_ARBOL[etapaArbol(sesion.min)][1].toLowerCase()+' en tu bosque!'+(Math.floor(sesion.min/5)?'<span class="planted-seeds">🌰 +'+Math.floor(sesion.min/5)+' semillas</span>':''))+'</div></div>':'';
   var barraNivel=horasAntes!=null?nivelProgresoHTML(horasAntes):'';
-  openModal(plantado+barraNivel+'<h3>Sesión terminada</h3><div class="sub">'+fmtHoras(sesion.min)+' h en '+escapeHTML(sesion.bib.replace("Biblioteca ","").replace("Pública ",""))+(sesion.verif?' · <span class="badge-ok">✓ verificada</span>':'')+'</div>'+
+  openModal(plantado+recordSesionHTML(sesion)+barraNivel+'<h3>Sesión terminada</h3><div class="sub">'+fmtHoras(sesion.min)+' h en '+escapeHTML(sesion.bib.replace("Biblioteca ","").replace("Pública ",""))+(sesion.verif?' · <span class="badge-ok">✓ verificada</span>':'')+'</div>'+
     '<label style="font-size:var(--fs-s);font-weight:700;color:var(--suave);text-transform:uppercase;letter-spacing:.05em">¿Qué tal ha ido?</label>'+
     '<div class="prodstars" id="prodStars">'+[1,2,3,4,5].map(function(n){return '<button data-v="'+n+'">★</button>';}).join("")+'</div>'+
     (bibIdxDe(sesion)>=0?'<label style="display:block;margin-top:12px;font-size:var(--fs-s);font-weight:700;color:var(--suave);text-transform:uppercase;letter-spacing:.05em">¿Cómo estaba de llena?</label>'+
