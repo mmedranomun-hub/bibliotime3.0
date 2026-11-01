@@ -3549,8 +3549,6 @@ function comprobarMisiones(){
   if(!DATA)return; var M=misionesDeHoy(), h=statsHoy(), nuevas=[];
   M.ids.forEach(function(id){var d=misionDef(id);if(d&&!M.hechas[id]&&d.val(h)>=d.meta){M.hechas[id]=new Date().toISOString();nuevas.push(d);}});
   if(nuevas.length){
-    if(!sinMovimiento()&&misionesALaVista())nuevas.forEach(function(d){if(d.min)MIS_LLENA[d.id]=Date.now()+MIS_LLENA_MS;});
-    if(Object.keys(MIS_LLENA).length){clearTimeout(comprobarMisiones.t);comprobarMisiones.t=setTimeout(renderMisiones,MIS_LLENA_MS+30);}
     DATA.semillasPremio=(DATA.semillasPremio||0)+MIS_PREMIO*nuevas.length;saveUserData();
     nuevas.forEach(function(d,k){setTimeout(function(){showToast("✅ Misión cumplida: "+d.txt+" · +"+MIS_PREMIO+" 🌰");celebrar($("missionsCard"),[d.icon,"✨","🌰"],10);encolarVuelo(MIS_PREMIO,'#missionsCard [data-m="'+d.id+'"]');},k*1400);});
     renderSemillas();
@@ -3569,32 +3567,20 @@ function soltarVuelo(){
   var z,n=VUELO.n,h=VUELO.h,hr=VUELO.hr,o=VUELO.de&&document.querySelector(VUELO.de),r=o&&o.getBoundingClientRect();z=VUELO.z;VUELO.n=VUELO.h=VUELO.z=0;VUELO.hr=null;
   cargarExtra().then(function(){if(n)volarSemillas(r,n);if(h)volarHielo(hr||r,n?250:0);if(z)hieloSalva();},function(){});
 }
-// Misión de minutos cumplida con «Misiones de hoy» a la vista: su barra termina de llenarse (transición de .8 s de
-// .mis-bar i) antes de pasar a ✅, en vez de saltar. MIS_LLENA guarda hasta cuándo se pinta «llenándose» (sin ✅ ni
-// contarla para el cofre); un solo setTimeout repinta al acabar, sin intervalos. Con «reducir movimiento», ✅ directo.
-var MIS_LLENA={},MIS_LLENA_MS=820;
-function misionesALaVista(){
-  var el=$("missionsCard"); if(!el||document.hidden)return false;
-  var r=el.getBoundingClientRect(); return r.height>0&&r.bottom>0&&r.top<innerHeight;
-}
 function renderMisiones(){
   var el=$("missionsCard"); if(!el||!DATA)return;
-  var ahora=Date.now(), antes={};
-  Object.keys(MIS_LLENA).forEach(function(id){if(MIS_LLENA[id]<=ahora){delete MIS_LLENA[id];return;}var i=el.querySelector('[data-m="'+id+'"] .mis-bar i'),b=i&&i.parentNode.getBoundingClientRect().width;antes[id]=b?(i.getBoundingClientRect().width/b*100).toFixed(1)+"%":"";});
-  var llena=function(id){return id in antes;};
-  var M=misionesDeHoy(), h=statsHoy(), hechas=M.ids.filter(function(id){return M.hechas[id]&&!llena(id);}).length;
+  var M=misionesDeHoy(), h=statsHoy(), hechas=M.ids.filter(function(id){return M.hechas[id];}).length;
   var finDia=new Date();finDia.setHours(24,0,0,0);var qm=Math.max(0,Math.round((finDia-Date.now())/60000)), quedan=qm>=60?Math.floor(qm/60)+" h":qm+" min";
   el.innerHTML='<div class="mis-head"><div class="section-title" style="margin:0">🎯 Misiones de hoy</div><span class="mis-time">⏳ '+quedan+'</span></div>'+
     M.ids.map(function(id){
       var d=misionDef(id); if(!d)return "";
-      var v=Math.min(d.meta,d.val(h)), pct=Math.round(v/d.meta*100), ok=!!M.hechas[id]&&!llena(id), foco=MIS_FOCO.id===id&&Date.now()<MIS_FOCO.hasta, falta=d.meta-v;
-      return '<div class="mis'+(ok?' ok':'')+(foco?' mis-foco':'')+(llena(id)?' mis-llena':'')+'" data-m="'+id+'"><div class="mis-ic">'+(ok?'✅':d.icon)+'</div><div class="mis-main"><div class="mis-txt">'+escapeHTML(d.txt)+'</div>'+
-        '<div class="mis-bar"><i style="width:'+(llena(id)?antes[id]||'100%':pct+'%')+'"></i></div>'+(foco&&!ok&&d.min&&falta>0?'<div class="mis-pista">⏱️ <b>'+falta+' min</b> más y es tuya · <b>+'+MIS_PREMIO+' 🌰</b></div>':'')+'</div><div class="mis-val">'+(d.min?hMin(v).replace("0h ",""):v)+'/'+(d.min?hMin(d.meta).replace("0h ",""):d.meta)+'</div></div>';
+      var v=Math.min(d.meta,d.val(h)), pct=Math.round(v/d.meta*100), ok=!!M.hechas[id], foco=MIS_FOCO.id===id&&Date.now()<MIS_FOCO.hasta, falta=d.meta-v;
+      return '<div class="mis'+(ok?' ok':'')+(foco?' mis-foco':'')+'" data-m="'+id+'"><div class="mis-ic">'+(ok?'✅':d.icon)+'</div><div class="mis-main"><div class="mis-txt">'+escapeHTML(d.txt)+'</div>'+
+        '<div class="mis-bar"><i style="width:'+pct+'%"></i></div>'+(foco&&!ok&&d.min&&falta>0?'<div class="mis-pista">⏱️ <b>'+falta+' min</b> más y es tuya · <b>+'+MIS_PREMIO+' 🌰</b></div>':'')+'</div><div class="mis-val">'+(d.min?hMin(v).replace("0h ",""):v)+'/'+(d.min?hMin(d.meta).replace("0h ",""):d.meta)+'</div></div>';
     }).join("")+
     '<button class="cofre'+(hechas===3&&!M.cofre?' listo':'')+(M.cofre?' abierto':'')+'" onclick="abrirCofre(this)" '+(hechas===3&&!M.cofre?'':'disabled')+'>'+
       '<span class="cofre-ic">🎁</span><span>'+(M.cofre?'Sello del día conseguido · vuelve mañana':hechas===3?'¡Abre tu cofre!':'Cofre: completa las 3 misiones ('+hechas+'/3)')+'</span>'+
       (M.cofre?'<span class="sello-dia" aria-hidden="true">🏵️</span>':'')+'</button>';
-  var ll=el.querySelectorAll(".mis-llena .mis-bar i"); if(ll.length){void el.offsetWidth;ll.forEach(function(i){i.style.width="100%";});}
 }
 // Barrita bajo el cronómetro: «🎯 2/3 misiones · la siguiente en 7 min» si a una misión de minutos le faltan ≤ 15 min;
 // tras cumplir una en esta sesión lo refleja 3 min. Va con el tick del cronómetro (solo recalcula al cambiar el minuto);
