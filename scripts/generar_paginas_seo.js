@@ -314,9 +314,47 @@ function tablaHorariosLugar(lugar, lista) {
 
 // ---------- Escritura ----------
 const SALIDA = path.join(RAIZ, "bibliotecas");
+// <lastmod> exacto por página: el día en que su HTML cambió de verdad. Antes de borrar la carpeta se guardan la huella
+// (sha1) de cada página y su <lastmod> del sitemap anterior; si la página nueva sale idéntica, conserva esa fecha; si
+// cambia o es nueva, lleva la de hoy. Así regenerar con los mismos datos no «refresca» 400 URL que no han cambiado (Google
+// deja de fiarse del lastmod si no es exacto) y un cambio de plantilla o de datos sí lo mueve, aunque el horario
+// verificado (dateModified) sea anterior.
+const crypto = require("crypto");
+const huella = (txt) => crypto.createHash("sha1").update(txt).digest("hex");
+const lastmodAntes = new Map(), huellaAntes = new Map(), huellaNueva = new Map();
+try {
+  const sm = fs.readFileSync(path.join(RAIZ, "sitemap.xml"), "utf8");
+  for (const m of sm.matchAll(/<loc>([^<]+)<\/loc><lastmod>(\d{4}-\d\d-\d\d)<\/lastmod>/g)) lastmodAntes.set(m[1].slice(DOMINIO.length), m[2]);
+} catch (e) { /* sin sitemap anterior: todo lleva la fecha de hoy */ }
+(function recorre(dir) {
+  if (!fs.existsSync(dir)) return;
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    const f = path.join(dir, e.name);
+    if (e.isDirectory()) recorre(f);
+    else if (e.name === "index.html") huellaAntes.set("/" + path.relative(RAIZ, dir).split(path.sep).join("/") + "/", huella(fs.readFileSync(f)));
+  }
+})(SALIDA);
+// La portada («/», la app) no la genera este script: su fecha es la del último commit que tocó index.html (hoy si tiene
+// cambios sin subir o si no hay git a mano).
+const lastmodPortada = (() => {
+  try {
+    const git = (...a) => require("child_process").execFileSync("git", a, { cwd: RAIZ, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+    if (git("status", "--porcelain", "--", "index.html")) return HOY;
+    const d = git("log", "-1", "--format=%cs", "--", "index.html");
+    return /^\d{4}-\d\d-\d\d$/.test(d) && d <= HOY ? d : HOY;
+  } catch (e) { return HOY; }
+})();
+// `mod` (la verificación más reciente, el dateModified del JSON-LD) es el suelo: el sitemap nunca dice que la página
+// cambió antes que sus datos (lo comprueba scripts/comprobar_paginas_seo.js).
+const lastmodDe = (ruta, mod) => {
+  if (ruta === "/") return lastmodPortada;
+  const nueva = huellaNueva.get(ruta);
+  const d = nueva && huellaAntes.get(ruta) === nueva && lastmodAntes.has(ruta) ? lastmodAntes.get(ruta) : HOY;
+  return mod && mod > d && mod <= HOY ? mod : d;
+};
 fs.rmSync(SALIDA, { recursive: true, force: true });
 const urls = [["/", "1.0"], ["/bibliotecas/", "0.9"]];
-const escribe = (ruta, html) => { const f = path.join(RAIZ, ruta, "index.html"); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, html); };
+const escribe = (ruta, html) => { const f = path.join(RAIZ, ruta, "index.html"); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, html); huellaNueva.set(ruta, huella(html)); };
 const porProv = {};
 todas.forEach((b) => (porProv[b.p] = porProv[b.p] || []).push(b));
 const provincias = Object.keys(porProv).sort((a, b) => a.localeCompare(b, "es"));
@@ -1814,7 +1852,7 @@ escribe("/bibliotecas/", pagina({
 
 fs.writeFileSync(path.join(RAIZ, "sitemap.xml"), `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${urls.map(([u, pr, mod]) => `  <url><loc>${DOMINIO}${u}</loc><lastmod>${mod || HOY}</lastmod><priority>${pr}</priority></url>`).join("\n")}
+${urls.map(([u, pr, mod]) => `  <url><loc>${DOMINIO}${u}</loc><lastmod>${lastmodDe(u, mod)}</lastmod><priority>${pr}</priority></url>`).join("\n")}
 </urlset>
 `);
 fs.writeFileSync(path.join(RAIZ, "robots.txt"), `User-agent: *
@@ -1823,6 +1861,8 @@ Allow: /
 Sitemap: ${DOMINIO}/sitemap.xml
 `);
 console.log(`Vecinas: ${locsConPagina.filter((x) => !localidadesCercanas(x.p, x.c).length).length} de ${locsConPagina.length} localidades sin «Localidades cercanas» (ninguna con página a menos de 150 km)`);
+{ const sinCambio = urls.filter(([u]) => u !== "/" && huellaNueva.get(u) === huellaAntes.get(u)).length;
+  console.log(`Lastmod: ${sinCambio} páginas iguales que antes (conservan su fecha) · ${urls.length - 1 - sinCambio} nuevas o cambiadas (${HOY})`); }
 console.log(`Páginas: ${urls.length - 1} (+ portada) · provincias: ${provincias.length} · bibliotecas: ${todas.length} · con página propia: ${paginaDe.size} (${conPaginaPropia.filter(verificado).length} con horario verificado)`);
 console.log(`Universidades: ${universidades.length} con página (${universidades.map((u) => `${u.sigla} ${u.lista.length}/${u.ver.length}`).join(", ")}) · sin página: ${UNIVERSIDADES.filter((u) => !u.ruta).map((u) => `${u.sigla} ${u.lista.length}/${u.lista.filter(verificado).length}`).join(", ")} · dudosas (casan con 2): ${uniDudosas.length}`);
 console.log(`Exámenes: ${exCiudades.length} ciudades con página (${exCiudades.map((g) => `${g.ciudad} ${g.entradas.length}`).join(", ")}) de ${EXAMENES.length} entradas vigentes`);

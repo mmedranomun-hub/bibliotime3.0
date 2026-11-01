@@ -4,10 +4,13 @@
        de la misma página o de otra página generada),
      - títulos y meta descriptions repetidos o de más de 65 / 160 caracteres,
      - páginas sin enlace entrante desde otra página (huérfanas) y URL del sitemap que no existen o que faltan en él,
+     - <lastmod> del sitemap que falta, no es AAAA-MM-DD, es posterior a hoy o anterior al dateModified del JSON-LD de su
+       página (la página diría que cambió después de lo que dice el sitemap),
      - JSON-LD que no se puede leer, y horarios especiales (specialOpeningHoursSpecification: verano y exámenes de las
        fichas) mal formados o con tramos por fecha que se solapan.
    Uso (desde la raíz del proyecto):  node scripts/comprobar_paginas_seo.js
-   Sale con código 1 si hay enlaces rotos, títulos o descripciones repetidos, JSON-LD roto o horarios especiales mal. */
+   Sale con código 1 si hay enlaces rotos, títulos o descripciones repetidos, JSON-LD roto, horarios especiales mal o
+   lastmod mal. */
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -26,6 +29,7 @@ const html = new Map(paginas.map((f) => [rutaDe(f), fs.readFileSync(f, "utf8")])
 const decodifica = (s) => s.replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
 const ids = (h) => new Set([...h.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]));
 
+const modPagina = new Map(); // ruta → dateModified más reciente de su JSON-LD
 const rotos = [], entrantes = new Map(), titulos = new Map(), descs = new Map(), ldMal = [], horEspMal = [];
 // Más largos que esto, Google los corta en los resultados (los mismos límites que usa el generador). Desde el
 // 2026-11-01 todo el sitio cumple (fichas de biblioteca incluidas), así que uno solo hace fallar la comprobación.
@@ -59,7 +63,10 @@ for (const [ruta, h] of html) {
   for (const m of h.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)) {
     let j = null;
     try { j = JSON.parse(m[1]); } catch (e) { ldMal.push(ruta); }
-    if (j) [].concat(j).forEach((x) => compruebaEspeciales(ruta, x));
+    if (j) [].concat(j).forEach((x) => {
+      compruebaEspeciales(ruta, x);
+      if (x && typeof x.dateModified === "string" && !(modPagina.get(ruta) >= x.dateModified)) modPagina.set(ruta, x.dateModified);
+    });
   }
   const misIds = ids(h);
   for (const m of h.matchAll(/\shref="([^"]+)"/g)) {
@@ -83,6 +90,14 @@ const sitemap = fs.existsSync(path.join(RAIZ, "sitemap.xml")) ? fs.readFileSync(
 const enSitemap = new Set([...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1].slice(DOMINIO.length)));
 const sitemapRoto = [...enSitemap].filter((r) => r !== "/" && !existe(r));
 const faltanSitemap = [...html.keys()].filter((r) => !enSitemap.has(r));
+const HOY = new Date().toISOString().slice(0, 10), lastmodMal = [], lastmodN = new Map();
+for (const m of sitemap.matchAll(/<url>([\s\S]*?)<\/url>/g)) {
+  const loc = ((m[1].match(/<loc>([^<]+)<\/loc>/) || [])[1] || "").slice(DOMINIO.length), lm = (m[1].match(/<lastmod>([^<]*)<\/lastmod>/) || [])[1];
+  if (!lm || !/^\d{4}-\d\d-\d\d$/.test(lm)) { lastmodMal.push(`${loc} sin lastmod válido (${lm || "falta"})`); continue; }
+  lastmodN.set(lm, (lastmodN.get(lm) || 0) + 1);
+  if (lm > HOY) lastmodMal.push(`${loc} lastmod ${lm} posterior a hoy`);
+  if (modPagina.has(loc) && lm < modPagina.get(loc)) lastmodMal.push(`${loc} lastmod ${lm} anterior a su dateModified ${modPagina.get(loc)}`);
+}
 
 const muestra = (l, f) => l.slice(0, 15).map(f).join("\n") + (l.length > 15 ? `\n  … y ${l.length - 15} más` : "");
 console.log(`Páginas: ${html.size} · enlaces internos: ${nEnlaces}`);
@@ -95,4 +110,6 @@ console.log(`Horarios especiales (verano y exámenes): ${nHorEsp} tramos en ${nP
 console.log(`Huérfanas (sin enlace desde otra página generada): ${huerfanas.length}${huerfanas.length ? "\n" + muestra(huerfanas, (r) => "  " + r) : ""}`);
 console.log(`Sitemap: ${enSitemap.size} URL · no existen: ${sitemapRoto.length} · faltan en el sitemap: ${faltanSitemap.length}` +
   (sitemapRoto.length + faltanSitemap.length ? "\n" + muestra(sitemapRoto.concat(faltanSitemap), (r) => "  " + r) : ""));
-if (rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
+console.log(`Lastmod: ${[...lastmodN].sort().map(([d, n]) => `${d} ×${n}`).join(", ")} · mal (falta, formato, futuro o < dateModified): ${lastmodMal.length}` +
+  (lastmodMal.length ? "\n" + muestra(lastmodMal, (r) => "  " + r) : ""));
+if (lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);

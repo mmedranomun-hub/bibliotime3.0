@@ -149,6 +149,16 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
   verificado que muestra la página. Ya lo tenían las temáticas, salas y universidades; ahora también provincias y localidades
   (`CollectionPage`) y las fichas de biblioteca (un `WebPage` con `about` → la `Library`, que no admite `dateModified`). Las
   páginas sin ningún horario verificado siguen con la fecha del día en que se genera.
+  **Cambiado el 2026-11-01:** el `lastmod` del sitemap ya no es la fecha de verificación ni «hoy», sino el día en que el
+  HTML de la página cambió de verdad. El generador guarda, antes de borrar `bibliotecas/`, la huella sha1 de cada página y
+  su `lastmod` del sitemap anterior: si la página nueva sale idéntica conserva la fecha; si cambia (datos o plantilla) o
+  es nueva, lleva la de hoy; nunca es anterior a su `dateModified`. La portada `/` lleva la fecha del último commit de
+  `index.html`. Antes, cada regeneración ponía la fecha del día a las ~435 páginas sin horario verificado aunque no
+  cambiaran (Google ignora el `lastmod` de un sitio si no es exacto) y no movía las verificadas cuando cambiaba la
+  plantilla. Probado regenerando con el reloj 3 días adelantado: sitemap idéntico; tocando una página, solo esa pasa a la
+  fecha nueva. El comprobador falla si algún `lastmod` falta, no es AAAA-MM-DD, es posterior a hoy o anterior al
+  `dateModified` del JSON-LD de su página. Ojo: si se regenera en una copia sin el `sitemap.xml` o sin `bibliotecas/`
+  anteriores, todo sale con la fecha del día (no hay con qué comparar).
 - Arreglos: una web sin `http(s)://` en los datos (Villanueva de la Serena) salía como enlace relativo roto en 2 páginas: el
   generador le añade `http://`; dos sedes «Biblioteca Universidad de Murcia» tenían la misma meta description: la segunda
   lleva la dirección.
