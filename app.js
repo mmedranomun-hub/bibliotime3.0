@@ -3583,6 +3583,7 @@ function renderMisiones(){
 // Barrita bajo el cronómetro: «🎯 2/3 misiones · la siguiente en 7 min» si a una misión de minutos le faltan ≤ 15 min;
 // tras cumplir una en esta sesión lo refleja 3 min. Va con el tick del cronómetro (solo recalcula al cambiar el minuto);
 // sin aria-live: el lector oye un resumen estable que solo cambia al cumplir una misión.
+// También pinta «🎯 7 min» en el minicronómetro (#miniMis) con el mismo dato.
 function misionCerca(){
   if(!DATA||!studyTimer.running)return null;
   var M=misionesDeHoy(), h=statsHoy(), hechas=M.ids.filter(function(id){return M.hechas[id];}).length, falta=99, recien=false;
@@ -3599,7 +3600,9 @@ function renderMisCerca(){
   var hechas=DATA&&DATA.misiones?Object.keys(DATA.misiones.hechas||{}).length:0;
   var clave=studyTimer.running?elapsedMin()+"|"+Math.floor(Date.now()/60000)+"|"+hechas:"";
   if(el._clave===clave)return; el._clave=clave;
-  var c=misionCerca();
+  var c=misionCerca(), mi=$("miniMis");
+  if(mi){mi.classList.toggle("hidden",!c);mi.classList.toggle("hecha",!!c&&!c.falta);
+    mi.innerHTML=c?'<span aria-hidden="true">'+(c.falta?"🎯 "+c.falta+" min":"✅ "+c.hechas+"/3")+'</span><span class="sr-solo">'+(c.falta?"Misión cerca":"Misión cumplida")+'</span>':"";}
   if(!c){el.classList.add("hidden");el.innerHTML="";return;}
   var cofre=c.hechas===3&&!DATA.misiones.cofre;
   var txt=c.falta?'🎯 <b>'+c.hechas+'/3</b> misiones · la siguiente en '+c.falta+' min':'✅ <b>'+c.hechas+'/3</b> misiones'+(cofre?' · tu cofre te espera 🎁':' · ¡una más hecha!');

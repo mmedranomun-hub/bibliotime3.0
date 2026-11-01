@@ -551,6 +551,38 @@ PRUEBAS = [
         return true;
       }finally{window.statsHoy=sh;studyTimer.running=t0.running;studyTimer.start=t0.start;studyTimer.bibIndex=t0.bibIndex;studyTimer.tick=t0.tick;
         k.forEach(x=>DATA[x]=o[x]);el&&(el._clave=null);renderStudy();}"""),
+    ("minicronómetro: «🎯 7 min» junto al tiempo con el mismo dato que la barrita, y nada si no aplica", """
+      var k=['misiones','sessions','acciones'],o={};k.forEach(x=>o[x]=DATA[x]);
+      var t0={running:studyTimer.running,start:studyTimer.start,bibIndex:studyTimer.bibIndex,tick:studyTimer.tick},el=$('misCerca'),mi=$('miniMis'),ms=$('miniStudy');
+      var viejo=new Date(Date.now()-5*3600000).toISOString(),oculto0=ms.classList.contains('hidden');
+      var pinta=(min,ids,hechas)=>{studyTimer.running=true;studyTimer.tick=t0.tick||1;studyTimer.bibIndex=-1;studyTimer.start=Date.now()-min*60000-500;
+        DATA.misiones={fecha:ymd(),ids:ids,hechas:hechas,cofre:false};el._clave=null;
+        var si=window.setInterval,n=0;window.setInterval=function(){n++;return si.apply(this,arguments);};
+        try{updateTimers();}finally{window.setInterval=si;}
+        if(n)throw new Error('crea intervalos nuevos');
+        var v=mi.querySelector('[aria-hidden="true"]');return mi.classList.contains('hidden')||!v?'':v.textContent.trim();};
+      try{
+        closeModal();goView('map');DATA.sessions=[];DATA.acciones={fecha:ymd()};ms.classList.remove('hidden');
+        if(!mi||mi.parentElement.querySelector('#miniTime')!==$('miniTime'))return 'no va junto al tiempo';
+        var t=pinta(18,['m25','agenda','social'],{agenda:viejo,social:viejo});
+        if(t!=='🎯 7 min')return 'texto mal: '+t;
+        if(mi.getAttribute('aria-live')||mi.closest('[aria-live]'))return 'anuncia cada minuto con aria-live';
+        if(!mi.querySelector('[aria-hidden="true"]')||/\d/.test(mi.querySelector('.sr-solo').textContent))return 'falta el texto estable para lectores';
+        var c=getComputedStyle(mi),rojo=/rgb\(2[0-5]\d, [0-9]{1,2}, [0-9]{1,2}\)/;
+        if(rojo.test(c.color)||rojo.test(c.backgroundColor))return 'es roja';
+        if(parseFloat(c.borderTopLeftRadius)<100)return 'no es una píldora --r-pill';
+        var r=ms.getBoundingClientRect();if(r.left<0||r.right>innerWidth||document.documentElement.scrollWidth>innerWidth)return 'rompe el ancho: '+Math.round(r.left)+'–'+Math.round(r.right);
+        if(!/2\/3 misiones · la siguiente en 7 min/.test(el.innerText))return 'no cuadra con la barrita';
+        if(!/✅ 2\/3/.test(pinta(26,['m25','agenda','pomo'],{m25:new Date(Date.now()-60000).toISOString(),agenda:viejo}))||!mi.classList.contains('hecha'))return 'no refleja la misión cumplida';
+        if(pinta(5,['m25','agenda','social'],{}))return 'sale a 20 min';
+        if(pinta(30,['agenda','social','pomo'],{}))return 'sale sin misión de minutos';
+        if(/cuenta atrás|pierdes|corre|rápido/i.test(mi.innerText))return 'mete presión';
+        studyTimer.running=false;el._clave=null;renderMisCerca();
+        if(!mi.classList.contains('hidden')||mi.innerText.trim())return 'sigue sin sesión';
+        return true;
+      }finally{await new Promise(r=>setTimeout(r,300)); // deja que el mapa haga su invalidateSize (120 ms) mientras se ve
+        studyTimer.running=t0.running;studyTimer.start=t0.start;studyTimer.bibIndex=t0.bibIndex;studyTimer.tick=t0.tick;
+        k.forEach(x=>DATA[x]=o[x]);el&&(el._clave=null);ms.classList.toggle('hidden',oculto0);renderMisCerca();renderStudy();}"""),
     ("acceso: la ley foral solo en Navarra", """
       for(var i=N_NAVARRA;i<BIBLIOTECAS.length;i++)if(/Ley Foral/.test(accesoAccesibilidadHTML(BIBLIOTECAS[i])))return 'ley foral fuera de Navarra: '+BIBLIOTECAS[i].nombre;
       var nav=BIBLIOTECAS.slice(0,N_NAVARRA).some(b=>/Ley Foral 32\\/2002/.test(accesoAccesibilidadHTML(b)));

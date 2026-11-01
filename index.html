@@ -360,6 +360,13 @@
   @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(34,197,94,.5)}70%{box-shadow:0 0 0 8px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
   .ministudy .t{font-variant-numeric:tabular-nums;font-weight:800;font-size:var(--fs-xl);letter-spacing:.02em}
   .ministudy .lbl{font-size:var(--fs-xs);color:var(--suave)}
+  /* «🎯 7 min» junto al tiempo: el mismo dato que la barrita #misCerca, en corto (informativo, sin rojo) */
+  .ministudy .t-fila{display:flex;align-items:center;gap:6px}
+  .mini-mis{padding:1px 7px;border-radius:var(--r-pill);background:var(--acento-tenue);border:1px solid var(--borde);
+    color:var(--acento-tx);font-size:var(--fs-xs);font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap;animation:fadeIn .4s ease}
+  .mini-mis.hecha{color:var(--ok-tx)}
+  .mini-mis.hidden{display:none}
+  @media(prefers-reduced-motion:reduce){.mini-mis{animation:none}}
   .ministudy button{border:none;border-radius:var(--r-m);padding:7px 12px;font-weight:700;font-size:var(--fs-s);cursor:pointer}
   /* Compartir: botón principal (blanco sobre degradado). Parar: tono suave de parar, como .btn.danger */
   .ministudy #miniShare{background:var(--grad-acento);color:#fff}
@@ -1301,7 +1308,7 @@
 
     <div class="ministudy hidden" id="miniStudy">
       <div class="pulse"></div>
-      <div><div class="t" id="miniTime">00:00</div><div class="lbl" id="miniPlace">Estudiando</div></div>
+      <div><div class="t-fila"><div class="t" id="miniTime">00:00</div><span class="mini-mis hidden" id="miniMis"></span></div><div class="lbl" id="miniPlace">Estudiando</div></div>
       <button id="miniShare">Compartir</button>
       <button id="miniStop">Parar</button>
     </div>
