@@ -394,7 +394,7 @@ async def main():
         # --- velocidad: mediana de 5 cargas con la CPU 4 veces más lenta (como un móvil medio) ---
         # Entre cargas sueltas hay ±300 ms de ruido: con 5 la mediana deja comparar cambios pequeños,
         # y el mínimo/máximo dicen cuánto ruido hubo en esa ejecución (cada carga tarda ~2 s).
-        tiempos = []
+        tiempos, fcp, chinchetas = [], [], []
         for _ in range(CARGAS):
             ctx, pg = await nueva_pagina()
             cdp = await ctx.new_cdp_session(pg)
@@ -403,9 +403,23 @@ async def main():
             await pg.goto(url)
             await pg.wait_for_function("document.getElementById('nowCard') && document.getElementById('nowCard').innerText.length>10", timeout=30000)
             tiempos.append(round((time.time() - t0) * 1000))
+            # Primera pintura con contenido y momento en que están todas las chinchetas en el mapa
+            # (app.js las añade por lotes tras la primera pintura): que bajar la carga no esconda
+            # el trabajo, solo lo reordene.
+            fcp.append(await pg.evaluate("()=>{var e=performance.getEntriesByName('first-contentful-paint')[0];return e?Math.round(e.startTime):null}"))
+            try:
+                await pg.wait_for_function("window.__marcadoresListos===true || (window.__mapReady===true && window.__marcadoresListos===undefined)", timeout=30000)
+                chinchetas.append(round((time.time() - t0) * 1000))
+            except Exception:
+                pass
             await ctx.close()
         res["carga_ms_cpu4x"] = round(statistics.median(tiempos))
         res["carga_ms_cpu4x_min_max"] = [min(tiempos), max(tiempos)]
+        fcp = [x for x in fcp if x is not None]
+        if fcp:
+            res["primera_pintura_ms_cpu4x"] = round(statistics.median(fcp))
+        if chinchetas:
+            res["todas_las_chinchetas_ms_cpu4x"] = round(statistics.median(chinchetas))
 
         # --- pruebas funcionales ---
         ctx, pg = await nueva_pagina()

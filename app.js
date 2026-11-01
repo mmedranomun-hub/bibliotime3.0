@@ -1650,6 +1650,9 @@ window.__selBib=function(i){
   markers.forEach(function(mk,j){var el=mk&&mk.getElement&&mk.getElement();
     if(el){var ch=el.querySelector(".chincheta");if(ch)ch.classList.toggle("sel",j===i);}});
   document.querySelectorAll("#list .card").forEach(function(c){c.classList.toggle("active",+c.dataset.i===i);});
+  // Las chinchetas se añaden al mapa por lotes después de abrir la app: si aún no están todas,
+  // se centra el mapa cuando terminen (enlace #bib o un toque muy rápido nada más abrir).
+  if(window.__map&&markers[i]&&!window.__marcadoresListos){window.__selPendiente=i;return;}
   if(window.__map&&markers[i]){
     var mk=markers[i], cap=window.__capaBibs;
     if(cap&&cap.zoomToShowLayer){window.__map.setView([b.lat,b.lon],16,{animate:false});cap.zoomToShowLayer(mk,function(){
@@ -1819,21 +1822,45 @@ function initMap(){
   else map.fitBounds(L.latLngBounds([[36.0,-9.3],[43.8,4.3]]),{animate:false});
   // Con miles de bibliotecas, las muy próximas se agrupan, pero el grupo también es una chincheta
   // (con el número encima) y a partir del zoom 11 cada biblioteca tiene la suya.
+  window.__marcadoresListos=false;
+  function marcadoresListos(){
+    if(window.__marcadoresListos)return;
+    window.__marcadoresListos=true;
+    var k=window.__selPendiente;window.__selPendiente=null;
+    if(typeof k==="number")window.__selBib(k);
+  }
+  // chunkedLoading: markercluster reparte el agrupado de las 2616 entre fotogramas en vez de
+  // bloquear la primera pintura; chunkProgress avisa cuando ha procesado todas.
   var capaBibs=(L.markerClusterGroup?L.markerClusterGroup({showCoverageOnHover:false,maxClusterRadius:28,disableClusteringAtZoom:11,spiderfyOnMaxZoom:false,
+    chunkedLoading:true,chunkProgress:function(hechas,total){if(hechas>=total)marcadoresListos();},
     iconCreateFunction:function(c){var n=c.getChildCount();
       return L.divIcon({className:"",html:'<div class="chincheta grupo"><div class="cuerpo"></div><div class="punta"></div><b class="cnt">'+(n>999?"999+":n)+'</b></div>',iconSize:[34,44],iconAnchor:[17,44]});}
   }):L.layerGroup()).addTo(map);
   window.__capaBibs=capaBibs;
   map.attributionControl.addAttribution("Bibliotecas: &copy; Overture Maps Foundation");
-  // El contenido del popup se genera al abrirlo (función), no para las 2616 de golpe,
-  // y las chinchetas se añaden al grupo en un solo lote (addLayers) en vez de una a una.
+  // El contenido del popup se genera al abrirlo (función), no para las 2616 de golpe. Los objetos
+  // L.marker se crean ya (markers[i] existe siempre para refreshOccUI, __selBib y locateMe), pero
+  // añadirlos al mapa (crear y pintar su DOM) se hace después de la primera pintura.
   BIBLIOTECAS.forEach(function(b,i){
     var mk=L.marker([b.lat,b.lon],{icon:chinchetaIcon(i)}).bindPopup(function(){return popupHTML(BIBLIOTECAS[i],i);},{maxWidth:280,offset:[0,4]});
     mk.on("click",function(){window.__selBib(i);});
     markers.push(mk);
   });
-  if(capaBibs.addLayers)capaBibs.addLayers(markers);else markers.forEach(function(mk){capaBibs.addLayer(mk);});
   socialRenderFriendMarkers();
+  if(capaBibs.addLayers){setTimeout(function(){capaBibs.addLayers(markers);},0);return;}
+  // Sin markercluster: por lotes, primero las que caen en la vista actual, para que el navegador
+  // pinte y responda entre lote y lote en vez de quedarse ~1 s bloqueado con 2616 iconos. Lotes
+  // de 12 ms: con lotes mayores (50 ms o crecientes) la app vuelve a tardar ~2,8 s en responder.
+  var vista=map.getBounds().pad(0.2), orden=[], resto=[];
+  markers.forEach(function(mk){(vista.contains(mk.getLatLng())?orden:resto).push(mk);});
+  orden=orden.concat(resto);
+  var pos=0;
+  function lote(){
+    var t0=Date.now();
+    while(pos<orden.length&&Date.now()-t0<12)capaBibs.addLayer(orden[pos++]);
+    if(pos<orden.length)setTimeout(lote,0);else marcadoresListos();
+  }
+  setTimeout(lote,0);
 }
 
 /* ===================== MODO ESTUDIO ===================== */
