@@ -377,6 +377,37 @@ PRUEBAS = [
         if(!$('sellosWrap').classList.contains('hidden'))return 'sale sin sellos';
         return true;
       }finally{k.forEach(x=>DATA[x]=o[x]);closeModal();renderMisiones();renderSellos();}"""),
+    ("las 🌰 de las misiones y del cofre vuelan al marcador (una vez; con reducir movimiento, solo la cifra)", """
+      await cargarExtra();
+      var k=['misiones','acciones','sellosMisiones','cofresAbiertos','semillasPremio','streakFreezes'],o={};k.forEach(x=>o[x]=DATA[x]);
+      var espera=ms=>new Promise(r=>setTimeout(r,ms)),st=window.showToast,sm=window.sinMovimiento,vs=window.volarSemillas,vuelos=[];
+      var limpia=()=>document.querySelectorAll('.saco-semillas,.semilla-vuela').forEach(x=>x.remove());
+      var calma=async()=>{for(var i=0;i<40&&(VUELO.n||VUELO.t);i++)await espera(250);await espera(2600);limpia();};
+      window.showToast=()=>{};window.volarSemillas=function(r,n){vuelos.push([r,n]);return vs.apply(this,arguments);};
+      try{
+        closeModal();goView('study');await calma();vuelos=[];
+        DATA.misiones={fecha:ymd(),ids:['agenda','largo','m90'],hechas:{},cofre:false};DATA.acciones={fecha:ymd()};renderMisiones();
+        registrarAccion('agenda');await espera(500);
+        if(!document.querySelectorAll('.semilla-vuela').length)return 'no vuelan las semillas de la misión';
+        if(vuelos.length!==1||vuelos[0][1]!==10||!vuelos[0][0]||!vuelos[0][0].width)return 'vuelo mal: '+JSON.stringify(vuelos.map(v=>v[1]));
+        await calma();comprobarMisiones();registrarAccion('agenda');renderMisiones();await espera(900);
+        if(vuelos.length!==1)return 'vuela dos veces por la misma misión: '+vuelos.length;
+        window.sinMovimiento=()=>true;DATA.misiones.hechas={};vuelos=[];
+        comprobarMisiones();await espera(500);
+        if(document.querySelector('.semilla-vuela'))return 'vuela con reducir movimiento';
+        var n=document.querySelector('.seeds-n.sv-rebote,.saco-semillas .seeds-n');
+        if(vuelos.length!==1||!document.querySelector('.saco-semillas .seeds-n')&&!n)return 'con reducir movimiento no da la cifra';
+        if(document.querySelector('.saco-semillas .seeds-n')&&document.querySelector('.saco-semillas .seeds-n').textContent!==String(semillas()))return 'cifra final mal';
+        window.sinMovimiento=sm;await calma();vuelos=[];
+        var M=misionesDeHoy();M.ids.forEach(id=>M.hechas[id]=M.hechas[id]||new Date().toISOString());M.cofre=false;renderMisiones();
+        abrirCofre();await espera(900);
+        if(vuelos.length)return 'vuela debajo de la ventana del cofre';
+        closeModal();await espera(1200);
+        if(vuelos.length!==1||vuelos[0][1]<20)return 'el cofre no vuela al cerrar: '+vuelos.length;
+        await calma();abrirCofre();closeModal();await espera(1200);
+        if(vuelos.length!==1)return 'el cofre vuela dos veces';
+        return true;
+      }finally{window.showToast=st;window.sinMovimiento=sm;window.volarSemillas=vs;k.forEach(x=>DATA[x]=o[x]);closeModal();limpia();renderMisiones();renderSemillas();}"""),
     ("acceso: la ley foral solo en Navarra", """
       for(var i=N_NAVARRA;i<BIBLIOTECAS.length;i++)if(/Ley Foral/.test(accesoAccesibilidadHTML(BIBLIOTECAS[i])))return 'ley foral fuera de Navarra: '+BIBLIOTECAS[i].nombre;
       var nav=BIBLIOTECAS.slice(0,N_NAVARRA).some(b=>/Ley Foral 32\\/2002/.test(accesoAccesibilidadHTML(b)));

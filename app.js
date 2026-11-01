@@ -3546,10 +3546,20 @@ function comprobarMisiones(){
   M.ids.forEach(function(id){var d=misionDef(id);if(d&&!M.hechas[id]&&d.val(h)>=d.meta){M.hechas[id]=new Date().toISOString();nuevas.push(d);}});
   if(nuevas.length){
     DATA.semillasPremio=(DATA.semillasPremio||0)+10*nuevas.length;saveUserData();
-    nuevas.forEach(function(d,k){setTimeout(function(){showToast("✅ Misión cumplida: "+d.txt+" · +10 🌰");celebrar($("missionsCard"),[d.icon,"✨","🌰"],10);},k*1400);});
+    nuevas.forEach(function(d,k){setTimeout(function(){showToast("✅ Misión cumplida: "+d.txt+" · +10 🌰");celebrar($("missionsCard"),[d.icon,"✨","🌰"],10);encolarVuelo(10,'#missionsCard [data-m="'+d.id+'"]');},k*1400);});
     renderSemillas();
   }
   renderMisiones();
+}
+// 🌰 de misiones y cofre que vuelan al marcador (volarSemillas, app-extra.js). Se encolan y salen cuando no hay
+// ventana abierta ni otro vuelo en marcha; M.hechas/M.cofre (guardados) evitan repetirlo al recargar.
+var VUELO={n:0,de:"",t:0},VUELO_FIN=0;
+function encolarVuelo(n,de){VUELO.n+=n;VUELO.de=de;if(!VUELO.t)VUELO.t=setTimeout(soltarVuelo,300);}
+function soltarVuelo(){
+  VUELO.t=0;if(!VUELO.n)return;
+  if($("modalRoot").innerHTML||Date.now()<VUELO_FIN||document.querySelector(".semilla-vuela,.saco-semillas,.racha-overlay")){VUELO.t=setTimeout(soltarVuelo,700);return;}
+  var n=VUELO.n,o=document.querySelector(VUELO.de),r=o&&o.getBoundingClientRect();VUELO.n=0;
+  cargarExtra().then(function(){volarSemillas(r,n);},function(){});
 }
 function renderMisiones(){
   var el=$("missionsCard"); if(!el||!DATA)return;
@@ -3559,7 +3569,7 @@ function renderMisiones(){
     M.ids.map(function(id){
       var d=misionDef(id); if(!d)return "";
       var v=Math.min(d.meta,d.val(h)), pct=Math.round(v/d.meta*100), ok=!!M.hechas[id];
-      return '<div class="mis'+(ok?' ok':'')+'"><div class="mis-ic">'+(ok?'✅':d.icon)+'</div><div class="mis-main"><div class="mis-txt">'+escapeHTML(d.txt)+'</div>'+
+      return '<div class="mis'+(ok?' ok':'')+'" data-m="'+id+'"><div class="mis-ic">'+(ok?'✅':d.icon)+'</div><div class="mis-main"><div class="mis-txt">'+escapeHTML(d.txt)+'</div>'+
         '<div class="mis-bar"><i style="width:'+pct+'%"></i></div></div><div class="mis-val">'+(d.min?hMin(v).replace("0h ",""):v)+'/'+(d.min?hMin(d.meta).replace("0h ",""):d.meta)+'</div></div>';
     }).join("")+
     '<button class="cofre'+(hechas===3&&!M.cofre?' listo':'')+(M.cofre?' abierto':'')+'" onclick="abrirCofre(this)" '+(hechas===3&&!M.cofre?'':'disabled')+'>'+

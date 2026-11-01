@@ -654,7 +654,7 @@ function abrirCofre(btn){
     '<button class="btn" onclick="closeModal();abrirTienda()">Ver especies</button><button class="linkbtn" onclick="closeModal()" style="display:block;margin:12px auto 0">Seguir</button></div>',function(){
     var c=document.querySelector(".cofre-big");setTimeout(function(){if(c){c.textContent="✨";c.classList.add("abre");}confeti(140);celebrar(c,["🌰","✨","💎","⭐"],18);},700);
   });
-  renderMisiones();renderSemillas();
+  renderMisiones();renderSemillas();encolarVuelo(premio,"#missionsCard .cofre"); // las 🌰 del cofre vuelan al cerrar la ventana
   // el sello «se estampa» en la tarjeta del cofre al cerrar la ventana (debajo no se vería)
   var root=$("modalRoot");if(!root||typeof MutationObserver!=="function")return;
   var ob=new MutationObserver(function(){if(root.innerHTML)return;ob.disconnect();
@@ -913,6 +913,7 @@ function volarSemillas(desde,ganadas){
   var r=el.getBoundingClientRect(),tx=r.left+r.width/2,ty=r.top+r.height/2;
   var ox=desde&&desde.width?desde.left+desde.width/2:innerWidth/2,oy=desde&&desde.width?desde.top+desde.height/2:innerHeight*.6;
   var k=Math.min(6,ganadas),empezo=false;
+  VUELO_FIN=Date.now()+850+k*90+Math.min(900,300+ganadas*40); // las misiones esperan a que acabe este vuelo
   function contar(){
     if(empezo)return;empezo=true;var dur=Math.min(900,300+ganadas*40),t0=0;
     function paso(t){if(!el.isConnected)return;if(!t0)t0=t;var p=Math.min(1,(t-t0)/dur),e=1-Math.pow(1-p,3);
