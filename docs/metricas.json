@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-11-01 06:34",
+  "fecha": "2026-11-01 07:41",
   "pruebas": {
     "arranca: datos y vistas": true,
     "marca España (sin «Navarra» en la cabecera)": true,
@@ -16,6 +16,7 @@
     "contador de minutos en «Sesión terminada» (sube hasta los minutos reales; «Hoy llevas» solo con más sesiones hoy)": true,
     "«¡Qué alegría verte!» al volver tras ≥ 3 días (horas y árbol más grande, sin hablar de la racha perdida)": true,
     "biblioteca nueva en tu mapa: aviso suave al cerrar y «📍 bibliotecas exploradas» en el Perfil": true,
+    "sello del día: al abrir el cofre se estampa 🏵️ y el Perfil cuenta solo los días logrados": true,
     "acceso: la ley foral solo en Navarra": true,
     "especies de temporada (cruzan el año)": true,
     "historias y tips": true,
@@ -30,13 +31,13 @@
     "atajos de la app instalada (#accion=estudiar|ahora|pronto)": true
   },
   "errores_js": [],
-  "carga_ms_cpu4x": 905,
+  "carga_ms_cpu4x": 1289,
   "carga_ms_cpu4x_min_max": [
-    866,
-    917
+    1131,
+    1425
   ],
-  "primera_pintura_ms_cpu4x": 224,
-  "todas_las_chinchetas_ms_cpu4x": 924,
+  "primera_pintura_ms_cpu4x": 316,
+  "todas_las_chinchetas_ms_cpu4x": 1348,
   "markercluster": {
     "cargado": false,
     "agrupa": false,
@@ -46,26 +47,26 @@
   },
   "datos": {
     "bibliotecas": 2616,
-    "con_horario_verificado": 364,
+    "con_horario_verificado": 375,
     "provincias_con_horario": 51,
     "provincias_total": 51
   },
   "seo": {
-    "paginas": 655,
+    "paginas": 669,
     "sitemap": true
   },
   "peso": {
     "index.html": {
-      "kb": 126.3,
-      "kb_gzip": 28.2
+      "kb": 128.0,
+      "kb_gzip": 28.6
     },
     "app.js": {
-      "kb": 295.8,
-      "kb_gzip": 87.1
+      "kb": 296.3,
+      "kb_gzip": 87.2
     },
     "bibliotecas-espana.js": {
-      "kb": 679.2,
-      "kb_gzip": 175.3
+      "kb": 688.1,
+      "kb_gzip": 177.1
     }
   },
   "ok": true

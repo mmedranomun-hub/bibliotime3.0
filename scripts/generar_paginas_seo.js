@@ -3,7 +3,7 @@
      bibliotecas/index.html                      → todas las provincias
      bibliotecas/<provincia>/index.html          → bibliotecas de la provincia, por localidad
      bibliotecas/<provincia>/<localidad>/index.html (localidades con 3 o más bibliotecas)
-     bibliotecas/abiertas-hoy|abiertas-domingo|abiertas-fin-de-semana|abiertas-hasta-tarde/index.html (España, por provincia;
+     bibliotecas/abiertas-hoy|abiertas-domingo|abiertas-fin-de-semana|abiertas-sabado-tarde|abiertas-hasta-tarde/index.html (España, por provincia;
        «hoy» calcula en el navegador el horario de hoy y si está abierta ahora)
        y abiertas-verano (solo con horario de verano verificado: h.ver + h.vd/h.vh)
      bibliotecas/<provincia>/<tema>/index.html   (mismos temas, solo con 2 o más bibliotecas que cumplen)
@@ -131,6 +131,7 @@ function cierraTarde(b) { return b.h && b.h.inv && DIAS.slice(0, 5).some((d) => 
 // Las páginas temáticas solo usan horarios verificados CON fuente (h.f) y fecha (h.fv).
 const verificado = (b) => !!(b.h && b.h.inv && b.h.f && b.h.fv);
 const abreDomingo = (b) => verificado(b) && (b.h.inv.D || []).length > 0;
+const abreSabadoTarde = (b) => verificado(b) && (b.h.inv.S || []).some((r) => r[1] >= "17:00" || r[1] === "00:00");
 // Verano: horario h.ver con sus fechas h.vd/h.vh («MM-DD», como en bibliotecas-espana.js) y algún día abierto.
 const MMDD = /^\d{2}-\d{2}$/;
 const abreVerano = (b) => verificado(b) && !!b.h.ver && MMDD.test(b.h.vd || "") && MMDD.test(b.h.vh || "") &&
@@ -326,6 +327,27 @@ const TEMAS = [
   { slug: "abiertas-fin-de-semana", corto: "Fin de semana", que: "abiertas el fin de semana", cumple: (b) => verificado(b) && !!abreFinde(b),
     destacado: (b) => `Sábado: ${franjas(b.h.inv.S) || "cerrado"} · Domingo: ${franjas(b.h.inv.D) || "cerrado"}`,
     pregunta: (l) => `¿Qué bibliotecas abren el fin de semana en ${l}?` },
+  // Sábado por la tarde: alguna franja del sábado (horario de invierno verificado) que acaba a las 17:00 o más tarde.
+  // Solo con 3 o más que cumplan (min) y si no son exactamente las mismas que «fin de semana» del mismo sitio (distintoDe):
+  // si coinciden, la página repetiría aquella y no se crea.
+  { slug: "abiertas-sabado-tarde", corto: "Sábado tarde", que: "abiertas el sábado por la tarde", cumple: abreSabadoTarde,
+    min: 3, distintoDe: "abiertas-fin-de-semana",
+    destacado: (b) => `Sábado: ${franjas(b.h.inv.S)}`,
+    pregunta: (l) => `¿Qué bibliotecas abren el sábado por la tarde en ${l}?`,
+    faq: (t, lista, lugar) => {
+      const nombres = lista.slice(0, 6).map((b) => b.n).join(", ") + (lista.length > 6 ? " y otras" : "");
+      const cierreS = (b) => (b.h.inv.S || []).map((r) => (r[1] === "00:00" ? "24:00" : r[1])).sort().pop();
+      const max = lista.map(cierreS).sort().pop(), ultimas = lista.filter((b) => cierreS(b) === max);
+      const dom = lista.filter((b) => (b.h.inv.D || []).length);
+      return [
+        [t.pregunta(lugar), `Con horario de invierno verificado en su web oficial abren el sábado hasta las 17:00 o más tarde: ${nombres}.`],
+        [`¿Qué biblioteca cierra más tarde el sábado en ${lugar}?`, `Según su horario verificado, ${ultimas.slice(0, 4).map((b) => b.n).join(", ")}${ultimas.length > 4 ? " y otras" : ""} (a las ${quitaCero(max).replace("24:00", "00:00")}).`],
+        [`¿Abren también el domingo?`, dom.length
+          ? `De estas, ${dom.length === 1 ? "solo 1 abre" : `${dom.length} abren`} también el domingo: ${dom.slice(0, 6).map((b) => b.n).join(", ")}${dom.length > 6 ? " y otras" : ""}.`
+          : `Ninguna de estas abre el domingo según su horario verificado.`],
+        [`¿Están actualizados estos horarios?`, `Son los horarios de invierno publicados en la web oficial de cada biblioteca, comprobados ${textoFechas(lista)}. Pueden cambiar en verano, festivos o temporada de exámenes; si ves uno mal, avísanos desde la app.`],
+      ];
+    } },
   { slug: "abiertas-hasta-tarde", corto: "Hasta tarde", que: "abiertas hasta tarde", cumple: (b) => verificado(b) && cierraTarde(b),
     destacado: (b) => `Entre semana cierra a las ${quitaCero(cierreMasTarde(b)).replace("24:00", "00:00 (medianoche)")}`,
     pregunta: (l) => `¿Qué bibliotecas cierran a las 21:00 o más tarde en ${l}?` },
@@ -350,9 +372,12 @@ const TEMAS = [
     } },
 ];
 const temaProv = {}; // temaProv[slug][provincia] = lista (solo si se genera página)
+// ¿La lista es exactamente la del tema «distintoDe» en el mismo sitio? (entonces la página sería duplicada y no se crea)
+const igualQue = (t, l, mapa, k) => { const o = t.distintoDe && mapa[t.distintoDe] && mapa[t.distintoDe][k];
+  return !!o && o.length === l.length && l.every((b) => o.includes(b)); };
 TEMAS.forEach((t) => {
   temaProv[t.slug] = {};
-  provincias.forEach((p) => { const l = porProv[p].filter(t.cumple); if (l.length >= MIN_TEMA_PROV) temaProv[t.slug][p] = l; });
+  provincias.forEach((p) => { const l = porProv[p].filter(t.cumple); if (l.length >= (t.min || MIN_TEMA_PROV) && !igualQue(t, l, temaProv, p)) temaProv[t.slug][p] = l; });
 });
 // Localidad: mismos temas (salvo los «local: false»), solo con 2 o más que cumplen y solo en localidades que ya tienen
 // página propia (3 o más bibliotecas y slug distinto del de la provincia). Así nunca se crea /madrid/madrid/…, que
@@ -367,8 +392,16 @@ provincias.forEach((p) => {
   porProv[p].forEach((b) => (porC[b.c] = porC[b.c] || []).push(b));
   Object.keys(porC).forEach((c) => {
     if (!tieneLocPagina(p, c, porC[c].length)) return;
-    TEMAS_LOC.forEach((t) => { const l = porC[c].filter(t.cumple); if (l.length >= MIN_TEMA_LOC) temaLoc[t.slug][p + "|" + c] = l; });
+    TEMAS_LOC.forEach((t) => { const l = porC[c].filter(t.cumple); if (l.length >= (t.min || MIN_TEMA_LOC) && !igualQue(t, l, temaLoc, p + "|" + c)) temaLoc[t.slug][p + "|" + c] = l; });
   });
+});
+// Recuento del filtro de los temas con mínimo propio o «distintoDe» (para saber cuántas se quedan fuera y por qué).
+TEMAS.filter((t) => t.min || t.distintoDe).forEach((t) => {
+  const min = t.min || MIN_TEMA_PROV, prov = provincias.map((p) => porProv[p].filter(t.cumple)).filter((l) => l.length);
+  const locs = {}; provincias.forEach((p) => porProv[p].forEach((b) => { if (tieneLocPagina(p, b.c, porProv[p].filter((x) => x.c === b.c).length) && t.cumple(b)) (locs[p + "|" + b.c] = locs[p + "|" + b.c] || []).push(b); }));
+  const nl = Object.values(locs), np = Object.keys(temaProv[t.slug]).length, nlp = temaLoc[t.slug] ? Object.keys(temaLoc[t.slug]).length : 0;
+  console.log(`Tema ${t.slug}: cumplen en ${prov.length} provincias (${prov.filter((l) => l.length >= min).length} con ${min} o más, ${np} con página) ` +
+    `y en ${nl.length} localidades con página (${nl.filter((l) => l.length >= min).length} con ${min} o más, ${nlp} con página; si no, por ser iguales a «${t.distintoDe}»)`);
 });
 // Fecha de verificación más reciente de las listadas (dateModified del JSON-LD y lastmod del sitemap): no depende del día
 // en que se genera, así que regenerar con los mismos datos da las mismas páginas.

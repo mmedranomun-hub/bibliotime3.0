@@ -239,6 +239,19 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
   ≤ 15 km, no sale nada. Las localidades con alguna verificada no cambian.
 - Hoy: 18 de las 41 localidades sin verificadas (de 73 con página), 50 enlaces nuevos a fichas. Sin CSS nuevo.
 
+## Hecho (2026-11-01) · «Bibliotecas abiertas el sábado por la tarde en <lugar>» (658 páginas, antes 655)
+- Para «biblioteca abierta sábado tarde <ciudad>»: `/bibliotecas/abiertas-sabado-tarde/` (España) y
+  `/bibliotecas/<prov>/[<loc>/]abiertas-sabado-tarde/`. Entra una biblioteca si tiene horario de invierno verificado (`h.f` +
+  `h.fv`; Navarra con `fuenteHorario` + `verificadoHorario`) con alguna franja del sábado que acaba a las 17:00 o más tarde
+  (`abreSabadoTarde`). Un día «sin confirmar» no tiene franjas, así que no entra.
+- Es una entrada más de `TEMAS` con dos campos nuevos que valen para cualquier tema: `min` (aquí 3, en lugar de 2) y
+  `distintoDe` (aquí `abiertas-fin-de-semana`): si en una provincia o localidad la lista es exactamente la de ese otro tema, la
+  página no se crea porque lo duplicaría (`igualQue`). Sale sola en el hub, «Por horario», la barra de temas, «Por horario en
+  <provincia>» de las fichas y el sitemap. Tarjeta con «Sábado: 10:00–20:00» y FAQ propia (cuáles, cuál cierra más tarde el
+  sábado con empates, cuántas abren también el domingo, de dónde salen los horarios). Sin CSS nuevo.
+- Recuento (el generador lo imprime en «Tema abiertas-sabado-tarde: …»): cumplen en 14 provincias, 2 con 3 o más (Madrid 6,
+  Barcelona 11) y en 13 localidades con página, ninguna con 3 o más; en España, 34. Crece sola al verificar horarios.
+
 ## Lo que tienes que hacer tú (sin esto no sirve de nada)
 1. **Conectar el dominio** en Vercel: proyecto `bibliotime` → Settings → Domains → añadir `bibliomapa.es` y
    `www.bibliomapa.es` (redirigir www → sin www) y poner en tu registrador los DNS que te indique Vercel.
