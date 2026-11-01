@@ -232,11 +232,14 @@
   .rate{margin-left:auto;font-weight:700;color:var(--aviso);font-size:var(--fs-s)}
 
   /* ===== CHINCHETA ===== */
-  .chincheta{position:relative;width:34px;height:44px;cursor:pointer;transition:transform .15s;filter:drop-shadow(0 5px 5px rgba(2,6,23,.35))}
+  /* Sombra como box-shadow del círculo, no filter:drop-shadow en todo el icono: el filtro obligaba a pintar
+     cada chincheta en su propia capa con desenfoque y dominaba el pintado hasta tenerlas todas (~4 s con CPU 4×) */
+  .chincheta{position:relative;width:34px;height:44px;cursor:pointer;transition:transform .15s}
   .chincheta:hover{transform:scale(1.12) translateY(-2px)}
   .chincheta.sel{transform:scale(1.22) translateY(-3px)}
   .chincheta .cuerpo{position:absolute;top:0;left:0;width:34px;height:34px;border-radius:50%;
-    background:var(--pin-abierta);border:3px solid #fff;display:flex;align-items:center;justify-content:center}
+    background:var(--pin-abierta);border:3px solid #fff;display:flex;align-items:center;justify-content:center;
+    box-shadow:0 4px 6px rgba(2,6,23,.35)}
   .chincheta.unk .cuerpo{background:var(--pin-sin-horario)}
   .dot.unk{background:var(--neutro)}
   .estado.unk{background:rgba(148,163,184,.2);color:var(--suave)}
