@@ -2763,12 +2763,13 @@ function computeBestStreak(){
 function renderRecords(){
   var el=$("recordsGrid"); if(!el)return;
   if(!DATA.sessions.length){el.innerHTML='<div class="empty-note" style="grid-column:1/-1">Termina tu primera sesión para empezar a ganar récords</div>';return;}
-  var maxMin=0,bestBib="—",totalMin=0;
+  var maxMin=0,bestBib="—",totalMin=0,nb=bibsExploradas();
   DATA.sessions.forEach(function(s){totalMin+=s.min;if(s.min>maxMin){maxMin=s.min;bestBib=cortoNombre(s.bib||"—");}});
   el.innerHTML=
     '<div class="stat"><div class="num">'+hMin(maxMin)+'</div><div class="lab">Sesión más larga · '+escapeHTML(bestBib)+'</div></div>'+
     '<div class="stat"><div class="num">'+computeBestStreak()+'</div><div class="lab">Mejor racha (días)</div></div>'+
-    '<div class="stat"><div class="num">'+Math.floor(totalMin/60)+'h</div><div class="lab">Total histórico</div></div>';
+    '<div class="stat"><div class="num">'+Math.floor(totalMin/60)+'h</div><div class="lab">Total histórico</div></div>'+
+    (nb?'<div class="stat"><div class="num">'+nb+'</div><div class="lab">📍 '+(nb===1?'Biblioteca explorada':'Bibliotecas exploradas')+'</div></div>':'');
 }
 const BADGE_DEFS=[
   {id:"first_session",icon:"🎯",label:"Primer paso",desc:"Completa tu primera sesión de estudio"},
@@ -2913,7 +2914,7 @@ function closeModal(){
   var hito=!!document.querySelector("#modalRoot .hito-bosque");$("modalRoot").innerHTML="";
   // Si hay un hito del bosque sin celebrar (otra ventana lo tapaba), se enseña al cerrar esa ventana.
   if(CELEB_DIA)setTimeout(celebrarDia,600);
-  if(DATA&&DATA.especieAvisoPend)setTimeout(avisoEspecie,CELEB_DIA?4600:700);
+  if(DATA&&(DATA.especieAvisoPend||DATA.bibNuevaPend))setTimeout(avisoEspecie,CELEB_DIA?4600:700);
   if(DATA&&DATA.hitoBosquePend){if(hito){DATA.hitoBosquePend=0;saveUserData();}else setTimeout(function(){if(!$("modalRoot").innerHTML&&DATA.hitoBosquePend)mostrarHitoBosque();},400);}
 }
 function showToast(msg){
@@ -3581,7 +3582,14 @@ function trasGuardarSesion(sesion){
   var arbol=primerArbolDelDia(sesion), racha=!!(sesion&&sesion.date===hoy&&deHoy===1);
   if(arbol||racha){CELEB_DIA={arbol:arbol,racha:racha};setTimeout(celebrarDia,350);}
   if(sesion&&sesion.focus!=="withered")comprobarHitoBosque();
-  comprobarMisiones();comprobarEspecieLista();renderRacha();renderSemillas();
+  comprobarMisiones();comprobarEspecieLista();comprobarBibNueva(sesion);renderRacha();renderSemillas();
+}
+/* ----- Biblioteca nueva en tu mapa: el primer árbol sano en una biblioteca real (no «Sin biblioteca») donde no
+   tenías ninguno da un aviso suave con cuántas llevas (solo suma). Espera como el de la especie (avisoEspecie). ----- */
+function bibsExploradas(){var v={};((DATA&&DATA.sessions)||[]).forEach(function(s){if(s.bib&&s.bib!==NO_BIB)v[s.bib]=1;});return Object.keys(v).length;}
+function comprobarBibNueva(s){
+  if(!s||s.focus==="withered"||bibIdxDe(s)<0||DATA.sessions.some(function(x){return x!==s&&x.bib===s.bib&&x.focus!=="withered";}))return;
+  DATA.bibNuevaPend=bibsExploradas();saveUserData();setTimeout(avisoEspecie,3200);
 }
 
 /* ----- Hitos del bosque: al llegar a 10, 25, 50… árboles sanos, tarjeta de celebración y semillas.
@@ -3630,8 +3638,13 @@ function comprobarEspecieLista(){
   DATA.especiesAvisadas=av.concat(nuevas.map(function(e){return e.id;}));DATA.especieAvisoPend=nuevas[nuevas.length-1].id;saveUserData();
   setTimeout(avisoEspecie,3200);
 }
+var AVISO_T=0; // los avisos suaves (biblioteca nueva, especie) salen de uno en uno, sin pisarse
 function avisoEspecie(){
-  if(!DATA||!DATA.especieAvisoPend||$("modalRoot").innerHTML||DATA.hitoBosquePend||document.querySelector(".racha-overlay"))return;
+  if(!DATA||!(DATA.especieAvisoPend||DATA.bibNuevaPend)||$("modalRoot").innerHTML||DATA.hitoBosquePend||document.querySelector(".racha-overlay"))return;
+  var w=AVISO_T-Date.now(); if(w>0){setTimeout(avisoEspecie,w);return;}
+  AVISO_T=Date.now()+2900;
+  if(DATA.bibNuevaPend){var n=DATA.bibNuevaPend;DATA.bibNuevaPend=0;saveUserData();
+    showToast("📍 Biblioteca nueva en tu mapa · "+(n>1?"ya has estudiado en "+n:"¡la primera!"));if(DATA.especieAvisoPend)setTimeout(avisoEspecie,2900);return;}
   var e=especieDe(DATA.especieAvisoPend);DATA.especieAvisoPend=0;saveUserData();
   if(!especieComprada(e.id))showToast(e.icon+" ¡Ya puedes plantar "+e.pl+"! Están en «Especies» 🌰");
 }

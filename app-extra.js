@@ -636,7 +636,7 @@ function mostrarPrimerArbol(conRacha){
     '<div class="pa-card"><div class="pa-t">'+saludoHora(new Date().getHours())+escapeHTML(nombre)+'!</div>'+
     '<div class="pa-sub">Primer árbol del día 🌱'+(conRacha?'<br>'+(n===1?'¡Empieza tu racha!':'Racha de '+n+' días'):'')+'</div>'+
     '<div class="pa-premio">+5 🌰 de bienvenida</div></div>';
-  var fuera=function(){if(!o.parentNode)return;o.remove();if(DATA&&DATA.especieAvisoPend)setTimeout(avisoEspecie,400);};
+  var fuera=function(){if(!o.parentNode)return;o.remove();if(DATA&&(DATA.especieAvisoPend||DATA.bibNuevaPend))setTimeout(avisoEspecie,400);};
   o.addEventListener("click",fuera);document.body.appendChild(o);renderSemillas();
   if(!sinMovimiento())setTimeout(function(){celebrar(o.querySelector(".pa-premio"),["🌰","🌱","✨"],10);},500);
   setTimeout(function(){o.classList.add("out");setTimeout(fuera,450);},3400);

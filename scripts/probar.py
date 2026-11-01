@@ -242,6 +242,44 @@ PRUEBAS = [
         pedirValoracion(s,null);if(document.querySelector('#modalRoot .record-ses'))return 'sale sin récord';
         return true;
       }finally{DATA.sessions=o;closeModal();}"""),
+    ("biblioteca nueva en tu mapa: aviso suave al cerrar y «📍 bibliotecas exploradas» en el Perfil", """
+      var k=['sessions','misiones','acciones','hitosBosque','hitoBosquePend','especiesAvisadas','especieAvisoPend','bibNuevaPend','primerArbol','semillasPremio'],o={};
+      k.forEach(x=>o[x]=DATA[x]);
+      var toasts=[],st=window.showToast,cm=window.comprobarMisiones;window.showToast=m=>toasts.push([m,Date.now()]);window.comprobarMisiones=()=>{};
+      var espera=ms=>new Promise(r=>setTimeout(r,ms)),hoy=ymd(),A=BIBLIOTECAS[0].nombre,B=BIBLIOTECAS[1].nombre,C=BIBLIOTECAS[2].nombre;
+      var mk=(i,b,f)=>({id:'bn'+i,date:hoy,min:30,ts:Date.now()-(100-i)*1000,bib:b,focus:f||'ok',esp:'roble'});
+      var nuevo=s=>{DATA.sessions.push(s);trasGuardarSesion(s);return DATA.bibNuevaPend;};
+      try{
+        CELEB_DIA=null;closeModal();document.querySelectorAll('.racha-overlay').forEach(x=>x.remove());
+        DATA.hitosBosque=[1e9];DATA.hitoBosquePend=0;DATA.especiesAvisadas=ESPECIES.map(e=>e.id);DATA.especieAvisoPend=0;DATA.bibNuevaPend=0;
+        DATA.sessions=[mk(0,A),mk(1,NO_BIB),mk(2,B,'withered')];
+        openModal('<h3>Sesión terminada</h3>');
+        if(nuevo(mk(3,A)))return 'avisa en una biblioteca ya conocida';
+        if(nuevo(mk(4,NO_BIB)))return 'avisa sin biblioteca';
+        if(nuevo(mk(5,C,'withered')))return 'avisa con un árbol marchito';
+        if(nuevo(mk(6,B))!==3)return 'no prepara el aviso con 3 bibliotecas: '+DATA.bibNuevaPend;
+        await espera(3400);
+        if(toasts.length)return 'el aviso tapa la ventana abierta';
+        closeModal();await espera(900);
+        var t=toasts.map(x=>x[0]);
+        if(t.length!==1||t[0]!=='📍 Biblioteca nueva en tu mapa · ya has estudiado en 3')return 'aviso mal: '+JSON.stringify(t);
+        if(/falta|-\d/.test(t[0])||DATA.bibNuevaPend)return 'texto negativo o no se da por visto';
+        if(nuevo(mk(7,B)))return 'repite el aviso';
+        DATA.especieAvisoPend='cerezo';toasts=[];DATA.sessions.push(mk(8,BIBLIOTECAS[3].nombre));trasGuardarSesion(DATA.sessions[DATA.sessions.length-1]);
+        await espera(7000);
+        if(toasts.length!==2||!/ya has estudiado en 4/.test(toasts[0][0])||!/cerezos/.test(toasts[1][0])||toasts[1][1]-toasts[0][1]<2500)return 'los avisos se pisan: '+JSON.stringify(toasts);
+        DATA.sessions=[mk(0,NO_BIB)];toasts=[];
+        if(nuevo(mk(9,A))!==1)return 'la primera biblioteca no avisa';
+        await espera(3400);if(!toasts.length||toasts[0][0]!=='📍 Biblioteca nueva en tu mapa · ¡la primera!')return 'primera mal: '+JSON.stringify(toasts);
+        DATA.sessions=[mk(0,A),mk(1,B,'withered'),mk(2,NO_BIB),mk(3,A)];goView('profile');renderRecords();
+        var r=$('recordsGrid').innerText;
+        if(!/2\s*📍 Bibliotecas exploradas/.test(r))return 'perfil mal: '+r;
+        DATA.sessions=[mk(0,NO_BIB)];renderRecords();if(/explorada/.test($('recordsGrid').innerText))return 'sale con 0 bibliotecas';
+        return true;
+      }finally{
+        window.showToast=st;window.comprobarMisiones=cm;k.forEach(x=>DATA[x]=o[x]);CELEB_DIA=null;closeModal();
+        document.querySelectorAll('.racha-overlay').forEach(x=>x.remove());renderRecords();renderForest();renderMisiones();
+      }"""),
     ("acceso: la ley foral solo en Navarra", """
       for(var i=N_NAVARRA;i<BIBLIOTECAS.length;i++)if(/Ley Foral/.test(accesoAccesibilidadHTML(BIBLIOTECAS[i])))return 'ley foral fuera de Navarra: '+BIBLIOTECAS[i].nombre;
       var nav=BIBLIOTECAS.slice(0,N_NAVARRA).some(b=>/Ley Foral 32\\/2002/.test(accesoAccesibilidadHTML(b)));
