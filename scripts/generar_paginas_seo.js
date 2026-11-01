@@ -3,12 +3,12 @@
      bibliotecas/index.html                      → todas las provincias
      bibliotecas/<provincia>/index.html          → bibliotecas de la provincia, por localidad
      bibliotecas/<provincia>/<localidad>/index.html (localidades con 3 o más bibliotecas)
-     bibliotecas/abiertas-hoy|abiertas-domingo|abiertas-fin-de-semana|abiertas-sabado-tarde|abiertas-hasta-tarde|abiertas-mediodia|abiertas-temprano/index.html (España, por provincia;
+     bibliotecas/abiertas-hoy|abiertas-domingo|abiertas-fin-de-semana|abiertas-sabado-tarde|abiertas-domingo-tarde|abiertas-hasta-tarde|abiertas-mediodia|abiertas-temprano/index.html (España, por provincia;
        «hoy» calcula en el navegador el horario de hoy y si está abierta ahora)
        y abiertas-verano (solo con horario de verano verificado: h.ver + h.vd/h.vh)
      bibliotecas/<provincia>/<tema>/index.html   (mismos temas, solo con 2 o más bibliotecas que cumplen)
      bibliotecas/<provincia>/<localidad>/<tema>/index.html (domingo, fin de semana y hasta tarde; localidades con
-       página propia y 2 o más que cumplen)
+       página propia y 2 o más que cumplen; temas con «min»: con ese mínimo y lista distinta de la de su provincia)
      bibliotecas/<provincia>/<biblioteca>/index.html (las más buscadas: Nacional, Regional de Madrid, grandes y
        universitarias de capitales y todas las de capitales con horario verificado)
      bibliotecas/salas-de-estudio/ y bibliotecas/<prov>/[<capital>/]salas-de-estudio/ (capitales con 5 o más universitarias,
@@ -132,6 +132,7 @@ function cierraTarde(b) { return b.h && b.h.inv && DIAS.slice(0, 5).some((d) => 
 const verificado = (b) => !!(b.h && b.h.inv && b.h.f && b.h.fv);
 const abreDomingo = (b) => verificado(b) && (b.h.inv.D || []).length > 0;
 const abreSabadoTarde = (b) => verificado(b) && (b.h.inv.S || []).some((r) => r[1] >= "17:00" || r[1] === "00:00");
+const abreDomingoTarde = (b) => verificado(b) && (b.h.inv.D || []).some((r) => r[1] >= "17:00" || r[1] === "00:00");
 // Mediodía: los 5 días de lunes a viernes (horario de invierno verificado) con una franja que cubre de 14:00 a 16:00 sin
 // cortar. Un día sin franjas (cerrado o «sin confirmar») la deja fuera: solo se afirma lo que dice la fuente.
 const MEDIODIA = ["14:00", "16:00"];
@@ -373,6 +374,34 @@ const TEMAS = [
         [`¿Están actualizados estos horarios?`, `Son los horarios de invierno publicados en la web oficial de cada biblioteca, comprobados ${textoFechas(lista)}. Pueden cambiar en verano, festivos o temporada de exámenes; si ves uno mal, avísanos desde la app.`],
       ];
     } },
+  // Domingo por la tarde: alguna franja del domingo (horario de invierno verificado) que acaba a las 17:00 o más tarde.
+  // Con 3 o más y nunca si la lista es la misma que «Domingo» o «Sábado tarde» del mismo sitio (sería una página repetida).
+  { slug: "abiertas-domingo-tarde", corto: "Domingo tarde", que: "abiertas el domingo por la tarde", cumple: abreDomingoTarde,
+    min: 3, distintoDe: ["abiertas-domingo", "abiertas-sabado-tarde"],
+    destacado: (b) => `Domingo: ${franjas(b.h.inv.D)}`,
+    pregunta: (l) => `¿Qué bibliotecas abren el domingo por la tarde en ${l}?`,
+    intro: (lista, lugar) => `${lista.length} ${lista.length === 1 ? "biblioteca" : "bibliotecas"} de ${esc(lugar)} abiertas el domingo hasta las 17:00 o más tarde, ` +
+      `según el horario de invierno comprobado en la web oficial de cada una ${textoFechas(lista)} (en cada ficha tienes la fecha y la fuente). ` +
+      `En verano, festivos y época de exámenes puede cambiar: confírmalo en su web antes de ir. Solo aparecen las que tienen horario verificado.`,
+    faq: (t, lista, lugar) => {
+      const nombres = lista.slice(0, 6).map((b) => b.n).join(", ") + (lista.length > 6 ? " y otras" : "");
+      const pocas = (l) => l.slice(0, 4).map((b) => b.n).join(", ") + (l.length > 4 ? ` y ${l.length - 4} más` : "");
+      const cierreD = (b) => (b.h.inv.D || []).map((r) => (r[1] === "00:00" ? "24:00" : r[1])).sort().pop();
+      const max = lista.map(cierreD).sort().pop(), ultimas = lista.filter((b) => cierreD(b) === max);
+      const sab = lista.filter(abreSabadoTarde);
+      // Las que abren el domingo las 24 horas (0:00–24:00) se dicen así: «cierra a las 00:00» confundiría.
+      const de24 = (b) => (b.h.inv.D || []).some((r) => r[0] === "00:00" && (r[1] === "24:00" || r[1] === "00:00"));
+      const cierraTexto = ultimas.every(de24) ? `${ultimas.length === 1 ? "abre" : "abren"} las 24 horas el domingo`
+        : `a las ${quitaCero(max).replace("24:00", "00:00 (medianoche)")}`;
+      return [
+        [t.pregunta(lugar), `Con horario de invierno verificado en su web oficial abren el domingo hasta las 17:00 o más tarde: ${nombres}.`],
+        [`¿Qué biblioteca cierra más tarde el domingo en ${lugar}?`, `Según su horario verificado, ${ultimas.length === 1 ? "la que cierra más tarde es" : "las que cierran más tarde son"} ${pocas(ultimas)} (${cierraTexto}).`],
+        [`¿Abren también el sábado por la tarde?`, sab.length
+          ? `De estas, ${sab.length === lista.length ? "todas abren" : sab.length === 1 ? "solo 1 abre" : `${sab.length} abren`} también el sábado hasta las 17:00 o más tarde${sab.length === lista.length ? "" : `: ${pocas(sab)}`}.`
+          : `Ninguna de estas abre el sábado hasta las 17:00 o más tarde según su horario verificado.`],
+        [`¿Están actualizados estos horarios?`, `Son los horarios de invierno publicados en la web oficial de cada biblioteca, comprobados ${textoFechas(lista)}. Pueden cambiar en verano, festivos o temporada de exámenes; si ves uno mal, avísanos desde la app.`],
+      ];
+    } },
   { slug: "abiertas-hasta-tarde", corto: "Hasta tarde", que: "abiertas hasta tarde", cumple: (b) => verificado(b) && cierraTarde(b),
     destacado: (b) => `Entre semana cierra a las ${quitaCero(cierreMasTarde(b)).replace("24:00", "00:00 (medianoche)")}`,
     pregunta: (l) => `¿Qué bibliotecas cierran a las 21:00 o más tarde en ${l}?` },
@@ -465,6 +494,9 @@ TEMAS.forEach((t) => {
 const MIN_TEMA_LOC = 2;
 const TEMAS_LOC = TEMAS.filter((t) => t.local !== false);
 const tieneLocPagina = (p, c, n) => n >= 3 && !!slug(c) && slug(c) !== slug(p);
+// En los temas con «min» propio, la página de localidad tampoco se crea si su lista es exactamente la de la página de su
+// provincia (p. ej. «abren temprano»: Pamplona y Navarra, las mismas 3): sería la misma página con otro nombre.
+const igualProv = (t, l, p) => { const o = t.min && temaProv[t.slug][p]; return !!o && o.length === l.length && l.every((b) => o.includes(b)); };
 const temaLoc = {}; // temaLoc[slug]["<provincia>|<localidad>"] = lista
 TEMAS_LOC.forEach((t) => { temaLoc[t.slug] = {}; });
 provincias.forEach((p) => {
@@ -472,7 +504,7 @@ provincias.forEach((p) => {
   porProv[p].forEach((b) => (porC[b.c] = porC[b.c] || []).push(b));
   Object.keys(porC).forEach((c) => {
     if (!tieneLocPagina(p, c, porC[c].length)) return;
-    TEMAS_LOC.forEach((t) => { const l = porC[c].filter(t.cumple); if (l.length >= (t.min || MIN_TEMA_LOC) && !igualQue(t, l, temaLoc, p + "|" + c)) temaLoc[t.slug][p + "|" + c] = l; });
+    TEMAS_LOC.forEach((t) => { const l = porC[c].filter(t.cumple); if (l.length >= (t.min || MIN_TEMA_LOC) && !igualQue(t, l, temaLoc, p + "|" + c) && !igualProv(t, l, p)) temaLoc[t.slug][p + "|" + c] = l; });
   });
 });
 // Recuento del filtro de los temas con mínimo propio o «distintoDe» (para saber cuántas se quedan fuera y por qué).
@@ -481,7 +513,7 @@ TEMAS.filter((t) => t.min || t.distintoDe).forEach((t) => {
   const locs = {}; provincias.forEach((p) => porProv[p].forEach((b) => { if (tieneLocPagina(p, b.c, porProv[p].filter((x) => x.c === b.c).length) && t.cumple(b)) (locs[p + "|" + b.c] = locs[p + "|" + b.c] || []).push(b); }));
   const nl = Object.values(locs), np = Object.keys(temaProv[t.slug]).length, nlp = temaLoc[t.slug] ? Object.keys(temaLoc[t.slug]).length : 0;
   console.log(`Tema ${t.slug}: cumplen en ${prov.length} provincias (${prov.filter((l) => l.length >= min).length} con ${min} o más, ${np} con página) ` +
-    `y en ${nl.length} localidades con página (${nl.filter((l) => l.length >= min).length} con ${min} o más, ${nlp} con página; si no, por ser iguales a «${t.distintoDe}»)`);
+    `y en ${nl.length} localidades con página (${nl.filter((l) => l.length >= min).length} con ${min} o más, ${nlp} con página; si no, por ser iguales a «${t.distintoDe}»${t.min ? " o a su provincia" : ""})`);
 });
 // Fecha de verificación más reciente de las listadas (dateModified del JSON-LD y lastmod del sitemap): no depende del día
 // en que se genera, así que regenerar con los mismos datos da las mismas páginas.

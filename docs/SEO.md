@@ -278,6 +278,20 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
   (Sevilla 4, Valencia 3, Navarra 3; Las Palmas 4 coincide con «Hoy»), 1 localidad (Pamplona 3, la misma lista que Navarra);
   España 25.
 
+## Hecho (2026-11-01) · «Bibliotecas abiertas el domingo por la tarde en <lugar>» (721 páginas, antes 720)
+- Para «biblioteca abierta domingo tarde <ciudad>»: `/bibliotecas/abiertas-domingo-tarde/` (España) y
+  `/bibliotecas/<prov>/[<loc>/]abiertas-domingo-tarde/`. Entra una biblioteca si su horario de invierno verificado (`h.f` +
+  `h.fv`; Navarra con `fuenteHorario` + `verificadoHorario`) tiene alguna franja del domingo que acaba a las 17:00 o más tarde
+  (`abreDomingoTarde`). Un día «sin confirmar» no tiene franjas, así que no entra.
+- Entrada de `TEMAS` con `min: 3` y `distintoDe: ["abiertas-domingo", "abiertas-sabado-tarde"]`. Tarjeta «Domingo:
+  10:00–19:00», intro y FAQ propias (cuáles, cuál cierra más tarde el domingo con empates —las de 24 h se dicen así—, cuántas
+  abren también el sábado por la tarde, de dónde salen los horarios). Sin CSS nuevo.
+- Recuento (el generador lo imprime en «Tema abiertas-domingo-tarde: …»): cumplen en 12 provincias, 1 con 3 o más (Madrid 8;
+  Barcelona 2) y en 9 localidades con página, 1 con 3 o más (Pozuelo de Alarcón, igual que su «Domingo»: no se crea); España 20.
+- Temas con `min`: la página de localidad tampoco se crea si su lista es exactamente la de su provincia (`igualProv`). Hoy solo
+  cae `/navarra/pamplona/abiertas-temprano/` (las mismas 3 que Navarra). Con todos los temas caerían 16 (Hoy, Domingo, Fin de
+  semana y Hasta tarde en Bilbao, Logroño, Las Palmas, Pamplona…); no se aplica a esos porque se buscan con el nombre de la ciudad.
+
 ## Lo que tienes que hacer tú (sin esto no sirve de nada)
 1. **Conectar el dominio** en Vercel: proyecto `bibliotime` → Settings → Domains → añadir `bibliomapa.es` y
    `www.bibliomapa.es` (redirigir www → sin www) y poner en tu registrador los DNS que te indique Vercel.
