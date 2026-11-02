@@ -850,6 +850,36 @@ PRUEBAS = [
       }finally{clearTimeout(irAMision.t);studyTimer.running=t0.running;studyTimer.start=t0.start;studyTimer.bibIndex=t0.bibIndex;studyTimer.tick=t0.tick;MIS_FOCO={id:'',hasta:0};
         clearTimeout(VUELO.t);VUELO.t=0;VUELO.n=VUELO.h=VUELO.z=0;VUELO.hr=null;
         k.forEach(x=>DATA[x]=o[x]);saveUserData();closeModal();el&&(el._clave=null);goView('map');await espera(300);renderMisCerca();renderStudy();renderSemillas();}"""),
+    ("«Sesión terminada» con las 3 misiones y el cofre sin abrir: «🎁 Tu cofre de misiones te espera» en --suave y «Abrirlo» guarda y lleva al cofre (nada con 2/3 ni con el cofre abierto)", """
+      var k=['misiones','sessions','acciones','semillasPremio','streakFreezes','cofresAbiertos','sellosMisiones'],o={};k.forEach(x=>o[x]=DATA[x]);
+      var viejo=new Date(Date.now()-5*3600000).toISOString(),espera=n=>new Promise(r=>setTimeout(r,n)),hoy=ymd();
+      var mk=i=>({id:'ce'+i,date:hoy,min:30,ts:Date.now()-60000,bib:NO_BIB,focus:'ok',esp:'roble',prod:null,note:''});
+      var abre=(hechas,cofre)=>{closeModal();DATA.misiones={fecha:hoy,ids:['m25','agenda','pomo'],hechas:hechas,cofre:cofre};var s=mk(Math.random());DATA.sessions=[s];pedirValoracion(s,null);return s;};
+      var tres={m25:viejo,agenda:viejo,pomo:viejo};
+      try{
+        await cargarExtra();closeModal();goView('map');DATA.acciones={fecha:hoy};
+        abre({m25:viejo,agenda:viejo},false);if(document.querySelector('#modalRoot .ses-cofre'))return 'sale con 2/3';
+        abre(tres,true);if(document.querySelector('#modalRoot .ses-cofre'))return 'sale con el cofre ya abierto';
+        var s=abre(tres,false),l=document.querySelector('#modalRoot .ses-cofre'),b=$('sessCofre');
+        if(!l||!/🎁 Tu cofre de misiones te espera/.test(l.innerText))return 'no sale la línea';
+        var m=$('modalRoot').innerHTML;if(m.indexOf('ses-cofre')<m.indexOf('Sesión terminada</h3>')||m.indexOf('ses-cofre')>m.indexOf('prodStars'))return 'no va bajo «Sesión terminada»';
+        var c=getComputedStyle(l),rojo=/rgb\\(2[0-5]\\d, [0-9]{1,2}, [0-9]{1,2}\\)/;
+        var t=document.createElement('i');t.style.color='var(--suave)';document.body.appendChild(t);var su=getComputedStyle(t).color;t.remove();if(c.color!==su)return 'no va en --suave: '+c.color;
+        if(rojo.test(c.color)||rojo.test(getComputedStyle(b).color)||rojo.test(getComputedStyle(b).backgroundColor)||c.animationName!=='none')return 'roja o animada';
+        if(!b||b.tagName!=='BUTTON'||b.innerText.trim()!=='Abrirlo'||!/cofre/i.test(b.getAttribute('aria-label')||''))return 'botón «Abrirlo» sin etiqueta';
+        if(b.getBoundingClientRect().height<44)return 'el botón mide menos de 44 px: '+b.getBoundingClientRect().height;
+        if(/prisa|corre|pierdes|caduca|rápido/i.test(l.innerText))return 'mete presión';
+        document.querySelector('#prodStars button[data-v="4"]').click();$('viewStudy').scrollTop=0;b.click();await espera(800);
+        if(document.querySelector('#modalRoot .ses-cofre'))return 'no cierra «Sesión terminada»';
+        if(s.prod!==4)return 'no guarda las estrellas marcadas: '+s.prod;
+        if($('viewStudy').classList.contains('hidden'))return 'no abre Estudio';
+        var cb=document.querySelector('#missionsCard .cofre.listo'),r=cb&&cb.getBoundingClientRect(),v=$('viewStudy').getBoundingClientRect();
+        if(!cb||!(r.top>=v.top-1&&r.bottom<=v.bottom+1))return 'el cofre no queda a la vista';
+        if(document.querySelector('#missionsCard .mis-foco'))return 'resalta una fila en vez del cofre';
+        return true;
+      }finally{clearTimeout(irAMision.t);MIS_FOCO={id:'',hasta:0};
+        clearTimeout(VUELO.t);VUELO.t=0;VUELO.n=VUELO.h=VUELO.z=0;VUELO.hr=null;document.querySelectorAll('.saco-semillas,.semilla-vuela').forEach(x=>x.remove());
+        k.forEach(x=>DATA[x]=o[x]);saveUserData();closeModal();goView('map');await espera(300);renderStudy();renderSemillas();}"""),
     ("acceso: la ley foral solo en Navarra", """
       for(var i=N_NAVARRA;i<BIBLIOTECAS.length;i++)if(/Ley Foral/.test(accesoAccesibilidadHTML(BIBLIOTECAS[i])))return 'ley foral fuera de Navarra: '+BIBLIOTECAS[i].nombre;
       var nav=BIBLIOTECAS.slice(0,N_NAVARRA).some(b=>/Ley Foral 32\\/2002/.test(accesoAccesibilidadHTML(b)));

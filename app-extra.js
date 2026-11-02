@@ -1020,13 +1020,27 @@ function volarHielo(desde,espera){
   var fin=function(){if(!s.parentNode)return;s.remove();marcarHieloRacha(p);};a.onfinish=fin;a.oncancel=fin;
 }
 
+/* ----- «🎁 Tu cofre de misiones te espera» en «Sesión terminada»: si al parar quedan las 3 misiones de hoy
+   hechas y el cofre sin abrir, una línea en --suave con «Abrirlo» (guarda lo que hayas marcado, cierra y lleva
+   al cofre con irAMision("cofre")). Sin rojo, sin prisa, sin animación; con el cofre ya abierto, nada. ----- */
+function cofreEspera(){var M=DATA&&DATA.misiones;return !!M&&M.fecha===ymd()&&!M.cofre&&(M.ids||[]).length===3&&M.ids.every(function(id){return M.hechas&&M.hechas[id];});}
+function cofreEsperaHTML(){
+  if(!cofreEspera())return "";
+  if(!$("cofreEsperaCss")){var st=document.createElement("style");st.id="cofreEsperaCss";
+    st.textContent='.ses-cofre{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 14px;padding:4px 4px 4px 12px;border-radius:var(--r-m);border:1px solid var(--borde);background:var(--glass);color:var(--suave);font-size:var(--fs-m);font-weight:700;line-height:1.3;text-align:left}'+
+      '.ses-cofre-b{flex:none;min-height:44px;min-width:44px;padding:0 16px;border:1.5px solid var(--acento);border-radius:var(--r-pill);background:var(--glass-fuerte);color:var(--acento-tx);font:inherit;font-weight:800;cursor:pointer}'+
+      '.ses-cofre-b:focus-visible{outline:2px solid var(--acento);outline-offset:2px}';
+    document.head.appendChild(st);}
+  return '<div class="ses-cofre"><span>🎁 Tu cofre de misiones te espera</span><button type="button" class="ses-cofre-b" id="sessCofre" aria-label="Abrirlo: ir a tu cofre de misiones">Abrirlo</button></div>';
+}
+
 /* ----- Sesión terminada (valorar, afluencia, nota) y editar una sesión ----- */
 function pedirValoracion(sesion,horasAntes){
   var sel={v:0};
   var plantado=sesion.focus?'<div class="planted'+(sesion.focus==="withered"?' seco':'')+'"><div class="planted-tree">'+arbolSVG(sesion.min,sesion.focus==="withered",sesion.subject||sesion.id,110,sesion.esp)+'</div>'+
     '<div class="planted-txt">'+(sesion.focus==="withered"?'🥀 Tu árbol se marchitó porque saliste de la app. ¡El próximo crecerá!':'🎉 ¡Has plantado un '+ETAPAS_ARBOL[etapaArbol(sesion.min)][1].toLowerCase()+' en tu bosque!'+(Math.floor(sesion.min/5)?'<span class="planted-seeds">🌰 +'+Math.floor(sesion.min/5)+' semillas</span>':''))+'</div></div>':'';
   var barraNivel=horasAntes!=null?nivelProgresoHTML(horasAntes):'';
-  openModal(plantado+recordSesionHTML(sesion)+cuentaSesionHTML(sesion)+barraNivel+'<h3>Sesión terminada</h3><div class="sub">'+fmtHoras(sesion.min)+' h en '+escapeHTML(sesion.bib.replace("Biblioteca ","").replace("Pública ",""))+(sesion.verif?' · <span class="badge-ok">✓ verificada</span>':'')+'</div>'+
+  openModal(plantado+recordSesionHTML(sesion)+cuentaSesionHTML(sesion)+barraNivel+'<h3>Sesión terminada</h3><div class="sub">'+fmtHoras(sesion.min)+' h en '+escapeHTML(sesion.bib.replace("Biblioteca ","").replace("Pública ",""))+(sesion.verif?' · <span class="badge-ok">✓ verificada</span>':'')+'</div>'+cofreEsperaHTML()+
     '<label style="font-size:var(--fs-s);font-weight:700;color:var(--suave);text-transform:uppercase;letter-spacing:.05em">¿Qué tal ha ido?</label>'+
     '<div class="prodstars" id="prodStars">'+[1,2,3,4,5].map(function(n){return '<button data-v="'+n+'">★</button>';}).join("")+'</div>'+
     (bibIdxDe(sesion)>=0?'<label style="display:block;margin-top:12px;font-size:var(--fs-s);font-weight:700;color:var(--suave);text-transform:uppercase;letter-spacing:.05em">¿Cómo estaba de llena?</label>'+
@@ -1053,14 +1067,18 @@ function pedirValoracion(sesion,horasAntes){
       document.querySelectorAll("#sessOcc button").forEach(function(b){
         b.addEventListener("click",function(){occSel=b.dataset.l;document.querySelectorAll("#sessOcc button").forEach(function(x){x.classList.toggle("on",x===b);});});
       });
-      $("sessSave").addEventListener("click",function(){
+      var guardar=function(alCofre){
         // la afluencia solo vale si la sesión acaba de terminar (no se reporta para una sesión antigua)
         if(occSel&&bibIdxDe(sesion)>=0)addOccReport(bibIdxDe(sesion),occSel,true);
         sesion.prod=sel.v||null; sesion.note=$("sessNote").value.trim();var v=vuelo();
-        saveUserData();socialShareSession(sesion);closeModal();renderProfile();renderStudy();showToast("Sesión guardada");if(v)v();
+        saveUserData();socialShareSession(sesion);closeModal();renderProfile();renderStudy();if(alCofre)irAMision("cofre");else showToast("Sesión guardada");if(v)v();
         if(horasAntes!=null)comprobarSubidaNivel(horasAntes);
-      });
-      $("sessSkip").addEventListener("click",function(){var v=vuelo();closeModal();if(v)v();if(horasAntes!=null)comprobarSubidaNivel(horasAntes);});
+      };
+      var omitir=function(alCofre){var v=vuelo();closeModal();if(alCofre)irAMision("cofre");if(v)v();if(horasAntes!=null)comprobarSubidaNivel(horasAntes);};
+      $("sessSave").addEventListener("click",function(){guardar(false);});
+      $("sessSkip").addEventListener("click",function(){omitir(false);});
+      // «Abrirlo»: si ya has marcado algo (estrellas, afluencia o nota) se guarda; si no, como «Omitir»
+      var sc=$("sessCofre");if(sc)sc.addEventListener("click",function(){if(sel.v||occSel||$("sessNote").value.trim())guardar(true);else omitir(true);});
     });
 }
 function editarSesion(idx){
