@@ -904,7 +904,8 @@ function animarCuentaSesion(){
 
 /* ----- Semillas que vuelan al marcador: al cerrar «Sesión terminada» con un árbol sano, las 🌰 ganadas
    suben desde la tarjeta hasta el contador (.seeds-n del bosque si se ve; si no, un saco flotante) y este
-   cuenta hacia arriba con un rebote. Con «reducir movimiento», la cifra final sin vuelo. ----- */
+   cuenta hacia arriba con un rebote. Con «reducir movimiento», la cifra final sin vuelo.
+   El @keyframes svRebote vive en index.html (también lo usa #miniMis). ----- */
 function estilosVueloSemillas(){
   if($("vueloCss"))return;var st=document.createElement("style");st.id="vueloCss";
   st.textContent='.semilla-vuela{position:fixed;left:0;top:0;z-index:4500;pointer-events:none;font-size:var(--fs-2xl);will-change:transform}'+
@@ -913,7 +914,6 @@ function estilosVueloSemillas(){
       'font-size:var(--fs-l);font-weight:800;color:var(--aviso-tx);font-variant-numeric:tabular-nums;animation:fadeIn .25s both;transition:opacity .35s}'+
     '.saco-semillas{flex-wrap:wrap;justify-content:flex-end;max-width:calc(100vw - 32px)}.saco-semillas.con-pista{border-radius:var(--r-xl);row-gap:2px}.saco-pista{flex-basis:100%;text-align:right;font-size:var(--fs-s);font-weight:700;color:var(--suave);line-height:1.3}.saco-pista b{color:var(--ok-tx);font-weight:800}'+
     '.saco-semillas.fuera{opacity:0}.seeds-n.sv-rebote{animation:svRebote .5s cubic-bezier(.34,1.56,.64,1)}'+
-    '@keyframes svRebote{0%{transform:scale(1)}40%{transform:scale(1.4)}70%{transform:scale(.92)}100%{transform:scale(1)}}'+
     '@media (prefers-reduced-motion:reduce){.saco-semillas{animation:none;transition:none}.seeds-n.sv-rebote{animation:none}}';
   document.head.appendChild(st);
 }

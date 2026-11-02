@@ -371,7 +371,10 @@
     color:var(--acento-tx);font-size:var(--fs-xs);font-weight:800;font-family:inherit;line-height:inherit;cursor:pointer}
   .ministudy .mini-mis.hecha{color:var(--ok-tx)}
   .mini-mis::before{content:"";position:absolute;left:-4px;right:-4px;top:50%;height:44px;transform:translateY(-50%)}
-  @media(prefers-reduced-motion:reduce){.mini-mis{animation:none}}
+  /* misión recién cumplida fuera de Estudio: el mismo rebote que el contador de semillas, una vez (renderMisCerca) */
+  .ministudy .mini-mis.mm-rebote{animation:svRebote .5s cubic-bezier(.34,1.56,.64,1)}
+  @keyframes svRebote{0%{transform:scale(1)}40%{transform:scale(1.4)}70%{transform:scale(.92)}100%{transform:scale(1)}}
+  @media(prefers-reduced-motion:reduce){.mini-mis,.ministudy .mini-mis.mm-rebote{animation:none}}
   .ministudy button{border:none;border-radius:var(--r-m);padding:7px 12px;font-weight:700;font-size:var(--fs-s);cursor:pointer}
   /* Compartir: botón principal (blanco sobre degradado). Parar: tono suave de parar, como .btn.danger */
   .ministudy #miniShare{background:var(--grad-acento);color:#fff}

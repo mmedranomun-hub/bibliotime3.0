@@ -3614,10 +3614,16 @@ function irAMision(id){
 }
 function renderMisCerca(){
   var el=$("misCerca"); if(!el)return;
-  var hechas=DATA&&DATA.misiones?Object.keys(DATA.misiones.hechas||{}).length:0;
+  var hechas=DATA&&DATA.misiones?Object.keys(DATA.misiones.hechas||{}).length:0, mi=$("miniMis"), antes=mi?mi._nh:null;
+  if(mi)mi._nh=hechas; // cuenta anterior: el rebote sale al pasar de pendiente a cumplida, no al cargar ni al repintar
   var clave=studyTimer.running?elapsedMin()+"|"+Math.floor(Date.now()/60000)+"|"+hechas:"";
   if(el._clave===clave)return; el._clave=clave;
-  var c=misionCerca(), mi=$("miniMis");
+  var c=misionCerca();
+  // «✅ 2/3» recién cumplida con el minicronómetro a la vista (fuera de Estudio): rebote suave (svRebote), una vez.
+  // Solo una clase en el botón; se quita al cambiar a «🎯»/ocultarse para que no se repita. Quieto con «reducir movimiento».
+  if(mi&&(!c||c.falta))mi.classList.remove("mm-rebote");
+  else if(mi&&antes!=null&&hechas>antes&&!sinMovimiento()&&$("viewStudy").classList.contains("hidden")){
+    mi.classList.remove("mm-rebote");void mi.offsetWidth;mi.classList.add("mm-rebote");}
   if(mi){mi.classList.toggle("hidden",!c);mi.classList.toggle("hecha",!!c&&!c.falta);mi.dataset.m=c?c.id:"";
     mi.setAttribute("aria-label",c?(c.falta?"Misión cerca":"Misión cumplida")+": ver misiones de hoy":"Ver misiones de hoy");
     mi.innerHTML=c?'<span aria-hidden="true">'+(c.falta?"🎯 "+c.falta+" min":"✅ "+c.hechas+"/3")+'</span><span class="sr-solo">'+(c.falta?"Misión cerca":"Misión cumplida")+'</span>':"";}

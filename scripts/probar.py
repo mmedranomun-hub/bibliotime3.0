@@ -668,6 +668,39 @@ PRUEBAS = [
       }finally{await new Promise(r=>setTimeout(r,300)); // deja que el mapa haga su invalidateSize (120 ms) mientras se ve
         studyTimer.running=t0.running;studyTimer.start=t0.start;studyTimer.bibIndex=t0.bibIndex;studyTimer.tick=t0.tick;
         k.forEach(x=>DATA[x]=o[x]);el&&(el._clave=null);ms.classList.toggle('hidden',oculto0);renderMisCerca();renderStudy();}"""),
+    ("minicronómetro: «✅ 2/3» rebota una sola vez al cumplir una misión fuera de Estudio; no al repintar, recargar, en Estudio ni con «reducir movimiento»", """
+      var k=['misiones','sessions','acciones'],o={};k.forEach(x=>o[x]=DATA[x]);
+      var t0={running:studyTimer.running,start:studyTimer.start,bibIndex:studyTimer.bibIndex,tick:studyTimer.tick},el=$('misCerca'),mi=$('miniMis'),ms=$('miniStudy');
+      var viejo=new Date(Date.now()-5*3600000).toISOString(),oculto0=ms.classList.contains('hidden'),sm=window.sinMovimiento,espera=n=>new Promise(r=>setTimeout(r,n));
+      var inicios=0,cuenta=e=>{if(e.animationName==='svRebote')inicios++;};
+      var pinta=hechas=>{DATA.misiones={fecha:ymd(),ids:['m25','agenda','pomo'],hechas:hechas,cofre:false};el._clave=null;renderMisCerca();};
+      var ciclo=async()=>{delete mi._nh;mi.classList.remove('mm-rebote');pinta({agenda:viejo});
+        if(mi.classList.contains('mm-rebote'))return 'rebota sin cumplir nada';
+        pinta({agenda:viejo,m25:new Date(Date.now()-60000).toISOString()});await espera(80);return '';};
+      try{
+        closeModal();goView('map');DATA.sessions=[];DATA.acciones={fecha:ymd()};ms.classList.remove('hidden');mi.addEventListener('animationstart',cuenta);
+        studyTimer.running=true;studyTimer.tick=t0.tick||1;studyTimer.bibIndex=-1;studyTimer.start=Date.now()-26*60000-500;
+        var e=await ciclo();if(e)return e;
+        if(!mi.classList.contains('mm-rebote')||!/✅ 2.3/.test(mi.innerText))return 'no rebota al cumplir';
+        if(inicios!==1)return 'la animación svRebote no arranca una vez: '+inicios;
+        await espera(600);pinta(DATA.misiones.hechas);el._clave=null;renderMisCerca();await espera(80);
+        if(inicios!==1)return 'vuelve a rebotar al repintar';
+        // recarga con la misión ya hecha: sin cuenta anterior, quieto
+        delete mi._nh;mi.classList.remove('mm-rebote');pinta(DATA.misiones.hechas);
+        if(mi.classList.contains('mm-rebote'))return 'rebota al cargar con misiones ya hechas';
+        // pasa a «🎯»/se oculta: la clase se va para no repetirse al volver a salir
+        studyTimer.running=false;el._clave=null;renderMisCerca();studyTimer.running=true;
+        if(mi.classList.contains('mm-rebote'))return 'la clase se queda al ocultarse';
+        goView('study');e=await ciclo();if(e)return e;
+        if(mi.classList.contains('mm-rebote'))return 'rebota estando en Estudio';
+        goView('map');window.sinMovimiento=()=>true;e=await ciclo();window.sinMovimiento=sm;if(e)return e;
+        if(mi.classList.contains('mm-rebote'))return 'rebota con «reducir movimiento»';
+        var rm=[].some.call(document.styleSheets,sh=>{try{return [].some.call(sh.cssRules,x=>x.media&&/reduced-motion/.test(x.media.mediaText)&&/mm-rebote[^}]*animation[^};]*none/.test(x.cssText));}catch(err){return false;}});
+        if(!rm)return 'el CSS no lo para con prefers-reduced-motion';
+        return true;
+      }finally{window.sinMovimiento=sm;mi.removeEventListener('animationstart',cuenta);mi.classList.remove('mm-rebote');goView('map');await espera(300);
+        studyTimer.running=t0.running;studyTimer.start=t0.start;studyTimer.bibIndex=t0.bibIndex;studyTimer.tick=t0.tick;
+        k.forEach(x=>DATA[x]=o[x]);el&&(el._clave=null);ms.classList.toggle('hidden',oculto0);renderMisCerca();renderStudy();}"""),
     ("tocar «🎯 7 min» o la barrita abre Estudio con la fila de la misión cerca resaltada un momento y a la vista", """
       var k=['misiones','sessions','acciones'],o={};k.forEach(x=>o[x]=DATA[x]);
       var t0={running:studyTimer.running,start:studyTimer.start,bibIndex:studyTimer.bibIndex,tick:studyTimer.tick},el=$('misCerca'),mi=$('miniMis'),ms=$('miniStudy');
