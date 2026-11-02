@@ -685,6 +685,9 @@ var RACHA_FOCO_MS=1000;
 // Cómo se gana un 🧊, la regla real: checkStreakFreezes (app.js) da uno al llegar a cada múltiplo de 7 días reales seguidos
 // y abrirCofre, un día de cada tres (hashStr(ymd())%3), uno más con el cofre; los dos solo si tienes menos de 3.
 // Bajo «y 🧊 un congelador de racha» del cofre: cuántos tienes ya, con la cifra real (sin línea si el cofre no trae 🧊).
+// los 3 huecos de 🧊 en la casilla «Congeladores»: llenos con 🧊 y libres como círculo --borde (sin rojo ni «te faltan»)
+function huecosHielo(){var n=Math.min(3,DATA.streakFreezes||0),h="";for(var i=0;i<3;i++)h+='<i class="'+(i<n?"lleno":"libre")+'">'+(i<n?"🧊":"")+'</i>';
+  return '<span class="rs-huecos" role="img" aria-label="'+n+' de 3 congeladores">'+h+'</span>';}
 function cuantosHielo(){var n=DATA.streakFreezes||0;return "Ya tienes "+n+" de 3"+(n>=3?", el máximo":"");}
 function comoHielo(){
   return (DATA.streakFreezes||0)>=3?"Tienes el máximo (3). Cada uno salva un día sin estudiar."
@@ -702,7 +705,7 @@ function abrirRacha(foco){
   openModal('<div class="racha-modal"><div class="racha-fuego'+(hoyOk?'':' apagado')+'">🔥</div><div class="racha-n">'+n+'</div><div class="racha-lbl">'+(n===1?"día seguido":"días seguidos")+'</div>'+
     '<div class="semana-racha">'+sem+'</div>'+
     '<div class="sub" style="margin-top:12px">'+(hoyOk?"¡Hoy ya cuenta! Vuelve mañana para mantenerla.":n?"Estudia hoy para no perder tu racha de "+n+" días.":"Estudia hoy y empieza una racha.")+'</div>'+
-    '<div class="racha-stats"><div><b>'+mejor+'</b><small>Mejor racha</small></div><div class="rs-hielo'+(foco==="hielo"?' rs-foco':'')+'"><b>🧊 '+(DATA.streakFreezes||0)+'</b><small>Congeladores</small></div><div><b>🌰 '+semillas()+'</b><small>Semillas</small></div>'+
+    '<div class="racha-stats"><div><b>'+mejor+'</b><small>Mejor racha</small></div><div class="rs-hielo'+(foco==="hielo"?' rs-foco':'')+'"><b>🧊 '+(DATA.streakFreezes||0)+'</b>'+huecosHielo()+'<small>Congeladores</small></div><div><b>🌰 '+semillas()+'</b><small>Semillas</small></div>'+
       '<p class="rs-hielo-como">'+comoHielo()+'</p></div>'+
     (hoyOk?'':'<button class="btn" onclick="closeModal();goView(\'study\')">▶ Estudiar ahora</button>')+'</div>');
   if(foco!=="hielo")return;

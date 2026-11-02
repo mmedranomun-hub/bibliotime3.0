@@ -592,6 +592,34 @@ PRUEBAS = [
         if(/falta|pierdes|perder/i.test(l.innerText))return 'mete presión';
         return true;
       }finally{clearTimeout(abrirRacha.t);k.forEach(x=>DATA[x]=o[x]);closeModal();}"""),
+    ("la casilla «🧊 Congeladores» enseña los 3 huecos (con 2: dos 🧊 y un círculo libre en --borde, sin rojo; aria-label «2 de 3 congeladores») sin romper la cifra ni el resaltado", """
+      await cargarExtra();
+      var k=['streakFreezes'],o={};k.forEach(x=>o[x]=DATA[x]);
+      try{
+        closeModal();DATA.streakFreezes=2;abrirRacha("hielo");
+        var h=document.querySelector('#modalRoot .racha-stats .rs-hielo'),z=h&&h.querySelector('.rs-huecos');
+        if(!z)return 'no hay huecos en la casilla';
+        if(!h.classList.contains('rs-foco')||!/🧊 2/.test(h.querySelector('b').innerText))return 'rompe la cifra o el resaltado';
+        if(z.getAttribute('role')!=='img'||z.getAttribute('aria-label')!=='2 de 3 congeladores')return 'aria: '+z.getAttribute('aria-label');
+        var ll=z.querySelectorAll('i.lleno'),li=z.querySelectorAll('i.libre');
+        if(z.children.length!==3||ll.length!==2||li.length!==1)return 'huecos: '+ll.length+' llenos, '+li.length+' libres';
+        if([].some.call(ll,x=>x.textContent!=='🧊')||li[0].textContent!=='')return 'contenido de los huecos';
+        var c=document.createElement('i');c.style.borderColor='var(--borde)';document.body.appendChild(c);var borde=getComputedStyle(c).borderTopColor;c.remove();
+        var e=getComputedStyle(li[0]);if(e.borderTopColor!==borde||parseFloat(e.borderTopWidth)<1)return 'el libre no lleva borde --borde: '+e.borderTopColor;
+        if(e.borderTopLeftRadius!=='50%'&&parseFloat(e.borderTopLeftRadius)<8)return 'el libre no es un círculo';
+        var rojo=/rgb\\(2[0-5]\\d, [0-9]{1,2}, [0-9]{1,2}/;if(rojo.test(e.borderTopColor)||rojo.test(e.backgroundColor))return 'es roja';
+        if(/falta/i.test(h.innerText))return 'mete presión';
+        if(e.animationName!=='none'||getComputedStyle(ll[0]).animationName!=='none')return 'lleva animación';
+        var r=z.getBoundingClientRect(),b=h.querySelector('b').getBoundingClientRect();if(r.top<b.bottom-1||r.right>h.getBoundingClientRect().right+1)return 'no va bajo la cifra dentro de la casilla';
+        if(document.documentElement.scrollWidth>innerWidth)return 'desborda en horizontal';
+        closeModal();DATA.streakFreezes=0;abrirRacha();
+        z=document.querySelector('#modalRoot .rs-huecos');
+        if(!z||z.querySelectorAll('i.libre').length!==3||z.getAttribute('aria-label')!=='0 de 3 congeladores')return 'con 0';
+        closeModal();DATA.streakFreezes=3;abrirRacha();
+        z=document.querySelector('#modalRoot .rs-huecos');
+        if(!z||z.querySelectorAll('i.lleno').length!==3||z.getAttribute('aria-label')!=='3 de 3 congeladores')return 'con 3';
+        return true;
+      }finally{clearTimeout(abrirRacha.t);k.forEach(x=>DATA[x]=o[x]);closeModal();}"""),
     ("barrita de misiones bajo el cronómetro: «🎯 2/3 misiones · la siguiente en 7 min» solo si falta ≤ 15 min de una misión de minutos", """
       var k=['misiones','sessions','acciones'],o={};k.forEach(x=>o[x]=DATA[x]);
       var t0={running:studyTimer.running,start:studyTimer.start,bibIndex:studyTimer.bibIndex,tick:studyTimer.tick},sh=window.statsHoy,el=$('misCerca');
