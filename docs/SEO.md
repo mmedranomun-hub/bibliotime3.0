@@ -354,6 +354,13 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
 - `comprobar_paginas_seo.js` falla si una página de provincia (`/bibliotecas/<prov>/` con secciones por localidad) o de
   localidad que enlaza a alguna ficha no lleva `mainEntity` `ItemList` en su `CollectionPage`.
 
+## Hecho (2026-11-02) · «¿Buscabas…?» fuera de `/bibliotecas/` (solo cambia `/404.html`)
+- Si el primer tramo de la ruta no es `bibliotecas`, el script prueba ese tramo (`/navarra/`, `/bizkaia`, `/Vizcaya.html`,
+  `/A%20Coru%C3%B1a/horarios`): quita un `.html`/`.htm` final, normaliza igual y solo sugiere si es igual a un slug de
+  `#prov-404` sin guiones o está en `ALIAS_404`. Sin distancia de edición ni prefijo fuera de `/bibliotecas/`, para no
+  sugerir provincias en rutas que no lo son (`/sevila/`, `/santa-cruz/`, `/leonx/`, `/404.html`, `/` → nada).
+- Script inline 2.121 → 2.231 bytes. `comprobar_paginas_seo.js` pasa de 12 a 21 casos; con el script anterior fallan 4.
+
 ## Hecho (2026-11-01) · «¿Buscabas…?» en la 404 (solo cambia `/404.html`)
 - La 404 lleva bajo el h1 `<p id="buscabas" class="buscabas" hidden>` y, tras el nav de provincias (`id="prov-404"`), un
   `<script id="buscabas-js">` inline sin librerías (`SCRIPT_BUSCABAS` en el generador). Si la ruta es `/bibliotecas/<algo>/…`,

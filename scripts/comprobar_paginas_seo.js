@@ -208,7 +208,11 @@ else {
       // Alias (ALIAS_404 en generar_paginas_seo.js): nombres que la distancia de edición no alcanza.
       ["/bibliotecas/vizcaya/", "¿Buscabas Bizkaia[/bibliotecas/bizkaia/]?"], ["/bibliotecas/Guip%C3%BAzcoa/x/", "¿Buscabas Gipuzkoa[/bibliotecas/gipuzkoa/]?"],
       ["/bibliotecas/palma-de-mallorca/", "¿Buscabas Baleares[/bibliotecas/baleares/]?"], ["/bibliotecas/tenerife/", "¿Buscabas Santa Cruz de Tenerife[/bibliotecas/santa-cruz-de-tenerife/]?"],
-      ["/bibliotecas/la-palma/", "¿Buscabas Santa Cruz de Tenerife[/bibliotecas/santa-cruz-de-tenerife/]?"], ["/bibliotecas/gran-canaria/", "¿Buscabas Las Palmas[/bibliotecas/las-palmas/]?"]];
+      ["/bibliotecas/la-palma/", "¿Buscabas Santa Cruz de Tenerife[/bibliotecas/santa-cruz-de-tenerife/]?"], ["/bibliotecas/gran-canaria/", "¿Buscabas Las Palmas[/bibliotecas/las-palmas/]?"],
+      // Fuera de /bibliotecas/: primer tramo de la ruta, solo igual (sin tildes/guiones/.html) o alias; nunca parecido ni prefijo.
+      ["/navarra/", "¿Buscabas Navarra[/bibliotecas/navarra/]?"], ["/bizkaia", "¿Buscabas Bizkaia[/bibliotecas/bizkaia/]?"],
+      ["/A%20Coru%C3%B1a/horarios", "¿Buscabas A Coruña[/bibliotecas/a-coruna/]?"], ["/Vizcaya.html", "¿Buscabas Bizkaia[/bibliotecas/bizkaia/]?"],
+      ["/sevila/", ""], ["/santa-cruz/", ""], ["/leonx/", ""], ["/404.html", ""], ["/", ""]];
     for (const [ruta, esperado] of casos) { const r = sugiere(ruta); if (r !== esperado) mal404.push(`«¿Buscabas…?» en ${ruta}: «${r}» (esperado «${esperado}»)`); else n404Busca++; }
   }
 }
