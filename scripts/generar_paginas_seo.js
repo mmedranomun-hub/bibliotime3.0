@@ -1283,7 +1283,8 @@ function descripcionTema(t, lista, donde, espana) {
   return inicio.length <= MAX_DESC ? inicio : inicio.slice(0, MAX_DESC - 1).replace(/\s\S*$/, "") + "…";
 }
 
-// Página propia (CollectionPage) con el mismo nombre y descripción que el título y la meta description.
+// Página propia (CollectionPage) con el mismo nombre y descripción que el título y la meta description. isPartOf: el
+// WebSite, salvo que extra traiga otro (provincias y localidades: la página que enlaza su <p class="volver">).
 const ldLugar = (ruta, nombre, descripcion, extra) => ({ "@context": "https://schema.org", "@type": "CollectionPage", name: nombre,
   description: descripcion, url: DOMINIO + ruta, inLanguage: "es-ES", isPartOf: { "@type": "WebSite", name: "Bibliomapa", url: DOMINIO + "/" }, ...extra });
 
@@ -1352,13 +1353,20 @@ function partesLugar(prov, loc, { locs = [], salasL = [], exL = [], filtroUni })
   if (l.length) { nLugarHasPart++; nHasPart += l.length; }
   return l.length ? { hasPart: l } : {};
 }
-let nProvItemList = 0, nItemsProv = 0, nLugarHasPart = 0, nHasPart = 0;
+let nProvItemList = 0, nItemsProv = 0, nLugarHasPart = 0, nHasPart = 0, nLugarIsPartOf = 0;
+// isPartOf de una provincia o localidad: la página que ya enlaza su <p class="volver"> (la localidad, su provincia; la
+// provincia, el índice /bibliotecas/), con el mismo name que el CollectionPage destino. Es la otra mitad del hasPart de
+// la provincia y del ItemList del índice; scripts/comprobar_paginas_seo.js falla si no existe, no está enlazada o no es recíproca.
+const NOMBRE_INDICE = "Bibliotecas de España por provincia: abiertas ahora";
+const superiorLugar = (name, ruta) => { nLugarIsPartOf++; return { isPartOf: { "@type": "CollectionPage", name, url: DOMINIO + ruta } }; };
 provincias.forEach((p) => {
   const lista = porProv[p], ps = slug(p);
   const porLoc = {};
   lista.forEach((b) => (porLoc[b.c] = porLoc[b.c] || []).push(b));
   const locs = Object.keys(porLoc).sort((a, b) => porLoc[b].length - porLoc[a].length || a.localeCompare(b, "es"));
   const conPagina = locs.filter((c) => tieneLocPagina(p, c, porLoc[c].length));
+  // título de la provincia antes que los de sus localidades: su name es el isPartOf de cada una
+  const ruta = `/bibliotecas/${ps}/`, k = cuentas(lista), tp = tituloLugar(ruta, p, k);
   // páginas de localidad
   conPagina.forEach((c) => {
     const l = porLoc[c].slice().sort(ordenBib), ruta = `/bibliotecas/${ps}/${slug(c)}/`;
@@ -1375,7 +1383,7 @@ provincias.forEach((p) => {
       h1: `Bibliotecas en ${esc(c)}`, intro: `${l.length} bibliotecas y salas de estudio en ${esc(c)} (${esc(p)})${k.v ? `, ${k.v} con horario verificado` : ""}. En el mapa de Bibliomapa ves en tiempo real cuáles están abiertas y cuál te pilla más cerca.`,
       cuerpo: `${navPorHorario(p, c)}${navSalas(salasDeLoc.has(p + "|" + c) ? [salasDeLoc.get(p + "|" + c)] : [])}${navExamenes(exDeLoc(p, c))}${navUniversidades((b) => b.p === p && b.c === c)}${tablaHorariosLugar(c, l)}<section class="lista">${l.map((b) => tarjeta(b)).join("")}</section>${secVerif}${f.html}${seccionLocalidadesCercanas(p, c)}<p class="volver"><a href="/bibliotecas/${ps}/">← Todas las bibliotecas de ${esc(p)}</a></p>`,
       migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], [p, `/bibliotecas/${ps}/`], [c, ruta]], head: k.v ? ESTILO_TABLA_HOR : "",
-      ld: [ldLugar(ruta, tl.nombre, dl, { ...modVerif(l), ...partesLugar(p, c, { salasL: salasDeLoc.has(p + "|" + c) ? [salasDeLoc.get(p + "|" + c)] : [], exL: exDeLoc(p, c), filtroUni: (b) => b.p === p && b.c === c }), mainEntity: { "@type": "ItemList", name: `Bibliotecas en ${c}`, numberOfItems: l.length, itemListElement: l.map((b, k) => ({ "@type": "ListItem", position: k + 1, item: itemBib(b) })) } }), f.ld],
+      ld: [ldLugar(ruta, tl.nombre, dl, { ...modVerif(l), ...superiorLugar(tp.nombre, `/bibliotecas/${ps}/`), ...partesLugar(p, c, { salasL: salasDeLoc.has(p + "|" + c) ? [salasDeLoc.get(p + "|" + c)] : [], exL: exDeLoc(p, c), filtroUni: (b) => b.p === p && b.c === c }), mainEntity: { "@type": "ItemList", name: `Bibliotecas en ${c}`, numberOfItems: l.length, itemListElement: l.map((b, k) => ({ "@type": "ListItem", position: k + 1, item: itemBib(b) })) } }), f.ld],
     }));
     urls.push([ruta, "0.8", modVerif(l).dateModified]);
     // páginas temáticas de la localidad (2 o más que cumplen; ver temaLoc)
@@ -1411,7 +1419,7 @@ provincias.forEach((p) => {
     urls.push([rutaT, "0.7", fechaMod(l)]);
   });
   // página de provincia
-  const ruta = `/bibliotecas/${ps}/`, f = faq(p, lista);
+  const f = faq(p, lista);
   const enlTemas = navPorHorario(p);
   const enPagina = []; // tarjetas visibles, en el orden del HTML (para el ItemList del JSON-LD)
   const secciones = locs.map((c) => {
@@ -1421,7 +1429,7 @@ provincias.forEach((p) => {
     enPagina.push(...vistas);
     return `<section class="loc"><h2>${titulo} <small>${l.length}</small></h2>${vistas.map((b) => tarjeta(b)).join("")}${conPagina.includes(c) && l.length > 4 ? `<p class="mas"><a href="/bibliotecas/${ps}/${slug(c)}/">Ver las ${l.length} bibliotecas de ${esc(c)} →</a></p>` : ""}</section>`;
   }).join("");
-  const k = cuentas(lista), tp = tituloLugar(ruta, p, k), dp = descripcionLugar(ruta, p, "", k, locs.length);
+  const dp = descripcionLugar(ruta, p, "", k, locs.length);
   // mainEntity: las bibliotecas con ficha que se ven en la página, con el @id de su ficha (<ficha>#biblioteca), para que
   // Google enlace la página de provincia con cada ficha. Sin ficha no entran: su único enlace sería /#bib=… (la portada).
   const conFicha = enPagina.filter((b) => paginaDe.has(b.i));
@@ -1433,7 +1441,7 @@ provincias.forEach((p) => {
     h1: `Bibliotecas en ${esc(p)}`, intro: `${lista.length} bibliotecas en ${locs.length} ${locs.length === 1 ? "localidad" : "localidades"} de ${esc(p)}${k.v ? `, ${k.v} con horario verificado` : ""}. Elige tu localidad o abre el mapa para ver cuáles están abiertas ahora mismo.`,
     cuerpo: `${enlTemas}${navSalas(salasDeProv[p])}${navExamenes(exDeProv(p))}${navUniversidades((b) => b.p === p)}<nav class="locs">${conPagina.map((c) => `<a href="/bibliotecas/${ps}/${slug(c)}/">${esc(c)} <small>${porLoc[c].length}</small></a>`).join("")}</nav>${tablaHorariosLugar(p, lista)}${secciones}${f.html}${seccionProvinciasCercanas(p)}<p class="volver"><a href="/bibliotecas/">← Todas las provincias</a></p>`,
     migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], [p, ruta]], head: k.v ? ESTILO_TABLA_HOR : "",
-    ld: [ldLugar(ruta, tp.nombre, dp, { ...modVerif(lista), ...partesLugar(p, null, { locs: conPagina, salasL: salasDeProv[p] || [], exL: exDeProv(p), filtroUni: (b) => b.p === p }), ...mainProv }), f.ld],
+    ld: [ldLugar(ruta, tp.nombre, dp, { ...modVerif(lista), ...superiorLugar(NOMBRE_INDICE, "/bibliotecas/"), ...partesLugar(p, null, { locs: conPagina, salasL: salasDeProv[p] || [], exL: exDeProv(p), filtroUni: (b) => b.p === p }), ...mainProv }), f.ld],
   }));
   urls.push([ruta, "0.8", modVerif(lista).dateModified]);
 });
@@ -1896,7 +1904,7 @@ ${fq.html}
 // índice: CollectionPage (mismo nombre y descripción que el título y la meta description; dateModified = verificación
 // más reciente de toda España) con mainEntity ItemList de las provincias, en el orden del HTML (<nav class="locs grande">).
 {
-const tituloIndice = "Bibliotecas de España por provincia: abiertas ahora | Bibliomapa";
+const tituloIndice = `${NOMBRE_INDICE} | Bibliomapa`;
 const descIndice = `Más de ${Math.floor(todas.length / 100) * 100} bibliotecas de toda España por provincia y localidad: horarios verificados, salas de estudio y cuáles están abiertas ahora.`;
 const modIndice = verifTodas.length ? { dateModified: fechaMod(verifTodas) } : {};
 urls.find(([u]) => u === "/bibliotecas/")[2] = modIndice.dateModified;
@@ -2032,6 +2040,7 @@ console.log(`Fichas con horario especial en JSON-LD (specialOpeningHoursSpecific
 console.log(`hasPart en provincias y localidades: ${nLugarHasPart} páginas · ${nHasPart} partes`);
 console.log(`hasPart en temáticas de provincia y de España: ${nTemaHasPart} páginas · ${nHasPartTema} partes`);
 console.log(`isPartOf en temáticas de localidad y de provincia: ${nTemaIsPartOf} páginas`);
+console.log(`isPartOf en provincias y localidades: ${nLugarIsPartOf} páginas`);
 console.log(`Provincias con ItemList de sus fichas en el JSON-LD: ${nProvItemList} de ${provincias.length} · elementos: ${nItemsProv}`);
 console.log(`Localidades sin ninguna verificada con «Cerca, con horario verificado» (≤ ${RADIO_VERIF_KM} km del centroide): ${nLocsVerifCerca} · enlaces: ${nEnlacesLocVerifCerca}`);
 console.log(`Fichas con «Cerca, con horario verificado» (≤ ${RADIO_VERIF_KM} km, otra ficha): ${nFichasVerifCerca} de ${paginaDe.size} · enlaces: ${nEnlacesVerifCerca}`);
