@@ -162,7 +162,7 @@ for (const m of sitemap.matchAll(/<url>([\s\S]*?)<\/url>/g)) {
 
 // 404: no cuenta como enlace entrante (no quita huérfanas) ni entra en el resto de comprobaciones (no se indexa).
 const f404 = path.join(RAIZ, "404.html"), mal404 = [];
-let n404 = 0, n404Prov = 0, n404Busca = 0;
+let n404 = 0, n404Prov = 0, n404Busca = 0, n404Slugs = 0;
 if (!fs.existsSync(f404)) mal404.push("falta 404.html");
 else {
   const h = fs.readFileSync(f404, "utf8");
@@ -192,11 +192,28 @@ else {
   if (!js) mal404.push("falta el script «¿Buscabas…?» (<script id=\"buscabas-js\">)");
   else if (/href="/.test(js)) mal404.push("el script «¿Buscabas…?» escribe href= en el HTML");
   if (!navProv) mal404.push("falta el nav de provincias #prov-404 que usa «¿Buscabas…?»");
+  // Slugs del segundo tramo (<script type="application/json" id="slugs-404">): sin enlaces, y cada ruta que
+  // describen (página de España, localidad = slug del nombre, temática de provincia) tiene que existir.
+  const jsonTxt = (h.match(/<script type="application\/json" id="slugs-404">([\s\S]*?)<\/script>/) || [])[1];
+  let S = null;
+  try { S = JSON.parse(jsonTxt); } catch (e) { mal404.push("falta o no es JSON válido <script type=\"application/json\" id=\"slugs-404\">"); }
+  if (S) {
+    const slug = (x) => String(x).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    const rutas = [...(S.e || []).map(([x]) => `/bibliotecas/${x}/`)];
+    for (const [ps, [locs, temas]] of Object.entries(S.p || {})) {
+      if (!existe(`/bibliotecas/${ps}/`)) mal404.push(`slugs-404: provincia ${ps} sin página`);
+      for (const l of locs) rutas.push(`/bibliotecas/${ps}/${slug(l)}/`);
+      for (const k of temas) if (!(S.t || [])[k]) mal404.push(`slugs-404: índice de temática ${k} sin entrada (${ps})`); else rutas.push(`/bibliotecas/${ps}/${S.t[k][0]}/`);
+    }
+    for (const r of rutas) if (!existe(r)) mal404.push(`slugs-404: ${r} no existe`); else n404Slugs++;
+    if (/href|<a\b/.test(jsonTxt)) mal404.push("slugs-404 lleva enlaces");
+    if ((S.e || []).length < 5 || Object.keys(S.p || {}).length < 40) mal404.push(`slugs-404 incompleto (${(S.e || []).length} de España, ${Object.keys(S.p || {}).length} provincias)`);
+  }
   if (js && navProv) {
     const enlaces = [...navProv.matchAll(/<a href="([^"]+)">([^<]*)</g)].map((m) => ({ getAttribute: () => m[1], firstChild: { textContent: m[2] } }));
     const sugiere = (ruta) => {
       const caja = { textContent: "", hidden: true, hijos: [], appendChild(n) { this.hijos.push(n); } };
-      const document = { getElementById: (id) => (id === "buscabas" ? caja : null), querySelectorAll: () => enlaces,
+      const document = { getElementById: (id) => (id === "buscabas" ? caja : id === "slugs-404" && jsonTxt ? { textContent: jsonTxt } : null), querySelectorAll: () => enlaces,
         createElement: () => ({ href: "", textContent: "" }), createTextNode: (t) => ({ textContent: t }) };
       try { require("vm").runInNewContext(js, { location: { pathname: ruta }, document }, { timeout: 1000 }); }
       catch (e) { return `ERROR ${e.message}`; }
@@ -212,7 +229,21 @@ else {
       // Fuera de /bibliotecas/: primer tramo de la ruta, solo igual (sin tildes/guiones/.html) o alias; nunca parecido ni prefijo.
       ["/navarra/", "¿Buscabas Navarra[/bibliotecas/navarra/]?"], ["/bizkaia", "¿Buscabas Bizkaia[/bibliotecas/bizkaia/]?"],
       ["/A%20Coru%C3%B1a/horarios", "¿Buscabas A Coruña[/bibliotecas/a-coruna/]?"], ["/Vizcaya.html", "¿Buscabas Bizkaia[/bibliotecas/bizkaia/]?"],
-      ["/sevila/", ""], ["/santa-cruz/", ""], ["/leonx/", ""], ["/404.html", ""], ["/", ""]];
+      ["/sevila/", ""], ["/santa-cruz/", ""], ["/leonx/", ""], ["/404.html", ""], ["/", ""],
+      // Segundo tramo (slugs-404): provincia exacta (o alias) + localidad o temática mal escrita; si nada encaja, la provincia.
+      ["/bibliotecas/navarra/pamplna/", "¿Buscabas Pamplona[/bibliotecas/navarra/pamplona/]?"],
+      ["/bibliotecas/navarra/abiertas-domingos/", "¿Buscabas bibliotecas abiertas el domingo en Navarra[/bibliotecas/navarra/abiertas-domingo/]?"],
+      ["/bibliotecas/madrid/alcala-henares/", "¿Buscabas Alcalá de Henares[/bibliotecas/madrid/alcala-de-henares/]?"],
+      ["/bibliotecas/madrid/Getafe/no-existe/", "¿Buscabas Getafe[/bibliotecas/madrid/getafe/]?"],
+      ["/bibliotecas/vizcaya/bilbo/", "¿Buscabas Bilbao[/bibliotecas/bizkaia/bilbao/]?"],
+      ["/bibliotecas/burgos/salas-estudio/", "¿Buscabas bibliotecas para estudiar y salas de estudio en Burgos[/bibliotecas/burgos/salas-de-estudio/]?"],
+      ["/bibliotecas/navarra/xqzw/", "¿Buscabas Navarra[/bibliotecas/navarra/]?"], ["/bibliotecas/navarra/abiertas/", "¿Buscabas Navarra[/bibliotecas/navarra/]?"],
+      ["/bibliotecas/navara/pamplna/", "¿Buscabas Navarra[/bibliotecas/navarra/]?"],
+      // Páginas de toda España en /bibliotecas/<algo>/ (y, fuera de /bibliotecas/, solo iguales).
+      ["/bibliotecas/abiertas-domingos/", "¿Buscabas bibliotecas abiertas el domingo en España[/bibliotecas/abiertas-domingo/]?"],
+      ["/bibliotecas/horario/", "¿Buscabas bibliotecas por horario en España[/bibliotecas/horarios/]?"],
+      ["/abiertas-hoy/", "¿Buscabas bibliotecas abiertas hoy en España[/bibliotecas/abiertas-hoy/]?"], ["/abiertas-domingos/", ""],
+      ["/navarra/pamplna/", "¿Buscabas Navarra[/bibliotecas/navarra/]?"]];
     for (const [ruta, esperado] of casos) { const r = sugiere(ruta); if (r !== esperado) mal404.push(`«¿Buscabas…?» en ${ruta}: «${r}» (esperado «${esperado}»)`); else n404Busca++; }
   }
 }
@@ -236,5 +267,5 @@ console.log(`Sitemap: ${enSitemap.size} URL · no existen: ${sitemapRoto.length}
   (sitemapRoto.length + faltanSitemap.length ? "\n" + muestra(sitemapRoto.concat(faltanSitemap), (r) => "  " + r) : ""));
 console.log(`Lastmod: ${[...lastmodN].sort().map(([d, n]) => `${d} ×${n}`).join(", ")} · mal (falta, formato, futuro o < dateModified): ${lastmodMal.length}` +
   (lastmodMal.length ? "\n" + muestra(lastmodMal, (r) => "  " + r) : ""));
-console.log(`404: ${n404} enlaces internos · provincias enlazadas: ${n404Prov} · «¿Buscabas…?» ${n404Busca} casos ok · mal: ${mal404.length}${mal404.length ? "\n" + muestra(mal404, (r) => "  " + r) : ""}`);
+console.log(`404: ${n404} enlaces internos · provincias enlazadas: ${n404Prov} · «¿Buscabas…?» ${n404Busca} casos ok · slugs-404: ${n404Slugs} rutas ok · mal: ${mal404.length}${mal404.length ? "\n" + muestra(mal404, (r) => "  " + r) : ""}`);
 if (indiceMal.length || hasPartMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);

@@ -197,8 +197,10 @@ function itemBib(b) {
 // noindex (la 404): sin canonical ni og:url (se sirve en cualquier URL inexistente), con <meta name="robots" content="noindex">
 // y sin BreadcrumbList; todos los enlaces son absolutos (/…) para que funcionen desde cualquier ruta.
 // trasH1: HTML opcional entre el <h1> y la intro (la 404 pone ahí su «¿Buscabas…?»).
+const h1De = new Map(); // ruta → h1 (texto plano): de aquí salen los textos de «¿Buscabas…?» en la 404
 function pagina({ ruta, titulo, descripcion, h1, intro, cuerpo, migas, ld, cta, head, noindex, trasH1 }) {
   const url = DOMINIO + ruta;
+  h1De.set(ruta, h1);
   const migasLD = { "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: migas.map((x, k) => ({ "@type": "ListItem", position: k + 1, name: x[0], item: DOMINIO + x[1] })) };
   return `<!DOCTYPE html>
 <html lang="es">
@@ -1922,19 +1924,29 @@ const ALIAS_404 = {
 };
 const ESTILO_BUSCABAS = `<style>.buscabas{font-size:var(--fs-l);font-weight:700;color:var(--texto);background:var(--acento-tenue);
 border:1px solid var(--linea);border-radius:var(--r-m);padding:10px 14px;margin:6px 0 12px}.buscabas a{color:var(--acento-tx)}</style>`;
+// Segundo tramo (2026-11-02): si /bibliotecas/<provincia>/<algo>/ (provincia igual o por alias) y <algo> no existe,
+// compara <algo> con las localidades y temáticas de esa provincia (mismas reglas: distancia ≤ 2, prefijo único);
+// si nada encaja, sugiere la provincia como antes. Y /bibliotecas/<algo>/ compara también con las páginas de toda
+// España (/bibliotecas/abiertas-domingos/ → abiertas el domingo). Los slugs van en <script type="application/json"
+// id="slugs-404"> (sin enlaces): e = [slug, texto] de España, t = [slug, texto] de temáticas, p = {provincia: [nombres de
+// localidad, índices en t]}. Los textos salen del h1 de cada página (el de provincia sin « en <provincia>»). El slug de una localidad es norm(nombre) (igual que slug() aquí).
 const SCRIPT_BUSCABAS = `<script id="buscabas-js">(function(){
-var r=location.pathname.split("/"),fuera=r[1]!=="bibliotecas",g=(fuera?r[1]:r[2])||"",caja=document.getElementById("buscabas");if(!g||!caja)return;
+var r=location.pathname.split("/"),fuera=r[1]!=="bibliotecas",i=fuera?1:2,caja=document.getElementById("buscabas"),D={},P=[],m;if(!r[i]||!caja)return;
+try{D=JSON.parse(document.getElementById("slugs-404").textContent)}catch(e){}
 function norm(s){try{s=decodeURIComponent(s)}catch(e){}return s.normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}
 function dist(a,b){var f=[],i,j,p,t;for(j=0;j<=b.length;j++)f[j]=j;for(i=1;i<=a.length;i++){p=f[0];f[0]=i;for(j=1;j<=b.length;j++){t=f[j];f[j]=Math.min(f[j]+1,f[j-1]+1,p+(a[i-1]===b[j-1]?0:1));p=t}}return f[b.length]}
-var x=norm(g.replace(/\\.html?$/i,"")),xs=x.replace(/-/g,""),al=${JSON.stringify(ALIAS_404)}[xs],mejor=null,dm=9,emp=0,pre=null;if(x.length<2)return;
-[].forEach.call(document.querySelectorAll("#prov-404 a"),function(a){var s=(a.getAttribute("href")||"").split("/")[2];if(!s)return;
-if(al){if(s===al)mejor=a;return}
-if(fuera){if(xs===s.replace(/-/g,""))mejor=a;return}
-var d=Math.min(dist(x,s),dist(xs,s.replace(/-/g,""))),lim=s.length<=4?1:2;
-if(d<=lim){if(d<dm){dm=d;mejor=a;emp=0}else if(d===dm)emp=1}
-if(x.length>=3&&(s.indexOf(x)===0||x.indexOf(s+"-")===0))pre=pre?-1:a;});
-if(al||fuera){if(!mejor)return}else if(!mejor&&pre&&pre!==-1)mejor=pre;else if(!mejor||emp)return;
-var l=document.createElement("a");l.href=mejor.getAttribute("href");l.textContent=(mejor.firstChild&&mejor.firstChild.textContent||"").trim();
+function busca(g,C,ex){var x=norm(g.replace(/\\.html?$/i,"")),xs=x.replace(/-/g,""),mejor=null,dm=9,emp=0,pre=null;if(x.length<2)return null;
+C.forEach(function(c){var s=c[0],ss=s.replace(/-/g,"");if(ex){if(xs===ss)mejor=c;return}
+var d=Math.min(dist(x,s),dist(xs,ss)),lim=s.length<=4?1:2;
+if(d<=lim){if(d<dm){dm=d;mejor=c;emp=0}else if(d===dm)emp=1}
+if(x.length>=3&&(s.indexOf(x)===0||x.indexOf(s+"-")===0))pre=pre?-1:c});
+if(ex)return mejor;if(!mejor&&pre&&pre!==-1)return pre;return emp?null:mejor}
+[].forEach.call(document.querySelectorAll("#prov-404 a"),function(a){var s=(a.getAttribute("href")||"").split("/")[2];if(s)P.push([s,a.getAttribute("href"),(a.firstChild&&a.firstChild.textContent||"").trim(),1])});
+var al=${JSON.stringify(ALIAS_404)}[norm(r[i].replace(/\\.html?$/i,"")).replace(/-/g,"")];
+if(al)P.forEach(function(c){if(c[0]===al)m=c});else m=busca(r[i],P.concat((D.e||[]).map(function(e){return[e[0],"/bibliotecas/"+e[0]+"/",e[1]]})),fuera);
+if(!m)return;
+if(m[3]&&!fuera&&r[3]&&(al||busca(r[2],[m],1))){var L=(D.p||{})[m[0]]||[[],[]],h="/bibliotecas/"+m[0]+"/",n=busca(r[3],L[0].map(function(l){return[norm(l),h+norm(l)+"/",l]}).concat(L[1].map(function(k){var t=D.t[k];return[t[0],h+t[0]+"/",t[1]+" en "+m[2]]})));if(n)m=n}
+var l=document.createElement("a");l.href=m[1];l.textContent=m[2];
 caja.textContent="¿Buscabas ";caja.appendChild(l);caja.appendChild(document.createTextNode("?"));caja.hidden=false;
 })();</script>`;
 // Vercel sirve /404.html (con estado 404) en cualquier URL que no existe de un sitio estático. noindex y fuera del
@@ -1947,6 +1959,30 @@ caja.textContent="¿Buscabas ";caja.appendChild(l);caja.appendChild(document.cre
     if (!slugsProv.has(s)) throw new Error(`ALIAS_404: «${a}» apunta a «${s}», que no es el slug de ninguna provincia`);
     if (slugsProv.has(a) || /[^a-z0-9]/.test(a)) throw new Error(`ALIAS_404: «${a}» no vale como alias (es un slug o lleva guiones)`);
   }
+  // Datos de «¿Buscabas…?» para el segundo tramo, sacados de las páginas generadas (urls + h1De): nada inventado.
+  const fichas = new Set(paginaDe.values()), minus = (t) => t.charAt(0).toLowerCase() + t.slice(1);
+  const S404 = { e: [], t: [], p: {} }, temaN = {};
+  for (const [u] of urls) {
+    const x = (u.match(/^\/bibliotecas\/([^/]+)\/$/) || [])[1];
+    if (x && !slugsProv.has(x)) S404.e.push([x, minus(h1De.get(u) || "")]);
+  }
+  for (const p of provincias) {
+    const ps = slug(p), locs = [], temas = [];
+    for (const [u] of urls) {
+      const x = (u.match(new RegExp(`^/bibliotecas/${ps}/([^/]+)/$`)) || [])[1];
+      if (!x || fichas.has(u)) continue;
+      const c = porProv[p].find((b) => slug(b.c) === x && tieneLocPagina(p, b.c, porProv[p].filter((o) => o.c === b.c).length));
+      if (c) { locs.push(c.c); continue; }
+      const h = h1De.get(u), suf = ` en ${p}`;
+      if (!h || !h.endsWith(suf)) throw new Error(`404: el h1 de ${u} («${h}») no acaba en «${suf}»`);
+      const et = minus(h.slice(0, -suf.length));
+      if (!(x in temaN)) { temaN[x] = S404.t.length; S404.t.push([x, et]); }
+      else if (S404.t[temaN[x]][1] !== et) throw new Error(`404: ${x} tiene dos textos («${S404.t[temaN[x]][1]}» y «${et}»)`);
+      temas.push(temaN[x]);
+    }
+    if (locs.length || temas.length) S404.p[ps] = [locs, temas];
+  }
+  for (const [x, t] of [...S404.e, ...S404.t]) if (!t || /[<>&"]/.test(t)) throw new Error(`404: texto de ${x} vacío o con HTML («${t}»)`);
   fs.writeFileSync(path.join(RAIZ, "404.html"), pagina({
     ruta: "/404.html", noindex: true,
     titulo: "Página no encontrada | Bibliomapa",
@@ -1956,6 +1992,7 @@ caja.textContent="¿Buscabas ";caja.appendChild(l);caja.appendChild(document.cre
     cuerpo: `<nav class="temas" aria-label="Por horario"><span>Por horario:</span>${hoyT ? `<a href="/bibliotecas/abiertas-hoy/">Abiertas hoy <small>${hoyT.l.length}</small></a>` : ""}${temasEspana.length ? `<a href="${HUB}">Todos los horarios por provincia</a>` : ""}<a href="/bibliotecas/">Todas las provincias</a></nav>
 <h2 id="t-prov">Bibliotecas por provincia</h2>
 <nav class="locs grande" id="prov-404" aria-labelledby="t-prov">${provincias.map((p) => `<a href="/bibliotecas/${slug(p)}/">${esc(p)} <small>${porProv[p].length}</small></a>`).join("")}</nav>
+<script type="application/json" id="slugs-404">${JSON.stringify(S404).replace(/</g, "\\u003c")}</script>
 ${SCRIPT_BUSCABAS}`,
     head: ESTILO_BUSCABAS,
     trasH1: `<p id="buscabas" class="buscabas" hidden></p>\n`,
