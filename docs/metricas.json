@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-11-02 03:52",
+  "fecha": "2026-11-02 04:42",
   "pruebas": {
     "arranca: datos y vistas": true,
     "marca España (sin «Navarra» en la cabecera)": true,
@@ -26,6 +26,7 @@
     "cuando un 🧊 salva la racha, la pastilla enseña «🧊 ✓» un instante en azul calmado (sin hablar del día perdido; con reducir movimiento, quieta)": true,
     "tocar la insignia «🧊 N» abre la racha con «🧊 Congeladores» resaltada 1 s con borde --acento (botón accesible de 44 px; con reducir movimiento, sin transición)": true,
     "la ventana de la racha dice bajo «🧊 Congeladores» cómo se gana uno (cada 7 días seguidos y a veces en el cofre, máx. 3) en --suave; con 3, «Tienes el máximo (3)»": true,
+    "la casilla «🧊 Congeladores» enseña los 3 huecos (con 2: dos 🧊 y un círculo libre en --borde, sin rojo; aria-label «2 de 3 congeladores») sin romper la cifra ni el resaltado": true,
     "barrita de misiones bajo el cronómetro: «🎯 2/3 misiones · la siguiente en 7 min» solo si falta ≤ 15 min de una misión de minutos": true,
     "minicronómetro: «🎯 7 min» junto al tiempo con el mismo dato que la barrita, y nada si no aplica": true,
     "minicronómetro: «✅ 2/3» rebota una sola vez al cumplir una misión fuera de Estudio; no al repintar, recargar, en Estudio ni con «reducir movimiento»": true,
@@ -47,13 +48,13 @@
     "atajos de la app instalada (#accion=estudiar|ahora|pronto)": true
   },
   "errores_js": [],
-  "carga_ms_cpu4x": 967,
+  "carga_ms_cpu4x": 989,
   "carga_ms_cpu4x_min_max": [
-    906,
-    1031
+    865,
+    1112
   ],
-  "primera_pintura_ms_cpu4x": 260,
-  "todas_las_chinchetas_ms_cpu4x": 998,
+  "primera_pintura_ms_cpu4x": 248,
+  "todas_las_chinchetas_ms_cpu4x": 1045,
   "markercluster": {
     "cargado": false,
     "agrupa": false,
@@ -63,26 +64,26 @@
   },
   "datos": {
     "bibliotecas": 2616,
-    "con_horario_verificado": 559,
+    "con_horario_verificado": 569,
     "provincias_con_horario": 51,
     "provincias_total": 51
   },
   "seo": {
-    "paginas": 956,
+    "paginas": 974,
     "sitemap": true
   },
   "peso": {
     "index.html": {
-      "kb": 132.4,
-      "kb_gzip": 29.7
+      "kb": 132.9,
+      "kb_gzip": 29.8
     },
     "app.js": {
       "kb": 303.0,
       "kb_gzip": 89.7
     },
     "bibliotecas-espana.js": {
-      "kb": 785.7,
-      "kb_gzip": 195.0
+      "kb": 791.7,
+      "kb_gzip": 196.2
     }
   },
   "ok": true
