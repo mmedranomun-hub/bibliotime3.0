@@ -575,11 +575,16 @@ const modVerif = (lista) => { const v = lista.filter(verificado); return v.lengt
 // partes: las temáticas de nivel inferior que la página ya enlaza (las de sus localidades en la nav «Por localidad» de la
 // temática de provincia; las de provincia en las cabeceras de sección de la de España), como hasPart, igual que
 // partesLugar: sin enlaces nuevos, y scripts/comprobar_paginas_seo.js falla si falta o no está enlazada.
-let nTemaHasPart = 0, nHasPartTema = 0;
-const ldTema = (ruta, nombre, l, partes = []) => {
+// superior: [nombre, ruta] de la temática de nivel superior que ya enlaza su <p class="volver"> (la de localidad, la de
+// su provincia si existe y si no la de España; la de provincia, la de España), como isPartOf con el mismo name que el
+// CollectionPage destino. Es la otra mitad del hasPart: el comprobador falla si no existe, no está enlazada o, cuando la
+// superior es de provincia o la página lo es, la superior no la lleva en su hasPart.
+let nTemaHasPart = 0, nHasPartTema = 0, nTemaIsPartOf = 0;
+const ldTema = (ruta, nombre, l, partes = [], superior = null) => {
   if (partes.length) { nTemaHasPart++; nHasPartTema += partes.length; }
+  if (superior) nTemaIsPartOf++;
   return { "@context": "https://schema.org", "@type": "CollectionPage", name: nombre, url: DOMINIO + ruta,
-  inLanguage: "es-ES", dateModified: fechaMod(l), ...(partes.length ? { hasPart: partes.map(([name, r]) => ({ "@type": "CollectionPage", name, url: DOMINIO + r })) } : {}), mainEntity: { "@type": "ItemList", name: nombre, numberOfItems: l.length,
+  inLanguage: "es-ES", dateModified: fechaMod(l), ...(superior ? { isPartOf: { "@type": "CollectionPage", name: superior[0], url: DOMINIO + superior[1] } } : {}), ...(partes.length ? { hasPart: partes.map(([name, r]) => ({ "@type": "CollectionPage", name, url: DOMINIO + r })) } : {}), mainEntity: { "@type": "ItemList", name: nombre, numberOfItems: l.length,
     itemListElement: l.map((b, k) => ({ "@type": "ListItem", position: k + 1, item: itemBib(b) })) } };
 };
 function textoFechas(lista) {
@@ -1385,7 +1390,7 @@ provincias.forEach((p) => {
         h1: esc(titulo), intro: introTema(t, lo, `${c} (${p})`),
         cuerpo: `${navTemas(t.slug, p, c)}${t.antes ? t.antes(lo) : ""}<section class="lista">${lo.map((b) => tarjeta(b, t.destacado(b), t)).join("")}</section>${ft.html}<p class="volver"><a href="${ruta}">← Todas las bibliotecas de ${esc(c)}</a> · <a href="/bibliotecas/${enProv ? `${ps}/${t.slug}` : t.slug}/">${esc(t.corto)} en ${esc(enProv ? p : "toda España")}</a></p>${t.hoy ? SCRIPT_HOY : ""}`, head: t.hoy ? ESTILO_HOY : "",
         migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], [p, `/bibliotecas/${ps}/`], [c, ruta], [t.corto, rutaT]],
-        ld: [ldTema(rutaT, titulo, lo), ft.ld],
+        ld: [ldTema(rutaT, titulo, lo, [], enProv ? [`Bibliotecas ${t.que} en ${p}`, `/bibliotecas/${ps}/${t.slug}/`] : [`Bibliotecas ${t.que} en España`, `/bibliotecas/${t.slug}/`]), ft.ld],
       }));
       urls.push([rutaT, "0.7", fechaMod(lo)]);
     });
@@ -1401,7 +1406,7 @@ provincias.forEach((p) => {
       h1: esc(titulo), intro: introTema(t, l, p),
       cuerpo: `${navTemas(t.slug, p)}${locsT.length ? `<nav class="locs" aria-label="Por localidad">${locsT.map((c) => `<a href="/bibliotecas/${ps}/${slug(c)}/${t.slug}/">${esc(c)} <small>${temaLoc[t.slug][p + "|" + c].length}</small></a>`).join("")}</nav>` : ""}${t.antes ? t.antes(l) : ""}<section class="lista">${l.map((b) => tarjeta(b, t.destacado(b), t)).join("")}</section>${ft.html}<p class="volver"><a href="/bibliotecas/${ps}/">← Todas las bibliotecas de ${esc(p)}</a> · <a href="/bibliotecas/${t.slug}/">${esc(t.corto)} en toda España</a></p>${t.hoy ? SCRIPT_HOY : ""}`, head: t.hoy ? ESTILO_HOY : "",
       migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], [p, `/bibliotecas/${ps}/`], [t.corto, rutaT]],
-      ld: [ldTema(rutaT, titulo, l, locsT.map((c) => [`Bibliotecas ${t.que} en ${c}`, `/bibliotecas/${ps}/${slug(c)}/${t.slug}/`])), ft.ld],
+      ld: [ldTema(rutaT, titulo, l, locsT.map((c) => [`Bibliotecas ${t.que} en ${c}`, `/bibliotecas/${ps}/${slug(c)}/${t.slug}/`]), [`Bibliotecas ${t.que} en España`, `/bibliotecas/${t.slug}/`]), ft.ld],
     }));
     urls.push([rutaT, "0.7", fechaMod(l)]);
   });
@@ -2026,6 +2031,7 @@ console.log(`Exámenes: ${exCiudades.length} ciudades con página (${exCiudades.
 console.log(`Fichas con horario especial en JSON-LD (specialOpeningHoursSpecification): ${nFichasEspeciales} · con horario de verano verificado: ${nFichasVerano} · con horario de exámenes: ${nFichasEx} de ${[...exDeBib.keys()].length} bibliotecas del mapa con entrada vigente`);
 console.log(`hasPart en provincias y localidades: ${nLugarHasPart} páginas · ${nHasPart} partes`);
 console.log(`hasPart en temáticas de provincia y de España: ${nTemaHasPart} páginas · ${nHasPartTema} partes`);
+console.log(`isPartOf en temáticas de localidad y de provincia: ${nTemaIsPartOf} páginas`);
 console.log(`Provincias con ItemList de sus fichas en el JSON-LD: ${nProvItemList} de ${provincias.length} · elementos: ${nItemsProv}`);
 console.log(`Localidades sin ninguna verificada con «Cerca, con horario verificado» (≤ ${RADIO_VERIF_KM} km del centroide): ${nLocsVerifCerca} · enlaces: ${nEnlacesLocVerifCerca}`);
 console.log(`Fichas con «Cerca, con horario verificado» (≤ ${RADIO_VERIF_KM} km, otra ficha): ${nFichasVerifCerca} de ${paginaDe.size} · enlaces: ${nEnlacesVerifCerca}`);

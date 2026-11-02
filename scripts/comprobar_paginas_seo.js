@@ -14,6 +14,10 @@
      - hasPart de los CollectionPage que apunta a una página que no existe o que la página no enlaza en su HTML, y
        temáticas de provincia o de España que enlazan las de sus localidades («Por localidad») o provincias (cabeceras
        de sección) sin declararlas en su hasPart,
+     - temáticas de localidad (/bibliotecas/<prov>/<loc>/<tema>/) y de provincia (/bibliotecas/<prov>/<tema>/) sin isPartOf,
+       o con un isPartOf que no es la temática superior (la de su provincia si existe, si no la de España; la de provincia,
+       la de España), no existe, no tiene el mismo name que el CollectionPage destino, no está enlazado en su
+       <p class="volver"> o, si la página o la superior son de provincia, no es recíproco con el hasPart de la superior,
      - la 404 (/404.html, que Vercel sirve en cualquier URL inexistente): que exista, lleve noindex y no canonical, no
        esté en el sitemap, sus enlaces sean absolutos y no estén rotos, y enlace a las provincias, al hub y a «abiertas hoy»;
        y que su «¿Buscabas…?» (#buscabas + <script id="buscabas-js">) exista y sugiera bien (se ejecuta con un DOM mínimo),
@@ -21,8 +25,8 @@
        fichas) mal formados o con tramos por fecha que se solapan.
    Uso (desde la raíz del proyecto):  node scripts/comprobar_paginas_seo.js
    Sale con código 1 si hay enlaces rotos, títulos o descripciones repetidos, JSON-LD roto, horarios especiales mal o
-   lastmod mal, una provincia o localidad con fichas sin ItemList, el índice sin su CollectionPage, un hasPart roto o la
-   404 mal. */
+   lastmod mal, una provincia o localidad con fichas sin ItemList, el índice sin su CollectionPage, un hasPart roto, una
+   temática sin su isPartOf o la 404 mal. */
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -68,6 +72,11 @@ const indiceMal = [], hasPartMal = [];
 const partesDe = new Map(), temasConPartes = new Map(); // ruta → URL de su hasPart · temática → enlaces a sus partes
 let nIndiceProvs = 0, nHasPart = 0, nPagHasPart = 0, indiceCP = false;
 let nEnlaces = 0;
+// Temáticas: los slug de TEMAS en el generador (la misma lista que crea sus páginas). Por cada página, el name y el
+// isPartOf de su CollectionPage y los enlaces de su <p class="volver">.
+const TEMAS_SLUG = new Set([...fs.readFileSync(path.join(__dirname, "generar_paginas_seo.js"), "utf8").split(/\nconst TEMAS = \[/)[1].split(/\n\];/)[0]
+  .matchAll(/^  \{ slug: "([^"]+)", corto:/gm)].map((m) => m[1]));
+const cpDe = new Map(), volverDe = new Map(), isPartOfMal = [];
 function existe(ruta) {
   const limpia = decodeURIComponent(ruta);
   const f = path.join(RAIZ, limpia);
@@ -92,11 +101,13 @@ for (const [ruta, h] of html) {
   const tema = (ruta.match(/^\/bibliotecas\/([^/]+)\/$/) || [])[1];
   if (tema) for (const m2 of h.matchAll(/<section class="loc"[^>]*><h2><a href="([^"]+)">/g)) { const u = decodifica(m2[1]), pr = (u.match(new RegExp(`^/bibliotecas/([^/]+)/${tema}/$`)) || [])[1]; if (pr && pr !== tema) enlPartes.push(u); }
   if (enlPartes.length) temasConPartes.set(ruta, enlPartes);
+  volverDe.set(ruta, new Set([...h.matchAll(/<p class="volver">([\s\S]*?)<\/p>/g)].flatMap((v) => [...v[1].matchAll(/\shref="([^"]+)"/g)].map((m2) => decodifica(m2[1])))));
   for (const m of h.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)) {
     let j = null;
     try { j = JSON.parse(m[1]); } catch (e) { ldMal.push(ruta); }
     if (j) [].concat(j).forEach((x) => {
       compruebaEspeciales(ruta, x);
+      if (x && x["@type"] === "CollectionPage" && !cpDe.has(ruta)) cpDe.set(ruta, x);
       if (x && x["@type"] === "Library" && x["@id"]) fichaDe.set(claveLib(x), x["@id"]);
       const lista = x && (x["@type"] === "ItemList" ? x : x.mainEntity && x.mainEntity["@type"] === "ItemList" ? x.mainEntity : null);
       if (x && x["@type"] === "CollectionPage" && lugares.has(ruta) && x.mainEntity && x.mainEntity["@type"] === "ItemList" && (x.mainEntity.itemListElement || []).length) lugares.get(ruta).lista = true;
@@ -162,6 +173,32 @@ for (const [ruta, l] of temasConPartes) {
   nTemasPartes++;
   const faltan = l.filter((u) => !partesDe.get(ruta).has(u));
   if (faltan.length) hasPartMal.push(`${ruta} temática sin hasPart de ${faltan.length} partes que enlaza (p. ej. ${faltan[0]})`);
+}
+// isPartOf de las temáticas de localidad y de provincia: la superior que enlaza su «volver», con su mismo name y, si
+// la superior o la página son de provincia, recíproco con su hasPart. Y al revés: cada temática que la superior pone
+// en su hasPart la declara como isPartOf.
+const nivelTema = (r) => { const m = r.match(/^\/bibliotecas\/(?:([^/]+)\/(?:([^/]+)\/)?)?([^/]+)\/$/); return m && TEMAS_SLUG.has(m[3]) && (!m[1] || html.has(`/bibliotecas/${m[1]}/`)) ? { prov: m[1], loc: m[2], tema: m[3], nivel: m[2] ? "localidad" : m[1] ? "provincia" : "España" } : null; };
+const nIsPartOf = { localidad: 0, provincia: 0 }, nTemas = { localidad: 0, provincia: 0, España: 0 };
+if (TEMAS_SLUG.size < 9) isPartOfMal.push(`solo ${TEMAS_SLUG.size} temáticas leídas de TEMAS en generar_paginas_seo.js`);
+for (const ruta of html.keys()) {
+  const n = nivelTema(ruta), cp = cpDe.get(ruta);
+  if (!n || !cp) continue;
+  nTemas[n.nivel]++;
+  if (n.nivel === "España") continue;
+  const ip = cp.isPartOf, u = ((ip && ip.url) || "").replace(DOMINIO, "");
+  const deProv = `/bibliotecas/${n.prov}/${n.tema}/`, deEspana = `/bibliotecas/${n.tema}/`;
+  const esperada = n.nivel === "localidad" && html.has(deProv) ? deProv : deEspana;
+  if (!ip || ip["@type"] !== "CollectionPage") { isPartOfMal.push(`${ruta} (${n.nivel}) sin isPartOf CollectionPage`); continue; }
+  if (!html.has(u)) { isPartOfMal.push(`${ruta} isPartOf a una página que no existe: ${ip.url}`); continue; }
+  if (u !== esperada) isPartOfMal.push(`${ruta} isPartOf ${u} (esperado ${esperada})`);
+  if (!volverDe.get(ruta).has(u)) isPartOfMal.push(`${ruta} isPartOf ${u} no enlazado en su <p class="volver">`);
+  if (!cpDe.get(u) || cpDe.get(u).name !== ip.name) isPartOfMal.push(`${ruta} isPartOf «${ip.name}» distinto del name de ${u} («${cpDe.get(u) && cpDe.get(u).name}»)`);
+  if ((n.nivel === "provincia" || u === deProv) && !partesDe.get(u).has(ruta)) isPartOfMal.push(`${ruta} isPartOf ${u}, que no la lleva en su hasPart`);
+  nIsPartOf[n.nivel]++;
+}
+for (const [ruta, partes] of partesDe) {
+  if (!nivelTema(ruta)) continue;
+  for (const u of partes) if (nivelTema(u) && ((cpDe.get(u) && cpDe.get(u).isPartOf) || {}).url !== DOMINIO + ruta) isPartOfMal.push(`${ruta} hasPart ${u}, cuyo isPartOf no es esta página`);
 }
 if (!indiceCP) indiceMal.push("/bibliotecas/ sin CollectionPage en su JSON-LD");
 const huerfanas = [...html.keys()].filter((r) => r !== "/bibliotecas/" && !entrantes.has(r));
@@ -281,10 +318,11 @@ console.log(`Lugares con fichas y mainEntity ItemList: provincias ${nLugarLista.
   (sinLista.length ? "\n" + muestra(sinLista, (r) => "  " + r) : ""));
 console.log(`Índice /bibliotecas/: CollectionPage ${indiceCP ? "sí" : "NO"} · provincias en su ItemList: ${nIndiceProvs} · mal: ${indiceMal.length}${indiceMal.length ? "\n" + muestra(indiceMal, (r) => "  " + r) : ""}`);
 console.log(`hasPart: ${nHasPart} en ${nPagHasPart} páginas (temáticas que enlazan sus partes: ${nTemasPartes}) · rotos o sin enlace en el HTML: ${hasPartMal.length}${hasPartMal.length ? "\n" + muestra(hasPartMal, (r) => "  " + r) : ""}`);
+console.log(`Temáticas: España ${nTemas.España} · provincia ${nTemas.provincia} · localidad ${nTemas.localidad} · con isPartOf bien: provincia ${nIsPartOf.provincia} · localidad ${nIsPartOf.localidad} · mal: ${isPartOfMal.length}${isPartOfMal.length ? "\n" + muestra(isPartOfMal, (r) => "  " + r) : ""}`);
 console.log(`Huérfanas (sin enlace desde otra página generada): ${huerfanas.length}${huerfanas.length ? "\n" + muestra(huerfanas, (r) => "  " + r) : ""}`);
 console.log(`Sitemap: ${enSitemap.size} URL · no existen: ${sitemapRoto.length} · faltan en el sitemap: ${faltanSitemap.length}` +
   (sitemapRoto.length + faltanSitemap.length ? "\n" + muestra(sitemapRoto.concat(faltanSitemap), (r) => "  " + r) : ""));
 console.log(`Lastmod: ${[...lastmodN].sort().map(([d, n]) => `${d} ×${n}`).join(", ")} · mal (falta, formato, futuro o < dateModified): ${lastmodMal.length}` +
   (lastmodMal.length ? "\n" + muestra(lastmodMal, (r) => "  " + r) : ""));
 console.log(`404: ${n404} enlaces internos · provincias enlazadas: ${n404Prov} · «¿Buscabas…?» ${n404Busca} casos ok · slugs-404: ${n404Slugs} rutas ok · mal: ${mal404.length}${mal404.length ? "\n" + muestra(mal404, (r) => "  " + r) : ""}`);
-if (indiceMal.length || hasPartMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
+if (indiceMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
