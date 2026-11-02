@@ -147,5 +147,27 @@ window.TEMPORADA_EXAMENES = [
     horario: "todos los días, también sábados, domingos y festivos, de 9:00 a 20:30; desde el 8 ene amplía hasta la 1:00 (la UAM aún no dice hasta cuándo)",
     nota: "Fines de semana y festivos se entra desde el exterior por la rampa. Entrada libre, con prioridad para quien tenga carné UAM en exámenes y horas punta.",
     f: "https://www.uam.es/uam/vida-uam/bibliotecas/noticias/biblioteca-ciencias/sala-buho-otono-examenes", fv: "2026-11-01"
+  },
+  // Esade: página «Horaris» de la biblioteca, apartado «Biblioteques Sant Cugat i Barcelona» (el mismo horario para
+  // las dos). Da el «període d'exàmens del primer trimestre del curs 2026-2027: del 16 de novembre al 6 de febrer»,
+  // pero el horario ampliado (lunes a viernes hasta las 0:00) solo «del 16 de novembre al 22 de desembre»: ese es el
+  // periodo de la entrada. Ninguna de las dos está en el mapa (`bib: null`); sin `semana` por eso.
+  {
+    ciudad: "Barcelona", provincia: "Barcelona",
+    espacio: "Biblioteca d'Esade · campus de Barcelona (Universitat Ramon Llull)",
+    bib: null,
+    desde: "2026-11-16", hasta: "2026-12-22",
+    horario: "lunes a viernes de 8:00 a 0:00; sábados, domingos y festivos 6 y 8 dic, de 9:00 a 21:00",
+    nota: "En exámenes (16 nov-6 feb) el acceso queda restringido a estudiantes de Esade y de la Universitat Ramon Llull.",
+    f: "https://esade.edu/ca/biblioteca/coneix-nos/horaris", fv: "2026-11-02"
+  },
+  {
+    ciudad: "Sant Cugat del Vallès", provincia: "Barcelona",
+    espacio: "Biblioteca d'Esade · campus de Sant Cugat (Universitat Ramon Llull)",
+    bib: null,
+    desde: "2026-11-16", hasta: "2026-12-22",
+    horario: "lunes a viernes de 8:00 a 0:00; sábados, domingos y festivos 6 y 8 dic, de 9:00 a 21:00",
+    nota: "En exámenes (16 nov-6 feb) el acceso queda restringido a estudiantes de Esade y de la Universitat Ramon Llull.",
+    f: "https://esade.edu/ca/biblioteca/coneix-nos/horaris", fv: "2026-11-02"
   }
 ];
