@@ -1,0 +1,94 @@
+{
+  "fecha": "2026-11-02 07:53",
+  "pruebas": {
+    "arranca: datos y vistas": true,
+    "marca España (sin «Navarra» en la cabecera)": true,
+    "tarjeta Ahora se pinta": true,
+    "todas las vistas sin errores": true,
+    "sesión: empieza, crece el árbol, se guarda": true,
+    "bosque, misiones, racha y nivel": true,
+    "marchitar si se sale de la app": true,
+    "tienda y semillas": true,
+    "hitos del bosque: al plantar el 10.º árbol, tarjeta y semillas (una sola vez)": true,
+    "próxima especie: barra en «Mi bosque» y aviso «ya puedes» una sola vez": true,
+    "primer árbol del día: saludo y +5 🌰 una sola vez, sin tapar «Sesión terminada»": true,
+    "récord personal en «Sesión terminada» (solo si supera la más larga, sin negativos)": true,
+    "contador de minutos en «Sesión terminada» (sube hasta los minutos reales; «Hoy llevas» solo con más sesiones hoy)": true,
+    "semillas que vuelan al marcador (con 🌰 vuelan y el contador acaba en la cifra; sin 🌰 no; con reducir movimiento, cifra directa)": true,
+    "pista bajo el saco de semillas: «¡A N 🌰 de plantar <especie>!» solo a 1-10 🌰, en positivo, y se repinta al gastar": true,
+    "«¡Qué alegría verte!» al volver tras ≥ 3 días (horas y árbol más grande, sin hablar de la racha perdida)": true,
+    "biblioteca nueva en tu mapa: aviso suave al cerrar y «📍 bibliotecas exploradas» en el Perfil": true,
+    "sello del día: al abrir el cofre se estampa 🏵️ y el Perfil cuenta solo los días logrados": true,
+    "pista en el cofre del día: «¡A N 🌰 de plantar <especie>!» bajo el premio solo si quedas a 1-10 🌰 (y nada si el cofre ya te da para ella)": true,
+    "🧊 dice cuántos tienes: el toast de la racha añade «· ya tienes el máximo (3)» al llegar a 3 y el cofre con 🧊 dice «Ya tienes N de 3» en --suave": true,
+    "las 🌰 de las misiones y del cofre vuelan al marcador (una vez; con reducir movimiento, solo la cifra)": true,
+    "el 🧊 del cofre vuela a la pastilla de la racha al cerrar la ventana (una vez, tras las 🌰; con reducir movimiento, solo la cifra)": true,
+    "cuando un 🧊 salva la racha, la pastilla enseña «🧊 ✓» un instante en azul calmado (sin hablar del día perdido; con reducir movimiento, quieta)": true,
+    "tocar la insignia «🧊 N» abre la racha con «🧊 Congeladores» resaltada 1 s con borde --acento (botón accesible de 44 px; con reducir movimiento, sin transición)": true,
+    "la ventana de la racha dice bajo «🧊 Congeladores» cómo se gana uno (cada 7 días seguidos y a veces en el cofre, máx. 3) en --suave; con 3, «Tienes el máximo (3)»": true,
+    "la casilla «🧊 Congeladores» enseña los 3 huecos (con 2: dos 🧊 y un círculo libre en --borde, sin rojo; aria-label «2 de 3 congeladores») sin romper la cifra ni el resaltado": true,
+    "con 3 de 3 congeladores la casilla «🧊 Congeladores» celebra con «¡Completo!» en --ok-tx bajo los huecos (aria-label «3 de 3 congeladores, completo»); con 2, nada": true,
+    "barrita de misiones bajo el cronómetro: «🎯 2/3 misiones · la siguiente en 7 min» solo si falta ≤ 15 min de una misión de minutos": true,
+    "minicronómetro: «🎯 7 min» junto al tiempo con el mismo dato que la barrita, y nada si no aplica": true,
+    "minicronómetro: «✅ 2/3» rebota una sola vez al cumplir una misión fuera de Estudio; no al repintar, recargar, en Estudio ni con «reducir movimiento»": true,
+    "tocar «🎯 7 min» o la barrita abre Estudio con la fila de la misión cerca resaltada un momento y a la vista": true,
+    "junto a la fila resaltada, «⏱️ N min más y es tuya · +10 🌰» con cifras reales, que se va con el resaltado": true,
+    "con las 3 misiones hechas y el cofre sin abrir, la píldora dice «🎁 3/3», lleva al cofre y vuelve a «✅ 3/3» al abrirlo": true,
+    "la barrita «· tu cofre te espera 🎁» lleva al cofre y, ya abierto, vuelve a llevar a las misiones": true,
+    "«Sesión terminada» con las 3 misiones y el cofre sin abrir: «🎁 Tu cofre de misiones te espera» en --suave y «Abrirlo» guarda y lleva al cofre (nada con 2/3 ni con el cofre abierto)": true,
+    "acceso: la ley foral solo en Navarra": true,
+    "especies de temporada (cruzan el año)": true,
+    "historias y tips": true,
+    "app-extra.js define todas las funciones de EXTRA_FUNCS": true,
+    "agenda: añadir examen": true,
+    "agenda: aviso «🙏 N amigos rezan por tu examen de mañana» solo con rezos reales": true,
+    "temporada de exámenes: fuentes, chip y nota": true,
+    "reacciones 🔥💪🧠: ocultas sin sesión, alternan en local sin tabla": true,
+    "liga semanal: Oro/Plata por la semana pasada, mínimo de estudio y sin amigos nada": true,
+    "enlace #bib abre la ficha": true,
+    "al llegar al cofre desde la barrita o la píldora, «¡Abre tu cofre!» recibe el foco (Intro basta) y no lo pierde al repintarse; nada si el cofre no está listo": true,
+    "nombres recortados con gramática: «Sesión terminada» dice «h en Biblioteca de Navarra», nunca «en de Navarra»": true,
+    "perfil: récord con el nombre bien recortado": true,
+    "atajos de la app instalada (#accion=estudiar|ahora|pronto)": true
+  },
+  "errores_js": [],
+  "carga_ms_cpu4x": 1663,
+  "carga_ms_cpu4x_min_max": [
+    1549,
+    1736
+  ],
+  "primera_pintura_ms_cpu4x": 368,
+  "todas_las_chinchetas_ms_cpu4x": 1687,
+  "markercluster": {
+    "cargado": false,
+    "agrupa": false,
+    "grupos": 0,
+    "iconos": 0,
+    "servido_en_local": false
+  },
+  "datos": {
+    "bibliotecas": 2616,
+    "con_horario_verificado": 599,
+    "provincias_con_horario": 51,
+    "provincias_total": 51
+  },
+  "seo": {
+    "paginas": 1005,
+    "sitemap": true
+  },
+  "peso": {
+    "index.html": {
+      "kb": 133.2,
+      "kb_gzip": 29.9
+    },
+    "app.js": {
+      "kb": 303.2,
+      "kb_gzip": 89.7
+    },
+    "bibliotecas-espana.js": {
+      "kb": 807.4,
+      "kb_gzip": 198.7
+    }
+  },
+  "ok": true
+}
