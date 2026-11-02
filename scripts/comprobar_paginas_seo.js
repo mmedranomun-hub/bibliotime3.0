@@ -22,6 +22,11 @@
        que enlaza su <p class="volver"> (la localidad, su provincia; la provincia, el índice), con el mismo name que el
        CollectionPage destino y recíproco con el hasPart de la provincia (localidades) o el ItemList del índice (provincias);
        y el índice, con isPartOf WebSite,
+     - fichas (/bibliotecas/<prov>/<ficha>/) cuyo WebPage no lleva isPartOf CollectionPage a la página que enlaza primero
+       su <p class="volver"> (su localidad si tiene página; si no, su provincia), con el mismo name que su CollectionPage;
+       y al revés, cada ficha del mainEntity ItemList de una localidad la declara como isPartOf, y cada una del de una
+       provincia declara la provincia o una localidad suya (la reciprocidad solo se exige a las fichas que están en el
+       ItemList: la provincia lista solo las 4 primeras de cada localidad con página),
      - la 404 (/404.html, que Vercel sirve en cualquier URL inexistente): que exista, lleve noindex y no canonical, no
        esté en el sitemap, sus enlaces sean absolutos y no estén rotos, y enlace a las provincias, al hub y a «abiertas hoy»;
        y que su «¿Buscabas…?» (#buscabas + <script id="buscabas-js">) exista y sugiera bien (se ejecuta con un DOM mínimo),
@@ -30,7 +35,7 @@
    Uso (desde la raíz del proyecto):  node scripts/comprobar_paginas_seo.js
    Sale con código 1 si hay enlaces rotos, títulos o descripciones repetidos, JSON-LD roto, horarios especiales mal o
    lastmod mal, una provincia o localidad con fichas sin ItemList, el índice sin su CollectionPage, un hasPart roto, una
-   temática, provincia o localidad sin su isPartOf o la 404 mal. */
+   temática, provincia, localidad o ficha sin su isPartOf o la 404 mal. */
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -82,6 +87,7 @@ const TEMAS_SLUG = new Set([...fs.readFileSync(path.join(__dirname, "generar_pag
   .matchAll(/^  \{ slug: "([^"]+)", corto:/gm)].map((m) => m[1]));
 const cpDe = new Map(), volverDe = new Map(), isPartOfMal = [];
 const provsIndice = new Set(); // URL (sin dominio) de las provincias del ItemList del índice
+const wpDe = new Map(), idsListaDe = new Map(); // ruta → WebPage de la ficha · ruta → @id del mainEntity ItemList de su CollectionPage
 function existe(ruta) {
   const limpia = decodeURIComponent(ruta);
   const f = path.join(RAIZ, limpia);
@@ -113,6 +119,9 @@ for (const [ruta, h] of html) {
     if (j) [].concat(j).forEach((x) => {
       compruebaEspeciales(ruta, x);
       if (x && x["@type"] === "CollectionPage" && !cpDe.has(ruta)) cpDe.set(ruta, x);
+      if (x && x["@type"] === "WebPage" && x.about && !wpDe.has(ruta)) wpDe.set(ruta, x);
+      if (x && x["@type"] === "CollectionPage" && x.mainEntity && x.mainEntity["@type"] === "ItemList")
+        idsListaDe.set(ruta, new Set((x.mainEntity.itemListElement || []).map((el) => el && el.item && el.item["@id"]).filter(Boolean)));
       if (x && x["@type"] === "Library" && x["@id"]) fichaDe.set(claveLib(x), x["@id"]);
       const lista = x && (x["@type"] === "ItemList" ? x : x.mainEntity && x.mainEntity["@type"] === "ItemList" ? x.mainEntity : null);
       if (x && x["@type"] === "CollectionPage" && lugares.has(ruta) && x.mainEntity && x.mainEntity["@type"] === "ItemList" && (x.mainEntity.itemListElement || []).length) lugares.get(ruta).lista = true;
@@ -230,6 +239,33 @@ for (const [ruta, partes] of partesDe) {
 }
 for (const u of provsIndice) if (((cpDe.get(u) && cpDe.get(u).isPartOf) || {}).url !== DOMINIO + "/bibliotecas/") isPartOfMal.push(`/bibliotecas/ ItemList ${u}, cuyo isPartOf no es el índice`);
 if (((cpDe.get("/bibliotecas/") || {}).isPartOf || {})["@type"] !== "WebSite") isPartOfMal.push("/bibliotecas/ sin isPartOf WebSite");
+// isPartOf de las fichas: su WebPage, a la página que enlaza primero su «volver» (localidad con página o provincia), con
+// su mismo name. Las que no están en el ItemList de esa página solo se cuentan; al revés, cada ficha de un ItemList de
+// localidad la declara como isPartOf, y cada una del de una provincia, la provincia o una localidad de esa provincia.
+const nFichaIsPartOf = { localidad: 0, provincia: 0 };
+let nFichasFueraLista = 0;
+const supFicha = (r) => (((wpDe.get(r) || {}).isPartOf || {}).url || "").replace(DOMINIO, "");
+for (const ruta of fichas) {
+  const wp = wpDe.get(ruta), ip = wp && wp.isPartOf, u = supFicha(ruta);
+  const esperada = [...(volverDe.get(ruta) || [])][0];
+  if (!wp) { isPartOfMal.push(`${ruta} (ficha) sin WebPage con about`); continue; }
+  if (!ip || ip["@type"] !== "CollectionPage") { isPartOfMal.push(`${ruta} (ficha) sin isPartOf CollectionPage`); continue; }
+  if (!html.has(u) || !lugarDe(u)) { isPartOfMal.push(`${ruta} (ficha) isPartOf a una página que no es provincia ni localidad: ${ip.url}`); continue; }
+  if (u !== esperada) isPartOfMal.push(`${ruta} (ficha) isPartOf ${u} (esperado ${esperada}, primer enlace de su <p class="volver">)`);
+  if (!cpDe.get(u) || cpDe.get(u).name !== ip.name) isPartOfMal.push(`${ruta} (ficha) isPartOf «${ip.name}» distinto del name de ${u} («${cpDe.get(u) && cpDe.get(u).name}»)`);
+  if (!(idsListaDe.get(u) || new Set()).has(DOMINIO + ruta + "#biblioteca")) nFichasFueraLista++;
+  nFichaIsPartOf[lugarDe(u)]++;
+}
+for (const [ruta, ids] of idsListaDe) {
+  const tipo = lugarDe(ruta);
+  if (!tipo) continue;
+  for (const id of ids) {
+    const f = id.replace(DOMINIO, "").replace(/#biblioteca$/, "");
+    if (!fichas.has(f)) continue;
+    const u = supFicha(f), ok = u === ruta || (tipo === "provincia" && lugarDe(u) === "localidad" && ((cpDe.get(u) || {}).isPartOf || {}).url === DOMINIO + ruta);
+    if (!ok) isPartOfMal.push(`${ruta} ItemList ${f}, cuyo isPartOf (${u || "falta"}) no es ${tipo === "provincia" ? "esta provincia ni una localidad suya" : "esta localidad"}`);
+  }
+}
 if (!indiceCP) indiceMal.push("/bibliotecas/ sin CollectionPage en su JSON-LD");
 const huerfanas = [...html.keys()].filter((r) => r !== "/bibliotecas/" && !entrantes.has(r));
 const dupT = [...titulos].filter(([, l]) => l.length > 1), dupD = [...descs].filter(([, l]) => l.length > 1);
@@ -348,7 +384,7 @@ console.log(`Lugares con fichas y mainEntity ItemList: provincias ${nLugarLista.
   (sinLista.length ? "\n" + muestra(sinLista, (r) => "  " + r) : ""));
 console.log(`Índice /bibliotecas/: CollectionPage ${indiceCP ? "sí" : "NO"} · provincias en su ItemList: ${nIndiceProvs} · mal: ${indiceMal.length}${indiceMal.length ? "\n" + muestra(indiceMal, (r) => "  " + r) : ""}`);
 console.log(`hasPart: ${nHasPart} en ${nPagHasPart} páginas (temáticas que enlazan sus partes: ${nTemasPartes}) · rotos o sin enlace en el HTML: ${hasPartMal.length}${hasPartMal.length ? "\n" + muestra(hasPartMal, (r) => "  " + r) : ""}`);
-console.log(`Temáticas: España ${nTemas.España} · provincia ${nTemas.provincia} · localidad ${nTemas.localidad} · con isPartOf bien: provincia ${nIsPartOf.provincia} · localidad ${nIsPartOf.localidad} · lugares con isPartOf bien: provincias ${nLugarIsPartOf.provincia} · localidades ${nLugarIsPartOf.localidad} · mal: ${isPartOfMal.length}${isPartOfMal.length ? "\n" + muestra(isPartOfMal, (r) => "  " + r) : ""}`);
+console.log(`Temáticas: España ${nTemas.España} · provincia ${nTemas.provincia} · localidad ${nTemas.localidad} · con isPartOf bien: provincia ${nIsPartOf.provincia} · localidad ${nIsPartOf.localidad} · lugares con isPartOf bien: provincias ${nLugarIsPartOf.provincia} · localidades ${nLugarIsPartOf.localidad} · fichas con isPartOf bien: a su localidad ${nFichaIsPartOf.localidad} · a su provincia ${nFichaIsPartOf.provincia} (fuera del ItemList de esa página: ${nFichasFueraLista}) · mal: ${isPartOfMal.length}${isPartOfMal.length ? "\n" + muestra(isPartOfMal, (r) => "  " + r) : ""}`);
 console.log(`Huérfanas (sin enlace desde otra página generada): ${huerfanas.length}${huerfanas.length ? "\n" + muestra(huerfanas, (r) => "  " + r) : ""}`);
 console.log(`Sitemap: ${enSitemap.size} URL · no existen: ${sitemapRoto.length} · faltan en el sitemap: ${faltanSitemap.length}` +
   (sitemapRoto.length + faltanSitemap.length ? "\n" + muestra(sitemapRoto.concat(faltanSitemap), (r) => "  " + r) : ""));

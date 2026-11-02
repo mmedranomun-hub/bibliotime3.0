@@ -1111,6 +1111,11 @@ function paginaBiblioteca(b) {
   const colaEx = ex.length ? `Exámenes: horario ampliado del ${fechaEs(ex[0].e.desde).slice(0, 5)} al ${fechaEs(ex[0].e.hasta)}.` : "";
   const descripcion = descripcionBiblioteca(b, [resumen].concat(ok && !resumen.includes(" el ") ? [`Horario verificado el ${fechaEs(b.h.fv)}.`] : []), colaEx);
   const idBib = DOMINIO + ruta + "#biblioteca";
+  // isPartOf del WebPage: la página que ya enlaza su <p class="volver"> (su localidad si tiene página; si no, su
+  // provincia), con el mismo name que su CollectionPage. Es la otra mitad de su mainEntity ItemList, donde la ficha está.
+  const rutaSup = locConPagina ? `/bibliotecas/${ps}/${slug(b.c)}/` : `/bibliotecas/${ps}/`;
+  const parteDe = nombreLugarDe.has(rutaSup) ? { isPartOf: { "@type": "CollectionPage", name: nombreLugarDe.get(rutaSup), url: DOMINIO + rutaSup } } : {};
+  if (parteDe.isPartOf) nFichasIsPartOf++;
   escribe(ruta, pagina({
     ruta, titulo, descripcion,
     h1: esc(b.n),
@@ -1121,13 +1126,13 @@ function paginaBiblioteca(b) {
 ${fq ? fq.html : ""}
 ${cercanas.length ? `<section class="cerca" aria-labelledby="t-cerca"><h2 id="t-cerca">Otras bibliotecas en ${esc(b.c)}</h2><ul>${lisCerca}</ul></section>` : ""}${secVerif ? "\n" + secVerif : ""}
 ${seccionTemasFicha(b, locConPagina)}
-<p class="volver"><a href="${locConPagina ? `/bibliotecas/${ps}/${slug(b.c)}/` : `/bibliotecas/${ps}/`}">← Todas las bibliotecas de ${esc(locConPagina ? b.c : b.p)}</a>${locConPagina ? ` · <a href="/bibliotecas/${ps}/">${esc(b.p)}</a>` : ""}</p>`,
+<p class="volver"><a href="${rutaSup}">← Todas las bibliotecas de ${esc(locConPagina ? b.c : b.p)}</a>${locConPagina ? ` · <a href="/bibliotecas/${ps}/">${esc(b.p)}</a>` : ""}</p>`,
     migas,
     // Library no admite dateModified: va en el WebPage que la describe (fecha = verificación del horario).
     // Horarios especiales (verano verificado y exámenes con `semana`) en specialOpeningHoursSpecification con sus fechas.
     ld: [{ "@context": "https://schema.org", "@id": idBib, ...libraryLD(b, DOMINIO + ruta), ...(especiales.length ? { specialOpeningHoursSpecification: especiales } : {}) },
       { "@context": "https://schema.org", "@type": "WebPage", name: titulo.replace(MARCA, ""), description: descripcion, url: DOMINIO + ruta,
-        inLanguage: "es-ES", about: { "@id": idBib }, ...(mod ? { dateModified: mod } : {}) }, ...(fq ? [fq.ld] : [])],
+        inLanguage: "es-ES", ...parteDe, about: { "@id": idBib }, ...(mod ? { dateModified: mod } : {}) }, ...(fq ? [fq.ld] : [])],
   }));
   if (especiales.length) nFichasEspeciales++;
   if (tieneVerano(b)) nFichasVerano++;
@@ -1142,7 +1147,7 @@ ${seccionTemasFicha(b, locConPagina)}
 // Límites: título ≤ 65 caracteres (con « | Bibliomapa» solo si cabe) y descripción ≤ 160.
 const MAX_TIT = 65, MAX_DESC = 160, MARCA = " | Bibliomapa";
 const titulosUsados = new Set();
-let nFichasEspeciales = 0, nFichasVerano = 0, nFichasEx = 0; // fichas con horarios especiales en JSON-LD, con verano y con exámenes
+let nFichasEspeciales = 0, nFichasVerano = 0, nFichasEx = 0, nFichasIsPartOf = 0; // fichas con horarios especiales en JSON-LD, con verano y con exámenes
 const descUsadas = new Set(); // fichas de biblioteca y universidades: ninguna meta description repetida
 const hashTexto = (s) => { let h = 0; for (const ch of s) h = (h * 31 + ch.codePointAt(0)) >>> 0; return h; };
 const rota = (lista, semilla) => lista.map((_, k) => lista[(k + semilla) % lista.length]);
@@ -1359,6 +1364,8 @@ let nProvItemList = 0, nItemsProv = 0, nLugarHasPart = 0, nHasPart = 0, nLugarIs
 // la provincia y del ItemList del índice; scripts/comprobar_paginas_seo.js falla si no existe, no está enlazada o no es recíproca.
 const NOMBRE_INDICE = "Bibliotecas de España por provincia: abiertas ahora";
 const superiorLugar = (name, ruta) => { nLugarIsPartOf++; return { isPartOf: { "@type": "CollectionPage", name, url: DOMINIO + ruta } }; };
+// name del CollectionPage de cada provincia y localidad (ruta → name), para el isPartOf de las fichas (se generan después).
+const nombreLugarDe = new Map();
 provincias.forEach((p) => {
   const lista = porProv[p], ps = slug(p);
   const porLoc = {};
@@ -1367,6 +1374,7 @@ provincias.forEach((p) => {
   const conPagina = locs.filter((c) => tieneLocPagina(p, c, porLoc[c].length));
   // título de la provincia antes que los de sus localidades: su name es el isPartOf de cada una
   const ruta = `/bibliotecas/${ps}/`, k = cuentas(lista), tp = tituloLugar(ruta, p, k);
+  nombreLugarDe.set(ruta, tp.nombre);
   // páginas de localidad
   conPagina.forEach((c) => {
     const l = porLoc[c].slice().sort(ordenBib), ruta = `/bibliotecas/${ps}/${slug(c)}/`;
@@ -1378,6 +1386,7 @@ provincias.forEach((p) => {
     const secVerif = seccionVerifCerca(verifCerca, c, `Las de ${esc(c)} aún no tienen el horario comprobado; estas, a menos de ${RADIO_VERIF_KM} km del centro de sus bibliotecas, sí (horario de invierno, en su web oficial).`);
     const tl = tituloLugar(ruta, nombresRepetidos.has(slug(c)) ? `${c} (${p})` : c, k);
     const dl = descripcionLugar(ruta, c, p, k, 0);
+    nombreLugarDe.set(ruta, tl.nombre);
     escribe(ruta, pagina({
       ruta, titulo: tl.titulo, descripcion: dl,
       h1: `Bibliotecas en ${esc(c)}`, intro: `${l.length} bibliotecas y salas de estudio en ${esc(c)} (${esc(p)})${k.v ? `, ${k.v} con horario verificado` : ""}. En el mapa de Bibliomapa ves en tiempo real cuáles están abiertas y cuál te pilla más cerca.`,
@@ -2041,6 +2050,7 @@ console.log(`hasPart en provincias y localidades: ${nLugarHasPart} páginas · $
 console.log(`hasPart en temáticas de provincia y de España: ${nTemaHasPart} páginas · ${nHasPartTema} partes`);
 console.log(`isPartOf en temáticas de localidad y de provincia: ${nTemaIsPartOf} páginas`);
 console.log(`isPartOf en provincias y localidades: ${nLugarIsPartOf} páginas`);
+console.log(`isPartOf en fichas (su localidad o provincia): ${nFichasIsPartOf} de ${paginaDe.size}`);
 console.log(`Provincias con ItemList de sus fichas en el JSON-LD: ${nProvItemList} de ${provincias.length} · elementos: ${nItemsProv}`);
 console.log(`Localidades sin ninguna verificada con «Cerca, con horario verificado» (≤ ${RADIO_VERIF_KM} km del centroide): ${nLocsVerifCerca} · enlaces: ${nEnlacesLocVerifCerca}`);
 console.log(`Fichas con «Cerca, con horario verificado» (≤ ${RADIO_VERIF_KM} km, otra ficha): ${nFichasVerifCerca} de ${paginaDe.size} · enlaces: ${nEnlacesVerifCerca}`);
