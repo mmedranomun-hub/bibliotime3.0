@@ -405,6 +405,15 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
   provincias que existan y estén enlazadas en su HTML, o si un `hasPart` de cualquier página (también hub, salas,
   universidades y exámenes) no existe o la página no lo enlaza. Hoy: 51 provincias; 547 `hasPart` en 81 páginas, 0 mal.
 
+## Hecho (2026-11-02) · `hasPart` en las temáticas de provincia y de España (946 páginas, sin cambio)
+- `ldTema(ruta, nombre, lista, partes)`: el `CollectionPage` de `/bibliotecas/<prov>/<tema>/` lleva como `hasPart` las
+  temáticas de sus localidades que ya enlaza su nav «Por localidad», y el de `/bibliotecas/<tema>/` las temáticas de
+  provincia que enlazan las cabeceras de sus secciones (las provincias sin temática propia enlazan a su provincia y no
+  entran). Mismo patrón que `partesLugar()`: sin enlaces nuevos. 44 temáticas, 242 partes (35 de provincia con 66; 9 de
+  España con 176).
+- `comprobar_paginas_seo.js` falla también si una temática enlaza sus partes (nav «Por localidad» o cabecera de sección
+  hacia `/bibliotecas/<prov>/<tema>/`) sin declararlas en su `hasPart`. Hoy: 849 `hasPart` en 130 páginas, 0 mal.
+
 ## Lo que tienes que hacer tú (sin esto no sirve de nada)
 1. **Conectar el dominio** en Vercel: proyecto `bibliotime` → Settings → Domains → añadir `bibliomapa.es` y
    `www.bibliomapa.es` (redirigir www → sin www) y poner en tu registrador los DNS que te indique Vercel.

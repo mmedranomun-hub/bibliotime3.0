@@ -11,7 +11,9 @@
      - páginas de provincia o de localidad que enlazan a fichas pero cuyo CollectionPage no lleva mainEntity ItemList,
      - el índice /bibliotecas/ sin CollectionPage (con dateModified y mainEntity ItemList de las provincias, cada una una
        página que existe y que el índice enlaza),
-     - hasPart de los CollectionPage que apunta a una página que no existe o que la página no enlaza en su HTML,
+     - hasPart de los CollectionPage que apunta a una página que no existe o que la página no enlaza en su HTML, y
+       temáticas de provincia o de España que enlazan las de sus localidades («Por localidad») o provincias (cabeceras
+       de sección) sin declararlas en su hasPart,
      - la 404 (/404.html, que Vercel sirve en cualquier URL inexistente): que exista, lleve noindex y no canonical, no
        esté en el sitemap, sus enlaces sean absolutos y no estén rotos, y enlace a las provincias, al hub y a «abiertas hoy»;
        y que su «¿Buscabas…?» (#buscabas + <script id="buscabas-js">) exista y sugiera bien (se ejecuta con un DOM mínimo),
@@ -63,6 +65,7 @@ const fichaDe = new Map(), itemsLista = [];
 // provincia sin ser temática) → ¿lleva su CollectionPage mainEntity ItemList? y los href que contiene.
 const lugares = new Map();
 const indiceMal = [], hasPartMal = [];
+const partesDe = new Map(), temasConPartes = new Map(); // ruta → URL de su hasPart · temática → enlaces a sus partes
 let nIndiceProvs = 0, nHasPart = 0, nPagHasPart = 0, indiceCP = false;
 let nEnlaces = 0;
 function existe(ruta) {
@@ -81,6 +84,14 @@ for (const [ruta, h] of html) {
   const prov = /^\/bibliotecas\/[^/]+\/$/.test(ruta) && /<section class="loc">/.test(h);
   const loc = /^\/bibliotecas\/[^/]+\/[^/]+\/$/.test(ruta) && /<section class="lista">/.test(h) && /<p class="volver"><a href="\/bibliotecas\/[^/]+\/">← Todas las bibliotecas de [^<]*<\/a><\/p>/.test(h);
   if (prov || loc) lugares.set(ruta, { tipo: prov ? "provincia" : "localidad", lista: false, hrefs: [...h.matchAll(/\shref="([^"]+)"/g)].map((m) => decodifica(m[1])) });
+  // Temáticas que enlazan sus partes: la de provincia, sus localidades en la nav «Por localidad»; la de España
+  // (/bibliotecas/<tema>/), las temáticas de provincia en las cabeceras de sección. Cada una debe estar en su hasPart.
+  partesDe.set(ruta, new Set());
+  const enlPartes = [];
+  for (const nav of h.matchAll(/<nav class="locs" aria-label="Por localidad">([\s\S]*?)<\/nav>/g)) enlPartes.push(...[...nav[1].matchAll(/\shref="([^"]+)"/g)].map((m2) => decodifica(m2[1])));
+  const tema = (ruta.match(/^\/bibliotecas\/([^/]+)\/$/) || [])[1];
+  if (tema) for (const m2 of h.matchAll(/<section class="loc"[^>]*><h2><a href="([^"]+)">/g)) { const u = decodifica(m2[1]), pr = (u.match(new RegExp(`^/bibliotecas/([^/]+)/${tema}/$`)) || [])[1]; if (pr && pr !== tema) enlPartes.push(u); }
+  if (enlPartes.length) temasConPartes.set(ruta, enlPartes);
   for (const m of h.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)) {
     let j = null;
     try { j = JSON.parse(m[1]); } catch (e) { ldMal.push(ruta); }
@@ -92,6 +103,7 @@ for (const [ruta, h] of html) {
       if (lista) (lista.itemListElement || []).forEach((el) => el && el.item && el.item["@type"] === "Library" && itemsLista.push([ruta, el.item]));
       if (x && x["@type"] === "CollectionPage" && Array.isArray(x.hasPart)) {
         nPagHasPart++;
+        x.hasPart.forEach((hp) => partesDe.get(ruta).add(((hp && hp.url) || "").replace(DOMINIO, "")));
         const enlaza = new Set([...h.matchAll(/\shref="([^"]+)"/g)].map((m2) => decodifica(m2[1]).split("#")[0]));
         x.hasPart.forEach((hp) => {
           nHasPart++;
@@ -143,6 +155,13 @@ for (const [ruta, x] of lugares) {
   if (!x.hrefs.some((u) => fichas.has(u.replace(DOMINIO, "")))) continue;
   nLugarLista[x.tipo][1]++;
   if (x.lista) nLugarLista[x.tipo][0]++; else sinLista.push(`${ruta} (${x.tipo})`);
+}
+// Temáticas que enlazan sus partes y no las declaran en hasPart (la otra mitad —hasPart sin enlace— ya la mira arriba).
+let nTemasPartes = 0;
+for (const [ruta, l] of temasConPartes) {
+  nTemasPartes++;
+  const faltan = l.filter((u) => !partesDe.get(ruta).has(u));
+  if (faltan.length) hasPartMal.push(`${ruta} temática sin hasPart de ${faltan.length} partes que enlaza (p. ej. ${faltan[0]})`);
 }
 if (!indiceCP) indiceMal.push("/bibliotecas/ sin CollectionPage en su JSON-LD");
 const huerfanas = [...html.keys()].filter((r) => r !== "/bibliotecas/" && !entrantes.has(r));
@@ -261,7 +280,7 @@ console.log(`ItemList: ${itemsLista.length} bibliotecas · a su ficha: ${nItemsF
 console.log(`Lugares con fichas y mainEntity ItemList: provincias ${nLugarLista.provincia.join(" de ")} · localidades ${nLugarLista.localidad.join(" de ")} · sin ItemList: ${sinLista.length}` +
   (sinLista.length ? "\n" + muestra(sinLista, (r) => "  " + r) : ""));
 console.log(`Índice /bibliotecas/: CollectionPage ${indiceCP ? "sí" : "NO"} · provincias en su ItemList: ${nIndiceProvs} · mal: ${indiceMal.length}${indiceMal.length ? "\n" + muestra(indiceMal, (r) => "  " + r) : ""}`);
-console.log(`hasPart: ${nHasPart} en ${nPagHasPart} páginas · rotos o sin enlace en el HTML: ${hasPartMal.length}${hasPartMal.length ? "\n" + muestra(hasPartMal, (r) => "  " + r) : ""}`);
+console.log(`hasPart: ${nHasPart} en ${nPagHasPart} páginas (temáticas que enlazan sus partes: ${nTemasPartes}) · rotos o sin enlace en el HTML: ${hasPartMal.length}${hasPartMal.length ? "\n" + muestra(hasPartMal, (r) => "  " + r) : ""}`);
 console.log(`Huérfanas (sin enlace desde otra página generada): ${huerfanas.length}${huerfanas.length ? "\n" + muestra(huerfanas, (r) => "  " + r) : ""}`);
 console.log(`Sitemap: ${enSitemap.size} URL · no existen: ${sitemapRoto.length} · faltan en el sitemap: ${faltanSitemap.length}` +
   (sitemapRoto.length + faltanSitemap.length ? "\n" + muestra(sitemapRoto.concat(faltanSitemap), (r) => "  " + r) : ""));

@@ -10,9 +10,9 @@
   <url><loc>https://bibliomapa.es/bibliotecas/a-coruna/cambre/</loc><lastmod>2026-11-01</lastmod><priority>0.8</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/a-coruna/carballo/</loc><lastmod>2026-11-01</lastmod><priority>0.8</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/a-coruna/ferrol/</loc><lastmod>2026-11-01</lastmod><priority>0.8</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/a-coruna/abiertas-hoy/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/a-coruna/abiertas-fin-de-semana/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/a-coruna/abiertas-hasta-tarde/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/a-coruna/abiertas-hoy/</loc><lastmod>2026-11-02</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/a-coruna/abiertas-fin-de-semana/</loc><lastmod>2026-11-02</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/a-coruna/abiertas-hasta-tarde/</loc><lastmod>2026-11-02</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/a-coruna/abiertas-mediodia/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/a-coruna/abiertas-verano/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/a-coruna/</loc><lastmod>2026-11-01</lastmod><priority>0.8</priority></url>
@@ -49,7 +49,7 @@
   <url><loc>https://bibliomapa.es/bibliotecas/asturias/gijon/abiertas-hoy/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/asturias/abiertas-hoy/</loc><lastmod>2026-11-02</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/asturias/abiertas-domingo/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/asturias/abiertas-fin-de-semana/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/asturias/abiertas-fin-de-semana/</loc><lastmod>2026-11-02</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/asturias/abiertas-hasta-tarde/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/asturias/abiertas-mediodia/</loc><lastmod>2026-11-02</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/asturias/abiertas-verano/</loc><lastmod>2026-11-02</lastmod><priority>0.7</priority></url>
@@ -96,9 +96,9 @@
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/santa-coloma-de-gramenet/</loc><lastmod>2026-11-01</lastmod><priority>0.8</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/vic/</loc><lastmod>2026-11-01</lastmod><priority>0.8</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/vilanova-i-la-geltru/</loc><lastmod>2026-11-01</lastmod><priority>0.8</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/barcelona/abiertas-hoy/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/barcelona/abiertas-hoy/</loc><lastmod>2026-11-02</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/abiertas-domingo/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/barcelona/abiertas-fin-de-semana/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/barcelona/abiertas-fin-de-semana/</loc><lastmod>2026-11-02</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/abiertas-sabado-tarde/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/abiertas-mediodia/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/abiertas-verano/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
@@ -108,9 +108,9 @@
   <url><loc>https://bibliomapa.es/bibliotecas/bizkaia/bilbao/abiertas-fin-de-semana/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/bizkaia/bilbao/abiertas-hasta-tarde/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/bizkaia/getxo/</loc><lastmod>2026-11-01</lastmod><priority>0.8</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/bizkaia/abiertas-hoy/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/bizkaia/abiertas-fin-de-semana/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/bizkaia/abiertas-hasta-tarde/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/bizkaia/abiertas-hoy/</loc><lastmod>2026-11-02</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/bizkaia/abiertas-fin-de-semana/</loc><lastmod>2026-11-02</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/bizkaia/abiertas-hasta-tarde/</loc><lastmod>2026-11-02</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/bizkaia/abiertas-verano/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/bizkaia/</loc><lastmod>2026-11-02</lastmod><priority>0.8</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/burgos/abiertas-hoy/</loc><lastmod>2026-11-02</lastmod><priority>0.7</priority></url>
@@ -189,10 +189,10 @@
   <url><loc>https://bibliomapa.es/bibliotecas/la-rioja/logrono/abiertas-hoy/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/la-rioja/logrono/abiertas-fin-de-semana/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/la-rioja/logrono/abiertas-hasta-tarde/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/la-rioja/abiertas-hoy/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/la-rioja/abiertas-fin-de-semana/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/la-rioja/abiertas-hoy/</loc><lastmod>2026-11-02</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/la-rioja/abiertas-fin-de-semana/</loc><lastmod>2026-11-02</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/la-rioja/abiertas-sabado-tarde/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/la-rioja/abiertas-hasta-tarde/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/la-rioja/abiertas-hasta-tarde/</loc><lastmod>2026-11-02</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/la-rioja/abiertas-mediodia/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/la-rioja/abiertas-verano/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/la-rioja/</loc><lastmod>2026-11-02</lastmod><priority>0.8</priority></url>
@@ -204,10 +204,10 @@
   <url><loc>https://bibliomapa.es/bibliotecas/las-palmas/aguimes/</loc><lastmod>2026-11-01</lastmod><priority>0.8</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/las-palmas/arrecife/</loc><lastmod>2026-11-01</lastmod><priority>0.8</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/las-palmas/la-oliva/</loc><lastmod>2026-11-01</lastmod><priority>0.8</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/las-palmas/abiertas-hoy/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/las-palmas/abiertas-domingo/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/las-palmas/abiertas-fin-de-semana/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/las-palmas/abiertas-hasta-tarde/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/las-palmas/abiertas-hoy/</loc><lastmod>2026-11-02</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/las-palmas/abiertas-domingo/</loc><lastmod>2026-11-02</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/las-palmas/abiertas-fin-de-semana/</loc><lastmod>2026-11-02</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/las-palmas/abiertas-hasta-tarde/</loc><lastmod>2026-11-02</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/las-palmas/abiertas-temprano/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/las-palmas/</loc><lastmod>2026-11-01</lastmod><priority>0.8</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/leon/abiertas-hoy/</loc><lastmod>2026-11-02</lastmod><priority>0.7</priority></url>
@@ -259,13 +259,13 @@
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/tres-cantos/abiertas-hoy/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/tres-cantos/abiertas-fin-de-semana/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/tres-cantos/abiertas-hasta-tarde/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/madrid/abiertas-hoy/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/madrid/abiertas-domingo/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/madrid/abiertas-fin-de-semana/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/madrid/abiertas-hoy/</loc><lastmod>2026-11-02</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/madrid/abiertas-domingo/</loc><lastmod>2026-11-02</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/madrid/abiertas-fin-de-semana/</loc><lastmod>2026-11-02</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/abiertas-sabado-tarde/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/abiertas-domingo-tarde/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/madrid/abiertas-hasta-tarde/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/madrid/abiertas-mediodia/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/madrid/abiertas-hasta-tarde/</loc><lastmod>2026-11-02</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/madrid/abiertas-mediodia/</loc><lastmod>2026-11-02</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/abiertas-verano/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/</loc><lastmod>2026-11-02</lastmod><priority>0.8</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/malaga/archidona/</loc><lastmod>2026-11-01</lastmod><priority>0.8</priority></url>
@@ -273,7 +273,7 @@
   <url><loc>https://bibliomapa.es/bibliotecas/malaga/benalmadena/abiertas-hoy/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/malaga/fuengirola/</loc><lastmod>2026-11-01</lastmod><priority>0.8</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/malaga/marbella/</loc><lastmod>2026-11-01</lastmod><priority>0.8</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/malaga/abiertas-hoy/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/malaga/abiertas-hoy/</loc><lastmod>2026-11-02</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/malaga/abiertas-fin-de-semana/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/malaga/abiertas-hasta-tarde/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/malaga/abiertas-mediodia/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
@@ -293,11 +293,11 @@
   <url><loc>https://bibliomapa.es/bibliotecas/navarra/pamplona/abiertas-fin-de-semana/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/navarra/pamplona/abiertas-hasta-tarde/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/navarra/pamplona/abiertas-mediodia/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/navarra/abiertas-hoy/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/navarra/abiertas-domingo/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/navarra/abiertas-fin-de-semana/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/navarra/abiertas-hasta-tarde/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/navarra/abiertas-mediodia/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/navarra/abiertas-hoy/</loc><lastmod>2026-11-02</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/navarra/abiertas-domingo/</loc><lastmod>2026-11-02</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/navarra/abiertas-fin-de-semana/</loc><lastmod>2026-11-02</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/navarra/abiertas-hasta-tarde/</loc><lastmod>2026-11-02</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/navarra/abiertas-mediodia/</loc><lastmod>2026-11-02</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/navarra/abiertas-temprano/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/navarra/abiertas-verano/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/navarra/</loc><lastmod>2026-11-02</lastmod><priority>0.8</priority></url>
@@ -369,10 +369,10 @@
   <url><loc>https://bibliomapa.es/bibliotecas/zaragoza/abiertas-verano/</loc><lastmod>2026-11-01</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/zaragoza/</loc><lastmod>2026-11-02</lastmod><priority>0.8</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/abiertas-hoy/</loc><lastmod>2026-11-02</lastmod><priority>0.8</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/abiertas-domingo/</loc><lastmod>2026-11-01</lastmod><priority>0.8</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/abiertas-domingo/</loc><lastmod>2026-11-02</lastmod><priority>0.8</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/abiertas-fin-de-semana/</loc><lastmod>2026-11-02</lastmod><priority>0.8</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/abiertas-sabado-tarde/</loc><lastmod>2026-11-01</lastmod><priority>0.8</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/abiertas-domingo-tarde/</loc><lastmod>2026-11-01</lastmod><priority>0.8</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/abiertas-sabado-tarde/</loc><lastmod>2026-11-02</lastmod><priority>0.8</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/abiertas-domingo-tarde/</loc><lastmod>2026-11-02</lastmod><priority>0.8</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/abiertas-hasta-tarde/</loc><lastmod>2026-11-02</lastmod><priority>0.8</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/abiertas-mediodia/</loc><lastmod>2026-11-02</lastmod><priority>0.8</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/abiertas-temprano/</loc><lastmod>2026-11-02</lastmod><priority>0.8</priority></url>
