@@ -426,6 +426,33 @@ PRUEBAS = [
         DATA.especiesCompradas=ESPECIES.filter(e=>e.precio>0).map(e=>e.id);if(abre(56))return 'sale con todas compradas';
         return true;
       }finally{k.forEach(x=>DATA[x]=o[x]);closeModal();renderMisiones();renderSemillas();saveUserData();}"""),
+    ("🧊 dice cuántos tienes: el toast de la racha añade «· ya tienes el máximo (3)» al llegar a 3 y el cofre con 🧊 dice «Ya tienes N de 3» en --suave", """
+      var k=['sessions','streakFreezes','lastFreezeEarnedAtStreak','usedFreezeDates','misiones','sellosMisiones','cofresAbiertos','semillasPremio'],o={};k.forEach(x=>o[x]=DATA[x]);
+      var espera=ms=>new Promise(r=>setTimeout(r,ms)),toasts=[],st=window.showToast,hs=window.hashStr,sm=window.sinMovimiento;
+      var dia=a=>{var d=new Date();d.setDate(d.getDate()-a);return ymd(d);};
+      var racha=(f)=>{toasts=[];DATA.sessions=[0,1,2,3,4,5,6].map(a=>({id:'hz'+a,date:dia(a),min:30,ts:Date.now()-a*86400000,bib:NO_BIB,focus:'ok',esp:'roble'}));
+        DATA.streakFreezes=f;DATA.lastFreezeEarnedAtStreak=0;DATA.usedFreezeDates=[];checkStreakFreezes();return toasts.join('|');};
+      var abre=(conHielo,f)=>{closeModal();DATA.streakFreezes=f;window.hashStr=x=>x===ymd()?(conHielo?3:1):hs(x);
+        var M=misionesDeHoy();M.cofre=false;M.ids.forEach(id=>M.hechas[id]=new Date().toISOString());abrirCofre();window.hashStr=hs;
+        return document.querySelector('#modalRoot .cofre-hielo-n');};
+      try{
+        await cargarExtra();window.sinMovimiento=()=>true;window.showToast=m=>toasts.push(m);goView('study');
+        var t=racha(2);
+        if(t!=='🧊 Has ganado un congelador de racha (racha de 7 días) · ya tienes el máximo (3)'||DATA.streakFreezes!==3)return 'toast al llegar a 3: '+t;
+        t=racha(1);
+        if(t!=='🧊 Has ganado un congelador de racha (racha de 7 días)'||DATA.streakFreezes!==2)return 'toast con < 3 cambia: '+t;
+        var l=abre(true,1);
+        if(DATA.streakFreezes!==2||!l||l.innerText.trim()!=='Ya tienes 2 de 3')return 'cofre con 🧊: '+(l&&l.innerText)+' ('+DATA.streakFreezes+')';
+        var m=$('modalRoot').innerHTML;if(m.indexOf('cofre-hielo-n')<m.indexOf('cofre-hielo"')||m.indexOf('cofre-hielo-n')>m.indexOf('cofre-sello'))return 'la línea no va bajo «🧊 un congelador de racha»';
+        var c=document.createElement('i');c.style.color='var(--suave)';document.body.appendChild(c);var suave=getComputedStyle(c).color;c.remove();
+        if(getComputedStyle(l).color!==suave)return 'no es --suave: '+getComputedStyle(l).color;
+        if(document.documentElement.scrollWidth>innerWidth)return 'desborda en horizontal';
+        l=abre(true,2);if(!l||!/^Ya tienes 3 de 3/.test(l.innerText.trim()))return 'cofre con 🧊 hasta 3: '+(l&&l.innerText);
+        if(abre(false,1)||DATA.streakFreezes!==1)return 'sale la línea sin 🧊 en el cofre';
+        if(/falta|pierdes|perder/i.test(t+l.innerText))return 'mete presión';
+        return true;
+      }finally{window.showToast=st;window.hashStr=hs;closeModal();while(VUELO.t||VUELO.n||VUELO.h)await espera(250);window.sinMovimiento=sm;
+        k.forEach(x=>DATA[x]=o[x]);renderMisiones();renderSemillas();renderRacha();saveUserData();}"""),
     ("las 🌰 de las misiones y del cofre vuelan al marcador (una vez; con reducir movimiento, solo la cifra)", """
       await cargarExtra();
       var k=['misiones','acciones','sellosMisiones','cofresAbiertos','semillasPremio','streakFreezes'],o={};k.forEach(x=>o[x]=DATA[x]);

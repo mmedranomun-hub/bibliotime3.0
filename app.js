@@ -2627,7 +2627,7 @@ function checkStreakFreezes(){
     DATA.streakFreezes=Math.min(3,DATA.streakFreezes+1);
     DATA.lastFreezeEarnedAtStreak=earnedAt;
     saveUserData();
-    showToast("🧊 Has ganado un congelador de racha (racha de "+earnedAt+" días)");
+    showToast("🧊 Has ganado un congelador de racha (racha de "+earnedAt+" días)"+(DATA.streakFreezes>=3?" · ya tienes el máximo (3)":"")); // con 3, se entiende por qué el próximo múltiplo de 7 no da otro (comoHielo)
   }
   // Hueco de uno o más días sin estudiar justo antes de hoy: se cubre si hay congeladores para todos.
   var used=DATA.usedFreezeDates=DATA.usedFreezeDates||[];

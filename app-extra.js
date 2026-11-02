@@ -652,6 +652,7 @@ function abrirCofre(btn){
   DATA.semillasPremio=(DATA.semillasPremio||0)+premio;if(hielo)DATA.streakFreezes=(DATA.streakFreezes||0)+1;saveUserData();
   var pista=pistaEspecieSaco(semillas()); // ya con el premio: si te da para la especie, la pista calla (sale «Ya puedes plantar…»)
   openModal('<div class="cofre-modal"><div class="cofre-big">🎁</div><h3>¡Misiones completadas!</h3><div class="sub">Has ganado <b>🌰 '+premio+' semillas</b>'+(hielo?' y <b class="cofre-hielo">🧊 un congelador de racha</b>':'')+'.</div>'+
+    (hielo?'<div class="cofre-hielo-n">'+cuantosHielo()+'</div>':'')+
     (pista?'<div class="cofre-pista">'+pista+'</div>':'')+
     '<div class="cofre-sello">🏵️ Sello del día · '+(n===1?'¡tu primer día con todas las misiones!':'ya llevas '+n+' días con todas las misiones')+'</div>'+
     '<button class="btn" onclick="closeModal();abrirTienda()">Ver especies</button><button class="linkbtn" onclick="closeModal()" style="display:block;margin:12px auto 0">Seguir</button></div>',function(){
@@ -683,6 +684,8 @@ function pintarSellos(el,s){
 var RACHA_FOCO_MS=1000;
 // Cómo se gana un 🧊, la regla real: checkStreakFreezes (app.js) da uno al llegar a cada múltiplo de 7 días reales seguidos
 // y abrirCofre, un día de cada tres (hashStr(ymd())%3), uno más con el cofre; los dos solo si tienes menos de 3.
+// Bajo «y 🧊 un congelador de racha» del cofre: cuántos tienes ya, con la cifra real (sin línea si el cofre no trae 🧊).
+function cuantosHielo(){var n=DATA.streakFreezes||0;return "Ya tienes "+n+" de 3"+(n>=3?", el máximo":"");}
 function comoHielo(){
   return (DATA.streakFreezes||0)>=3?"Tienes el máximo (3). Cada uno salva un día sin estudiar."
     :"Ganas uno cada 7 días seguidos y, a veces, en el cofre del día (máx. 3).";
