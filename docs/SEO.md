@@ -354,6 +354,15 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
 - `comprobar_paginas_seo.js` falla si una página de provincia (`/bibliotecas/<prov>/` con secciones por localidad) o de
   localidad que enlaza a alguna ficha no lleva `mainEntity` `ItemList` en su `CollectionPage`.
 
+## Hecho (2026-11-02) · Casos de «¿Buscabas…?» sacados de los datos (solo cambia el comprobador)
+- Además de la lista fija, `comprobar_paginas_seo.js` genera casos: para cada provincia que la 404 enlaza (páginas
+  `/bibliotecas/<slug>/` con `<section class="loc">`; nombre = texto de su enlace en `#prov-404`), `/<slug>/` y
+  `/bibliotecas/<slug sin guiones>/` deben sugerir esa provincia; y cada clave de `ALIAS_404` (leída del código de
+  `generar_paginas_seo.js` y evaluada con `vm`) por `/bibliotecas/<clave>/`, su provincia. Si no puede leer la tabla, falla.
+- 35 → 169 casos (51 × 2 + 32 nuevos), todos en verde con la 404 actual: no hubo que tocar el script. Probado rompiendo
+  la 404: si el script deja de quitar guiones a la clave del alias, fallan 3; si además deja de compararlos sin guiones
+  en los slugs, 13 (todas las provincias de varias palabras por `/<slug>/`).
+
 ## Hecho (2026-11-02) · «¿Buscabas…?» fuera de `/bibliotecas/` (solo cambia `/404.html`)
 - Si el primer tramo de la ruta no es `bibliotecas`, el script prueba ese tramo (`/navarra/`, `/bizkaia`, `/Vizcaya.html`,
   `/A%20Coru%C3%B1a/horarios`): quita un `.html`/`.htm` final, normaliza igual y solo sugiere si es igual a un slug de

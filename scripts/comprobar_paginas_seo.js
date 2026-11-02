@@ -366,6 +366,22 @@ else {
       ["/bibliotecas/horario/", "¿Buscabas bibliotecas por horario en España[/bibliotecas/horarios/]?"],
       ["/abiertas-hoy/", "¿Buscabas bibliotecas abiertas hoy en España[/bibliotecas/abiertas-hoy/]?"], ["/abiertas-domingos/", ""],
       ["/navarra/pamplna/", "¿Buscabas Navarra[/bibliotecas/navarra/]?"]];
+    // Casos sacados de los datos (no de la lista fija): cada provincia que la 404 enlaza (`provs`, páginas con
+    // <section class="loc">; nombre = texto de su enlace en #prov-404) por `/<slug>/` y `/bibliotecas/<slug sin guiones>/`,
+    // y cada clave de ALIAS_404 (leída del código de generar_paginas_seo.js) por `/bibliotecas/<clave>/`. Así un cambio
+    // de slug, de normalización o de la tabla de alias no deja ninguna provincia sin sugerencia en silencio.
+    const nombreProv = new Map(enlaces.map((a) => [a.getAttribute(), a.firstChild.textContent.trim()]));
+    const esperaProv = (r) => `¿Buscabas ${nombreProv.get(r) || "?"}[${r}]?`;
+    for (const r of provs) {
+      const s = r.split("/")[2];
+      casos.push([`/${s}/`, esperaProv(r)], [`/bibliotecas/${s.replace(/-/g, "")}/`, esperaProv(r)]);
+    }
+    const genSrc = fs.readFileSync(path.join(RAIZ, "scripts", "generar_paginas_seo.js"), "utf8");
+    const aliasSrc = (genSrc.match(/\nconst ALIAS_404 = (\{[\s\S]*?\n\});/) || [])[1];
+    let alias = null;
+    try { alias = require("vm").runInNewContext(`(${aliasSrc})`, {}, { timeout: 1000 }); } catch (e) { /* abajo */ }
+    if (!alias || !Object.keys(alias).length) mal404.push("no se puede leer ALIAS_404 de generar_paginas_seo.js");
+    else for (const [k, s] of Object.entries(alias)) casos.push([`/bibliotecas/${k}/`, esperaProv(`/bibliotecas/${s}/`)]);
     for (const [ruta, esperado] of casos) { const r = sugiere(ruta); if (r !== esperado) mal404.push(`«¿Buscabas…?» en ${ruta}: «${r}» (esperado «${esperado}»)`); else n404Busca++; }
   }
 }
