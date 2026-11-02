@@ -1167,7 +1167,7 @@ function socialRenderPanel(err){
       fl.innerHTML=amigosVis.map(function(f){
         var p=socialPresenceFor(f.profile.id), loc='No está compartiendo ubicación ahora';
         var mapbtn='';
-        if(p&&BIBLIOTECAS[p.bib_index]){var age=Math.round((Date.now()-new Date(p.updated_at).getTime())/60000);loc='Está en '+BIBLIOTECAS[p.bib_index].nombre.replace("Biblioteca ","").replace("Pública ","")+' · hace '+Math.max(0,age)+' min';mapbtn='<button class="mapbtn" onclick="socialGoFriend('+jsArg(f.profile.id)+')">Mapa</button>';}
+        if(p&&BIBLIOTECAS[p.bib_index]){var age=Math.round((Date.now()-new Date(p.updated_at).getTime())/60000);loc='Está en '+cortoNombre(BIBLIOTECAS[p.bib_index].nombre)+' · hace '+Math.max(0,age)+' min';mapbtn='<button class="mapbtn" onclick="socialGoFriend('+jsArg(f.profile.id)+')">Mapa</button>';}
         return '<div class="friend-row"><div class="fav">'+socialInitial(f.profile.name)+'</div><div class="fi"><b>'+escapeHTML(f.profile.name||"Amigo")+'</b><small>'+escapeHTML(loc)+'</small></div><div class="factions"><button class="mapbtn" title="Ver su bosque" onclick="verBosqueAmigo('+jsArg(f.profile.id)+')">🌳</button>'+mapbtn+ugcMoreBtn("profile",f.profile.id,f.profile.id,f.profile.name||"Amigo")+'<button class="nobtn" title="Quitar de amigos" onclick="socialRemoveFriend('+jsArg(f.row.id)+','+jsArg(f.profile.name||"este amigo")+')">✕</button></div></div>';
       }).join("");
     }
@@ -2542,7 +2542,7 @@ function renderSessionFeed(force){
     var fses=filterBlocked(SOCIAL.friendSessions,"owner_id");
     if(!fses.length){el.innerHTML='<div class="empty-note">Tus amigos no tienen sesiones compartidas todavía</div>';return;}
     el.innerHTML=fses.map(function(s){
-      var lugar=(s.bib_name||"").replace("Biblioteca ","").replace("Pública ","");
+      var lugar=cortoNombre(s.bib_name||"");
       var who=socialNameById(s.owner_id);
       var stars=s.prod?'<span class="fstars">'+"★".repeat(s.prod)+"☆".repeat(5-s.prod)+'</span>':'';
       var n=SOCIAL.kudosCounts[s.local_id]||0, ya=!!SOCIAL.kudosByMe[s.local_id];
@@ -2577,7 +2577,7 @@ function renderSessionFeed(force){
   }
   el.innerHTML=lista.map(function(item){
     var s=item.s,idx=item.idx;
-    var lugar=s.bib.replace("Biblioteca ","").replace("Pública ","");
+    var lugar=cortoNombre(s.bib);
     var valoracion=s.prod?("★".repeat(s.prod)+"☆".repeat(5-s.prod)):"—";
     var prBanner=(idx in prAt)?('<div class="pr-banner"><span class="pr-badge">RP</span>¡Tu sesión más larga hasta ahora!'+(prAt[idx]?'<span class="pr-delta">▲ +'+hMin(prAt[idx])+'</span>':'')+'</div>'):'';
     var extra=(s.subject?' · '+escapeHTML(s.subject):'')+(s.focus==="ok"?' <span title="Sesión de foco completada">🌳</span>':(s.focus==="withered"?' <span title="Saliste de la app durante el modo foco">🥀</span>':''));
@@ -3208,7 +3208,7 @@ function calcularAvisos(){
       var bib=BIBLIOTECAS.filter(function(b){return b.nombre===l.bib;})[0];
       var abierta=bib?estadoBib(bib):false;
       avisos.push({type:"loan",icon:"📚",title:"Devolver: "+l.title,
-        sub:(dias<0?"Vencido hace "+(-dias)+" d":(dias===0?"Vence hoy":"Vence en "+dias+" d"))+" · "+l.bib.replace("Biblioteca ","")+(bib&&bib.sinHorario?" (horario sin confirmar)":(abierta?" (abierta)":" (cerrada)")),dias:dias});
+        sub:(dias<0?"Vencido hace "+(-dias)+" d":(dias===0?"Vence hoy":"Vence en "+dias+" d"))+" · "+cortoNombre(l.bib)+(bib&&bib.sinHorario?" (horario sin confirmar)":(abierta?" (abierta)":" (cerrada)")),dias:dias});
     }
   });
   // solicitudes de amistad pendientes
@@ -3221,7 +3221,7 @@ function calcularAvisos(){
   if(studyTimer.running&&studyTimer.bibIndex>=0&&!es24h(BIBLIOTECAS[studyTimer.bibIndex])){
     var cierre=minutosHastaCierre(BIBLIOTECAS[studyTimer.bibIndex]);
     if(cierre>0&&cierre<=30){
-      avisos.push({type:"close",icon:"⏰",title:BIBLIOTECAS[studyTimer.bibIndex].nombre.replace("Biblioteca ","")+" cierra pronto",sub:"En "+cierre+" min",dias:0});
+      avisos.push({type:"close",icon:"⏰",title:cortoNombre(BIBLIOTECAS[studyTimer.bibIndex].nombre)+" cierra pronto",sub:"En "+cierre+" min",dias:0});
     }
   }
   // tus favoritas que abren o cierran en <=30 min (aunque no tengas sesión activa)
@@ -3332,7 +3332,7 @@ function comprobarEnlaceCompartido(){
     var hace = mins<1?"hace un momento":(mins<60?"hace "+mins+" min":"hace "+Math.floor(mins/60)+" h");
     var banner=$("friendBanner");
     banner.innerHTML='<div class="fav">'+escapeHTML((payload.n||"?").charAt(0).toUpperCase())+'</div>'+
-      '<div class="ft"><b>'+escapeHTML(payload.n||"Alguien")+' está estudiando</b><small>en '+escapeHTML(b.nombre.replace("Biblioteca ",""))+' · '+hace+(/^\d{1,2}:\d{2}$/.test(String(payload.h||""))?" · hasta ~"+payload.h:"")+'</small></div>'+
+      '<div class="ft"><b>'+escapeHTML(payload.n||"Alguien")+' está estudiando</b><small>en '+escapeHTML(cortoNombre(b.nombre))+' · '+hace+(/^\d{1,2}:\d{2}$/.test(String(payload.h||""))?" · hasta ~"+payload.h:"")+'</small></div>'+
       '<button class="nowclose" id="friendClose" style="margin-left:auto">×</button>';
     banner.classList.remove("hidden");
     setTimeout(function(){
@@ -3369,8 +3369,8 @@ function renderSugerencia(){
   var mejorProd=null,mejorMedia=0;
   for(var k in prodBib){ var media=prodBib[k].sum/prodBib[k].n; if(media>mejorMedia){mejorMedia=media;mejorProd=k;} }
   var html='<div style="font-size:var(--fs-base);line-height:1.6">';
-  html+='Sueles rendir más cuando estudias <b>'+franjaTxt+'</b>'+(mejorBib?', y donde más horas acumulas es en <b>'+escapeHTML(mejorBib.replace("Biblioteca ",""))+'</b>':'')+'.';
-  if(mejorProd){ html+='<br>Según tus propias valoraciones, donde mejor te concentras es en <b>'+escapeHTML(mejorProd.replace("Biblioteca ",""))+'</b> ('+mejorMedia.toFixed(1)+'★ de media).'; }
+  html+='Sueles rendir más cuando estudias <b>'+franjaTxt+'</b>'+(mejorBib?', y donde más horas acumulas es en <b>'+escapeHTML(cortoNombre(mejorBib))+'</b>':'')+'.';
+  if(mejorProd){ html+='<br>Según tus propias valoraciones, donde mejor te concentras es en <b>'+escapeHTML(cortoNombre(mejorProd))+'</b> ('+mejorMedia.toFixed(1)+'★ de media).'; }
   html+='</div><div style="font-size:var(--fs-xs);color:var(--suave);margin-top:10px;font-style:italic">Basado solo en tus '+ses.length+' sesiones registradas.</div>';
   card.innerHTML=html;
 }
@@ -3570,6 +3570,7 @@ function soltarVuelo(){
 function renderMisiones(){
   var el=$("missionsCard"); if(!el||!DATA)return;
   var M=misionesDeHoy(), h=statsHoy(), hechas=M.ids.filter(function(id){return M.hechas[id];}).length;
+  var ae=document.activeElement, cofFoco=!!(ae&&ae.classList&&ae.classList.contains("cofre")&&el.contains(ae)); // el repintado no le quita el foco
   var finDia=new Date();finDia.setHours(24,0,0,0);var qm=Math.max(0,Math.round((finDia-Date.now())/60000)), quedan=qm>=60?Math.floor(qm/60)+" h":qm+" min";
   el.innerHTML='<div class="mis-head"><div class="section-title" style="margin:0">🎯 Misiones de hoy</div><span class="mis-time">⏳ '+quedan+'</span></div>'+
     M.ids.map(function(id){
@@ -3581,6 +3582,7 @@ function renderMisiones(){
     '<button class="cofre'+(hechas===3&&!M.cofre?' listo':'')+(M.cofre?' abierto':'')+'" onclick="abrirCofre(this)" '+(hechas===3&&!M.cofre?'':'disabled')+'>'+
       '<span class="cofre-ic">🎁</span><span>'+(M.cofre?'Sello del día conseguido · vuelve mañana':hechas===3?'¡Abre tu cofre!':'Cofre: completa las 3 misiones ('+hechas+'/3)')+'</span>'+
       (M.cofre?'<span class="sello-dia" aria-hidden="true">🏵️</span>':'')+'</button>';
+  var c=cofFoco&&el.querySelector(".cofre.listo"); if(c)c.focus({preventScroll:true});
 }
 // Barrita bajo el cronómetro: «🎯 2/3 misiones · la siguiente en 7 min» si a una misión de minutos le faltan ≤ 15 min;
 // tras cumplir una en esta sesión lo refleja 3 min. Va con el tick del cronómetro (solo recalcula al cambiar el minuto);
@@ -3608,7 +3610,8 @@ function irAMision(id){
   goView("study");
   var card=$("missionsCard"); if(!card)return;
   var cof=aCofre&&card.querySelector(".cofre");
-  if(cof){cof.scrollIntoView({behavior:sinMovimiento()?"auto":"smooth",block:"center"});return;}
+  // y el foco al botón «¡Abre tu cofre!» (si está listo): con teclado o lector basta Intro; sin animación nueva
+  if(cof){cof.scrollIntoView({behavior:sinMovimiento()?"auto":"smooth",block:"center"});if(!cof.disabled)cof.focus({preventScroll:true});return;}
   var fila=id?card.querySelector('[data-m="'+id+'"]'):null;
   card.scrollIntoView({behavior:sinMovimiento()?"auto":"smooth",block:"start"});
   if(!fila)return;

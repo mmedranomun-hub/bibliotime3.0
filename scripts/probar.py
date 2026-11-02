@@ -1010,6 +1010,41 @@ PRUEBAS = [
     ("enlace #bib abre la ficha", """
       location.hash='#bib=104-x';comprobarEnlaceCompartido();await new Promise(r=>setTimeout(r,900));
       return !!document.querySelector('.leaflet-popup-content') || 'no abre la ficha';"""),
+    ("al llegar al cofre desde la barrita o la píldora, «¡Abre tu cofre!» recibe el foco (Intro basta) y no lo pierde al repintarse; nada si el cofre no está listo", """
+      var k=['misiones','sessions','acciones','semillasPremio','streakFreezes','cofresAbiertos','sellosMisiones'],o={};k.forEach(x=>o[x]=DATA[x]);
+      var t0={running:studyTimer.running,start:studyTimer.start,bibIndex:studyTimer.bibIndex,tick:studyTimer.tick},el=$('misCerca'),mi=$('miniMis'),ms=$('miniStudy');
+      var viejo=new Date(Date.now()-5*3600000).toISOString(),ya=new Date(Date.now()-60000).toISOString(),oculto0=ms.classList.contains('hidden'),espera=n=>new Promise(r=>setTimeout(r,n));
+      var listo=()=>{DATA.misiones={fecha:ymd(),ids:['m25','agenda','pomo'],hechas:{agenda:viejo,pomo:viejo,m25:ya},cofre:false};el._clave=null;renderMisCerca();renderMisiones();};
+      var foco=()=>{var a=document.activeElement;return !!(a&&a.matches&&a.matches('#missionsCard .cofre.listo'));};
+      try{
+        await cargarExtra();closeModal();DATA.sessions=[];DATA.acciones={fecha:ymd()};
+        studyTimer.running=true;studyTimer.tick=t0.tick||1;studyTimer.bibIndex=-1;studyTimer.start=Date.now()-26*60000-500;
+        goView('study');listo();document.body.focus();el.click();await espera(100);
+        if(!foco())return 'desde la barrita el foco cae en '+(document.activeElement&&document.activeElement.outerHTML.slice(0,60));
+        renderMisiones();if(!foco())return 'el repintado le quita el foco';
+        var b=document.querySelector('#missionsCard .cofre.listo');if(getComputedStyle(b).animationName!=='tiembla'&&!matchMedia('(prefers-reduced-motion: reduce)').matches)return 'cambió la animación: '+getComputedStyle(b).animationName;
+        goView('map');ms.classList.remove('hidden');listo();mi.focus();mi.click();await espera(100);
+        if(!foco())return 'desde la píldora el foco no cae en el cofre';
+        var n0=DATA.cofresAbiertos||0;document.activeElement.click();await espera(50);
+        if(!$('modalRoot').innerHTML||(DATA.cofresAbiertos||0)<=n0&&!misionesDeHoy().cofre)return 'activar el botón enfocado no abre el cofre';
+        closeModal();await espera(50);
+        DATA.misiones={fecha:ymd(),ids:['m25','agenda','pomo'],hechas:{agenda:viejo},cofre:false};renderMisiones();mi.focus();irAMision('cofre');await espera(50);
+        if(document.activeElement&&document.activeElement.classList.contains('cofre'))return 'enfoca un cofre que no está listo';
+        return true;
+      }finally{clearTimeout(irAMision.t);studyTimer.running=t0.running;studyTimer.start=t0.start;studyTimer.bibIndex=t0.bibIndex;studyTimer.tick=t0.tick;MIS_FOCO={id:'',hasta:0};
+        clearTimeout(VUELO.t);VUELO.t=0;VUELO.n=VUELO.h=VUELO.z=0;VUELO.hr=null;document.querySelectorAll('.saco-semillas,.semilla-vuela').forEach(x=>x.remove());
+        k.forEach(x=>DATA[x]=o[x]);saveUserData();closeModal();el&&(el._clave=null);ms.classList.toggle('hidden',oculto0);goView('map');await espera(300);renderMisCerca();renderStudy();renderSemillas();}"""),
+    ("nombres recortados con gramática: «Sesión terminada» dice «h en Biblioteca de Navarra», nunca «en de Navarra»", """
+      var casos={'Biblioteca de Navarra':'Biblioteca de Navarra','Biblioteca Pública de Pamplona Yamaguchi':'Pamplona Yamaguchi','Biblioteca de la Universidad de Navarra':'Universidad de Navarra','Biblioteca Nacional de España':'Biblioteca Nacional de España','Sala de estudio X':'Sala de estudio X'};
+      for(var n in casos){if(cortoNombre(n)!==casos[n])return n+' → '+cortoNombre(n);}
+      var s0=DATA.sessions;
+      try{
+        await cargarExtra();closeModal();var s={id:'nb1',date:ymd(),min:30,ts:Date.now()-60000,bib:'Biblioteca de Navarra',focus:'ok',esp:'roble',prod:null,note:''};DATA.sessions=[s];pedirValoracion(s,null);
+        var t=$('modalRoot').innerText;if(/\\ben de\\b/.test(t)||!/h en Biblioteca de Navarra/.test(t))return 'dice: '+(t.match(/h en [^·\\n]*/)||[t.slice(0,80)])[0];
+        var src=[...document.scripts].map(x=>x.textContent).join('')+String(pedirValoracion);
+        if(/replace\\("Biblioteca ",""\\)/.test(src))return 'queda un recorte a pelo de «Biblioteca »';
+        return true;
+      }finally{DATA.sessions=s0;clearTimeout(VUELO.t);VUELO.t=0;VUELO.n=VUELO.h=VUELO.z=0;VUELO.hr=null;closeModal();goView('map');}"""),
     ("perfil: récord con el nombre bien recortado", """
       var bad=DATA.sessions.length;DATA.sessions.push({id:'t-rec',date:'2026-01-01',min:9999,bib:'Biblioteca de Navarra'});
       try{goView('profile');await new Promise(r=>setTimeout(r,300));

@@ -498,7 +498,7 @@ function pintarSalaActiva(card){
   var miembros=filterBlocked(SOCIAL.roomMembers,"id");
   var membersHTML=miembros.length
     ? miembros.map(function(m){
-        var lugar=BIBLIOTECAS[m.bib_index]?BIBLIOTECAS[m.bib_index].nombre.replace("Biblioteca ","").replace("Pública ",""):"—";
+        var lugar=BIBLIOTECAS[m.bib_index]?cortoNombre(BIBLIOTECAS[m.bib_index].nombre):"—";
         return '<div class="pray-row"><div class="pi"><b>'+escapeHTML(m.name)+'</b><small>'+escapeHTML(lugar)+'</small></div><span class="tabular" style="font-family:var(--mono,monospace);font-weight:800;color:var(--acento-tx)">'+elapsedSince(m.started_at)+'</span></div>';
       }).join("")
     : '<div class="empty-note">Nadie está estudiando en la sala ahora mismo</div>';
@@ -715,7 +715,7 @@ function abrirRacha(foco){
 
 /* ----- Visor de historias (Instagram): las de los amigos y «Tu día» ----- */
 function slideHTML(s,nombre){
-  var m=s.minutes!=null?s.minutes:s.min, lugar=(s.bib_name||s.bib||"").replace("Biblioteca ","").replace("Pública ","");
+  var m=s.minutes!=null?s.minutes:s.min, lugar=cortoNombre(s.bib_name||s.bib||"");
   var hace=s.created_at?(function(){var x=Math.round((Date.now()-Date.parse(s.created_at))/60000);return x<60?"hace "+x+" min":x<1440?"hace "+Math.round(x/60)+" h":"ayer";})():fmtFeedDate(s.date);
   return '<div class="sv-tree">'+arbolSVG(Math.max(m,1),s.focus==="withered",s.subject||s.local_id||s.id,190,s.esp)+'</div>'+
     '<div class="sv-min">'+hMin(m)+'</div><div class="sv-where">'+(lugar&&lugar!==NO_BIB?'📍 '+escapeHTML(lugar):'🏠 Fuera de la biblioteca')+(s.subject?' · 📚 '+escapeHTML(s.subject):'')+'</div>'+
@@ -1040,7 +1040,7 @@ function pedirValoracion(sesion,horasAntes){
   var plantado=sesion.focus?'<div class="planted'+(sesion.focus==="withered"?' seco':'')+'"><div class="planted-tree">'+arbolSVG(sesion.min,sesion.focus==="withered",sesion.subject||sesion.id,110,sesion.esp)+'</div>'+
     '<div class="planted-txt">'+(sesion.focus==="withered"?'🥀 Tu árbol se marchitó porque saliste de la app. ¡El próximo crecerá!':'🎉 ¡Has plantado un '+ETAPAS_ARBOL[etapaArbol(sesion.min)][1].toLowerCase()+' en tu bosque!'+(Math.floor(sesion.min/5)?'<span class="planted-seeds">🌰 +'+Math.floor(sesion.min/5)+' semillas</span>':''))+'</div></div>':'';
   var barraNivel=horasAntes!=null?nivelProgresoHTML(horasAntes):'';
-  openModal(plantado+recordSesionHTML(sesion)+cuentaSesionHTML(sesion)+barraNivel+'<h3>Sesión terminada</h3><div class="sub">'+fmtHoras(sesion.min)+' h en '+escapeHTML(sesion.bib.replace("Biblioteca ","").replace("Pública ",""))+(sesion.verif?' · <span class="badge-ok">✓ verificada</span>':'')+'</div>'+cofreEsperaHTML()+
+  openModal(plantado+recordSesionHTML(sesion)+cuentaSesionHTML(sesion)+barraNivel+'<h3>Sesión terminada</h3><div class="sub">'+fmtHoras(sesion.min)+' h en '+escapeHTML(cortoNombre(sesion.bib))+(sesion.verif?' · <span class="badge-ok">✓ verificada</span>':'')+'</div>'+cofreEsperaHTML()+
     '<label style="font-size:var(--fs-s);font-weight:700;color:var(--suave);text-transform:uppercase;letter-spacing:.05em">¿Qué tal ha ido?</label>'+
     '<div class="prodstars" id="prodStars">'+[1,2,3,4,5].map(function(n){return '<button data-v="'+n+'">★</button>';}).join("")+'</div>'+
     (bibIdxDe(sesion)>=0?'<label style="display:block;margin-top:12px;font-size:var(--fs-s);font-weight:700;color:var(--suave);text-transform:uppercase;letter-spacing:.05em">¿Cómo estaba de llena?</label>'+
