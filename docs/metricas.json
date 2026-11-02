@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-11-02 04:42",
+  "fecha": "2026-11-02 05:36",
   "pruebas": {
     "arranca: datos y vistas": true,
     "marca España (sin «Navarra» en la cabecera)": true,
@@ -34,6 +34,7 @@
     "junto a la fila resaltada, «⏱️ N min más y es tuya · +10 🌰» con cifras reales, que se va con el resaltado": true,
     "con las 3 misiones hechas y el cofre sin abrir, la píldora dice «🎁 3/3», lleva al cofre y vuelve a «✅ 3/3» al abrirlo": true,
     "la barrita «· tu cofre te espera 🎁» lleva al cofre y, ya abierto, vuelve a llevar a las misiones": true,
+    "«Sesión terminada» con las 3 misiones y el cofre sin abrir: «🎁 Tu cofre de misiones te espera» en --suave y «Abrirlo» guarda y lleva al cofre (nada con 2/3 ni con el cofre abierto)": true,
     "acceso: la ley foral solo en Navarra": true,
     "especies de temporada (cruzan el año)": true,
     "historias y tips": true,
@@ -48,13 +49,13 @@
     "atajos de la app instalada (#accion=estudiar|ahora|pronto)": true
   },
   "errores_js": [],
-  "carga_ms_cpu4x": 989,
+  "carga_ms_cpu4x": 1213,
   "carga_ms_cpu4x_min_max": [
-    865,
-    1112
+    1154,
+    1337
   ],
-  "primera_pintura_ms_cpu4x": 248,
-  "todas_las_chinchetas_ms_cpu4x": 1045,
+  "primera_pintura_ms_cpu4x": 264,
+  "todas_las_chinchetas_ms_cpu4x": 1260,
   "markercluster": {
     "cargado": false,
     "agrupa": false,
@@ -64,12 +65,12 @@
   },
   "datos": {
     "bibliotecas": 2616,
-    "con_horario_verificado": 569,
+    "con_horario_verificado": 579,
     "provincias_con_horario": 51,
     "provincias_total": 51
   },
   "seo": {
-    "paginas": 974,
+    "paginas": 985,
     "sitemap": true
   },
   "peso": {
@@ -82,8 +83,8 @@
       "kb_gzip": 89.7
     },
     "bibliotecas-espana.js": {
-      "kb": 791.7,
-      "kb_gzip": 196.2
+      "kb": 797.1,
+      "kb_gzip": 197.1
     }
   },
   "ok": true
