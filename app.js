@@ -3636,7 +3636,9 @@ function renderMisCerca(){
   if(!c){el.classList.add("hidden");el.innerHTML="";return;}
   var txt=c.falta?'🎯 <b>'+c.hechas+'/3</b> misiones · la siguiente en '+c.falta+' min':'✅ <b>'+c.hechas+'/3</b> misiones'+(cofre?' · tu cofre te espera 🎁':' · ¡una más hecha!');
   var lector=c.hechas+" de 3 misiones de hoy cumplidas"+(c.falta?"; la siguiente está cerca":"");
-  el.classList.toggle("hecha",!c.falta);el.dataset.m=c.id;el.setAttribute("aria-label",lector+". Ver misiones de hoy");
+  // Con el cofre listo, la barrita lleva al cofre igual que «🎁 3/3» (#miniMis); si no, a «🎯 Misiones de hoy».
+  el.classList.toggle("hecha",!c.falta);el.dataset.m=cofre?"cofre":c.id;
+  el.setAttribute("aria-label",cofre?"Cofre listo: ir a abrir tu cofre de misiones":lector+". Ver misiones de hoy");
   el.innerHTML='<span aria-hidden="true">'+txt+'</span><span class="sr-solo">'+lector+'</span>';
   el.classList.remove("hidden");
 }
