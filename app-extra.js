@@ -687,7 +687,7 @@ var RACHA_FOCO_MS=1000;
 // Bajo «y 🧊 un congelador de racha» del cofre: cuántos tienes ya, con la cifra real (sin línea si el cofre no trae 🧊).
 // los 3 huecos de 🧊 en la casilla «Congeladores»: llenos con 🧊 y libres como círculo --borde (sin rojo ni «te faltan»)
 function huecosHielo(){var n=Math.min(3,DATA.streakFreezes||0),h="";for(var i=0;i<3;i++)h+='<i class="'+(i<n?"lleno":"libre")+'">'+(i<n?"🧊":"")+'</i>';
-  return '<span class="rs-huecos" role="img" aria-label="'+n+' de 3 congeladores">'+h+'</span>';}
+  return '<span class="rs-huecos" role="img" aria-label="'+n+' de 3 congeladores'+(n===3?', completo':'')+'">'+h+'</span>'+(n===3?'<span class="rs-completo" aria-hidden="true">¡Completo!</span>':'');}
 function cuantosHielo(){var n=DATA.streakFreezes||0;return "Ya tienes "+n+" de 3"+(n>=3?", el máximo":"");}
 function comoHielo(){
   return (DATA.streakFreezes||0)>=3?"Tienes el máximo (3). Cada uno salva un día sin estudiar."

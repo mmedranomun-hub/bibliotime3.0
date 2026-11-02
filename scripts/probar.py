@@ -617,7 +617,30 @@ PRUEBAS = [
         if(!z||z.querySelectorAll('i.libre').length!==3||z.getAttribute('aria-label')!=='0 de 3 congeladores')return 'con 0';
         closeModal();DATA.streakFreezes=3;abrirRacha();
         z=document.querySelector('#modalRoot .rs-huecos');
-        if(!z||z.querySelectorAll('i.lleno').length!==3||z.getAttribute('aria-label')!=='3 de 3 congeladores')return 'con 3';
+        if(!z||z.querySelectorAll('i.lleno').length!==3||z.getAttribute('aria-label')!=='3 de 3 congeladores, completo')return 'con 3';
+        return true;
+      }finally{clearTimeout(abrirRacha.t);k.forEach(x=>DATA[x]=o[x]);closeModal();}"""),
+    ("con 3 de 3 congeladores la casilla «🧊 Congeladores» celebra con «¡Completo!» en --ok-tx bajo los huecos (aria-label «3 de 3 congeladores, completo»); con 2, nada", """
+      await cargarExtra();
+      var k=['streakFreezes'],o={};k.forEach(x=>o[x]=DATA[x]);
+      try{
+        closeModal();DATA.streakFreezes=3;abrirRacha("hielo");
+        var h=document.querySelector('#modalRoot .racha-stats .rs-hielo'),z=h&&h.querySelector('.rs-huecos'),c=h&&h.querySelector('.rs-completo');
+        if(!z||!c)return 'con 3 no hay «¡Completo!»';
+        if(c.textContent!=='¡Completo!')return 'texto: '+c.textContent;
+        if(z.getAttribute('aria-label')!=='3 de 3 congeladores, completo')return 'aria: '+z.getAttribute('aria-label');
+        if(!/🧊 3/.test(h.querySelector('b').innerText)||!h.classList.contains('rs-foco'))return 'cambia la cifra o el resaltado';
+        var t=document.createElement('i');t.style.color='var(--ok-tx)';t.style.fontSize='var(--fs-2xs)';document.body.appendChild(t);var ct=getComputedStyle(t),col=ct.color,fs=ct.fontSize;t.remove();
+        var e=getComputedStyle(c);
+        if(e.color!==col)return 'no va en --ok-tx: '+e.color;
+        if(e.fontSize!==fs||e.fontWeight!=='700')return 'tamaño/peso: '+e.fontSize+' '+e.fontWeight;
+        if(e.animationName!=='none')return 'lleva animación';
+        var rc=c.getBoundingClientRect(),rz=z.getBoundingClientRect(),rh=h.getBoundingClientRect();
+        if(rc.top<rz.bottom-1||rc.left<rh.left-1||rc.right>rh.right+1)return 'no va bajo los huecos dentro de la casilla';
+        if(document.documentElement.scrollWidth>innerWidth)return 'desborda en horizontal';
+        closeModal();DATA.streakFreezes=2;abrirRacha();
+        if(document.querySelector('#modalRoot .rs-completo'))return 'con 2 también sale';
+        if(document.querySelector('#modalRoot .rs-huecos').getAttribute('aria-label')!=='2 de 3 congeladores')return 'con 2 cambia el aria-label';
         return true;
       }finally{clearTimeout(abrirRacha.t);k.forEach(x=>DATA[x]=o[x]);closeModal();}"""),
     ("barrita de misiones bajo el cronómetro: «🎯 2/3 misiones · la siguiente en 7 min» solo si falta ≤ 15 min de una misión de minutos", """
