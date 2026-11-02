@@ -773,6 +773,32 @@ PRUEBAS = [
         return true;
       }finally{clearTimeout(irAMision.t);studyTimer.running=t0.running;studyTimer.start=t0.start;studyTimer.bibIndex=t0.bibIndex;studyTimer.tick=t0.tick;MIS_FOCO={id:'',hasta:0};
         k.forEach(x=>DATA[x]=o[x]);el&&(el._clave=null);ms.classList.toggle('hidden',oculto0);goView('map');await espera(300);renderMisCerca();renderStudy();}"""),
+    ("con las 3 misiones hechas y el cofre sin abrir, la píldora dice «🎁 3/3», lleva al cofre y vuelve a «✅ 3/3» al abrirlo", """
+      var k=['misiones','sessions','acciones','semillasPremio','streakFreezes','cofresAbiertos','sellosMisiones'],o={};k.forEach(x=>o[x]=DATA[x]);
+      var t0={running:studyTimer.running,start:studyTimer.start,bibIndex:studyTimer.bibIndex,tick:studyTimer.tick},el=$('misCerca'),mi=$('miniMis'),ms=$('miniStudy');
+      var viejo=new Date(Date.now()-5*3600000).toISOString(),ya=new Date(Date.now()-60000).toISOString(),oculto0=ms.classList.contains('hidden'),espera=n=>new Promise(r=>setTimeout(r,n));
+      var vis=()=>{var v=mi.querySelector('[aria-hidden="true"]');return mi.classList.contains('hidden')||!v?'':v.textContent.trim();};
+      try{
+        await cargarExtra();closeModal();goView('map');DATA.sessions=[];DATA.acciones={fecha:ymd()};ms.classList.remove('hidden');
+        studyTimer.running=true;studyTimer.tick=t0.tick||1;studyTimer.bibIndex=-1;studyTimer.start=Date.now()-26*60000-500;
+        DATA.misiones={fecha:ymd(),ids:['m25','agenda','pomo'],hechas:{agenda:viejo,pomo:viejo,m25:ya},cofre:false};el._clave=null;renderMisCerca();renderMisiones();
+        if(vis()!=='🎁 3/3')return 'con el cofre cerrado dice «'+vis()+'»';
+        if(!/cofre/i.test(mi.getAttribute('aria-label')||'')||!/cofre/i.test(mi.querySelector('.sr-solo').textContent))return 'la etiqueta no habla del cofre';
+        if(!/tu cofre te espera/.test(el.innerText))return 'no cuadra con la barrita';
+        var c=getComputedStyle(mi),rojo=/rgb\\(2[0-5]\\d, [0-9]{1,2}, [0-9]{1,2}\\)/;if(rojo.test(c.color)||rojo.test(c.backgroundColor))return 'es roja';
+        $('viewStudy').scrollTop=0;mi.click();await espera(800);
+        if($('viewStudy').classList.contains('hidden'))return 'no abre Estudio';
+        if(document.querySelector('#missionsCard .mis-foco'))return 'resalta una fila en vez del cofre';
+        var b=document.querySelector('#missionsCard .cofre.listo'),r=b&&b.getBoundingClientRect(),v=$('viewStudy').getBoundingClientRect();
+        if(!b||!(r.top>=v.top-1&&r.bottom<=v.bottom+1))return 'el cofre no queda a la vista';
+        goView('map');abrirCofre(b);closeModal();await espera(50);
+        if(vis()!=='✅ 3/3')return 'tras abrir el cofre dice «'+vis()+'»';
+        if(mi.dataset.m==='cofre'||/cofre/i.test(mi.getAttribute('aria-label')))return 'sigue llevando al cofre ya abierto';
+        if(/cuenta atrás|pierdes|corre|rápido/i.test(mi.innerText))return 'mete presión';
+        return true;
+      }finally{clearTimeout(irAMision.t);studyTimer.running=t0.running;studyTimer.start=t0.start;studyTimer.bibIndex=t0.bibIndex;studyTimer.tick=t0.tick;MIS_FOCO={id:'',hasta:0};
+        clearTimeout(VUELO.t);VUELO.t=0;VUELO.n=VUELO.h=VUELO.z=0;VUELO.hr=null;
+        k.forEach(x=>DATA[x]=o[x]);saveUserData();closeModal();el&&(el._clave=null);ms.classList.toggle('hidden',oculto0);goView('map');await espera(300);renderMisCerca();renderStudy();renderSemillas();}"""),
     ("acceso: la ley foral solo en Navarra", """
       for(var i=N_NAVARRA;i<BIBLIOTECAS.length;i++)if(/Ley Foral/.test(accesoAccesibilidadHTML(BIBLIOTECAS[i])))return 'ley foral fuera de Navarra: '+BIBLIOTECAS[i].nombre;
       var nav=BIBLIOTECAS.slice(0,N_NAVARRA).some(b=>/Ley Foral 32\\/2002/.test(accesoAccesibilidadHTML(b)));

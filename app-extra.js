@@ -660,7 +660,7 @@ function abrirCofre(btn){
     // de dónde sale el 🧊 al cerrar: su sitio en la ventana (ya colocada); si se cierra antes, la tarjeta del cofre
     if(hielo)setTimeout(function(){var b=document.querySelector("#modalRoot .cofre-hielo");if(b&&VUELO.h)VUELO.hr=b.getBoundingClientRect();},450);
   });
-  renderMisiones();renderSemillas();encolarVuelo(premio,"#missionsCard .cofre",hielo?1:0); // las 🌰 (y el 🧊) del cofre vuelan al cerrar la ventana
+  renderMisiones();renderMisCerca();renderSemillas();encolarVuelo(premio,"#missionsCard .cofre",hielo?1:0); // las 🌰 (y el 🧊) del cofre vuelan al cerrar la ventana
   // el sello «se estampa» en la tarjeta del cofre al cerrar la ventana (debajo no se vería)
   var root=$("modalRoot");if(!root||typeof MutationObserver!=="function")return;
   var ob=new MutationObserver(function(){if(root.innerHTML)return;ob.disconnect();

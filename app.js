@@ -3603,9 +3603,12 @@ function misionCerca(){
 // MIS_FOCO sobrevive al repintado de renderMisiones (cada 30 s con el cronómetro).
 var MIS_FOCO={id:"",hasta:0},MIS_FOCO_MS=2500;
 function irAMision(id){
+  var aCofre=id==="cofre"; if(aCofre)id=""; // «🎁 3/3»: a la tarjeta del cofre (botón «¡Abre tu cofre!»), sin resaltar filas
   MIS_FOCO={id:id||"",hasta:id?Date.now()+MIS_FOCO_MS:0};
   goView("study");
   var card=$("missionsCard"); if(!card)return;
+  var cof=aCofre&&card.querySelector(".cofre");
+  if(cof){cof.scrollIntoView({behavior:sinMovimiento()?"auto":"smooth",block:"center"});return;}
   var fila=id?card.querySelector('[data-m="'+id+'"]'):null;
   card.scrollIntoView({behavior:sinMovimiento()?"auto":"smooth",block:"start"});
   if(!fila)return;
@@ -3616,7 +3619,7 @@ function renderMisCerca(){
   var el=$("misCerca"); if(!el)return;
   var hechas=DATA&&DATA.misiones?Object.keys(DATA.misiones.hechas||{}).length:0, mi=$("miniMis"), antes=mi?mi._nh:null;
   if(mi)mi._nh=hechas; // cuenta anterior: el rebote sale al pasar de pendiente a cumplida, no al cargar ni al repintar
-  var clave=studyTimer.running?elapsedMin()+"|"+Math.floor(Date.now()/60000)+"|"+hechas:"";
+  var clave=studyTimer.running?elapsedMin()+"|"+Math.floor(Date.now()/60000)+"|"+hechas+"|"+!!(DATA&&DATA.misiones&&DATA.misiones.cofre):"";
   if(el._clave===clave)return; el._clave=clave;
   var c=misionCerca();
   // «✅ 2/3» recién cumplida con el minicronómetro a la vista (fuera de Estudio): rebote suave (svRebote), una vez.
@@ -3624,11 +3627,13 @@ function renderMisCerca(){
   if(mi&&(!c||c.falta))mi.classList.remove("mm-rebote");
   else if(mi&&antes!=null&&hechas>antes&&!sinMovimiento()&&$("viewStudy").classList.contains("hidden")){
     mi.classList.remove("mm-rebote");void mi.offsetWidth;mi.classList.add("mm-rebote");}
-  if(mi){mi.classList.toggle("hidden",!c);mi.classList.toggle("hecha",!!c&&!c.falta);mi.dataset.m=c?c.id:"";
-    mi.setAttribute("aria-label",c?(c.falta?"Misión cerca":"Misión cumplida")+": ver misiones de hoy":"Ver misiones de hoy");
-    mi.innerHTML=c?'<span aria-hidden="true">'+(c.falta?"🎯 "+c.falta+" min":"✅ "+c.hechas+"/3")+'</span><span class="sr-solo">'+(c.falta?"Misión cerca":"Misión cumplida")+'</span>':"";}
+  // Con las 3 hechas y el cofre sin abrir (el mismo dato que «· tu cofre te espera 🎁»): «🎁 3/3», y tocarla lleva al cofre.
+  var cofre=!!c&&!c.falta&&c.hechas===3&&!DATA.misiones.cofre;
+  if(mi){mi.classList.toggle("hidden",!c);mi.classList.toggle("hecha",!!c&&!c.falta);mi.dataset.m=cofre?"cofre":c?c.id:"";
+    var ml=c?(c.falta?"Misión cerca":cofre?"Cofre listo":"Misión cumplida"):"";
+    mi.setAttribute("aria-label",c?(cofre?"Cofre listo: ir a abrir tu cofre de misiones":ml+": ver misiones de hoy"):"Ver misiones de hoy");
+    mi.innerHTML=c?'<span aria-hidden="true">'+(c.falta?"🎯 "+c.falta+" min":(cofre?"🎁 ":"✅ ")+c.hechas+"/3")+'</span><span class="sr-solo">'+ml+'</span>':"";}
   if(!c){el.classList.add("hidden");el.innerHTML="";return;}
-  var cofre=c.hechas===3&&!DATA.misiones.cofre;
   var txt=c.falta?'🎯 <b>'+c.hechas+'/3</b> misiones · la siguiente en '+c.falta+' min':'✅ <b>'+c.hechas+'/3</b> misiones'+(cofre?' · tu cofre te espera 🎁':' · ¡una más hecha!');
   var lector=c.hechas+" de 3 misiones de hoy cumplidas"+(c.falta?"; la siguiente está cerca":"");
   el.classList.toggle("hecha",!c.falta);el.dataset.m=c.id;el.setAttribute("aria-label",lector+". Ver misiones de hoy");
