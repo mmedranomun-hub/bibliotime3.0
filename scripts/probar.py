@@ -23,6 +23,14 @@ MC_VERSION = "1.5.3"  # la que pide index.html (unpkg/jsdelivr leaflet.markerclu
 MC_DIR = os.environ.get("MC_DIR", f"/tmp/leaflet.markercluster-{MC_VERSION}")
 MC_ARCHIVOS = ("leaflet.markercluster.js", "MarkerCluster.css", "MarkerCluster.Default.css")
 CARGAS = int(os.environ.get("CARGAS", "5"))  # repeticiones de la medición de carga con CPU 4×
+# Zona horaria del navegador: una en la que ahora sean ~las 12 del mediodía. Así ninguna prueba cruza la medianoche
+# (la sesión de 31 min empezaba «ayer» entre las 0:00 y las 0:31 y fallaba «bosque, misiones, racha y nivel»)
+# ni cae en la franja de «racha en peligro» (≥ 19 h). Se puede fijar con ZONA_PRUEBAS=Europe/Madrid.
+def _zona_mediodia():
+    import datetime
+    x = 12 - datetime.datetime.now(datetime.timezone.utc).hour  # desfase en horas: UTC+x
+    return "Etc/GMT" if x == 0 else f"Etc/GMT{'-' if x > 0 else '+'}{abs(x)}"
+ZONA_PRUEBAS = os.environ.get("ZONA_PRUEBAS") or _zona_mediodia()
 
 
 def preparar_leaflet():
@@ -857,7 +865,7 @@ async def main():
         nav = await p.chromium.launch()
 
         async def nueva_pagina(tema="light"):
-            ctx = await nav.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, color_scheme=tema, service_workers="block")
+            ctx = await nav.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, color_scheme=tema, service_workers="block", timezone_id=ZONA_PRUEBAS)
             pg = await ctx.new_page()
 
             async def ruta(r):
