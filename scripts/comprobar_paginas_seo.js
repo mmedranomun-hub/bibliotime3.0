@@ -17,7 +17,9 @@
      - temáticas de localidad (/bibliotecas/<prov>/<loc>/<tema>/) y de provincia (/bibliotecas/<prov>/<tema>/) sin isPartOf,
        o con un isPartOf que no es la temática superior (la de su provincia si existe, si no la de España; la de provincia,
        la de España), no existe, no tiene el mismo name que el CollectionPage destino, no está enlazado en su
-       <p class="volver"> o, si la página o la superior son de provincia, no es recíproco con el hasPart de la superior,
+       <p class="volver"> o, si la página o la superior son de provincia, no es recíproco con el hasPart de la superior;
+       y temáticas de España (/bibliotecas/<tema>/) sin isPartOf CollectionPage al índice /bibliotecas/ enlazado en su
+       «volver» y con su mismo name (sin reciprocidad: el índice solo lista provincias),
      - provincias (/bibliotecas/<prov>/) y localidades (/bibliotecas/<prov>/<loc>/) sin isPartOf CollectionPage a la página
        que enlaza su <p class="volver"> (la localidad, su provincia; la provincia, el índice), con el mismo name que el
        CollectionPage destino y recíproco con el hasPart de la provincia (localidades) o el ItemList del índice (provincias);
@@ -31,7 +33,8 @@
        y exámenes (/bibliotecas/examenes/<ciudad>/) sin isPartOf CollectionPage a su hub (/bibliotecas/salas-de-estudio/,
        /bibliotecas/universidades/, /bibliotecas/examenes/), que debe ser el primer enlace de su <p class="volver">, con
        el mismo name que el CollectionPage del hub y estar en su hasPart; al revés, cada parte del hasPart del hub la
-       declara como isPartOf; y los hubs, con isPartOf WebSite,
+       declara como isPartOf; y los hubs (esos tres y /bibliotecas/horarios/), con isPartOf CollectionPage al índice
+       /bibliotecas/, primer enlace de su «volver» y con el mismo name que el CollectionPage del índice,
      - la 404 (/404.html, que Vercel sirve en cualquier URL inexistente): que exista, lleve noindex y no canonical, no
        esté en el sitemap, sus enlaces sean absolutos y no estén rotos, y enlace a las provincias, al hub y a «abiertas hoy»;
        y que su «¿Buscabas…?» (#buscabas + <script id="buscabas-js">) exista y sugiera bien (se ejecuta con un DOM mínimo),
@@ -40,7 +43,7 @@
    Uso (desde la raíz del proyecto):  node scripts/comprobar_paginas_seo.js
    Sale con código 1 si hay enlaces rotos, títulos o descripciones repetidos, JSON-LD roto, horarios especiales mal o
    lastmod mal, una provincia o localidad con fichas sin ItemList, el índice sin su CollectionPage, un hasPart roto, una
-   temática, provincia, localidad, ficha, sala de estudio, universidad o ciudad de exámenes sin su isPartOf o la 404 mal. */
+   temática, provincia, localidad, ficha, hub, sala de estudio, universidad o ciudad de exámenes sin su isPartOf o la 404 mal. */
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -198,13 +201,24 @@ for (const [ruta, l] of temasConPartes) {
 // la superior o la página son de provincia, recíproco con su hasPart. Y al revés: cada temática que la superior pone
 // en su hasPart la declara como isPartOf.
 const nivelTema = (r) => { const m = r.match(/^\/bibliotecas\/(?:([^/]+)\/(?:([^/]+)\/)?)?([^/]+)\/$/); return m && TEMAS_SLUG.has(m[3]) && (!m[1] || html.has(`/bibliotecas/${m[1]}/`)) ? { prov: m[1], loc: m[2], tema: m[3], nivel: m[2] ? "localidad" : m[1] ? "provincia" : "España" } : null; };
-const nIsPartOf = { localidad: 0, provincia: 0 }, nTemas = { localidad: 0, provincia: 0, España: 0 };
+const nIsPartOf = { localidad: 0, provincia: 0, España: 0 }, nTemas = { localidad: 0, provincia: 0, España: 0 };
+// isPartOf al índice /bibliotecas/ (temáticas de España y hubs): CollectionPage con el mismo name que el del índice y
+// enlazado en su «volver» (en los hubs, como primer enlace). Sin reciprocidad: el ItemList del índice solo lista provincias.
+const parteDelIndiceMal = (ruta, que, primero) => {
+  const ip = (cpDe.get(ruta) || {}).isPartOf, u = ((ip && ip.url) || "").replace(DOMINIO, ""), mal = [];
+  if (!ip || ip["@type"] !== "CollectionPage") return [`${ruta} (${que}) sin isPartOf CollectionPage al índice${ip ? ` (lleva ${ip["@type"]})` : ""}`];
+  if (u !== "/bibliotecas/") return [`${ruta} (${que}) isPartOf ${u} (esperado /bibliotecas/)`];
+  const volver = [...(volverDe.get(ruta) || [])];
+  if (primero ? volver[0] !== u : !volver.includes(u)) mal.push(`${ruta} isPartOf ${u} no es ${primero ? "el primer enlace" : "un enlace"} de su <p class="volver">`);
+  if (!cpDe.get(u) || cpDe.get(u).name !== ip.name) mal.push(`${ruta} isPartOf «${ip.name}» distinto del name de ${u} («${cpDe.get(u) && cpDe.get(u).name}»)`);
+  return mal;
+};
 if (TEMAS_SLUG.size < 9) isPartOfMal.push(`solo ${TEMAS_SLUG.size} temáticas leídas de TEMAS en generar_paginas_seo.js`);
 for (const ruta of html.keys()) {
   const n = nivelTema(ruta), cp = cpDe.get(ruta);
   if (!n || !cp) continue;
   nTemas[n.nivel]++;
-  if (n.nivel === "España") continue;
+  if (n.nivel === "España") { const mal = parteDelIndiceMal(ruta, "temática de España", false); isPartOfMal.push(...mal); if (!mal.length) nIsPartOf.España++; continue; }
   const ip = cp.isPartOf, u = ((ip && ip.url) || "").replace(DOMINIO, "");
   const deProv = `/bibliotecas/${n.prov}/${n.tema}/`, deEspana = `/bibliotecas/${n.tema}/`;
   const esperada = n.nivel === "localidad" && html.has(deProv) ? deProv : deEspana;
@@ -281,7 +295,6 @@ const nHubIsPartOf = {};
 for (const [hub, re, tipo] of HUBS) {
   nHubIsPartOf[tipo] = 0;
   if (!html.has(hub)) { isPartOfMal.push(`${hub} (hub de ${tipo}) no existe`); continue; }
-  if (((cpDe.get(hub) || {}).isPartOf || {})["@type"] !== "WebSite") isPartOfMal.push(`${hub} (hub) sin isPartOf WebSite`);
   const partes = partesDe.get(hub) || new Set();
   const paginas = new Set([...html.keys()].filter((r) => r !== hub && re.test(r)).concat([...partes]));
   if (!paginas.size) isPartOfMal.push(`${hub} sin páginas de ${tipo}`);
@@ -296,6 +309,14 @@ for (const [hub, re, tipo] of HUBS) {
     if (!partes.has(ruta)) isPartOfMal.push(`${ruta} isPartOf ${hub}, que no la lleva en su hasPart`);
     else if (u === hub) nHubIsPartOf[tipo]++;
   }
+}
+// isPartOf de los hubs: el índice, primer enlace de su «volver» (antes, WebSite).
+let nHubsIndice = 0;
+for (const hub of HUBS.map(([h]) => h).concat("/bibliotecas/horarios/")) {
+  if (!html.has(hub)) { if (hub === "/bibliotecas/horarios/") isPartOfMal.push(`${hub} (hub de horarios) no existe`); continue; }
+  const mal = parteDelIndiceMal(hub, "hub", true);
+  isPartOfMal.push(...mal);
+  if (!mal.length) nHubsIndice++;
 }
 if (!indiceCP) indiceMal.push("/bibliotecas/ sin CollectionPage en su JSON-LD");
 const huerfanas = [...html.keys()].filter((r) => r !== "/bibliotecas/" && !entrantes.has(r));
@@ -431,7 +452,7 @@ console.log(`Lugares con fichas y mainEntity ItemList: provincias ${nLugarLista.
   (sinLista.length ? "\n" + muestra(sinLista, (r) => "  " + r) : ""));
 console.log(`Índice /bibliotecas/: CollectionPage ${indiceCP ? "sí" : "NO"} · provincias en su ItemList: ${nIndiceProvs} · mal: ${indiceMal.length}${indiceMal.length ? "\n" + muestra(indiceMal, (r) => "  " + r) : ""}`);
 console.log(`hasPart: ${nHasPart} en ${nPagHasPart} páginas (temáticas que enlazan sus partes: ${nTemasPartes}) · rotos o sin enlace en el HTML: ${hasPartMal.length}${hasPartMal.length ? "\n" + muestra(hasPartMal, (r) => "  " + r) : ""}`);
-console.log(`Temáticas: España ${nTemas.España} · provincia ${nTemas.provincia} · localidad ${nTemas.localidad} · con isPartOf bien: provincia ${nIsPartOf.provincia} · localidad ${nIsPartOf.localidad} · lugares con isPartOf bien: provincias ${nLugarIsPartOf.provincia} · localidades ${nLugarIsPartOf.localidad} · fichas con isPartOf bien: a su localidad ${nFichaIsPartOf.localidad} · a su provincia ${nFichaIsPartOf.provincia} (fuera del ItemList de esa página: ${nFichasFueraLista}) · con isPartOf a su hub bien: ${Object.entries(nHubIsPartOf).map(([t, n]) => `${t} ${n}`).join(" · ")} · mal: ${isPartOfMal.length}${isPartOfMal.length ? "\n" + muestra(isPartOfMal, (r) => "  " + r) : ""}`);
+console.log(`Temáticas: España ${nTemas.España} · provincia ${nTemas.provincia} · localidad ${nTemas.localidad} · con isPartOf bien: España ${nIsPartOf.España} · provincia ${nIsPartOf.provincia} · localidad ${nIsPartOf.localidad} · lugares con isPartOf bien: provincias ${nLugarIsPartOf.provincia} · localidades ${nLugarIsPartOf.localidad} · fichas con isPartOf bien: a su localidad ${nFichaIsPartOf.localidad} · a su provincia ${nFichaIsPartOf.provincia} (fuera del ItemList de esa página: ${nFichasFueraLista}) · con isPartOf a su hub bien: ${Object.entries(nHubIsPartOf).map(([t, n]) => `${t} ${n}`).join(" · ")} · hubs con isPartOf al índice bien: ${nHubsIndice} · mal: ${isPartOfMal.length}${isPartOfMal.length ? "\n" + muestra(isPartOfMal, (r) => "  " + r) : ""}`);
 console.log(`Huérfanas (sin enlace desde otra página generada): ${huerfanas.length}${huerfanas.length ? "\n" + muestra(huerfanas, (r) => "  " + r) : ""}`);
 console.log(`Sitemap: ${enSitemap.size} URL · no existen: ${sitemapRoto.length} · faltan en el sitemap: ${faltanSitemap.length}` +
   (sitemapRoto.length + faltanSitemap.length ? "\n" + muestra(sitemapRoto.concat(faltanSitemap), (r) => "  " + r) : ""));

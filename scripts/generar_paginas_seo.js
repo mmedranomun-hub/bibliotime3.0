@@ -576,7 +576,8 @@ const modVerif = (lista) => { const v = lista.filter(verificado); return v.lengt
 // temática de provincia; las de provincia en las cabeceras de sección de la de España), como hasPart, igual que
 // partesLugar: sin enlaces nuevos, y scripts/comprobar_paginas_seo.js falla si falta o no está enlazada.
 // superior: [nombre, ruta] de la temática de nivel superior que ya enlaza su <p class="volver"> (la de localidad, la de
-// su provincia si existe y si no la de España; la de provincia, la de España), como isPartOf con el mismo name que el
+// su provincia si existe y si no la de España; la de provincia, la de España; la de España, el índice /bibliotecas/ con
+// NOMBRE_INDICE, sin reciprocidad porque el índice solo lista provincias), como isPartOf con el mismo name que el
 // CollectionPage destino. Es la otra mitad del hasPart: el comprobador falla si no existe, no está enlazada o, cuando la
 // superior es de provincia o la página lo es, la superior no la lleva en su hasPart.
 let nTemaHasPart = 0, nHasPartTema = 0, nTemaIsPartOf = 0;
@@ -1289,7 +1290,7 @@ function descripcionTema(t, lista, donde, espana) {
 }
 
 // Página propia (CollectionPage) con el mismo nombre y descripción que el título y la meta description. isPartOf: el
-// WebSite, salvo que extra traiga otro (provincias y localidades: la página que enlaza su <p class="volver">).
+// WebSite, salvo que extra traiga otro (provincias, localidades, hubs y sus páginas: la página que enlaza su <p class="volver">).
 const ldLugar = (ruta, nombre, descripcion, extra) => ({ "@context": "https://schema.org", "@type": "CollectionPage", name: nombre,
   description: descripcion, url: DOMINIO + ruta, inLanguage: "es-ES", isPartOf: { "@type": "WebSite", name: "Bibliomapa", url: DOMINIO + "/" }, ...extra });
 
@@ -1364,6 +1365,11 @@ let nProvItemList = 0, nItemsProv = 0, nLugarHasPart = 0, nHasPart = 0, nLugarIs
 // la provincia y del ItemList del índice; scripts/comprobar_paginas_seo.js falla si no existe, no está enlazada o no es recíproca.
 const NOMBRE_INDICE = "Bibliotecas de España por provincia: abiertas ahora";
 const superiorLugar = (name, ruta) => { nLugarIsPartOf++; return { isPartOf: { "@type": "CollectionPage", name, url: DOMINIO + ruta } }; };
+// isPartOf de los hubs (salas de estudio, universidades, exámenes y horarios): el índice /bibliotecas/, primer enlace de
+// su <p class="volver"> («← Todas las provincias»), con NOMBRE_INDICE como name (el del CollectionPage del índice). Sin
+// reciprocidad: el índice no los lleva en su ItemList (solo provincias). Las temáticas de España lo declaran con ldTema.
+let nHubIndice = 0;
+const parteDeIndice = () => { nHubIndice++; return { isPartOf: { "@type": "CollectionPage", name: NOMBRE_INDICE, url: DOMINIO + "/bibliotecas/" } }; };
 // name del CollectionPage de cada provincia y localidad (ruta → name), para el isPartOf de las fichas (se generan después).
 const nombreLugarDe = new Map();
 provincias.forEach((p) => {
@@ -1473,7 +1479,7 @@ temasEspana.forEach(({ t, l }) => {
     h1: esc(titulo), intro: introTema(t, l, "España"),
     cuerpo: `${navTemas(t.slug)}<nav class="locs" aria-label="Provincias">${provs.map((p) => `<a href="#${slug(p)}">${esc(p)} <small>${porP[p].length}</small></a>`).join("")}</nav>${t.antes ? t.antes(l) : ""}${secciones}${ft.html}<p class="volver"><a href="/bibliotecas/">← Todas las provincias</a></p>${t.hoy ? SCRIPT_HOY : ""}`, head: t.hoy ? ESTILO_HOY : "",
     migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], [t.corto, rutaT]],
-    ld: [ldTema(rutaT, titulo, ordenados, provs.filter((p) => temaProv[t.slug][p]).map((p) => [`Bibliotecas ${t.que} en ${p}`, `/bibliotecas/${slug(p)}/${t.slug}/`])), ft.ld],
+    ld: [ldTema(rutaT, titulo, ordenados, provs.filter((p) => temaProv[t.slug][p]).map((p) => [`Bibliotecas ${t.que} en ${p}`, `/bibliotecas/${slug(p)}/${t.slug}/`]), [NOMBRE_INDICE, "/bibliotecas/"]), ft.ld],
   }));
   urls.push([rutaT, "0.8", fechaMod(ordenados)]);
 });
@@ -1525,7 +1531,7 @@ function faqSalas(s, rk, ex) {
 }
 // isPartOf de las páginas de salas de estudio, universidades y exámenes: su hub (el primer enlace de su <p class="volver">),
 // con el mismo name que el CollectionPage del hub; por eso el título de cada hub se calcula antes que sus páginas (no
-// coincide con ninguno de ellas: 0 títulos cambiados). Es la otra mitad del hasPart del hub; los hubs siguen con WebSite.
+// coincide con ninguno de ellas: 0 títulos cambiados). Es la otra mitad del hasPart del hub; los hubs, el índice (parteDeIndice).
 let nHubIsPartOf = 0;
 const parteDeHub = (titulo, ruta) => { nHubIsPartOf++; return { isPartOf: { "@type": "CollectionPage", name: titulo.replace(MARCA, ""), url: DOMINIO + ruta } }; };
 const tituloHubSalas = (() => {
@@ -1586,7 +1592,7 @@ if (salas.length) {
       return `<li><a href="${s.ruta}">Salas de estudio en ${esc(s.ciudad)}</a> <small>${[[s.est.filter((b) => b.t === "universidad").length, "universitaria", "universitarias"], [s.est.filter((b) => b.t !== "universidad").length, "pública", "públicas"]].filter((x) => x[0]).map((x) => plural(...x)).join(" · ")} · ${s.ver.length} con horario verificado${f ? ` (${f} en fin de semana)` : ""} · más horas: ${esc(top.n)}, ${horasTexto(horasSemana(top))}/semana</small></li>`; }).join("")}</ul></section>
 <p class="volver"><a href="/bibliotecas/">← Todas las provincias</a>${exCiudades.length ? ` · <a href="${EX_RUTA}">Bibliotecas en exámenes</a>` : ""} · ${enlaceHub}</p>`,
     migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], ["Salas de estudio", ruta]],
-    ld: ldLugar(ruta, titulo.replace(MARCA, ""), descripcion, { dateModified: fechaMod(todasVer),
+    ld: ldLugar(ruta, titulo.replace(MARCA, ""), descripcion, { ...parteDeIndice(), dateModified: fechaMod(todasVer),
       hasPart: orden.map((s) => ({ "@type": "CollectionPage", name: `Salas de estudio en ${s.ciudad}`, url: DOMINIO + s.ruta })) }),
   }));
   urls.push([ruta, "0.8", fechaMod(todasVer)]);
@@ -1735,7 +1741,7 @@ if (universidades.length) {
       return `<li><a href="${u.ruta}">Bibliotecas de la ${esc(u.nombre)} (${esc(u.sigla)})</a> <small>${plural(u.lista.length, "biblioteca", "bibliotecas")} · ${u.ver.length} con horario verificado${f ? ` (${f} en fin de semana)` : ""} · ${ciud.length <= 3 ? esc(enumera(ciud)) : `${ciud.length} ciudades`}</small></li>`; }).join("")}</ul></section>
 <p class="volver"><a href="/bibliotecas/">← Todas las provincias</a>${salas.length ? ` · <a href="/bibliotecas/${SALAS_SLUG}/">Salas de estudio</a>` : ""} · ${enlaceHub}</p>`,
     migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], ["Universidades", ruta]],
-    ld: ldLugar(ruta, titulo.replace(MARCA, ""), descripcion, { dateModified: fechaMod(todasVer),
+    ld: ldLugar(ruta, titulo.replace(MARCA, ""), descripcion, { ...parteDeIndice(), dateModified: fechaMod(todasVer),
       hasPart: universidades.map((u) => ({ "@type": "CollectionPage", name: `Bibliotecas de la ${u.nombre}`, url: DOMINIO + u.ruta })) }),
   }));
   urls.push([ruta, "0.8", fechaMod(todasVer)]);
@@ -1864,7 +1870,7 @@ if (exCiudades.length) {
 ${fq.html}
 <p class="volver"><a href="/bibliotecas/">← Todas las provincias</a>${salas.length ? ` · <a href="/bibliotecas/${SALAS_SLUG}/">Salas de estudio</a>` : ""}${universidades.length ? ` · <a href="/bibliotecas/${UNIS_SLUG}/">Universidades</a>` : ""} · ${enlaceHub}</p>`,
     migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], ["Exámenes", ruta]], head: ESTILO_TABLA_HOR,
-    ld: [ldLugar(ruta, titulo.replace(MARCA, ""), descripcion, { dateModified: fv,
+    ld: [ldLugar(ruta, titulo.replace(MARCA, ""), descripcion, { ...parteDeIndice(), dateModified: fv,
       hasPart: exCiudades.map((g) => ({ "@type": "CollectionPage", name: `Bibliotecas en exámenes en ${g.ciudad}`, url: DOMINIO + g.ruta })) }), fq.ld],
   }));
   urls.push([ruta, "0.8", fv]);
@@ -1928,7 +1934,7 @@ ${sinPagina.length ? `<p class="nota">Con horario verificado pero aún sin pági
 ${fq.html}
 <p class="volver"><a href="/bibliotecas/">← Todas las provincias</a></p>`,
     migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], ["Por horario", ruta]],
-    ld: [ldLugar(ruta, titulo.replace(MARCA, ""), descripcion, { dateModified: fechaMod(verifTodas), hasPart }), fq.ld],
+    ld: [ldLugar(ruta, titulo.replace(MARCA, ""), descripcion, { ...parteDeIndice(), dateModified: fechaMod(verifTodas), hasPart }), fq.ld],
   }));
   urls.push([ruta, "0.9", fechaMod(verifTodas)]);
 }
@@ -2074,6 +2080,7 @@ console.log(`hasPart en temáticas de provincia y de España: ${nTemaHasPart} p�
 console.log(`isPartOf en temáticas de localidad y de provincia: ${nTemaIsPartOf} páginas`);
 console.log(`isPartOf en provincias y localidades: ${nLugarIsPartOf} páginas`);
 console.log(`isPartOf en salas de estudio, universidades y exámenes (su hub): ${nHubIsPartOf} páginas`);
+console.log(`isPartOf al índice en los hubs (salas, universidades, exámenes y horarios): ${nHubIndice} páginas`);
 console.log(`isPartOf en fichas (su localidad o provincia): ${nFichasIsPartOf} de ${paginaDe.size}`);
 console.log(`Provincias con ItemList de sus fichas en el JSON-LD: ${nProvItemList} de ${provincias.length} · elementos: ${nItemsProv}`);
 console.log(`Localidades sin ninguna verificada con «Cerca, con horario verificado» (≤ ${RADIO_VERIF_KM} km del centroide): ${nLocsVerifCerca} · enlaces: ${nEnlacesLocVerifCerca}`);
