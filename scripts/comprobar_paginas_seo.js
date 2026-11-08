@@ -42,7 +42,10 @@
        página, o cuyo penúltimo elemento de las migas no es la url de su isPartOf (o el último no es la ficha); y lo
        mismo en el índice /bibliotecas/, provincias, localidades y temáticas de España, de provincia y de localidad
        (breadcrumb en su CollectionPage), con el penúltimo igual al isPartOf en el índice (el WebSite), provincias,
-       localidades y temáticas de España (el índice) y al primer enlace de su «volver» en las de provincia y localidad,
+       localidades y temáticas de España (el índice) y al primer enlace de su «volver» en las de provincia y localidad;
+       y en los hubs (horarios, universidades, exámenes y salas de estudio), las universidades y las ciudades de
+       exámenes, con el penúltimo igual a la url de su isPartOf (el índice; su hub). Cuenta las BreadcrumbList sueltas,
+
      - JSON-LD que no se puede leer, y horarios especiales (specialOpeningHoursSpecification: verano y exámenes de las
        fichas) mal formados o con tramos por fecha que se solapan.
    Uso (desde la raíz del proyecto):  node scripts/comprobar_paginas_seo.js
@@ -325,6 +328,37 @@ for (const ruta of html.keys()) {
   if (ult !== DOMINIO + ruta) { migasMal.push(`${ruta} (${tipo}) último de las migas ${ult || "falta"} no es la página`); continue; }
   nLugarMigas[tipo]++;
 }
+// breadcrumb de los hubs (/bibliotecas/horarios/, universidades, exámenes y salas de estudio: isPartOf el índice) y de
+// las universidades y ciudades de exámenes (isPartOf su hub): su CollectionPage lo enlaza por @id (<ruta>#migas) a un
+// BreadcrumbList de la misma página cuyo penúltimo elemento es la url de su isPartOf y el último, la propia página.
+// Las salas de estudio de provincia y localidad aún no (sus migas siguen el lugar): solo se cuentan como sueltas.
+const nHubMigas = { hub: 0, universidad: 0, exámenes: 0 };
+const familiaMigasHub = (r) => ["/bibliotecas/horarios/", "/bibliotecas/universidades/", "/bibliotecas/examenes/", "/bibliotecas/salas-de-estudio/"].includes(r) ? "hub"
+  : /^\/bibliotecas\/universidades\/[^/]+\/$/.test(r) ? "universidad" : /^\/bibliotecas\/examenes\/[^/]+\/$/.test(r) ? "exámenes" : null;
+for (const ruta of html.keys()) {
+  const tipo = familiaMigasHub(ruta);
+  if (!tipo) continue;
+  const cp = cpDe.get(ruta);
+  if (!cp) { migasMal.push(`${ruta} (${tipo}) sin CollectionPage`); continue; }
+  const id = DOMINIO + ruta + "#migas", idCp = cp.breadcrumb && cp.breadcrumb["@id"];
+  if (idCp !== id) { migasMal.push(`${ruta} (${tipo}) CollectionPage sin breadcrumb {"@id": "${id}"}${idCp ? ` (lleva ${idCp})` : ""}`); continue; }
+  const lista = (migasDe.get(ruta) || []).find((x) => x["@id"] === id);
+  if (!lista) { migasMal.push(`${ruta} (${tipo}) breadcrumb ${id} sin BreadcrumbList con ese @id en la página`); continue; }
+  const el = lista.itemListElement || [], pen = el.length >= 2 && el[el.length - 2].item, ult = el.length && el[el.length - 1].item;
+  const sup = (cp.isPartOf || {}).url;
+  if (!sup || pen !== sup) { migasMal.push(`${ruta} (${tipo}) penúltimo de las migas ${pen || "falta"} distinto del isPartOf ${sup || "falta"}`); continue; }
+  if (ult !== DOMINIO + ruta) { migasMal.push(`${ruta} (${tipo}) último de las migas ${ult || "falta"} no es la página`); continue; }
+  nHubMigas[tipo]++;
+}
+// BreadcrumbList sueltas (sin @id, o con un @id que no enlaza el breadcrumb de ninguna página de la misma ruta), por
+// familia. Solo se cuentan: las salas de estudio de provincia y localidad esperan a la tarea de sus migas.
+const familiaMigas = (r) => familiaMigasHub(r) || (/\/salas-de-estudio\/$/.test(r) ? "sala de estudio" : r === "/bibliotecas/" ? "índice" : fichas.has(r) ? "ficha" : nivelTema(r) ? "temática" : lugarDe(r) || "otra");
+const migasSueltas = {};
+let nMigasSueltas = 0;
+for (const [ruta, ls] of migasDe) {
+  const enlazado = ((wpDe.get(ruta) || cpDe.get(ruta) || {}).breadcrumb || {})["@id"];
+  for (const x of ls) if (!x["@id"] || x["@id"] !== enlazado) { const f = familiaMigas(ruta); migasSueltas[f] = (migasSueltas[f] || 0) + 1; nMigasSueltas++; }
+}
 for (const [ruta, ids] of idsListaDe) {
   const tipo = lugarDe(ruta);
   if (!tipo) continue;
@@ -503,7 +537,7 @@ console.log(`Lugares con fichas y mainEntity ItemList: provincias ${nLugarLista.
 console.log(`Índice /bibliotecas/: CollectionPage ${indiceCP ? "sí" : "NO"} · provincias en su ItemList: ${nIndiceProvs} · mal: ${indiceMal.length}${indiceMal.length ? "\n" + muestra(indiceMal, (r) => "  " + r) : ""}`);
 console.log(`hasPart: ${nHasPart} en ${nPagHasPart} páginas (temáticas que enlazan sus partes: ${nTemasPartes}) · rotos o sin enlace en el HTML: ${hasPartMal.length}${hasPartMal.length ? "\n" + muestra(hasPartMal, (r) => "  " + r) : ""}`);
 console.log(`Temáticas: España ${nTemas.España} · provincia ${nTemas.provincia} · localidad ${nTemas.localidad} · con isPartOf bien: España ${nIsPartOf.España} · provincia ${nIsPartOf.provincia} · localidad ${nIsPartOf.localidad} · lugares con isPartOf bien: provincias ${nLugarIsPartOf.provincia} · localidades ${nLugarIsPartOf.localidad} · fichas con isPartOf bien: a su localidad ${nFichaIsPartOf.localidad} · a su provincia ${nFichaIsPartOf.provincia} (fuera del ItemList de esa página: ${nFichasFueraLista}) · con isPartOf a su hub bien: ${Object.entries(nHubIsPartOf).map(([t, n]) => `${t} ${n}`).join(" · ")} · hubs con isPartOf al índice bien: ${nHubsIndice} · mal: ${isPartOfMal.length}${isPartOfMal.length ? "\n" + muestra(isPartOfMal, (r) => "  " + r) : ""}`);
-console.log(`Migas de las fichas (breadcrumb del WebPage → BreadcrumbList #migas, penúltimo = isPartOf): ${nFichaMigas} de ${fichas.size} bien · índice, provincias, localidades y temáticas (breadcrumb del CollectionPage → #migas): ${Object.entries(nLugarMigas).map(([t, n]) => `${t} ${n}`).join(" · ")} (temáticas con penúltimo ≠ isPartOf, solo contadas: ${nTemaMigasDistintoIsPartOf}) · mal: ${migasMal.length}${migasMal.length ? "\n" + muestra(migasMal, (r) => "  " + r) : ""}`);
+console.log(`Migas de las fichas (breadcrumb del WebPage → BreadcrumbList #migas, penúltimo = isPartOf): ${nFichaMigas} de ${fichas.size} bien · índice, provincias, localidades y temáticas (breadcrumb del CollectionPage → #migas): ${Object.entries(nLugarMigas).map(([t, n]) => `${t} ${n}`).join(" · ")} (temáticas con penúltimo ≠ isPartOf, solo contadas: ${nTemaMigasDistintoIsPartOf}) · hubs, universidades y exámenes (penúltimo = isPartOf): ${Object.entries(nHubMigas).map(([t, n]) => `${t} ${n}`).join(" · ")} · BreadcrumbList sueltas (sin @id enlazado, solo contadas): ${nMigasSueltas}${nMigasSueltas ? ` (${Object.entries(migasSueltas).map(([t, n]) => `${t} ${n}`).join(" · ")})` : ""} · mal: ${migasMal.length}${migasMal.length ? "\n" + muestra(migasMal, (r) => "  " + r) : ""}`);
 console.log(`Huérfanas (sin enlace desde otra página generada): ${huerfanas.length}${huerfanas.length ? "\n" + muestra(huerfanas, (r) => "  " + r) : ""}`);
 console.log(`Sitemap: ${enSitemap.size} URL · no existen: ${sitemapRoto.length} · faltan en el sitemap: ${faltanSitemap.length}` +
   (sitemapRoto.length + faltanSitemap.length ? "\n" + muestra(sitemapRoto.concat(faltanSitemap), (r) => "  " + r) : ""));
