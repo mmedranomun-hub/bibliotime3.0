@@ -1523,6 +1523,19 @@ function faqSalas(s, rk, ex) {
   const ld = { "@context": "https://schema.org", "@type": "FAQPage", mainEntity: q.map(([p, r]) => ({ "@type": "Question", name: p, acceptedAnswer: { "@type": "Answer", text: r } })) };
   return { html: `<section class="faq"><h2>Preguntas frecuentes</h2>${q.map(([p, r]) => `<details><summary>${esc(p)}</summary><p>${esc(r)}</p></details>`).join("")}</section>`, ld };
 }
+// isPartOf de las páginas de salas de estudio, universidades y exámenes: su hub (el primer enlace de su <p class="volver">),
+// con el mismo name que el CollectionPage del hub; por eso el título de cada hub se calcula antes que sus páginas (no
+// coincide con ninguno de ellas: 0 títulos cambiados). Es la otra mitad del hasPart del hub; los hubs siguen con WebSite.
+let nHubIsPartOf = 0;
+const parteDeHub = (titulo, ruta) => { nHubIsPartOf++; return { isPartOf: { "@type": "CollectionPage", name: titulo.replace(MARCA, ""), url: DOMINIO + ruta } }; };
+const tituloHubSalas = (() => {
+  if (!salas.length) return "";
+  const totE = salas.reduce((t, s) => t + s.est.length, 0);
+  const tBase = `Salas de estudio en España: ${totE} bibliotecas en ${salas.length} ciudades`;
+  const titulo = (tBase + MARCA).length <= MAX_TIT ? tBase + MARCA : tBase;
+  titulosUsados.add(titulo);
+  return titulo;
+})();
 salas.forEach((s) => {
   const { p, ciudad, ruta, lista, est, ver } = s, ps = slug(p);
   const uni = est.filter((b) => b.t === "universidad").sort(ordenBib), pub = est.filter((b) => b.t !== "universidad").sort(ordenBib);
@@ -1551,7 +1564,7 @@ ${fq.html}
 ${otras ? `<p class="mas"><a href="${rutaCiudad}">Ver las ${lista.length} bibliotecas de ${esc(ciudad)} (incluidas ${otras} de barrio, especializadas o sin clasificar) →</a></p>` : ""}
 <p class="volver"><a href="/bibliotecas/${SALAS_SLUG}/">← Salas de estudio en otras ciudades</a> · <a href="${rutaCiudad}">${esc(s.conLoc ? ciudad : p)}</a> · ${enlaceHub}</p>`,
     migas,
-    ld: [ldLugar(ruta, titulo.replace(MARCA, ""), descripcion, { ...(ver.length ? { dateModified: fechaMod(ver) } : {}), mainEntity: { "@type": "ItemList", name: `Bibliotecas para estudiar en ${ciudad}`, numberOfItems: est.length,
+    ld: [ldLugar(ruta, titulo.replace(MARCA, ""), descripcion, { ...parteDeHub(tituloHubSalas, `/bibliotecas/${SALAS_SLUG}/`), ...(ver.length ? { dateModified: fechaMod(ver) } : {}), mainEntity: { "@type": "ItemList", name: `Bibliotecas para estudiar en ${ciudad}`, numberOfItems: est.length,
       itemListElement: uni.concat(pub).map((b, k) => ({ "@type": "ListItem", position: k + 1, item: itemBib(b) })) } }), fq.ld],
   }));
   urls.push([ruta, "0.8", fechaMod(ver)]);
@@ -1561,9 +1574,7 @@ if (salas.length) {
   const orden = salas.slice().sort((a, b) => b.est.length - a.est.length || a.ciudad.localeCompare(b.ciudad, "es"));
   const totU = salas.reduce((t, s) => t + s.est.filter((b) => b.t === "universidad").length, 0), totE = salas.reduce((t, s) => t + s.est.length, 0);
   const totV = salas.reduce((t, s) => t + s.ver.length, 0);
-  const tBase = `Salas de estudio en España: ${totE} bibliotecas en ${salas.length} ciudades`;
-  const titulo = (tBase + MARCA).length <= MAX_TIT ? tBase + MARCA : tBase;
-  titulosUsados.add(titulo);
+  const titulo = tituloHubSalas;
   const descripcion = `Bibliotecas para estudiar en ${salas.length} capitales de España: ${totU} universitarias y ${totE - totU} públicas, ${totV} con horario verificado. Horas de apertura, fin de semana y acceso.`;
   const todasVer = salas.flatMap((s) => s.ver);
   escribe(ruta, pagina({
@@ -1644,6 +1655,13 @@ function horarioTextoUni(b) {
 }
 // Página de la localidad (si la tiene) o de la provincia.
 const rutaLugar = (p, c) => (tieneLocPagina(p, c, porProv[p].filter((b) => b.c === c).length) ? `/bibliotecas/${slug(p)}/${slug(c)}/` : `/bibliotecas/${slug(p)}/`);
+const tituloHubUnis = (() => {
+  if (!universidades.length) return "";
+  const tBase = `Bibliotecas universitarias: ${universidades.length} universidades, horarios`;
+  const titulo = [tBase + MARCA, tBase, `Bibliotecas de ${universidades.length} universidades de España`].find((x) => x.length <= MAX_TIT && !titulosUsados.has(x));
+  titulosUsados.add(titulo);
+  return titulo;
+})();
 universidades.forEach((u) => {
   const { ruta, lista, ver } = u;
   // Ciudad o campus de cada biblioteca: «Valencia» y «València» van juntas (mismo slug, se muestra la grafía más usada);
@@ -1695,7 +1713,7 @@ ${navExamenes(exCiudades.filter((g) => g.entradas.some((x) => ex.includes(x.e)))
     cuerpo: `${claves.length > 1 ? `<nav class="locs" aria-label="Por ciudad">${claves.map((k) => `<a href="#${slug(k.split("|")[1])}">${esc(k.split("|")[1])} <small>${porC[k].length}</small></a>`).join("")}</nav>` : ""}${secVer}${secEx}${secciones}${fq.html}
 <p class="volver"><a href="/bibliotecas/${UNIS_SLUG}/">← Bibliotecas de otras universidades</a>${p0 ? ` · <a href="/bibliotecas/${slug(p0)}/">${esc(p0)}</a>` : ""} · ${enlaceHub}</p>`,
     migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], ["Universidades", `/bibliotecas/${UNIS_SLUG}/`], [u.sigla, ruta]],
-    ld: [ldLugar(ruta, titulo.replace(MARCA, ""), descripcion, { dateModified: fechaMod(ver),
+    ld: [ldLugar(ruta, titulo.replace(MARCA, ""), descripcion, { ...parteDeHub(tituloHubUnis, `/bibliotecas/${UNIS_SLUG}/`), dateModified: fechaMod(ver),
       about: { "@type": "CollegeOrUniversity", name: u.nombre, alternateName: u.sigla },
       mainEntity: { "@type": "ItemList", name: `Bibliotecas de la ${u.nombre}`, numberOfItems: lista.length,
         itemListElement: claves.flatMap((k) => porC[k].slice().sort(ordenBib)).map((b, k) => ({ "@type": "ListItem", position: k + 1, item: itemBib(b) })) } }), fq.ld],
@@ -1705,9 +1723,7 @@ ${navExamenes(exCiudades.filter((g) => g.entradas.some((x) => ex.includes(x.e)))
 if (universidades.length) {
   const ruta = `/bibliotecas/${UNIS_SLUG}/`;
   const totB = universidades.reduce((t, u) => t + u.lista.length, 0), totV = universidades.reduce((t, u) => t + u.ver.length, 0);
-  const tBase = `Bibliotecas universitarias: ${universidades.length} universidades, horarios`;
-  const titulo = [tBase + MARCA, tBase, `Bibliotecas de ${universidades.length} universidades de España`].find((x) => x.length <= MAX_TIT && !titulosUsados.has(x));
-  titulosUsados.add(titulo);
+  const titulo = tituloHubUnis;
   const descripcion = `Bibliotecas de ${universidades.length} universidades españolas (${universidades.slice(0, 4).map((u) => u.sigla).join(", ")}…): ${totB} bibliotecas, ${totV} con horario verificado en su web oficial, por ciudad y campus.`;
   const todasVer = universidades.flatMap((u) => u.ver);
   escribe(ruta, pagina({
@@ -1778,6 +1794,14 @@ function faqEx(g) {
   q.push([`¿De dónde salen estas fechas?`, `De la web oficial de cada biblioteca o universidad (${fuentesEx(l)}), comprobada ${fechasFv(l)}. Solo publicamos calendarios oficiales de este curso: si otra biblioteca de ${c} amplía horario y aún no lo ha publicado, no sale aquí. Confírmalo en su web antes de ir.`]);
   return faqDe(q);
 }
+const tituloHubEx = (() => {
+  if (!exCiudades.length) return "";
+  const todasEx = exCiudades.flatMap((g) => g.entradas), curso = cursosTexto(todasEx);
+  const tBase = `${todasEx.some((x) => x.h24) ? "Bibliotecas 24 horas y horario ampliado" : "Bibliotecas con horario ampliado"} en exámenes ${curso}`;
+  const titulo = [tBase + MARCA, tBase].find((x) => x.length <= MAX_TIT && !titulosUsados.has(x)) || tBase;
+  titulosUsados.add(titulo);
+  return titulo;
+})();
 exCiudades.forEach((g) => {
   const { ciudad, p, ruta, entradas } = g, ps = slug(p);
   // Página de la ciudad: la de su localidad si la tiene (mismo nombre, por slug) o la de la provincia.
@@ -1801,7 +1825,7 @@ ${fq.html}
 <section class="cerca" aria-labelledby="t-mas"><h2 id="t-mas">Más para estudiar en ${esc(ciudad)}</h2><ul>${mas}</ul></section>
 <p class="volver"><a href="${EX_RUTA}">← Exámenes en otras ciudades</a>${rutaCiudad ? ` · <a href="${rutaCiudad}">${esc(nombreLugar)}</a>` : ""} · ${enlaceHub}</p>`,
     migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], ["Exámenes", EX_RUTA], [ciudad, ruta]],
-    ld: [ldLugar(ruta, titulo.replace(MARCA, ""), descripcion, { dateModified: g.fv,
+    ld: [ldLugar(ruta, titulo.replace(MARCA, ""), descripcion, { ...parteDeHub(tituloHubEx, EX_RUTA), dateModified: g.fv,
       mainEntity: { "@type": "ItemList", name: `Bibliotecas con horario de exámenes en ${ciudad}`, numberOfItems: entradas.length,
         itemListElement: entradas.map((x, k) => ({ "@type": "ListItem", position: k + 1, item: x.b ? itemBib(x.b)
           : { "@type": "Library", name: x.e.espacio, address: { "@type": "PostalAddress", addressLocality: ciudad, addressRegion: p, addressCountry: "ES" } } })) } }), fq.ld],
@@ -1812,8 +1836,7 @@ if (exCiudades.length) {
   const ruta = EX_RUTA, todasEx = exCiudades.flatMap((g) => g.entradas), curso = cursosTexto(todasEx), fv = todasEx.map((x) => x.e.fv).sort().pop();
   const h24 = todasEx.filter((x) => x.h24), nC = exCiudades.length;
   const tBase = `${h24.length ? "Bibliotecas 24 horas y horario ampliado" : "Bibliotecas con horario ampliado"} en exámenes ${curso}`;
-  const titulo = [tBase + MARCA, tBase].find((x) => x.length <= MAX_TIT && !titulosUsados.has(x)) || tBase;
-  titulosUsados.add(titulo);
+  const titulo = tituloHubEx;
   const ciudadesTxt = enumera(exCiudades.map((g) => g.ciudad));
   const dCand = [`${plural(todasEx.length, "biblioteca", "bibliotecas")} con horario ampliado${h24.length ? " o abiertas 24 h" : ""} en exámenes ${curso} en ${ciudadesTxt}: fechas, horario y fuente oficial.`,
     `${plural(todasEx.length, "biblioteca", "bibliotecas")} con horario ampliado${h24.length ? " o abiertas 24 h" : ""} en exámenes ${curso} en ${plural(nC, "ciudad", "ciudades")}: fechas, horario y fuente oficial.`];
@@ -2050,6 +2073,7 @@ console.log(`hasPart en provincias y localidades: ${nLugarHasPart} páginas · $
 console.log(`hasPart en temáticas de provincia y de España: ${nTemaHasPart} páginas · ${nHasPartTema} partes`);
 console.log(`isPartOf en temáticas de localidad y de provincia: ${nTemaIsPartOf} páginas`);
 console.log(`isPartOf en provincias y localidades: ${nLugarIsPartOf} páginas`);
+console.log(`isPartOf en salas de estudio, universidades y exámenes (su hub): ${nHubIsPartOf} páginas`);
 console.log(`isPartOf en fichas (su localidad o provincia): ${nFichasIsPartOf} de ${paginaDe.size}`);
 console.log(`Provincias con ItemList de sus fichas en el JSON-LD: ${nProvItemList} de ${provincias.length} · elementos: ${nItemsProv}`);
 console.log(`Localidades sin ninguna verificada con «Cerca, con horario verificado» (≤ ${RADIO_VERIF_KM} km del centroide): ${nLocsVerifCerca} · enlaces: ${nEnlacesLocVerifCerca}`);

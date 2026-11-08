@@ -27,6 +27,11 @@
        y al revés, cada ficha del mainEntity ItemList de una localidad la declara como isPartOf, y cada una del de una
        provincia declara la provincia o una localidad suya (la reciprocidad solo se exige a las fichas que están en el
        ItemList: la provincia lista solo las 4 primeras de cada localidad con página),
+     - salas de estudio (/bibliotecas/<prov>/[<loc>/]salas-de-estudio/), universidades (/bibliotecas/universidades/<uni>/)
+       y exámenes (/bibliotecas/examenes/<ciudad>/) sin isPartOf CollectionPage a su hub (/bibliotecas/salas-de-estudio/,
+       /bibliotecas/universidades/, /bibliotecas/examenes/), que debe ser el primer enlace de su <p class="volver">, con
+       el mismo name que el CollectionPage del hub y estar en su hasPart; al revés, cada parte del hasPart del hub la
+       declara como isPartOf; y los hubs, con isPartOf WebSite,
      - la 404 (/404.html, que Vercel sirve en cualquier URL inexistente): que exista, lleve noindex y no canonical, no
        esté en el sitemap, sus enlaces sean absolutos y no estén rotos, y enlace a las provincias, al hub y a «abiertas hoy»;
        y que su «¿Buscabas…?» (#buscabas + <script id="buscabas-js">) exista y sugiera bien (se ejecuta con un DOM mínimo),
@@ -35,7 +40,7 @@
    Uso (desde la raíz del proyecto):  node scripts/comprobar_paginas_seo.js
    Sale con código 1 si hay enlaces rotos, títulos o descripciones repetidos, JSON-LD roto, horarios especiales mal o
    lastmod mal, una provincia o localidad con fichas sin ItemList, el índice sin su CollectionPage, un hasPart roto, una
-   temática, provincia, localidad o ficha sin su isPartOf o la 404 mal. */
+   temática, provincia, localidad, ficha, sala de estudio, universidad o ciudad de exámenes sin su isPartOf o la 404 mal. */
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -266,6 +271,32 @@ for (const [ruta, ids] of idsListaDe) {
     if (!ok) isPartOfMal.push(`${ruta} ItemList ${f}, cuyo isPartOf (${u || "falta"}) no es ${tipo === "provincia" ? "esta provincia ni una localidad suya" : "esta localidad"}`);
   }
 }
+// isPartOf de salas de estudio, universidades y exámenes: su hub, primer enlace de su «volver», con el mismo name que el
+// CollectionPage del hub y recíproco con su hasPart. Se miran las páginas de cada tipo por su ruta y las del hasPart del
+// hub (así falla tanto la página que falta en el hasPart como la parte del hasPart que no declara el hub).
+const HUBS = [["/bibliotecas/salas-de-estudio/", /^\/bibliotecas\/[^/]+\/(?:[^/]+\/)?salas-de-estudio\/$/, "sala de estudio"],
+  ["/bibliotecas/universidades/", /^\/bibliotecas\/universidades\/[^/]+\/$/, "universidad"],
+  ["/bibliotecas/examenes/", /^\/bibliotecas\/examenes\/[^/]+\/$/, "exámenes"]];
+const nHubIsPartOf = {};
+for (const [hub, re, tipo] of HUBS) {
+  nHubIsPartOf[tipo] = 0;
+  if (!html.has(hub)) { isPartOfMal.push(`${hub} (hub de ${tipo}) no existe`); continue; }
+  if (((cpDe.get(hub) || {}).isPartOf || {})["@type"] !== "WebSite") isPartOfMal.push(`${hub} (hub) sin isPartOf WebSite`);
+  const partes = partesDe.get(hub) || new Set();
+  const paginas = new Set([...html.keys()].filter((r) => r !== hub && re.test(r)).concat([...partes]));
+  if (!paginas.size) isPartOfMal.push(`${hub} sin páginas de ${tipo}`);
+  for (const ruta of paginas) {
+    if (!html.has(ruta)) continue; // hasPart roto: ya lo cuenta hasPartMal
+    const ip = (cpDe.get(ruta) || {}).isPartOf, u = ((ip && ip.url) || "").replace(DOMINIO, "");
+    if (!ip || ip["@type"] !== "CollectionPage") { isPartOfMal.push(`${ruta} (${tipo}) sin isPartOf CollectionPage${ip ? ` (lleva ${ip["@type"]})` : ""}`); continue; }
+    if (!html.has(u)) { isPartOfMal.push(`${ruta} isPartOf a una página que no existe: ${ip.url}`); continue; }
+    if (u !== hub) isPartOfMal.push(`${ruta} isPartOf ${u} (esperado ${hub})`);
+    if ([...(volverDe.get(ruta) || [])][0] !== u) isPartOfMal.push(`${ruta} isPartOf ${u} no es el primer enlace de su <p class="volver">`);
+    if (!cpDe.get(u) || cpDe.get(u).name !== ip.name) isPartOfMal.push(`${ruta} isPartOf «${ip.name}» distinto del name de ${u} («${cpDe.get(u) && cpDe.get(u).name}»)`);
+    if (!partes.has(ruta)) isPartOfMal.push(`${ruta} isPartOf ${hub}, que no la lleva en su hasPart`);
+    else if (u === hub) nHubIsPartOf[tipo]++;
+  }
+}
 if (!indiceCP) indiceMal.push("/bibliotecas/ sin CollectionPage en su JSON-LD");
 const huerfanas = [...html.keys()].filter((r) => r !== "/bibliotecas/" && !entrantes.has(r));
 const dupT = [...titulos].filter(([, l]) => l.length > 1), dupD = [...descs].filter(([, l]) => l.length > 1);
@@ -400,7 +431,7 @@ console.log(`Lugares con fichas y mainEntity ItemList: provincias ${nLugarLista.
   (sinLista.length ? "\n" + muestra(sinLista, (r) => "  " + r) : ""));
 console.log(`Índice /bibliotecas/: CollectionPage ${indiceCP ? "sí" : "NO"} · provincias en su ItemList: ${nIndiceProvs} · mal: ${indiceMal.length}${indiceMal.length ? "\n" + muestra(indiceMal, (r) => "  " + r) : ""}`);
 console.log(`hasPart: ${nHasPart} en ${nPagHasPart} páginas (temáticas que enlazan sus partes: ${nTemasPartes}) · rotos o sin enlace en el HTML: ${hasPartMal.length}${hasPartMal.length ? "\n" + muestra(hasPartMal, (r) => "  " + r) : ""}`);
-console.log(`Temáticas: España ${nTemas.España} · provincia ${nTemas.provincia} · localidad ${nTemas.localidad} · con isPartOf bien: provincia ${nIsPartOf.provincia} · localidad ${nIsPartOf.localidad} · lugares con isPartOf bien: provincias ${nLugarIsPartOf.provincia} · localidades ${nLugarIsPartOf.localidad} · fichas con isPartOf bien: a su localidad ${nFichaIsPartOf.localidad} · a su provincia ${nFichaIsPartOf.provincia} (fuera del ItemList de esa página: ${nFichasFueraLista}) · mal: ${isPartOfMal.length}${isPartOfMal.length ? "\n" + muestra(isPartOfMal, (r) => "  " + r) : ""}`);
+console.log(`Temáticas: España ${nTemas.España} · provincia ${nTemas.provincia} · localidad ${nTemas.localidad} · con isPartOf bien: provincia ${nIsPartOf.provincia} · localidad ${nIsPartOf.localidad} · lugares con isPartOf bien: provincias ${nLugarIsPartOf.provincia} · localidades ${nLugarIsPartOf.localidad} · fichas con isPartOf bien: a su localidad ${nFichaIsPartOf.localidad} · a su provincia ${nFichaIsPartOf.provincia} (fuera del ItemList de esa página: ${nFichasFueraLista}) · con isPartOf a su hub bien: ${Object.entries(nHubIsPartOf).map(([t, n]) => `${t} ${n}`).join(" · ")} · mal: ${isPartOfMal.length}${isPartOfMal.length ? "\n" + muestra(isPartOfMal, (r) => "  " + r) : ""}`);
 console.log(`Huérfanas (sin enlace desde otra página generada): ${huerfanas.length}${huerfanas.length ? "\n" + muestra(huerfanas, (r) => "  " + r) : ""}`);
 console.log(`Sitemap: ${enSitemap.size} URL · no existen: ${sitemapRoto.length} · faltan en el sitemap: ${faltanSitemap.length}` +
   (sitemapRoto.length + faltanSitemap.length ? "\n" + muestra(sitemapRoto.concat(faltanSitemap), (r) => "  " + r) : ""));
