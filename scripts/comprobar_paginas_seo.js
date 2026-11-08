@@ -38,12 +38,15 @@
      - la 404 (/404.html, que Vercel sirve en cualquier URL inexistente): que exista, lleve noindex y no canonical, no
        esté en el sitemap, sus enlaces sean absolutos y no estén rotos, y enlace a las provincias, al hub y a «abiertas hoy»;
        y que su «¿Buscabas…?» (#buscabas + <script id="buscabas-js">) exista y sugiera bien (se ejecuta con un DOM mínimo),
+     - fichas cuyo WebPage no lleva breadcrumb {"@id": "<ficha>#migas"}, sin BreadcrumbList con ese @id en la misma
+       página, o cuyo penúltimo elemento de las migas no es la url de su isPartOf (o el último no es la ficha),
      - JSON-LD que no se puede leer, y horarios especiales (specialOpeningHoursSpecification: verano y exámenes de las
        fichas) mal formados o con tramos por fecha que se solapan.
    Uso (desde la raíz del proyecto):  node scripts/comprobar_paginas_seo.js
    Sale con código 1 si hay enlaces rotos, títulos o descripciones repetidos, JSON-LD roto, horarios especiales mal o
    lastmod mal, una provincia o localidad con fichas sin ItemList, el índice sin su CollectionPage, un hasPart roto, una
-   temática, provincia, localidad, ficha, hub, sala de estudio, universidad o ciudad de exámenes sin su isPartOf o la 404 mal. */
+   temática, provincia, localidad, ficha, hub, sala de estudio, universidad o ciudad de exámenes sin su isPartOf o la 404 mal, o una ficha con
+   las migas sin enlazar o distintas de su isPartOf. */
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -96,6 +99,7 @@ const TEMAS_SLUG = new Set([...fs.readFileSync(path.join(__dirname, "generar_pag
 const cpDe = new Map(), volverDe = new Map(), isPartOfMal = [];
 const provsIndice = new Set(); // URL (sin dominio) de las provincias del ItemList del índice
 const wpDe = new Map(), idsListaDe = new Map(); // ruta → WebPage de la ficha · ruta → @id del mainEntity ItemList de su CollectionPage
+const migasDe = new Map(); // ruta → BreadcrumbList del JSON-LD de esa página (las migas)
 function existe(ruta) {
   const limpia = decodeURIComponent(ruta);
   const f = path.join(RAIZ, limpia);
@@ -128,6 +132,7 @@ for (const [ruta, h] of html) {
       compruebaEspeciales(ruta, x);
       if (x && x["@type"] === "CollectionPage" && !cpDe.has(ruta)) cpDe.set(ruta, x);
       if (x && x["@type"] === "WebPage" && x.about && !wpDe.has(ruta)) wpDe.set(ruta, x);
+      if (x && x["@type"] === "BreadcrumbList") (migasDe.get(ruta) || migasDe.set(ruta, []).get(ruta)).push(x);
       if (x && x["@type"] === "CollectionPage" && x.mainEntity && x.mainEntity["@type"] === "ItemList")
         idsListaDe.set(ruta, new Set((x.mainEntity.itemListElement || []).map((el) => el && el.item && el.item["@id"]).filter(Boolean)));
       if (x && x["@type"] === "Library" && x["@id"]) fichaDe.set(claveLib(x), x["@id"]);
@@ -274,6 +279,23 @@ for (const ruta of fichas) {
   if (!cpDe.get(u) || cpDe.get(u).name !== ip.name) isPartOfMal.push(`${ruta} (ficha) isPartOf «${ip.name}» distinto del name de ${u} («${cpDe.get(u) && cpDe.get(u).name}»)`);
   if (!(idsListaDe.get(u) || new Set()).has(DOMINIO + ruta + "#biblioteca")) nFichasFueraLista++;
   nFichaIsPartOf[lugarDe(u)]++;
+}
+// breadcrumb de las fichas: su WebPage lo enlaza por @id (<ficha>#migas) a un BreadcrumbList de la misma página cuyo
+// penúltimo elemento es la url de su isPartOf (localidad con página o provincia) y el último, la propia ficha.
+const migasMal = [];
+let nFichaMigas = 0;
+for (const ruta of fichas) {
+  const wp = wpDe.get(ruta), id = DOMINIO + ruta + "#migas";
+  if (!wp) continue; // ya cuenta en isPartOfMal
+  const bc = wp.breadcrumb, idWp = bc && bc["@id"];
+  if (idWp !== id) { migasMal.push(`${ruta} WebPage sin breadcrumb {"@id": "${id}"}${idWp ? ` (lleva ${idWp})` : ""}`); continue; }
+  const lista = (migasDe.get(ruta) || []).find((x) => x["@id"] === id);
+  if (!lista) { migasMal.push(`${ruta} breadcrumb ${id} sin BreadcrumbList con ese @id en la página`); continue; }
+  const el = lista.itemListElement || [], pen = el.length >= 2 && el[el.length - 2].item, ult = el.length && el[el.length - 1].item;
+  const sup = (wp.isPartOf || {}).url;
+  if (!sup || pen !== sup) { migasMal.push(`${ruta} penúltimo de las migas ${pen || "falta"} distinto del isPartOf ${sup || "falta"}`); continue; }
+  if (ult !== DOMINIO + ruta) { migasMal.push(`${ruta} último de las migas ${ult || "falta"} no es la ficha`); continue; }
+  nFichaMigas++;
 }
 for (const [ruta, ids] of idsListaDe) {
   const tipo = lugarDe(ruta);
@@ -453,10 +475,11 @@ console.log(`Lugares con fichas y mainEntity ItemList: provincias ${nLugarLista.
 console.log(`Índice /bibliotecas/: CollectionPage ${indiceCP ? "sí" : "NO"} · provincias en su ItemList: ${nIndiceProvs} · mal: ${indiceMal.length}${indiceMal.length ? "\n" + muestra(indiceMal, (r) => "  " + r) : ""}`);
 console.log(`hasPart: ${nHasPart} en ${nPagHasPart} páginas (temáticas que enlazan sus partes: ${nTemasPartes}) · rotos o sin enlace en el HTML: ${hasPartMal.length}${hasPartMal.length ? "\n" + muestra(hasPartMal, (r) => "  " + r) : ""}`);
 console.log(`Temáticas: España ${nTemas.España} · provincia ${nTemas.provincia} · localidad ${nTemas.localidad} · con isPartOf bien: España ${nIsPartOf.España} · provincia ${nIsPartOf.provincia} · localidad ${nIsPartOf.localidad} · lugares con isPartOf bien: provincias ${nLugarIsPartOf.provincia} · localidades ${nLugarIsPartOf.localidad} · fichas con isPartOf bien: a su localidad ${nFichaIsPartOf.localidad} · a su provincia ${nFichaIsPartOf.provincia} (fuera del ItemList de esa página: ${nFichasFueraLista}) · con isPartOf a su hub bien: ${Object.entries(nHubIsPartOf).map(([t, n]) => `${t} ${n}`).join(" · ")} · hubs con isPartOf al índice bien: ${nHubsIndice} · mal: ${isPartOfMal.length}${isPartOfMal.length ? "\n" + muestra(isPartOfMal, (r) => "  " + r) : ""}`);
+console.log(`Migas de las fichas (breadcrumb del WebPage → BreadcrumbList #migas, penúltimo = isPartOf): ${nFichaMigas} de ${fichas.size} bien · mal: ${migasMal.length}${migasMal.length ? "\n" + muestra(migasMal, (r) => "  " + r) : ""}`);
 console.log(`Huérfanas (sin enlace desde otra página generada): ${huerfanas.length}${huerfanas.length ? "\n" + muestra(huerfanas, (r) => "  " + r) : ""}`);
 console.log(`Sitemap: ${enSitemap.size} URL · no existen: ${sitemapRoto.length} · faltan en el sitemap: ${faltanSitemap.length}` +
   (sitemapRoto.length + faltanSitemap.length ? "\n" + muestra(sitemapRoto.concat(faltanSitemap), (r) => "  " + r) : ""));
 console.log(`Lastmod: ${[...lastmodN].sort().map(([d, n]) => `${d} ×${n}`).join(", ")} · mal (falta, formato, futuro o < dateModified): ${lastmodMal.length}` +
   (lastmodMal.length ? "\n" + muestra(lastmodMal, (r) => "  " + r) : ""));
 console.log(`404: ${n404} enlaces internos · provincias enlazadas: ${n404Prov} · «¿Buscabas…?» ${n404Busca} casos ok · slugs-404: ${n404Slugs} rutas ok · mal: ${mal404.length}${mal404.length ? "\n" + muestra(mal404, (r) => "  " + r) : ""}`);
-if (indiceMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
+if (migasMal.length || indiceMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);

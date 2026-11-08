@@ -197,11 +197,12 @@ function itemBib(b) {
 // noindex (la 404): sin canonical ni og:url (se sirve en cualquier URL inexistente), con <meta name="robots" content="noindex">
 // y sin BreadcrumbList; todos los enlaces son absolutos (/…) para que funcionen desde cualquier ruta.
 // trasH1: HTML opcional entre el <h1> y la intro (la 404 pone ahí su «¿Buscabas…?»).
+// migasId: @id opcional del BreadcrumbList (las fichas, <ficha>#migas, para enlazarlo desde su WebPage con breadcrumb).
 const h1De = new Map(); // ruta → h1 (texto plano): de aquí salen los textos de «¿Buscabas…?» en la 404
-function pagina({ ruta, titulo, descripcion, h1, intro, cuerpo, migas, ld, cta, head, noindex, trasH1 }) {
+function pagina({ ruta, titulo, descripcion, h1, intro, cuerpo, migas, migasId, ld, cta, head, noindex, trasH1 }) {
   const url = DOMINIO + ruta;
   h1De.set(ruta, h1);
-  const migasLD = { "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: migas.map((x, k) => ({ "@type": "ListItem", position: k + 1, name: x[0], item: DOMINIO + x[1] })) };
+  const migasLD = { "@context": "https://schema.org", ...(migasId ? { "@id": migasId } : {}), "@type": "BreadcrumbList", itemListElement: migas.map((x, k) => ({ "@type": "ListItem", position: k + 1, name: x[0], item: DOMINIO + x[1] })) };
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -1111,7 +1112,7 @@ function paginaBiblioteca(b) {
   // distingue dos sedes con el mismo nombre por su dirección y nunca repite una descripción).
   const colaEx = ex.length ? `Exámenes: horario ampliado del ${fechaEs(ex[0].e.desde).slice(0, 5)} al ${fechaEs(ex[0].e.hasta)}.` : "";
   const descripcion = descripcionBiblioteca(b, [resumen].concat(ok && !resumen.includes(" el ") ? [`Horario verificado el ${fechaEs(b.h.fv)}.`] : []), colaEx);
-  const idBib = DOMINIO + ruta + "#biblioteca";
+  const idBib = DOMINIO + ruta + "#biblioteca", idMigas = DOMINIO + ruta + "#migas";
   // isPartOf del WebPage: la página que ya enlaza su <p class="volver"> (su localidad si tiene página; si no, su
   // provincia), con el mismo name que su CollectionPage. Es la otra mitad de su mainEntity ItemList, donde la ficha está.
   const rutaSup = locConPagina ? `/bibliotecas/${ps}/${slug(b.c)}/` : `/bibliotecas/${ps}/`;
@@ -1128,12 +1129,13 @@ ${fq ? fq.html : ""}
 ${cercanas.length ? `<section class="cerca" aria-labelledby="t-cerca"><h2 id="t-cerca">Otras bibliotecas en ${esc(b.c)}</h2><ul>${lisCerca}</ul></section>` : ""}${secVerif ? "\n" + secVerif : ""}
 ${seccionTemasFicha(b, locConPagina)}
 <p class="volver"><a href="${rutaSup}">← Todas las bibliotecas de ${esc(locConPagina ? b.c : b.p)}</a>${locConPagina ? ` · <a href="/bibliotecas/${ps}/">${esc(b.p)}</a>` : ""}</p>`,
-    migas,
+    // Las migas llevan @id y el WebPage las enlaza con breadcrumb: su penúltimo elemento es rutaSup, el mismo isPartOf.
+    migas, migasId: idMigas,
     // Library no admite dateModified: va en el WebPage que la describe (fecha = verificación del horario).
     // Horarios especiales (verano verificado y exámenes con `semana`) en specialOpeningHoursSpecification con sus fechas.
     ld: [{ "@context": "https://schema.org", "@id": idBib, ...libraryLD(b, DOMINIO + ruta), ...(especiales.length ? { specialOpeningHoursSpecification: especiales } : {}) },
       { "@context": "https://schema.org", "@type": "WebPage", name: titulo.replace(MARCA, ""), description: descripcion, url: DOMINIO + ruta,
-        inLanguage: "es-ES", ...parteDe, about: { "@id": idBib }, ...(mod ? { dateModified: mod } : {}) }, ...(fq ? [fq.ld] : [])],
+        inLanguage: "es-ES", ...parteDe, breadcrumb: { "@id": idMigas }, about: { "@id": idBib }, ...(mod ? { dateModified: mod } : {}) }, ...(fq ? [fq.ld] : [])],
   }));
   if (especiales.length) nFichasEspeciales++;
   if (tieneVerano(b)) nFichasVerano++;
