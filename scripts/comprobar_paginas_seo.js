@@ -46,6 +46,8 @@
        y en los hubs (horarios, universidades, exámenes y salas de estudio), las universidades y las ciudades de
        exámenes y las salas de estudio de provincia y localidad, con el penúltimo igual a la url de su isPartOf (el
        índice; su hub). Falla con cualquier BreadcrumbList suelto (sin @id <ruta>#migas o sin breadcrumb que lo enlace).
+     - fichas cuyo WebPage no lleva @id <ficha>#pagina y about {"@id": "<ficha>#biblioteca"}, sin Library con ese @id
+       en la misma página, o cuya Library no lo devuelve con mainEntityOfPage {"@id": "<ficha>#pagina"} (recíprocos).
 
      - JSON-LD que no se puede leer, y horarios especiales (specialOpeningHoursSpecification: verano y exámenes de las
        fichas) mal formados o con tramos por fecha que se solapan.
@@ -107,6 +109,7 @@ const cpDe = new Map(), volverDe = new Map(), isPartOfMal = [];
 const provsIndice = new Set(); // URL (sin dominio) de las provincias del ItemList del índice
 const wpDe = new Map(), idsListaDe = new Map(); // ruta → WebPage de la ficha · ruta → @id del mainEntity ItemList de su CollectionPage
 const migasDe = new Map(); // ruta → BreadcrumbList del JSON-LD de esa página (las migas)
+const libDe = new Map(); // ruta de la ficha → su Library de nivel superior (@id <ficha>#biblioteca)
 function existe(ruta) {
   const limpia = decodeURIComponent(ruta);
   const f = path.join(RAIZ, limpia);
@@ -143,6 +146,7 @@ for (const [ruta, h] of html) {
       if (x && x["@type"] === "CollectionPage" && x.mainEntity && x.mainEntity["@type"] === "ItemList")
         idsListaDe.set(ruta, new Set((x.mainEntity.itemListElement || []).map((el) => el && el.item && el.item["@id"]).filter(Boolean)));
       if (x && x["@type"] === "Library" && x["@id"]) fichaDe.set(claveLib(x), x["@id"]);
+      if (x && x["@type"] === "Library" && x["@id"] === DOMINIO + ruta + "#biblioteca" && !libDe.has(ruta)) libDe.set(ruta, x);
       const lista = x && (x["@type"] === "ItemList" ? x : x.mainEntity && x.mainEntity["@type"] === "ItemList" ? x.mainEntity : null);
       if (x && x["@type"] === "CollectionPage" && lugares.has(ruta) && x.mainEntity && x.mainEntity["@type"] === "ItemList" && (x.mainEntity.itemListElement || []).length) lugares.get(ruta).lista = true;
       if (lista) (lista.itemListElement || []).forEach((el) => el && el.item && el.item["@type"] === "Library" && itemsLista.push([ruta, el.item]));
@@ -303,6 +307,21 @@ for (const ruta of fichas) {
   if (!sup || pen !== sup) { migasMal.push(`${ruta} penúltimo de las migas ${pen || "falta"} distinto del isPartOf ${sup || "falta"}`); continue; }
   if (ult !== DOMINIO + ruta) { migasMal.push(`${ruta} último de las migas ${ult || "falta"} no es la ficha`); continue; }
   nFichaMigas++;
+}
+// mainEntityOfPage de las fichas: su WebPage lleva @id <ficha>#pagina y about {"@id": "<ficha>#biblioteca"}, y la
+// Library con ese @id, en la misma página, lo devuelve con mainEntityOfPage {"@id": "<ficha>#pagina"}: se apuntan entre sí.
+const mainEntityMal = [];
+let nFichaMainEntity = 0;
+for (const ruta of fichas) {
+  const wp = wpDe.get(ruta), idPag = DOMINIO + ruta + "#pagina", idBib = DOMINIO + ruta + "#biblioteca";
+  if (!wp) continue; // ya cuenta en isPartOfMal
+  if (wp["@id"] !== idPag) { mainEntityMal.push(`${ruta} WebPage sin @id ${idPag}${wp["@id"] ? ` (lleva ${wp["@id"]})` : ""}`); continue; }
+  if ((wp.about || {})["@id"] !== idBib) { mainEntityMal.push(`${ruta} about del WebPage ${(wp.about || {})["@id"] || "falta"} (esperado ${idBib})`); continue; }
+  const lib = libDe.get(ruta);
+  if (!lib) { mainEntityMal.push(`${ruta} sin Library con @id ${idBib} en la página`); continue; }
+  const me = lib.mainEntityOfPage && lib.mainEntityOfPage["@id"];
+  if (me !== idPag) { mainEntityMal.push(`${ruta} Library sin mainEntityOfPage {"@id": "${idPag}"}${me ? ` (lleva ${me})` : ""}`); continue; }
+  nFichaMainEntity++;
 }
 // breadcrumb de provincias, localidades y temáticas de provincia y de localidad: su CollectionPage lo enlaza por @id
 // (<ruta>#migas) a un BreadcrumbList de la misma página cuyo último elemento es la propia página. Penúltimo: en
@@ -545,10 +564,11 @@ console.log(`Índice /bibliotecas/: CollectionPage ${indiceCP ? "sí" : "NO"} ·
 console.log(`hasPart: ${nHasPart} en ${nPagHasPart} páginas (temáticas que enlazan sus partes: ${nTemasPartes}) · rotos o sin enlace en el HTML: ${hasPartMal.length}${hasPartMal.length ? "\n" + muestra(hasPartMal, (r) => "  " + r) : ""}`);
 console.log(`Temáticas: España ${nTemas.España} · provincia ${nTemas.provincia} · localidad ${nTemas.localidad} · con isPartOf bien: España ${nIsPartOf.España} · provincia ${nIsPartOf.provincia} · localidad ${nIsPartOf.localidad} · lugares con isPartOf bien: provincias ${nLugarIsPartOf.provincia} · localidades ${nLugarIsPartOf.localidad} · fichas con isPartOf bien: a su localidad ${nFichaIsPartOf.localidad} · a su provincia ${nFichaIsPartOf.provincia} (fuera del ItemList de esa página: ${nFichasFueraLista}) · con isPartOf a su hub bien: ${Object.entries(nHubIsPartOf).map(([t, n]) => `${t} ${n}`).join(" · ")} · hubs con isPartOf al índice bien: ${nHubsIndice} · mal: ${isPartOfMal.length}${isPartOfMal.length ? "\n" + muestra(isPartOfMal, (r) => "  " + r) : ""}`);
 console.log(`Migas de las fichas (breadcrumb del WebPage → BreadcrumbList #migas, penúltimo = isPartOf): ${nFichaMigas} de ${fichas.size} bien · índice, provincias, localidades y temáticas (breadcrumb del CollectionPage → #migas): ${Object.entries(nLugarMigas).map(([t, n]) => `${t} ${n}`).join(" · ")} (temáticas con penúltimo ≠ isPartOf, solo contadas: ${nTemaMigasDistintoIsPartOf}) · hubs, salas de estudio, universidades y exámenes (penúltimo = isPartOf): ${Object.entries(nHubMigas).map(([t, n]) => `${t} ${n}`).join(" · ")} · BreadcrumbList sueltas (sin @id <ruta>#migas enlazado: fallo): ${nMigasSueltas}${nMigasSueltas ? ` (${Object.entries(migasSueltas).map(([t, n]) => `${t} ${n}`).join(" · ")})` : ""} · mal: ${migasMal.length}${migasMal.length ? "\n" + muestra(migasMal, (r) => "  " + r) : ""}`);
+console.log(`mainEntityOfPage de las fichas (WebPage #pagina about Library #biblioteca y Library mainEntityOfPage → #pagina): ${nFichaMainEntity} de ${fichas.size} bien · mal: ${mainEntityMal.length}${mainEntityMal.length ? "\n" + muestra(mainEntityMal, (r) => "  " + r) : ""}`);
 console.log(`Huérfanas (sin enlace desde otra página generada): ${huerfanas.length}${huerfanas.length ? "\n" + muestra(huerfanas, (r) => "  " + r) : ""}`);
 console.log(`Sitemap: ${enSitemap.size} URL · no existen: ${sitemapRoto.length} · faltan en el sitemap: ${faltanSitemap.length}` +
   (sitemapRoto.length + faltanSitemap.length ? "\n" + muestra(sitemapRoto.concat(faltanSitemap), (r) => "  " + r) : ""));
 console.log(`Lastmod: ${[...lastmodN].sort().map(([d, n]) => `${d} ×${n}`).join(", ")} · mal (falta, formato, futuro o < dateModified): ${lastmodMal.length}` +
   (lastmodMal.length ? "\n" + muestra(lastmodMal, (r) => "  " + r) : ""));
 console.log(`404: ${n404} enlaces internos · provincias enlazadas: ${n404Prov} · «¿Buscabas…?» ${n404Busca} casos ok · slugs-404: ${n404Slugs} rutas ok · mal: ${mal404.length}${mal404.length ? "\n" + muestra(mal404, (r) => "  " + r) : ""}`);
-if (migasMal.length || indiceMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
+if (migasMal.length || mainEntityMal.length || indiceMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);

@@ -1122,7 +1122,7 @@ function paginaBiblioteca(b) {
   // distingue dos sedes con el mismo nombre por su dirección y nunca repite una descripción).
   const colaEx = ex.length ? `Exámenes: horario ampliado del ${fechaEs(ex[0].e.desde).slice(0, 5)} al ${fechaEs(ex[0].e.hasta)}.` : "";
   const descripcion = descripcionBiblioteca(b, [resumen].concat(ok && !resumen.includes(" el ") ? [`Horario verificado el ${fechaEs(b.h.fv)}.`] : []), colaEx);
-  const idBib = DOMINIO + ruta + "#biblioteca", idMigas = DOMINIO + ruta + "#migas";
+  const idBib = DOMINIO + ruta + "#biblioteca", idMigas = DOMINIO + ruta + "#migas", idPag = DOMINIO + ruta + "#pagina";
   // isPartOf del WebPage: la página que ya enlaza su <p class="volver"> (su localidad si tiene página; si no, su
   // provincia), con el mismo name que su CollectionPage. Es la otra mitad de su mainEntity ItemList, donde la ficha está.
   const rutaSup = locConPagina ? `/bibliotecas/${ps}/${slug(b.c)}/` : `/bibliotecas/${ps}/`;
@@ -1143,8 +1143,9 @@ ${seccionTemasFicha(b, locConPagina)}
     migas, migasId: idMigas,
     // Library no admite dateModified: va en el WebPage que la describe (fecha = verificación del horario).
     // Horarios especiales (verano verificado y exámenes con `semana`) en specialOpeningHoursSpecification con sus fechas.
-    ld: [{ "@context": "https://schema.org", "@id": idBib, ...libraryLD(b, DOMINIO + ruta), ...(especiales.length ? { specialOpeningHoursSpecification: especiales } : {}) },
-      { "@context": "https://schema.org", "@type": "WebPage", name: titulo.replace(MARCA, ""), description: descripcion, url: DOMINIO + ruta,
+    // WebPage (@id <ficha>#pagina) y Library (@id <ficha>#biblioteca) se apuntan entre sí: about y mainEntityOfPage.
+    ld: [{ "@context": "https://schema.org", "@id": idBib, ...libraryLD(b, DOMINIO + ruta), ...(especiales.length ? { specialOpeningHoursSpecification: especiales } : {}), mainEntityOfPage: { "@id": idPag } },
+      { "@context": "https://schema.org", "@id": idPag, "@type": "WebPage", name: titulo.replace(MARCA, ""), description: descripcion, url: DOMINIO + ruta,
         inLanguage: "es-ES", ...parteDe, breadcrumb: { "@id": idMigas }, about: { "@id": idBib }, ...(mod ? { dateModified: mod } : {}) }, ...(fq ? [fq.ld] : [])],
   }));
   if (especiales.length) nFichasEspeciales++;
