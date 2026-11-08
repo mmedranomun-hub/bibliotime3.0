@@ -39,7 +39,9 @@
        esté en el sitemap, sus enlaces sean absolutos y no estén rotos, y enlace a las provincias, al hub y a «abiertas hoy»;
        y que su «¿Buscabas…?» (#buscabas + <script id="buscabas-js">) exista y sugiera bien (se ejecuta con un DOM mínimo),
      - fichas cuyo WebPage no lleva breadcrumb {"@id": "<ficha>#migas"}, sin BreadcrumbList con ese @id en la misma
-       página, o cuyo penúltimo elemento de las migas no es la url de su isPartOf (o el último no es la ficha),
+       página, o cuyo penúltimo elemento de las migas no es la url de su isPartOf (o el último no es la ficha); y lo
+       mismo en provincias, localidades y temáticas de provincia y de localidad (breadcrumb en su CollectionPage), con
+       el penúltimo igual al isPartOf en provincias y localidades y al primer enlace de su «volver» en las temáticas,
      - JSON-LD que no se puede leer, y horarios especiales (specialOpeningHoursSpecification: verano y exámenes de las
        fichas) mal formados o con tramos por fecha que se solapan.
    Uso (desde la raíz del proyecto):  node scripts/comprobar_paginas_seo.js
@@ -297,6 +299,28 @@ for (const ruta of fichas) {
   if (ult !== DOMINIO + ruta) { migasMal.push(`${ruta} último de las migas ${ult || "falta"} no es la ficha`); continue; }
   nFichaMigas++;
 }
+// breadcrumb de provincias, localidades y temáticas de provincia y de localidad: su CollectionPage lo enlaza por @id
+// (<ruta>#migas) a un BreadcrumbList de la misma página cuyo último elemento es la propia página. Penúltimo: en
+// provincias y localidades, la url de su isPartOf (el índice; su provincia); en las temáticas, el primer enlace de su
+// «volver» (su localidad o provincia: las migas siguen el lugar y el isPartOf la temática superior, así que ahí no
+// coinciden y solo se cuentan).
+const nLugarMigas = { provincia: 0, localidad: 0, "temática de provincia": 0, "temática de localidad": 0 };
+let nTemaMigasDistintoIsPartOf = 0;
+for (const ruta of html.keys()) {
+  const n = nivelTema(ruta), tipo = n ? (n.nivel === "España" ? null : `temática de ${n.nivel}`) : lugarDe(ruta), cp = cpDe.get(ruta);
+  if (!tipo || !cp) continue;
+  const id = DOMINIO + ruta + "#migas", idCp = cp.breadcrumb && cp.breadcrumb["@id"];
+  if (idCp !== id) { migasMal.push(`${ruta} (${tipo}) CollectionPage sin breadcrumb {"@id": "${id}"}${idCp ? ` (lleva ${idCp})` : ""}`); continue; }
+  const lista = (migasDe.get(ruta) || []).find((x) => x["@id"] === id);
+  if (!lista) { migasMal.push(`${ruta} (${tipo}) breadcrumb ${id} sin BreadcrumbList con ese @id en la página`); continue; }
+  const el = lista.itemListElement || [], pen = el.length >= 2 && el[el.length - 2].item, ult = el.length && el[el.length - 1].item;
+  const sup = (cp.isPartOf || {}).url, volver = [...(volverDe.get(ruta) || [])][0];
+  const esperado = n ? volver && DOMINIO + volver : sup;
+  if (n && pen !== sup) nTemaMigasDistintoIsPartOf++;
+  if (!esperado || pen !== esperado) { migasMal.push(`${ruta} (${tipo}) penúltimo de las migas ${pen || "falta"} distinto ${n ? "del primer enlace de su «volver»" : "del isPartOf"} ${esperado || "falta"}`); continue; }
+  if (ult !== DOMINIO + ruta) { migasMal.push(`${ruta} (${tipo}) último de las migas ${ult || "falta"} no es la página`); continue; }
+  nLugarMigas[tipo]++;
+}
 for (const [ruta, ids] of idsListaDe) {
   const tipo = lugarDe(ruta);
   if (!tipo) continue;
@@ -475,7 +499,7 @@ console.log(`Lugares con fichas y mainEntity ItemList: provincias ${nLugarLista.
 console.log(`Índice /bibliotecas/: CollectionPage ${indiceCP ? "sí" : "NO"} · provincias en su ItemList: ${nIndiceProvs} · mal: ${indiceMal.length}${indiceMal.length ? "\n" + muestra(indiceMal, (r) => "  " + r) : ""}`);
 console.log(`hasPart: ${nHasPart} en ${nPagHasPart} páginas (temáticas que enlazan sus partes: ${nTemasPartes}) · rotos o sin enlace en el HTML: ${hasPartMal.length}${hasPartMal.length ? "\n" + muestra(hasPartMal, (r) => "  " + r) : ""}`);
 console.log(`Temáticas: España ${nTemas.España} · provincia ${nTemas.provincia} · localidad ${nTemas.localidad} · con isPartOf bien: España ${nIsPartOf.España} · provincia ${nIsPartOf.provincia} · localidad ${nIsPartOf.localidad} · lugares con isPartOf bien: provincias ${nLugarIsPartOf.provincia} · localidades ${nLugarIsPartOf.localidad} · fichas con isPartOf bien: a su localidad ${nFichaIsPartOf.localidad} · a su provincia ${nFichaIsPartOf.provincia} (fuera del ItemList de esa página: ${nFichasFueraLista}) · con isPartOf a su hub bien: ${Object.entries(nHubIsPartOf).map(([t, n]) => `${t} ${n}`).join(" · ")} · hubs con isPartOf al índice bien: ${nHubsIndice} · mal: ${isPartOfMal.length}${isPartOfMal.length ? "\n" + muestra(isPartOfMal, (r) => "  " + r) : ""}`);
-console.log(`Migas de las fichas (breadcrumb del WebPage → BreadcrumbList #migas, penúltimo = isPartOf): ${nFichaMigas} de ${fichas.size} bien · mal: ${migasMal.length}${migasMal.length ? "\n" + muestra(migasMal, (r) => "  " + r) : ""}`);
+console.log(`Migas de las fichas (breadcrumb del WebPage → BreadcrumbList #migas, penúltimo = isPartOf): ${nFichaMigas} de ${fichas.size} bien · provincias, localidades y temáticas (breadcrumb del CollectionPage → #migas): ${Object.entries(nLugarMigas).map(([t, n]) => `${t} ${n}`).join(" · ")} (temáticas con penúltimo ≠ isPartOf, solo contadas: ${nTemaMigasDistintoIsPartOf}) · mal: ${migasMal.length}${migasMal.length ? "\n" + muestra(migasMal, (r) => "  " + r) : ""}`);
 console.log(`Huérfanas (sin enlace desde otra página generada): ${huerfanas.length}${huerfanas.length ? "\n" + muestra(huerfanas, (r) => "  " + r) : ""}`);
 console.log(`Sitemap: ${enSitemap.size} URL · no existen: ${sitemapRoto.length} · faltan en el sitemap: ${faltanSitemap.length}` +
   (sitemapRoto.length + faltanSitemap.length ? "\n" + muestra(sitemapRoto.concat(faltanSitemap), (r) => "  " + r) : ""));
