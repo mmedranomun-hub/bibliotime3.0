@@ -169,5 +169,49 @@ window.TEMPORADA_EXAMENES = [
     horario: "lunes a viernes de 8:00 a 0:00; sábados, domingos y festivos 6 y 8 dic, de 9:00 a 21:00",
     nota: "En exámenes (16 nov-6 feb) el acceso queda restringido a estudiantes de Esade y de la Universitat Ramon Llull.",
     f: "https://esade.edu/ca/biblioteca/coneix-nos/horaris", fv: "2026-11-02"
+  },
+  // UPM, misma página que Campus Sur y Agronómica («diciembre de 2026» y «enero de 2027», act. 03-09-2026): otras tres
+  // bibliotecas con apertura extraordinaria. No están en el mapa (`bib: null`). Solo sala de lectura, con reserva
+  // previa en #AccedeUPM y solo para estudiantes UPM; todas cerradas 24, 25 y 31 dic y 1, 6 y 28 ene.
+  {
+    ciudad: "Madrid", provincia: "Madrid",
+    espacio: "Biblioteca de la ETSI Industriales · UPM (Paseo de la Castellana)",
+    bib: null,
+    desde: "2026-12-05", hasta: "2027-01-24",
+    horario: "abre también, de 9:00 a 21:30, el 5-8, 12-13, 19-20, 23 y 26-30 dic y el 2-5, 9-10, 16-17 y 23-24 ene; cerrada 24, 25 y 31 dic y 1 y 6 ene",
+    nota: "Solo sala de lectura, con reserva previa de puesto en #AccedeUPM; solo estudiantes de la UPM.",
+    f: "https://www.upm.es/UPM/Biblioteca/ServiciosUsuario/HorarioAmpliado/ArticulosRelacionados", fv: "2026-11-08"
+  },
+  {
+    ciudad: "Madrid", provincia: "Madrid",
+    espacio: "Biblioteca de la ETSI Aeronáutica y del Espacio · UPM (Ciudad Universitaria)",
+    bib: null,
+    desde: "2026-12-05", hasta: "2027-01-24",
+    horario: "abre también, de 9:00 a 21:30, el 5-8, 12-13 y 19-20 dic y el 9-10, 16-17 y 23-24 ene",
+    nota: "Solo sala de lectura, con reserva previa de puesto en #AccedeUPM; solo estudiantes de la UPM.",
+    f: "https://www.upm.es/UPM/Biblioteca/ServiciosUsuario/HorarioAmpliado/ArticulosRelacionados", fv: "2026-11-08"
+  },
+  {
+    ciudad: "Madrid", provincia: "Madrid",
+    espacio: "Biblioteca de la ETSI de Telecomunicación · UPM (Ciudad Universitaria)",
+    bib: null,
+    desde: "2026-12-05", hasta: "2027-01-31",
+    horario: "abre también, de 9:00 a 21:30, el 5-8, 12-13 y 19-20 dic y el 9-10, 16-17, 23-24 y 30-31 ene (fines de semana, todos los servicios de 9:00 a 15:00 y solo sala de lectura de 15:00 a 21:30)",
+    nota: "Reserva previa de puesto en #AccedeUPM; solo estudiantes de la UPM.",
+    f: "https://www.upm.es/UPM/Biblioteca/ServiciosUsuario/HorarioAmpliado/ArticulosRelacionados", fv: "2026-11-08"
+  },
+  // UIB: página «Horaris» de la biblioteca, ya con el curso 2026-27 («23, 28, 29 i 30 de desembre de 2026, i els dies
+  // 4 i 5 de gener de 2027»; Pasqua 30 mar-2 abr). Los fines de semana de exámenes de enero («9-10, 16-17, 23-24 i
+  // 30-31 de gener») no llevan año, pero son sábado-domingo en 2027 (en 2026 caían en viernes-sábado). Edificio
+  // Ramon Llull, campus de la carretera de Valldemossa (Palma). En el mapa solo hay «Biblioteca de la UIB» con un punto
+  // en el centro de Palma, no en el campus: `bib: null`.
+  {
+    ciudad: "Palma", provincia: "Baleares",
+    espacio: "Biblioteca de l'edifici Ramon Llull · Universitat de les Illes Balears (campus de Palma)",
+    bib: null,
+    desde: "2027-01-09", hasta: "2027-01-31",
+    horario: "abre también los fines de semana 9-10, 16-17, 23-24 y 30-31 ene, de 8:30 a 20:30",
+    nota: "Esos fines de semana hay préstamo de portátiles, pero no de libros ni devoluciones. En Navidad (23 y 28-30 dic, 4-5 ene) abre solo de 8:30 a 14:30.",
+    f: "https://biblioteca.uib.cat/ca/espais-i-horaris/horaris", fv: "2026-11-08"
   }
 ];
