@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-11-08 02:43",
+  "fecha": "2026-11-08 03:38",
   "pruebas": {
     "arranca: datos y vistas": true,
     "marca España (sin «Navarra» en la cabecera)": true,
@@ -23,6 +23,7 @@
     "🧊 dice cuántos tienes: el toast de la racha añade «· ya tienes el máximo (3)» al llegar a 3 y el cofre con 🧊 dice «Ya tienes N de 3» en --suave": true,
     "las 🌰 de las misiones y del cofre vuelan al marcador (una vez; con reducir movimiento, solo la cifra)": true,
     "la misión de minutos cumplida con «Misiones de hoy» a la vista termina de llenar su barra (~90 % → 100 %, .8 s) antes del ✅; fuera de la vista o con reducir movimiento, salto directo": true,
+    "mientras la barra de la misión de minutos termina de llenarse, su contador sube con ella (22m → 25m, cifras tabulares, sin intervalos) y el toast «Misión cumplida» espera al ✅; con reducir movimiento, cifra final y toast al momento": true,
     "el 🧊 del cofre vuela a la pastilla de la racha al cerrar la ventana (una vez, tras las 🌰; con reducir movimiento, solo la cifra)": true,
     "cuando un 🧊 salva la racha, la pastilla enseña «🧊 ✓» un instante en azul calmado (sin hablar del día perdido; con reducir movimiento, quieta)": true,
     "tocar la insignia «🧊 N» abre la racha con «🧊 Congeladores» resaltada 1 s con borde --acento (botón accesible de 44 px; con reducir movimiento, sin transición)": true,
@@ -55,13 +56,13 @@
     "atajos de la app instalada (#accion=estudiar|ahora|pronto)": true
   },
   "errores_js": [],
-  "carga_ms_cpu4x": 683,
+  "carga_ms_cpu4x": 720,
   "carga_ms_cpu4x_min_max": [
-    604,
-    751
+    669,
+    764
   ],
-  "primera_pintura_ms_cpu4x": 192,
-  "todas_las_chinchetas_ms_cpu4x": 693,
+  "primera_pintura_ms_cpu4x": 160,
+  "todas_las_chinchetas_ms_cpu4x": 727,
   "markercluster": {
     "cargado": false,
     "agrupa": false,
@@ -71,26 +72,26 @@
   },
   "datos": {
     "bibliotecas": 2616,
-    "con_horario_verificado": 609,
+    "con_horario_verificado": 617,
     "provincias_con_horario": 51,
     "provincias_total": 51
   },
   "seo": {
-    "paginas": 1017,
+    "paginas": 1028,
     "sitemap": true
   },
   "peso": {
     "index.html": {
-      "kb": 133.8,
+      "kb": 133.9,
       "kb_gzip": 30.1
     },
     "app.js": {
-      "kb": 304.7,
-      "kb_gzip": 90.3
+      "kb": 305.6,
+      "kb_gzip": 90.7
     },
     "bibliotecas-espana.js": {
-      "kb": 814.2,
-      "kb_gzip": 199.7
+      "kb": 819.4,
+      "kb_gzip": 200.8
     }
   },
   "ok": true
