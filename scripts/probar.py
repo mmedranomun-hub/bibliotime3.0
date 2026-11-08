@@ -643,6 +643,32 @@ PRUEBAS = [
         if(document.querySelector('#modalRoot .rs-huecos').getAttribute('aria-label')!=='2 de 3 congeladores')return 'con 2 cambia el aria-label';
         return true;
       }finally{clearTimeout(abrirRacha.t);k.forEach(x=>DATA[x]=o[x]);closeModal();}"""),
+    ("tras el 🧊 del cofre, tocar su insignia «🧊 N» abre la racha y el hueco recién llenado (el último i.lleno) rebota una vez con svRebote; desde «🧊 ✓» o la pastilla, quieto; con reducir movimiento, sin animación", """
+      await cargarExtra();
+      var k=['streakFreezes'],o={};k.forEach(x=>o[x]=DATA[x]);
+      var espera=ms=>new Promise(r=>setTimeout(r,ms)),sm=window.sinMovimiento;
+      var limpia=()=>document.querySelectorAll('.pill-hielo,.hielo-vuela').forEach(x=>x.remove());
+      try{
+        closeModal();goView('study');while(VUELO.t||VUELO.n||VUELO.h)await espera(250);limpia();
+        window.sinMovimiento=()=>false;DATA.streakFreezes=2;renderRacha();volarHielo(null,0);
+        var b=null;for(var i=0;i<30&&!b;i++){await espera(100);b=document.querySelector('.pill-hielo');}
+        if(!b)return 'el 🧊 no llega a la pastilla';
+        b.click();await espera(50);
+        var z=document.querySelector('#modalRoot .rs-huecos'),ll=z&&z.querySelectorAll('i.lleno'),nv=z&&z.querySelectorAll('.rs-nuevo');
+        if(!z||ll.length!==2||nv.length!==1||nv[0]!==ll[1])return 'no rebota el último hueco lleno';
+        var e=getComputedStyle(nv[0]);
+        if(e.animationName!=='svRebote'||e.animationIterationCount!=='1')return 'animación: '+e.animationName+' × '+e.animationIterationCount;
+        var rm=[].some.call(document.styleSheets,sh=>{try{return [].some.call(sh.cssRules,x=>x.media&&/reduced-motion/.test(x.media.mediaText)&&/rs-nuevo[^}]*animation[^;}]*none/.test(x.cssText));}catch(e){return false;}});
+        if(!rm)return 'sin regla de reducir movimiento para el rebote';
+        if(!document.querySelector('#modalRoot .rs-hielo.rs-foco'))return 'rompe el resaltado de la casilla';
+        closeModal();abrirRacha();
+        if(document.querySelector('#modalRoot .rs-nuevo'))return 'rebota al abrir la racha desde la pastilla';
+        closeModal();limpia();hieloSalva();b=document.querySelector('.pill-hielo');
+        if(!b)return 'sin insignia «🧊 ✓»';
+        b.click();await espera(50);
+        if(document.querySelector('#modalRoot .rs-nuevo'))return 'rebota desde «🧊 ✓» (no se ha ganado ninguno)';
+        return true;
+      }finally{window.sinMovimiento=sm;clearTimeout(abrirRacha.t);k.forEach(x=>DATA[x]=o[x]);closeModal();limpia();renderRacha();}"""),
     ("barrita de misiones bajo el cronómetro: «🎯 2/3 misiones · la siguiente en 7 min» solo si falta ≤ 15 min de una misión de minutos", """
       var k=['misiones','sessions','acciones'],o={};k.forEach(x=>o[x]=DATA[x]);
       var t0={running:studyTimer.running,start:studyTimer.start,bibIndex:studyTimer.bibIndex,tick:studyTimer.tick},sh=window.statsHoy,el=$('misCerca');

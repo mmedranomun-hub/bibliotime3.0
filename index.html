@@ -989,6 +989,9 @@
   .racha-stats .rs-huecos{display:flex;justify-content:center;gap:4px;margin:4px 0 2px}
   .racha-stats .rs-huecos i{display:flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;font-style:normal;font-size:var(--fs-s);line-height:1;box-sizing:border-box}
   .racha-stats .rs-huecos i.libre{border:2px solid var(--borde);background:var(--glass)}
+  /* el 🧊 recién ganado en el cofre, si llegas desde su insignia: su hueco rebota una vez (quieto con «reducir movimiento») */
+  .racha-stats .rs-huecos i.rs-nuevo{animation:svRebote .55s .25s cubic-bezier(.34,1.56,.64,1) both}
+  @media (prefers-reduced-motion:reduce){.racha-stats .rs-huecos i.rs-nuevo{animation:none}}
   /* con 3 de 3, «¡Completo!» bajo los huecos para celebrarlo (sin animación) */
   .racha-stats .rs-completo{display:block;margin:0 0 2px;font-size:var(--fs-2xs);font-weight:700;color:var(--ok-tx);line-height:1.2}
   /* cómo se gana un 🧊 (comoHielo): una línea --suave a lo ancho, bajo las tres cifras */

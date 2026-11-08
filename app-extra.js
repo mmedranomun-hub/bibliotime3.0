@@ -693,7 +693,8 @@ function comoHielo(){
   return (DATA.streakFreezes||0)>=3?"Tienes el máximo (3). Cada uno salva un día sin estudiar."
     :"Ganas uno cada 7 días seguidos y, a veces, en el cofre del día (máx. 3).";
 }
-function abrirRacha(foco){
+// nuevo: desde la insignia del 🧊 recién ganado en el cofre, su hueco (.rs-nuevo) rebota una vez (svRebote; CSS quieto con «reducir movimiento»).
+function abrirRacha(foco,nuevo){
   var n=streakDays(), mejor=0;try{mejor=computeBestStreak();}catch(e){}
   var dias={};DATA.sessions.forEach(function(s){dias[s.date]=(dias[s.date]||0)+s.min;});(DATA.usedFreezeDates||[]).forEach(function(d){if(!dias[d])dias[d]=-1;});
   // los últimos 7 días acabando hoy (como Duolingo)
@@ -709,6 +710,7 @@ function abrirRacha(foco){
       '<p class="rs-hielo-como">'+comoHielo()+'</p></div>'+
     (hoyOk?'':'<button class="btn" onclick="closeModal();goView(\'study\')">▶ Estudiar ahora</button>')+'</div>');
   if(foco!=="hielo")return;
+  var ll=nuevo&&document.querySelectorAll("#modalRoot .rs-huecos i.lleno");if(ll&&ll.length)ll[ll.length-1].classList.add("rs-nuevo");
   clearTimeout(abrirRacha.t);
   abrirRacha.t=setTimeout(function(){var f=document.querySelector("#modalRoot .rs-foco");if(f)f.classList.remove("rs-foco");},RACHA_FOCO_MS);
 }
@@ -991,8 +993,8 @@ function estilosVueloHielo(){
 function marcarHieloRacha(p,t){
   var c=document.querySelector(".pill-hielo"),f=DATA.streakFreezes||0,quieto=sinMovimiento();
   if(!c){c=document.createElement("button");c.type="button";c.className="pill-hielo";p.parentNode.insertBefore(c,p.nextSibling);
-    c.addEventListener("click",function(){abrirRacha("hielo");});}
-  c.classList.remove("fuera","ph-rebote");c.textContent=t||"🧊 "+f;p.setAttribute("aria-label",t?"Tu racha sigue a salvo":"Tu racha · "+f+(f===1?" congelador":" congeladores"));
+    c.addEventListener("click",function(){abrirRacha("hielo",c._nuevo);});}
+  c._nuevo=!t;c.classList.remove("fuera","ph-rebote");c.textContent=t||"🧊 "+f;p.setAttribute("aria-label",t?"Tu racha sigue a salvo":"Tu racha · "+f+(f===1?" congelador":" congeladores"));
   c.setAttribute("aria-label",t?"Tu racha sigue a salvo: ver racha":"Tienes "+f+(f===1?" congelador":" congeladores")+": ver racha");
   // misma esquina que antes (arriba a la derecha de la pastilla): 9 px por encima y 8 px por fuera
   c.style.top=(p.offsetTop-9)+"px";c.style.left=(p.offsetLeft+p.offsetWidth+8-c.offsetWidth)+"px";
