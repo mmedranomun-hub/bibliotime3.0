@@ -651,7 +651,9 @@ PRUEBAS = [
         if(getComputedStyle(cof()).overflow!=='visible')return 'recorta el sello';
         var css=[].map.call(document.styleSheets,sh=>{try{return [].map.call(sh.cssRules,x=>x.cssText).join(' ');}catch(e){return '';}}).join(' ');
         if(!/\\.cofre-brilla::after[^}]*var\\(--destello\\)/.test(css))return 'el brillo no usa --destello';
-        // repintado siguiente (cada 30 s con el cronómetro) y recarga con el cofre ya abierto: oro quieto
+        // tras barrer (.6 s), el repintado siguiente (cada 30 s con el cronómetro) y la recarga con el cofre ya abierto: oro quieto
+        await new Promise(r=>setTimeout(r,900));
+        if(document.querySelector('.cofre-brilla'))return 'no se quita al acabar el barrido';
         renderMisiones();
         if(document.querySelector('.cofre-brilla'))return 'vuelve a brillar al repintar';
         $('missionsCard').innerHTML='';renderMisiones();
@@ -663,6 +665,37 @@ PRUEBAS = [
         if(!rm)return 'sin regla CSS de reducir movimiento para el brillo del cofre';
         return true;
       }finally{window.sinMovimiento=sm;window.encolarVuelo=ev;window.celebrar=ce;window.confeti=cf;window.showToast=st;closeModal();
+        k.forEach(x=>DATA[x]=o[x]);renderMisiones();renderSemillas();}"""),
+    ("el barrido del cofre sigue pendiente si la tarjeta se repinta con la ventana abierta (p. ej. el tick de 30 s) y se ve una sola vez al cerrarla", """
+      await cargarExtra();
+      var k=['misiones','sellosMisiones','cofresAbiertos','semillasPremio','streakFreezes'],o={};k.forEach(x=>o[x]=DATA[x]);
+      var sm=window.sinMovimiento,ev=window.encolarVuelo,ce=window.celebrar,cf=window.confeti,st=window.showToast,espera=ms=>new Promise(r=>setTimeout(r,ms));
+      var cof=()=>document.querySelector('#missionsCard .cofre'),af=()=>getComputedStyle(cof(),'::after');
+      var lista=()=>{var M=misionesDeHoy();M.cofre=false;M.ids.forEach(id=>M.hechas[id]=M.hechas[id]||new Date().toISOString());renderMisiones();return M;};
+      window.encolarVuelo=()=>{};window.celebrar=()=>{};window.confeti=()=>{};window.showToast=()=>{};
+      try{
+        closeModal();goView('study');window.sinMovimiento=()=>false;COFRE_BRILLA=0;
+        lista();abrirCofre(cof());
+        if(!document.querySelector('#modalRoot .modal-bg'))return 'no se abre la ventana del cofre';
+        // repintados con la ventana abierta (como el de cada 30 s con el cronómetro): la clase sigue
+        renderMisiones();await espera(800);renderMisiones();
+        if(!cof().classList.contains('cofre-brilla'))return 'el repintado con la ventana abierta quita el barrido';
+        if(CSS.supports('selector(:has(a))')&&af().animationPlayState!=='paused')return 'barre debajo de la ventana tras repintar';
+        var fin=0,cuenta=e=>{if(e.animationName==='cofreBrilla')fin++;};$('missionsCard').addEventListener('animationend',cuenta);
+        closeModal();
+        if(!cof().classList.contains('cofre-brilla')||af().animationPlayState!=='running')return 'no barre al cerrar la ventana';
+        await espera(900);$('missionsCard').removeEventListener('animationend',cuenta);
+        if(fin!==1)return 'el barrido no se ve una vez al cerrar: '+fin;
+        if(cof().classList.contains('cofre-brilla'))return 'la clase sigue tras barrer';
+        renderMisiones();
+        if(document.querySelector('.cofre-brilla'))return 'se repite al repintar tras verlo';
+        $('missionsCard').innerHTML='';renderMisiones();
+        if(document.querySelector('.cofre-brilla'))return 'se repite al recargar';
+        // con reducir movimiento: ni con repintados bajo la ventana
+        window.sinMovimiento=()=>true;lista();abrirCofre(cof());renderMisiones();closeModal();renderMisiones();
+        if(document.querySelector('.cofre-brilla'))return 'con reducir movimiento brilla';
+        return true;
+      }finally{window.sinMovimiento=sm;window.encolarVuelo=ev;window.celebrar=ce;window.confeti=cf;window.showToast=st;closeModal();COFRE_BRILLA=0;
         k.forEach(x=>DATA[x]=o[x]);renderMisiones();renderSemillas();}"""),
     ("el 🧊 del cofre vuela a la pastilla de la racha al cerrar la ventana (una vez, tras las 🌰; con reducir movimiento, solo la cifra)", """
       await cargarExtra();

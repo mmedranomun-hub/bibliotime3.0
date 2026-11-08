@@ -3575,7 +3575,7 @@ function soltarVuelo(){
 // Su contador .mis-val sube a la vez («22m» → «25m», .8 s, un requestAnimationFrame que se acaba solo).
 // El repintado que la pasa a ✅ (la fila venía .mis-llena) le pone .mis-brilla: barrido claro de .6 s en la barra verde y
 // fundido de .3 s del contador a --ok-tx (CSS). El siguiente repintado ya no lo lleva: nunca al cargar ni se repite.
-var MIS_LLENA={},MIS_LLENA_MS=850;
+var MIS_LLENA={},MIS_LLENA_MS=850,COFRE_BRILLA=0;
 function misMin(x){return hMin(x).replace("0h ","");}
 function misSubeCifra(c){var de=+c.getAttribute("data-de"),a=+c.getAttribute("data-a"),tl=c.textContent.split("/")[1],t0=0;
   requestAnimationFrame(function paso(t){t0=t0||t;var p=Math.min(1,(t-t0)/800);if(!c.isConnected)return;
@@ -3587,9 +3587,13 @@ function renderMisiones(){
   var antes={}, vista=misAVista(el), ahora=Date.now(), llenar=false;
   el.querySelectorAll(".mis[data-m]").forEach(function(r){var i=r.querySelector(".mis-bar i");antes[r.getAttribute("data-m")]={ok:r.classList.contains("ok"),llena:r.classList.contains("mis-llena"),w:i?parseFloat(i.style.width)||0:0};});
   var ae=document.activeElement, cofFoco=!!(ae&&ae.classList&&ae.classList.contains("cofre")&&el.contains(ae)); // el repintado no le quita el foco
-  // el repintado que abre el cofre (venía .listo y ya M.cofre) le pone .cofre-brilla: el barrido --destello de .mis-brilla en
-  // la tarjeta en oro, una vez. Al cargar con el cofre abierto no hay .listo antes, y el repintado siguiente ya no la lleva.
-  var cofBrilla=M.cofre&&!!el.querySelector(".cofre.listo")&&!sinMovimiento();
+  // el repintado que abre el cofre (venía .listo y ya M.cofre) apunta COFRE_BRILLA=fecha y la tarjeta en oro lleva .cofre-brilla
+  // (el barrido --destello de .mis-brilla, en pausa bajo la ventana) en todos los repintados hasta que el barrido termina
+  // (animationend de cofreBrilla, ya con la ventana cerrada): así el de cada 30 s no se lo come. Solo en memoria: al
+  // recargar con el cofre abierto no hay .listo antes y no brilla; con «reducir movimiento», nunca.
+  if(M.cofre&&el.querySelector(".cofre.listo")&&!sinMovimiento())COFRE_BRILLA=M.fecha;
+  var cofBrilla=M.cofre&&COFRE_BRILLA===M.fecha&&!sinMovimiento();
+  if(!el._cofFin){el._cofFin=1;el.addEventListener("animationend",function(e){if(e.animationName==="cofreBrilla"){COFRE_BRILLA=0;e.target.classList.remove("cofre-brilla");}});}
   var finDia=new Date();finDia.setHours(24,0,0,0);var qm=Math.max(0,Math.round((finDia-Date.now())/60000)), quedan=qm>=60?Math.floor(qm/60)+" h":qm+" min";
   el.innerHTML='<div class="mis-head"><div class="section-title" style="margin:0">🎯 Misiones de hoy</div><span class="mis-time">⏳ '+quedan+'</span></div>'+
     M.ids.map(function(id){

@@ -1075,7 +1075,8 @@
   .cofre.abierto .cofre-ic{filter:none}
   /* recién abierto (.cofre-brilla, solo el repintado que lo abre): el barrido --destello de .mis-brilla, .6 s, una vez. Va por
      background-position (sin overflow:hidden, que recortaría el sello al estamparse) y espera en pausa mientras la ventana
-     del cofre lo tapa: se ve al cerrarla */
+     del cofre lo tapa: se ve al cerrarla. renderMisiones mantiene la clase en los repintados (el de cada 30 s) hasta el
+     animationend de cofreBrilla, que la quita: una sola vez */
   .cofre.abierto.cofre-brilla::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
     background-image:linear-gradient(90deg,transparent,var(--destello),transparent);background-repeat:no-repeat;background-size:50% 100%;background-position:-100% 0;animation:cofreBrilla .6s ease-out forwards}
   body:has(#modalRoot .modal-bg) .cofre.cofre-brilla::after{animation-play-state:paused}
