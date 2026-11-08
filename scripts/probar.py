@@ -524,6 +524,46 @@ PRUEBAS = [
       }finally{window.showToast=st;window.sinMovimiento=sm;window.encolarVuelo=ev;window.celebrar=ce;window.setInterval=si;
         studyTimer.running=t0.running;studyTimer.start=t0.start;studyTimer.bibIndex=t0.bibIndex;studyTimer.tick=t0.tick;
         k.forEach(x=>DATA[x]=o[x]);renderStudy();renderMisiones();renderSemillas();}"""),
+    ("mientras la barra de la misión de minutos termina de llenarse, su contador sube con ella (22m → 25m, cifras tabulares, sin intervalos) y el toast «Misión cumplida» espera al ✅; con reducir movimiento, cifra final y toast al momento", """
+      var k=['misiones','sessions','acciones','semillasPremio'],o={};k.forEach(x=>o[x]=DATA[x]);
+      var t0={running:studyTimer.running,start:studyTimer.start,bibIndex:studyTimer.bibIndex,tick:studyTimer.tick};
+      var espera=ms=>new Promise(r=>setTimeout(r,ms)),st=window.showToast,sm=window.sinMovimiento,ev=window.encolarVuelo,ce=window.celebrar,si=window.setInterval,nuevos=0,toasts=[];
+      var fila=()=>document.querySelector('#missionsCard [data-m="m25"]'),cifra=()=>fila().querySelector('.mis-val').textContent;
+      var prepara=min=>{studyTimer.running=true;studyTimer.tick=t0.tick||1;studyTimer.bibIndex=-1;studyTimer.start=Date.now()-min*60000-500;
+        MIS_LLENA={};DATA.misiones={fecha:ymd(),ids:['m25','agenda','pomo'],hechas:{},cofre:false};renderMisiones();};
+      window.showToast=t=>{if(/Misión cumplida/.test(t))toasts.push(fila().classList.contains('ok'));};window.encolarVuelo=()=>{};window.celebrar=()=>{};
+      window.setInterval=function(){nuevos++;return si.apply(this,arguments);};
+      try{
+        closeModal();goView('study');DATA.sessions=[];DATA.acciones={fecha:ymd()};window.sinMovimiento=()=>false;
+        prepara(22);$('missionsCard').scrollIntoView({block:'center'});await espera(80);
+        if(cifra()!=='22m/25m')return 'antes: '+cifra();
+        if(getComputedStyle(fila().querySelector('.mis-val')).fontVariantNumeric!=='tabular-nums')return 'cifras sin tabular';
+        studyTimer.start=Date.now()-25*60000-500;comprobarMisiones();
+        if(cifra()!=='22m/25m')return 'la cifra salta antes de subir: '+cifra();
+        var vistos=[];
+        for(var i=0;i<45&&!fila().classList.contains('ok');i++){var c=cifra();if(vistos[vistos.length-1]!==c)vistos.push(c);await espera(20);}
+        var n=vistos.map(x=>parseInt(x));
+        if(n.some((x,j)=>j&&x<n[j-1]))return 'la cifra baja: '+vistos.join(' ');
+        if(vistos.length<3)return 'no sube poco a poco: '+vistos.join(' ');
+        if(vistos[vistos.length-1]!=='25m/25m')return 'no llega a 25m antes del ✅: '+vistos.join(' ');
+        if(!fila().classList.contains('ok'))return 'no pasa a ✅';
+        if(toasts.length)return 'el toast sale antes del ✅';
+        await espera(200);
+        if(toasts.length!==1||!toasts[0])return 'el toast no sale tras el ✅: '+JSON.stringify(toasts);
+        if(cifra()!=='25m/25m')return 'cifra final mal: '+cifra();
+        // con reducir movimiento: cifra final y toast al momento
+        toasts=[];window.sinMovimiento=()=>true;prepara(22);studyTimer.start=Date.now()-25*60000-500;comprobarMisiones();
+        if(cifra()!=='25m/25m')return 'con reducir movimiento no da la cifra final: '+cifra();
+        await espera(60);if(toasts.length!==1||!toasts[0])return 'con reducir movimiento el toast se retrasa';
+        // fuera de la vista: igual
+        toasts=[];window.sinMovimiento=()=>false;prepara(22);goView('map');studyTimer.start=Date.now()-25*60000-500;comprobarMisiones();
+        if(cifra()!=='25m/25m')return 'fuera de la vista no da la cifra final: '+cifra();
+        await espera(60);if(toasts.length!==1)return 'fuera de la vista el toast se retrasa';
+        if(nuevos)return 'crea intervalos nuevos';
+        return true;
+      }finally{window.showToast=st;window.sinMovimiento=sm;window.encolarVuelo=ev;window.celebrar=ce;window.setInterval=si;
+        studyTimer.running=t0.running;studyTimer.start=t0.start;studyTimer.bibIndex=t0.bibIndex;studyTimer.tick=t0.tick;
+        k.forEach(x=>DATA[x]=o[x]);renderStudy();renderMisiones();renderSemillas();}"""),
     ("el 🧊 del cofre vuela a la pastilla de la racha al cerrar la ventana (una vez, tras las 🌰; con reducir movimiento, solo la cifra)", """
       await cargarExtra();
       var k=['misiones','acciones','sellosMisiones','cofresAbiertos','semillasPremio','streakFreezes'],o={};k.forEach(x=>o[x]=DATA[x]);
