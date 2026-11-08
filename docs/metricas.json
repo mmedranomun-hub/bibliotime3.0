@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-11-08 05:44",
+  "fecha": "2026-11-08 06:41",
   "pruebas": {
     "arranca: datos y vistas": true,
     "marca España (sin «Navarra» en la cabecera)": true,
@@ -26,6 +26,7 @@
     "mientras la barra de la misión de minutos termina de llenarse, su contador sube con ella (22m → 25m, cifras tabulares, sin intervalos) y el toast «Misión cumplida» espera al ✅; con reducir movimiento, cifra final y toast al momento": true,
     "al pasar a ✅ tras llenarse, la misión de minutos brilla una vez (.mis-brilla: barrido --destello de .6 s) y su contador funde a --ok-tx en .3 s; nunca al cargar ni al repintar, quieto con reducir movimiento": true,
     "el barrido de .mis-brilla es luz en claro y en oscuro (--destello blanco, nunca la pizarra de --glass-fuerte)": true,
+    "al abrir el cofre, la tarjeta en oro recibe una vez el barrido --destello de .mis-brilla (.cofre-brilla, .6 s, en pausa bajo la ventana); nunca al recargar con el cofre abierto, quieta con reducir movimiento": true,
     "el 🧊 del cofre vuela a la pastilla de la racha al cerrar la ventana (una vez, tras las 🌰; con reducir movimiento, solo la cifra)": true,
     "cuando un 🧊 salva la racha, la pastilla enseña «🧊 ✓» un instante en azul calmado (sin hablar del día perdido; con reducir movimiento, quieta)": true,
     "tocar la insignia «🧊 N» abre la racha con «🧊 Congeladores» resaltada 1 s con borde --acento (botón accesible de 44 px; con reducir movimiento, sin transición)": true,
@@ -58,13 +59,13 @@
     "atajos de la app instalada (#accion=estudiar|ahora|pronto)": true
   },
   "errores_js": [],
-  "carga_ms_cpu4x": 848,
+  "carga_ms_cpu4x": 763,
   "carga_ms_cpu4x_min_max": [
-    799,
-    873
+    703,
+    818
   ],
-  "primera_pintura_ms_cpu4x": 224,
-  "todas_las_chinchetas_ms_cpu4x": 857,
+  "primera_pintura_ms_cpu4x": 208,
+  "todas_las_chinchetas_ms_cpu4x": 772,
   "markercluster": {
     "cargado": false,
     "agrupa": false,
@@ -84,12 +85,12 @@
   },
   "peso": {
     "index.html": {
-      "kb": 134.8,
-      "kb_gzip": 30.4
+      "kb": 136.2,
+      "kb_gzip": 30.7
     },
     "app.js": {
-      "kb": 306.0,
-      "kb_gzip": 90.8
+      "kb": 306.4,
+      "kb_gzip": 91.0
     },
     "bibliotecas-espana.js": {
       "kb": 831.3,
