@@ -156,9 +156,12 @@
   <url><loc>https://bibliomapa.es/bibliotecas/cuenca/abiertas-verano/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/cuenca/</loc><lastmod>2026-11-08</lastmod><priority>0.8</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/gipuzkoa/donostia/</loc><lastmod>2026-11-08</lastmod><priority>0.8</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/gipuzkoa/donostia/abiertas-hoy/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/gipuzkoa/san-sebastian/</loc><lastmod>2026-11-08</lastmod><priority>0.8</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/gipuzkoa/abiertas-hoy/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/gipuzkoa/abiertas-fin-de-semana/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/gipuzkoa/abiertas-mediodia/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/gipuzkoa/abiertas-verano/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/gipuzkoa/</loc><lastmod>2026-11-08</lastmod><priority>0.8</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/girona/blanes/</loc><lastmod>2026-11-08</lastmod><priority>0.8</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/girona/salt/</loc><lastmod>2026-11-08</lastmod><priority>0.8</priority></url>
@@ -637,6 +640,7 @@
   <url><loc>https://bibliomapa.es/bibliotecas/avila/biblioteca-municipal-posada-de-la-feria/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/huelva/biblioteca-provincial-de-huelva/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/avila/biblioteca-de-la-facultad-de-educacion-y-turismo-de-avila-usal/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/gipuzkoa/biblioteca-okendo-donostia/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/zamora/biblioteca-claudio-rodriguez-del-campus-de-zamora-usal/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/alicante/biblioteca-benalua-alicante/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/toledo/biblioteca-azucaica-toledo/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
@@ -936,13 +940,16 @@
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/biblioteca-miquel-marti-i-pol-de-sant-joan-despi/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/biblioteca-bac-de-roda/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/biblioteca-d-arenys-de-mar-pare-fidel-fita/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/gipuzkoa/hernaniko-udal-liburutegia/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/valladolid/biblioteca-de-boecillo/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/girona/biblioteca-de-cassa/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/girona/biblioteca-joan-vinyoli-santa-coloma-de-farners/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/gipuzkoa/biblioteca-juan-san-martin-liburutegia/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/huesca/biblioteca-jaca/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/salamanca/biblioteca-etsii-bejar-usal/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/girona/biblioteca-d-en-massagran/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/cantabria/biblioteca-conde-de-san-diego/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/gipuzkoa/arrasateko-udal-biblioteka/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/biblioteca-canyado-i-casagemes-joan-argente/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/biblioteca-josep-maria-lopez-pico/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/biblioteca-la-grua-montmelo/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
@@ -951,6 +958,7 @@
   <url><loc>https://bibliomapa.es/bibliotecas/girona/biblioteca-ramon-grabolosa/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/girona/biblioteca-carles-fontsere/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/girona/biblioteca-prudenci-bertrana/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/gipuzkoa/usurbilgo-udal-liburutegia/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/girona/biblioteca-jaume-marques-i-casanovas/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-municipal-miguel-de-cervantes/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/sevilla/bibliotecas-de-moron-de-la-frontera/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
@@ -964,9 +972,12 @@
   <url><loc>https://bibliomapa.es/bibliotecas/girona/biblioteca-de-campdevanol/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/girona/biblioteca-salvador-raurich/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-municipal-javier-lapena/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/gipuzkoa/onatiko-liburutegia-onate/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-municipal-isabel-allende/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/girona/biblioteca-victor-catala/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/gipuzkoa/sanz-enea-zarauzko-liburutegia/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/barcelona/biblioteca-el-moli/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/gipuzkoa/astigarragako-udal-liburutegia/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/asturias/casa-de-cultura-y-biblioteca-de-colombres/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-municipal-universitaria-esic/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-municipal-santiago-amon/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
@@ -976,6 +987,8 @@
   <url><loc>https://bibliomapa.es/bibliotecas/burgos/biblioteca-publica-municipal-briviesca/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/almeria/biblioteca-publica-municipal-vera/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/alicante/casa-de-la-cultura-y-biblioteca-de-denia/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/gipuzkoa/azpeitiko-udal-liburutegia/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/gipuzkoa/andoaingo-liburutegia/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-municipal-fernando-de-los-rios/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-municipal-rosalia-de-castro/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-ciencias-uah/</loc><lastmod>2026-11-08</lastmod><priority>0.7</priority></url>
