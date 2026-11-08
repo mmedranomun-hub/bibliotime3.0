@@ -319,6 +319,11 @@
   .locate-btn{position:fixed;z-index:900;background:var(--glass-fuerte);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
     border:1px solid var(--borde);border-radius:var(--r-m);width:42px;height:42px;display:flex;align-items:center;justify-content:center;
     box-shadow:var(--sombra);cursor:pointer;color:var(--acento-tx);bottom:186px;right:18px;transition:transform .12s,background .12s}
+  /* Zoom del mapa con el mismo aspecto que el botón de ubicación (en oscuro ya no es una caja blanca) */
+  .leaflet-control-zoom.leaflet-bar{border:1px solid var(--borde);border-radius:var(--r-m);overflow:hidden;box-shadow:var(--sombra)}
+  .leaflet-control-zoom.leaflet-bar a{background:var(--glass-fuerte);color:var(--acento-tx);border-bottom-color:var(--borde)}
+  .leaflet-control-zoom.leaflet-bar a:hover{background:var(--glass-fuerte);color:var(--acento-tx)}
+  .leaflet-control-zoom.leaflet-bar a.leaflet-disabled{background:var(--glass-fuerte);color:var(--neutro)}
   .locate-btn:hover{background:var(--glass);transform:translateY(-2px)}
   .locate-btn.active{color:#fff;background:var(--grad-acento);border-color:transparent}
   .locate-btn svg{width:19px;height:19px}
