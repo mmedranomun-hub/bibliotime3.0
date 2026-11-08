@@ -3573,6 +3573,8 @@ function soltarVuelo(){
 // veía al 100 %, con la transición de .8 s de .mis-bar i) y luego pasa a ✅. MIS_LLENA[fecha|id] = hasta cuándo se
 // llena (0 = ya lleno: no se repite). Con «reducir movimiento», fuera de la vista o al cargar, salto directo a ✅.
 // Su contador .mis-val sube a la vez («22m» → «25m», .8 s, un requestAnimationFrame que se acaba solo).
+// El repintado que la pasa a ✅ (la fila venía .mis-llena) le pone .mis-brilla: barrido claro de .6 s en la barra verde y
+// fundido de .3 s del contador a --ok-tx (CSS). El siguiente repintado ya no lo lleva: nunca al cargar ni se repite.
 var MIS_LLENA={},MIS_LLENA_MS=850;
 function misMin(x){return hMin(x).replace("0h ","");}
 function misSubeCifra(c){var de=+c.getAttribute("data-de"),a=+c.getAttribute("data-a"),tl=c.textContent.split("/")[1],t0=0;
@@ -3583,21 +3585,22 @@ function renderMisiones(){
   var el=$("missionsCard"); if(!el||!DATA)return;
   var M=misionesDeHoy(), h=statsHoy(), hechas=M.ids.filter(function(id){return M.hechas[id];}).length;
   var antes={}, vista=misAVista(el), ahora=Date.now(), llenar=false;
-  el.querySelectorAll(".mis[data-m]").forEach(function(r){var i=r.querySelector(".mis-bar i");antes[r.getAttribute("data-m")]={ok:r.classList.contains("ok"),w:i?parseFloat(i.style.width)||0:0};});
+  el.querySelectorAll(".mis[data-m]").forEach(function(r){var i=r.querySelector(".mis-bar i");antes[r.getAttribute("data-m")]={ok:r.classList.contains("ok"),llena:r.classList.contains("mis-llena"),w:i?parseFloat(i.style.width)||0:0};});
   var ae=document.activeElement, cofFoco=!!(ae&&ae.classList&&ae.classList.contains("cofre")&&el.contains(ae)); // el repintado no le quita el foco
   var finDia=new Date();finDia.setHours(24,0,0,0);var qm=Math.max(0,Math.round((finDia-Date.now())/60000)), quedan=qm>=60?Math.floor(qm/60)+" h":qm+" min";
   el.innerHTML='<div class="mis-head"><div class="section-title" style="margin:0">🎯 Misiones de hoy</div><span class="mis-time">⏳ '+quedan+'</span></div>'+
     M.ids.map(function(id){
       var d=misionDef(id); if(!d)return "";
       var v=Math.min(d.meta,d.val(h)), pct=Math.round(v/d.meta*100), ok=!!M.hechas[id], foco=MIS_FOCO.id===id&&Date.now()<MIS_FOCO.hasta, falta=d.meta-v;
-      var lk=M.fecha+"|"+id, a=antes[id], desde="", vd=v;
+      var lk=M.fecha+"|"+id, a=antes[id], desde="", vd=v, brilla=false;
       if(ok&&d.min){
         if(MIS_LLENA[lk]>ahora)desde=100; // repintado a mitad del llenado: sigue lleno, aún sin ✅
         else if(!(lk in MIS_LLENA)&&vista&&a&&!a.ok&&a.w<100&&ahora-Date.parse(M.hechas[id])<5000){desde=a.w;MIS_LLENA[lk]=ahora+MIS_LLENA_MS;llenar=true;}
         if(desde!=="")ok=false;
+        else if(a&&a.llena)brilla=true; // el repintado que acaba el llenado: brillo y cifra en verde, solo esta vez
         if(desde!==""&&desde<100)vd=Math.min(v,Math.round(desde*d.meta/100)); // la cifra que se veía, para que suba con la barra
       }
-      return '<div class="mis'+(ok?' ok':'')+(desde!==""?' mis-llena':'')+(foco?' mis-foco':'')+'" data-m="'+id+'"><div class="mis-ic">'+(ok?'✅':d.icon)+'</div><div class="mis-main"><div class="mis-txt">'+escapeHTML(d.txt)+'</div>'+
+      return '<div class="mis'+(ok?' ok':'')+(desde!==""?' mis-llena':'')+(brilla?' mis-brilla':'')+(foco?' mis-foco':'')+'" data-m="'+id+'"><div class="mis-ic">'+(ok?'✅':d.icon)+'</div><div class="mis-main"><div class="mis-txt">'+escapeHTML(d.txt)+'</div>'+
         '<div class="mis-bar"><i style="width:'+(desde!==""?desde:pct)+'%"></i></div>'+(foco&&!ok&&d.min&&falta>0?'<div class="mis-pista">⏱️ <b>'+falta+' min</b> más y es tuya · <b>+'+MIS_PREMIO+' 🌰</b></div>':'')+'</div><div class="mis-val"'+(vd<v?' data-de="'+vd+'" data-a="'+v+'"':'')+'>'+(d.min?misMin(vd):v)+'/'+(d.min?misMin(d.meta):d.meta)+'</div></div>';
     }).join("")+
     '<button class="cofre'+(hechas===3&&!M.cofre?' listo':'')+(M.cofre?' abierto':'')+'" onclick="abrirCofre(this)" '+(hechas===3&&!M.cofre?'':'disabled')+'>'+

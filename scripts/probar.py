@@ -463,7 +463,7 @@ PRUEBAS = [
       try{
         closeModal();goView('study');await calma();vuelos=[];
         DATA.misiones={fecha:ymd(),ids:['agenda','largo','m90'],hechas:{},cofre:false};DATA.acciones={fecha:ymd()};renderMisiones();
-        registrarAccion('agenda');await espera(500);
+        registrarAccion('agenda');for(var i=0;i<30&&!document.querySelector('.semilla-vuela');i++)await espera(50); // sondea: con la máquina cargada el vuelo (300 ms + cargarExtra) puede pasar de 500 ms
         if(!document.querySelectorAll('.semilla-vuela').length)return 'no vuelan las semillas de la misión';
         if(vuelos.length!==1||vuelos[0][1]!==10||!vuelos[0][0]||!vuelos[0][0].width)return 'vuelo mal: '+JSON.stringify(vuelos.map(v=>v[1]));
         await calma();comprobarMisiones();registrarAccion('agenda');renderMisiones();await espera(900);
@@ -559,6 +559,53 @@ PRUEBAS = [
         toasts=[];window.sinMovimiento=()=>false;prepara(22);goView('map');studyTimer.start=Date.now()-25*60000-500;comprobarMisiones();
         if(cifra()!=='25m/25m')return 'fuera de la vista no da la cifra final: '+cifra();
         await espera(60);if(toasts.length!==1)return 'fuera de la vista el toast se retrasa';
+        if(nuevos)return 'crea intervalos nuevos';
+        return true;
+      }finally{window.showToast=st;window.sinMovimiento=sm;window.encolarVuelo=ev;window.celebrar=ce;window.setInterval=si;
+        studyTimer.running=t0.running;studyTimer.start=t0.start;studyTimer.bibIndex=t0.bibIndex;studyTimer.tick=t0.tick;
+        k.forEach(x=>DATA[x]=o[x]);renderStudy();renderMisiones();renderSemillas();}"""),
+    ("al pasar a ✅ tras llenarse, la misión de minutos brilla una vez (.mis-brilla: barrido --glass-fuerte de .6 s) y su contador funde a --ok-tx en .3 s; nunca al cargar ni al repintar, quieto con reducir movimiento", """
+      var k=['misiones','sessions','acciones','semillasPremio'],o={};k.forEach(x=>o[x]=DATA[x]);
+      var t0={running:studyTimer.running,start:studyTimer.start,bibIndex:studyTimer.bibIndex,tick:studyTimer.tick};
+      var espera=ms=>new Promise(r=>setTimeout(r,ms)),st=window.showToast,sm=window.sinMovimiento,ev=window.encolarVuelo,ce=window.celebrar,si=window.setInterval,nuevos=0;
+      var fila=()=>document.querySelector('#missionsCard [data-m="m25"]'),val=()=>fila().querySelector('.mis-val');
+      var okTx=()=>{var p=document.createElement('span');p.style.color='var(--ok-tx)';document.body.appendChild(p);var c=getComputedStyle(p).color;p.remove();return c;};
+      var prepara=min=>{studyTimer.running=true;studyTimer.tick=t0.tick||1;studyTimer.bibIndex=-1;studyTimer.start=Date.now()-min*60000-500;
+        MIS_LLENA={};DATA.misiones={fecha:ymd(),ids:['m25','agenda','pomo'],hechas:{},cofre:false};renderMisiones();};
+      window.showToast=()=>{};window.encolarVuelo=()=>{};window.celebrar=()=>{};window.setInterval=function(){nuevos++;return si.apply(this,arguments);};
+      try{
+        closeModal();goView('study');DATA.sessions=[];DATA.acciones={fecha:ymd()};window.sinMovimiento=()=>false;
+        prepara(22);$('missionsCard').scrollIntoView({block:'center'});
+        if(document.querySelector('.mis-brilla'))return 'brilla sin cumplir';
+        studyTimer.start=Date.now()-25*60000-500;comprobarMisiones();
+        if(!fila().classList.contains('mis-llena'))return 'no se llena (la prueba necesita la tarjeta a la vista)';
+        if(fila().classList.contains('mis-brilla'))return 'brilla mientras se llena';
+        // espera al ✅ sondeando (sin depender de un tiempo exacto)
+        for(var i=0;i<100&&!fila().classList.contains('ok');i++)await espera(30);
+        if(!fila().classList.contains('ok'))return 'no pasa a ✅';
+        if(!fila().classList.contains('mis-brilla'))return 'no brilla al pasar a ✅';
+        if(document.querySelectorAll('.mis-brilla').length!==1)return 'brilla más de una fila';
+        var af=getComputedStyle(fila().querySelector('.mis-bar i'),'::after');
+        if(af.animationName!=='misBrilla'||Math.abs(parseFloat(af.animationDuration)-.6)>.01||af.animationIterationCount!=='1')return 'brillo mal: '+af.animationName+' '+af.animationDuration;
+        if(!/linear-gradient/.test(af.backgroundImage))return 'el brillo no es un barrido';
+        var cv=getComputedStyle(val());
+        if(cv.animationName!=='misValOk'||Math.abs(parseFloat(cv.animationDuration)-.3)>.01)return 'el contador no funde: '+cv.animationName;
+        var css=[].map.call(document.styleSheets,sh=>{try{return [].map.call(sh.cssRules,x=>x.cssText).join(' ');}catch(e){return '';}}).join(' ');
+        if(!/\\.mis-bar i::after[^}]*var\\(--glass-fuerte\\)/.test(css))return 'el brillo no usa --glass-fuerte';
+        if(!/\\.mis\\.ok \\.mis-val\\s*\\{[^}]*var\\(--ok-tx\\)/.test(css))return 'el contador cumplido no va en --ok-tx';
+        // al repintar ya no brilla, pero la cifra sigue verde
+        renderMisiones();
+        if(document.querySelector('.mis-brilla'))return 'vuelve a brillar al repintar';
+        await espera(350);
+        if(getComputedStyle(val()).color!==okTx())return 'el contador cumplido no queda en --ok-tx: '+getComputedStyle(val()).color;
+        // al cargar con la misión ya cumplida: verde quieto, sin brillo ni fundido
+        MIS_LLENA={};renderMisiones();
+        if(document.querySelector('.mis-brilla')||getComputedStyle(val()).animationName!=='none')return 'brilla al cargar';
+        // con reducir movimiento: ✅ directo, sin brillo, y regla @media que lo apaga
+        window.sinMovimiento=()=>true;prepara(22);studyTimer.start=Date.now()-25*60000-500;comprobarMisiones();
+        if(!fila().classList.contains('ok')||document.querySelector('.mis-brilla'))return 'con reducir movimiento brilla';
+        var rm=[].some.call(document.styleSheets,sh=>{try{return [].some.call(sh.cssRules,x=>x.media&&/reduced-motion/.test(x.media.mediaText)&&/mis-brilla \\.mis-bar i::after[^}]*display:\\s*none/.test(x.cssText)&&/mis-brilla \\.mis-val[^}]*animation[^;}]*none/.test(x.cssText));}catch(e){return false;}});
+        if(!rm)return 'sin regla CSS de reducir movimiento para el brillo';
         if(nuevos)return 'crea intervalos nuevos';
         return true;
       }finally{window.showToast=st;window.sinMovimiento=sm;window.encolarVuelo=ev;window.celebrar=ce;window.setInterval=si;
