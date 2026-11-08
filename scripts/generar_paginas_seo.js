@@ -198,8 +198,8 @@ function itemBib(b) {
 // y sin BreadcrumbList; todos los enlaces son absolutos (/…) para que funcionen desde cualquier ruta.
 // trasH1: HTML opcional entre el <h1> y la intro (la 404 pone ahí su «¿Buscabas…?»).
 // migasId: @id opcional del BreadcrumbList (<ruta>#migas: fichas, índice, provincias, localidades, temáticas de España,
-// de provincia y de localidad, los hubs de horarios, universidades, exámenes y salas de estudio, universidades y ciudades
-// de exámenes), para enlazarlo desde su WebPage o CollectionPage con breadcrumb (ver idMigasDe/conMigas).
+// de provincia y de localidad, los hubs de horarios, universidades, exámenes y salas de estudio, universidades, ciudades
+// de exámenes y salas de estudio de provincia y localidad), para enlazarlo desde su WebPage o CollectionPage con breadcrumb (ver idMigasDe/conMigas).
 const h1De = new Map(); // ruta → h1 (texto plano): de aquí salen los textos de «¿Buscabas…?» en la 404
 function pagina({ ruta, titulo, descripcion, h1, intro, cuerpo, migas, migasId, ld, cta, head, noindex, trasH1 }) {
   const url = DOMINIO + ruta;
@@ -585,8 +585,8 @@ const modVerif = (lista) => { const v = lista.filter(verificado); return v.lengt
 // superior es de provincia o la página lo es, la superior no la lleva en su hasPart.
 // migas: true para enlazar su BreadcrumbList (<ruta>#migas) con breadcrumb (temáticas de España, de provincia y de localidad).
 // @id de las migas de una página y el breadcrumb que lo enlaza desde su CollectionPage (las fichas lo hacen a mano).
-// En el índice (/bibliotecas/: el WebSite), provincias, localidades, temáticas de España y hubs (el índice) y universidades
-// y ciudades de exámenes (su hub) el penúltimo de las migas es su isPartOf; en las temáticas de provincia y de localidad no (las migas siguen el lugar, provincia › localidad
+// En el índice (/bibliotecas/: el WebSite), provincias, localidades, temáticas de España y hubs (el índice) y universidades,
+// ciudades de exámenes y salas de estudio (su hub) el penúltimo de las migas es su isPartOf; en las temáticas de provincia y de localidad no (las migas siguen el lugar, provincia › localidad
 // › tema; el isPartOf, la temática superior): ahí es el primer enlace de su «volver».
 let nMigasId = 0;
 const idMigasDe = (ruta) => DOMINIO + ruta + "#migas";
@@ -1567,8 +1567,11 @@ salas.forEach((s) => {
   const secExamenes = ex.length ? `<section class="ficha" aria-labelledby="t-ex"><h2 id="t-ex">Temporada de exámenes</h2><ul class="lista-ex">${ex.map((e) =>
     `<li><b>${esc(e.espacio)}</b> · del ${esc(fechaEs(e.desde))} al ${esc(fechaEs(e.hasta))}: ${esc(e.horario)}.${e.nota ? ` ${esc(e.nota)}` : ""} <small>(<a href="${esc(e.f)}" rel="nofollow noopener" target="_blank">fuente oficial</a>, comprobado el ${esc(fechaEs(e.fv))})</small></li>`).join("")}</ul></section>` : "";
   const grupo = (id, tit, l, acceso) => (l.length ? `<section class="loc" id="${id}"><h2>${tit} <small>${l.length}</small></h2><p class="nota">${acceso}</p>${l.map((b) => tarjeta(b)).join("")}</section>` : "");
-  const migas = [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], [p, `/bibliotecas/${ps}/`]]
-    .concat(s.conLoc ? [[ciudad, rutaCiudad]] : []).concat([["Salas de estudio", ruta]]);
+  // Migas por su hub, como universidades y exámenes: Bibliotecas › Salas de estudio › <ciudad>; así el penúltimo es la
+  // url de su isPartOf (/bibliotecas/salas-de-estudio/) y el BreadcrumbList lleva @id <ruta>#migas enlazado desde el
+  // CollectionPage. Antes seguían el lugar (provincia › [localidad] › Salas de estudio: 15 a provincia, 6 a localidad);
+  // la provincia o localidad sigue enlazada en el «volver» del cuerpo, que no cambia.
+  const migas = [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], ["Salas de estudio", `/bibliotecas/${SALAS_SLUG}/`], [ciudad, ruta]];
   escribe(ruta, pagina({
     ruta, titulo, descripcion: descripcion.length <= MAX_DESC ? descripcion : descripcion.replace(/ Horas de apertura y acceso\.$/, ""),
     h1: `Bibliotecas para estudiar y salas de estudio en ${esc(ciudad)}`,
@@ -1581,8 +1584,8 @@ ${grupo("publicas", "Bibliotecas públicas y grandes bibliotecas", pub, "Las bib
 ${fq.html}
 ${otras ? `<p class="mas"><a href="${rutaCiudad}">Ver las ${lista.length} bibliotecas de ${esc(ciudad)} (incluidas ${otras} de barrio, especializadas o sin clasificar) →</a></p>` : ""}
 <p class="volver"><a href="/bibliotecas/${SALAS_SLUG}/">← Salas de estudio en otras ciudades</a> · <a href="${rutaCiudad}">${esc(s.conLoc ? ciudad : p)}</a> · ${enlaceHub}</p>`,
-    migas,
-    ld: [ldLugar(ruta, titulo.replace(MARCA, ""), descripcion, { ...parteDeHub(tituloHubSalas, `/bibliotecas/${SALAS_SLUG}/`), ...(ver.length ? { dateModified: fechaMod(ver) } : {}), mainEntity: { "@type": "ItemList", name: `Bibliotecas para estudiar en ${ciudad}`, numberOfItems: est.length,
+    migas, migasId: idMigasDe(ruta),
+    ld: [ldLugar(ruta, titulo.replace(MARCA, ""), descripcion, { ...parteDeHub(tituloHubSalas, `/bibliotecas/${SALAS_SLUG}/`), ...conMigas(ruta), ...(ver.length ? { dateModified: fechaMod(ver) } : {}), mainEntity: { "@type": "ItemList", name: `Bibliotecas para estudiar en ${ciudad}`, numberOfItems: est.length,
       itemListElement: uni.concat(pub).map((b, k) => ({ "@type": "ListItem", position: k + 1, item: itemBib(b) })) } }), fq.ld],
   }));
   urls.push([ruta, "0.8", fechaMod(ver)]);
@@ -2094,7 +2097,7 @@ console.log(`isPartOf en provincias y localidades: ${nLugarIsPartOf} páginas`);
 console.log(`isPartOf en salas de estudio, universidades y exámenes (su hub): ${nHubIsPartOf} páginas`);
 console.log(`isPartOf al índice en los hubs (salas, universidades, exámenes y horarios): ${nHubIndice} páginas`);
 console.log(`isPartOf en fichas (su localidad o provincia): ${nFichasIsPartOf} de ${paginaDe.size}`);
-console.log(`breadcrumb {"@id": "<ruta>#migas"} en el índice, provincias, localidades, temáticas de España, de provincia y de localidad, hubs, universidades y ciudades de exámenes: ${nMigasId} páginas`);
+console.log(`breadcrumb {"@id": "<ruta>#migas"} en el índice, provincias, localidades, temáticas de España, de provincia y de localidad, hubs, salas de estudio, universidades y ciudades de exámenes: ${nMigasId} páginas`);
 console.log(`Provincias con ItemList de sus fichas en el JSON-LD: ${nProvItemList} de ${provincias.length} · elementos: ${nItemsProv}`);
 console.log(`Localidades sin ninguna verificada con «Cerca, con horario verificado» (≤ ${RADIO_VERIF_KM} km del centroide): ${nLocsVerifCerca} · enlaces: ${nEnlacesLocVerifCerca}`);
 console.log(`Fichas con «Cerca, con horario verificado» (≤ ${RADIO_VERIF_KM} km, otra ficha): ${nFichasVerifCerca} de ${paginaDe.size} · enlaces: ${nEnlacesVerifCerca}`);
