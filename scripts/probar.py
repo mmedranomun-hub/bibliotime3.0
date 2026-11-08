@@ -669,6 +669,36 @@ PRUEBAS = [
         if(document.querySelector('#modalRoot .rs-nuevo'))return 'rebota desde «🧊 ✓» (no se ha ganado ninguno)';
         return true;
       }finally{window.sinMovimiento=sm;clearTimeout(abrirRacha.t);k.forEach(x=>DATA[x]=o[x]);closeModal();limpia();renderRacha();}"""),
+    ("desde la insignia del 🧊 recién ganado en el cofre, la línea bajo las cifras dice antes «🧊 +1 del cofre de hoy · » en --ok-tx (700, sin animación); desde la pastilla o «🧊 ✓», la línea de siempre", """
+      await cargarExtra();
+      var k=['streakFreezes'],o={};k.forEach(x=>o[x]=DATA[x]);
+      var espera=ms=>new Promise(r=>setTimeout(r,ms)),sm=window.sinMovimiento;
+      var limpia=()=>document.querySelectorAll('.pill-hielo,.hielo-vuela').forEach(x=>x.remove());
+      var siempre='Ganas uno cada 7 días seguidos y, a veces, en el cofre del día (máx. 3).';
+      try{
+        closeModal();goView('study');while(VUELO.t||VUELO.n||VUELO.h)await espera(250);limpia();
+        window.sinMovimiento=()=>true;DATA.streakFreezes=2;renderRacha();volarHielo(null,0);
+        var b=document.querySelector('.pill-hielo');if(!b)return 'sin insignia del 🧊 del cofre';
+        b.click();await espera(50);
+        var l=document.querySelector('#modalRoot .racha-stats .rs-hielo-como'),d=l&&l.querySelector('.rs-hielo-de');
+        if(!l||l.innerText.trim()!=='🧊 +1 del cofre de hoy · '+siempre)return 'texto: '+(l&&l.innerText);
+        if(!d||d.textContent!=='🧊 +1 del cofre de hoy')return 'sin el tramo del cofre';
+        var c=document.createElement('i');c.style.color='var(--ok-tx)';document.body.appendChild(c);var ok=getComputedStyle(c).color;c.remove();
+        var e=getComputedStyle(d);
+        if(e.color!==ok||e.fontWeight!=='700')return 'no va en --ok-tx 700: '+e.color+' '+e.fontWeight;
+        if(e.animationName!=='none')return 'lleva animación';
+        if(/falta|pierdes|perder/i.test(l.innerText))return 'mete presión';
+        if(document.documentElement.scrollWidth>innerWidth)return 'desborda en horizontal';
+        closeModal();abrirRacha();
+        l=document.querySelector('#modalRoot .rs-hielo-como');
+        if(!l||l.querySelector('.rs-hielo-de')||l.innerText.trim()!==siempre)return 'desde la pastilla: '+(l&&l.innerText);
+        closeModal();limpia();hieloSalva();b=document.querySelector('.pill-hielo');
+        if(!b)return 'sin insignia «🧊 ✓»';
+        b.click();await espera(50);
+        l=document.querySelector('#modalRoot .rs-hielo-como');
+        if(!l||/cofre de hoy/.test(l.innerText))return 'desde «🧊 ✓» habla del cofre';
+        return true;
+      }finally{window.sinMovimiento=sm;clearTimeout(abrirRacha.t);k.forEach(x=>DATA[x]=o[x]);closeModal();limpia();renderRacha();}"""),
     ("barrita de misiones bajo el cronómetro: «🎯 2/3 misiones · la siguiente en 7 min» solo si falta ≤ 15 min de una misión de minutos", """
       var k=['misiones','sessions','acciones'],o={};k.forEach(x=>o[x]=DATA[x]);
       var t0={running:studyTimer.running,start:studyTimer.start,bibIndex:studyTimer.bibIndex,tick:studyTimer.tick},sh=window.statsHoy,el=$('misCerca');

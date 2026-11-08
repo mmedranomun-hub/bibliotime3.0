@@ -689,9 +689,11 @@ var RACHA_FOCO_MS=1000;
 function huecosHielo(){var n=Math.min(3,DATA.streakFreezes||0),h="";for(var i=0;i<3;i++)h+='<i class="'+(i<n?"lleno":"libre")+'">'+(i<n?"🧊":"")+'</i>';
   return '<span class="rs-huecos" role="img" aria-label="'+n+' de 3 congeladores'+(n===3?', completo':'')+'">'+h+'</span>'+(n===3?'<span class="rs-completo" aria-hidden="true">¡Completo!</span>':'');}
 function cuantosHielo(){var n=DATA.streakFreezes||0;return "Ya tienes "+n+" de 3"+(n>=3?", el máximo":"");}
-function comoHielo(){
-  return (DATA.streakFreezes||0)>=3?"Tienes el máximo (3). Cada uno salva un día sin estudiar."
-    :"Ganas uno cada 7 días seguidos y, a veces, en el cofre del día (máx. 3).";
+// nuevo==="cofre" (insignia del 🧊 que acaba de volar desde el cofre): antes, «🧊 +1 del cofre de hoy · » en --ok-tx (700),
+// para decir de dónde ha salido. Solo el cofre: el de cada 7 días seguidos se anuncia con su aviso (checkStreakFreezes) y no vuela.
+function comoHielo(nuevo){
+  return (nuevo==="cofre"?'<span class="rs-hielo-de">🧊 +1 del cofre de hoy</span> · ':'')+((DATA.streakFreezes||0)>=3?"Tienes el máximo (3). Cada uno salva un día sin estudiar."
+    :"Ganas uno cada 7 días seguidos y, a veces, en el cofre del día (máx. 3).");
 }
 // nuevo: desde la insignia del 🧊 recién ganado en el cofre, su hueco (.rs-nuevo) rebota una vez (svRebote; CSS quieto con «reducir movimiento»).
 function abrirRacha(foco,nuevo){
@@ -707,7 +709,7 @@ function abrirRacha(foco,nuevo){
     '<div class="semana-racha">'+sem+'</div>'+
     '<div class="sub" style="margin-top:12px">'+(hoyOk?"¡Hoy ya cuenta! Vuelve mañana para mantenerla.":n?"Estudia hoy para no perder tu racha de "+n+" días.":"Estudia hoy y empieza una racha.")+'</div>'+
     '<div class="racha-stats"><div><b>'+mejor+'</b><small>Mejor racha</small></div><div class="rs-hielo'+(foco==="hielo"?' rs-foco':'')+'"><b>🧊 '+(DATA.streakFreezes||0)+'</b>'+huecosHielo()+'<small>Congeladores</small></div><div><b>🌰 '+semillas()+'</b><small>Semillas</small></div>'+
-      '<p class="rs-hielo-como">'+comoHielo()+'</p></div>'+
+      '<p class="rs-hielo-como">'+comoHielo(nuevo)+'</p></div>'+
     (hoyOk?'':'<button class="btn" onclick="closeModal();goView(\'study\')">▶ Estudiar ahora</button>')+'</div>');
   if(foco!=="hielo")return;
   var ll=nuevo&&document.querySelectorAll("#modalRoot .rs-huecos i.lleno");if(ll&&ll.length)ll[ll.length-1].classList.add("rs-nuevo");
@@ -994,7 +996,8 @@ function marcarHieloRacha(p,t){
   var c=document.querySelector(".pill-hielo"),f=DATA.streakFreezes||0,quieto=sinMovimiento();
   if(!c){c=document.createElement("button");c.type="button";c.className="pill-hielo";p.parentNode.insertBefore(c,p.nextSibling);
     c.addEventListener("click",function(){abrirRacha("hielo",c._nuevo);});}
-  c._nuevo=!t;c.classList.remove("fuera","ph-rebote");c.textContent=t||"🧊 "+f;p.setAttribute("aria-label",t?"Tu racha sigue a salvo":"Tu racha · "+f+(f===1?" congelador":" congeladores"));
+  c._nuevo=t?"":"cofre"; // sin texto = el 🧊 que vuela del cofre (volarHielo solo sale de VUELO.h, que solo llena abrirCofre)
+  c.classList.remove("fuera","ph-rebote");c.textContent=t||"🧊 "+f;p.setAttribute("aria-label",t?"Tu racha sigue a salvo":"Tu racha · "+f+(f===1?" congelador":" congeladores"));
   c.setAttribute("aria-label",t?"Tu racha sigue a salvo: ver racha":"Tienes "+f+(f===1?" congelador":" congeladores")+": ver racha");
   // misma esquina que antes (arriba a la derecha de la pastilla): 9 px por encima y 8 px por fuera
   c.style.top=(p.offsetTop-9)+"px";c.style.left=(p.offsetLeft+p.offsetWidth+8-c.offsetWidth)+"px";
