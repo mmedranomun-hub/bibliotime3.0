@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-11-08 04:40",
+  "fecha": "2026-11-08 05:44",
   "pruebas": {
     "arranca: datos y vistas": true,
     "marca España (sin «Navarra» en la cabecera)": true,
@@ -24,7 +24,8 @@
     "las 🌰 de las misiones y del cofre vuelan al marcador (una vez; con reducir movimiento, solo la cifra)": true,
     "la misión de minutos cumplida con «Misiones de hoy» a la vista termina de llenar su barra (~90 % → 100 %, .8 s) antes del ✅; fuera de la vista o con reducir movimiento, salto directo": true,
     "mientras la barra de la misión de minutos termina de llenarse, su contador sube con ella (22m → 25m, cifras tabulares, sin intervalos) y el toast «Misión cumplida» espera al ✅; con reducir movimiento, cifra final y toast al momento": true,
-    "al pasar a ✅ tras llenarse, la misión de minutos brilla una vez (.mis-brilla: barrido --glass-fuerte de .6 s) y su contador funde a --ok-tx en .3 s; nunca al cargar ni al repintar, quieto con reducir movimiento": true,
+    "al pasar a ✅ tras llenarse, la misión de minutos brilla una vez (.mis-brilla: barrido --destello de .6 s) y su contador funde a --ok-tx en .3 s; nunca al cargar ni al repintar, quieto con reducir movimiento": true,
+    "el barrido de .mis-brilla es luz en claro y en oscuro (--destello blanco, nunca la pizarra de --glass-fuerte)": true,
     "el 🧊 del cofre vuela a la pastilla de la racha al cerrar la ventana (una vez, tras las 🌰; con reducir movimiento, solo la cifra)": true,
     "cuando un 🧊 salva la racha, la pastilla enseña «🧊 ✓» un instante en azul calmado (sin hablar del día perdido; con reducir movimiento, quieta)": true,
     "tocar la insignia «🧊 N» abre la racha con «🧊 Congeladores» resaltada 1 s con borde --acento (botón accesible de 44 px; con reducir movimiento, sin transición)": true,
@@ -57,13 +58,13 @@
     "atajos de la app instalada (#accion=estudiar|ahora|pronto)": true
   },
   "errores_js": [],
-  "carga_ms_cpu4x": 737,
+  "carga_ms_cpu4x": 848,
   "carga_ms_cpu4x_min_max": [
-    675,
-    776
+    799,
+    873
   ],
-  "primera_pintura_ms_cpu4x": 196,
-  "todas_las_chinchetas_ms_cpu4x": 743,
+  "primera_pintura_ms_cpu4x": 224,
+  "todas_las_chinchetas_ms_cpu4x": 857,
   "markercluster": {
     "cargado": false,
     "agrupa": false,
@@ -73,26 +74,26 @@
   },
   "datos": {
     "bibliotecas": 2616,
-    "con_horario_verificado": 627,
+    "con_horario_verificado": 637,
     "provincias_con_horario": 51,
     "provincias_total": 51
   },
   "seo": {
-    "paginas": 1041,
+    "paginas": 1056,
     "sitemap": true
   },
   "peso": {
     "index.html": {
-      "kb": 134.6,
-      "kb_gzip": 30.3
+      "kb": 134.8,
+      "kb_gzip": 30.4
     },
     "app.js": {
       "kb": 306.0,
       "kb_gzip": 90.8
     },
     "bibliotecas-espana.js": {
-      "kb": 826.1,
-      "kb_gzip": 202.1
+      "kb": 831.3,
+      "kb_gzip": 203.3
     }
   },
   "ok": true
