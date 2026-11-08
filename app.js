@@ -3567,22 +3567,37 @@ function soltarVuelo(){
   var z,n=VUELO.n,h=VUELO.h,hr=VUELO.hr,o=VUELO.de&&document.querySelector(VUELO.de),r=o&&o.getBoundingClientRect();z=VUELO.z;VUELO.n=VUELO.h=VUELO.z=0;VUELO.hr=null;
   cargarExtra().then(function(){if(n)volarSemillas(r,n);if(h)volarHielo(hr||r,n?250:0);if(z)hieloSalva();},function(){});
 }
+// Misión de minutos recién cumplida con «Misiones de hoy» a la vista: su barra termina de llenarse (del ~90 % que se
+// veía al 100 %, con la transición de .8 s de .mis-bar i) y luego pasa a ✅. MIS_LLENA[fecha|id] = hasta cuándo se
+// llena (0 = ya lleno: no se repite). Con «reducir movimiento», fuera de la vista o al cargar, salto directo a ✅.
+var MIS_LLENA={},MIS_LLENA_MS=850;
+function misAVista(el){if(sinMovimiento()||!el.offsetParent)return false;var r=el.getBoundingClientRect();return r.bottom>0&&r.top<innerHeight;}
 function renderMisiones(){
   var el=$("missionsCard"); if(!el||!DATA)return;
   var M=misionesDeHoy(), h=statsHoy(), hechas=M.ids.filter(function(id){return M.hechas[id];}).length;
+  var antes={}, vista=misAVista(el), ahora=Date.now(), llenar=false;
+  el.querySelectorAll(".mis[data-m]").forEach(function(r){var i=r.querySelector(".mis-bar i");antes[r.getAttribute("data-m")]={ok:r.classList.contains("ok"),w:i?parseFloat(i.style.width)||0:0};});
   var ae=document.activeElement, cofFoco=!!(ae&&ae.classList&&ae.classList.contains("cofre")&&el.contains(ae)); // el repintado no le quita el foco
   var finDia=new Date();finDia.setHours(24,0,0,0);var qm=Math.max(0,Math.round((finDia-Date.now())/60000)), quedan=qm>=60?Math.floor(qm/60)+" h":qm+" min";
   el.innerHTML='<div class="mis-head"><div class="section-title" style="margin:0">🎯 Misiones de hoy</div><span class="mis-time">⏳ '+quedan+'</span></div>'+
     M.ids.map(function(id){
       var d=misionDef(id); if(!d)return "";
       var v=Math.min(d.meta,d.val(h)), pct=Math.round(v/d.meta*100), ok=!!M.hechas[id], foco=MIS_FOCO.id===id&&Date.now()<MIS_FOCO.hasta, falta=d.meta-v;
-      return '<div class="mis'+(ok?' ok':'')+(foco?' mis-foco':'')+'" data-m="'+id+'"><div class="mis-ic">'+(ok?'✅':d.icon)+'</div><div class="mis-main"><div class="mis-txt">'+escapeHTML(d.txt)+'</div>'+
-        '<div class="mis-bar"><i style="width:'+pct+'%"></i></div>'+(foco&&!ok&&d.min&&falta>0?'<div class="mis-pista">⏱️ <b>'+falta+' min</b> más y es tuya · <b>+'+MIS_PREMIO+' 🌰</b></div>':'')+'</div><div class="mis-val">'+(d.min?hMin(v).replace("0h ",""):v)+'/'+(d.min?hMin(d.meta).replace("0h ",""):d.meta)+'</div></div>';
+      var lk=M.fecha+"|"+id, a=antes[id], desde="";
+      if(ok&&d.min){
+        if(MIS_LLENA[lk]>ahora)desde=100; // repintado a mitad del llenado: sigue lleno, aún sin ✅
+        else if(!(lk in MIS_LLENA)&&vista&&a&&!a.ok&&a.w<100&&ahora-Date.parse(M.hechas[id])<5000){desde=a.w;MIS_LLENA[lk]=ahora+MIS_LLENA_MS;llenar=true;}
+        if(desde!=="")ok=false;
+      }
+      return '<div class="mis'+(ok?' ok':'')+(desde!==""?' mis-llena':'')+(foco?' mis-foco':'')+'" data-m="'+id+'"><div class="mis-ic">'+(ok?'✅':d.icon)+'</div><div class="mis-main"><div class="mis-txt">'+escapeHTML(d.txt)+'</div>'+
+        '<div class="mis-bar"><i style="width:'+(desde!==""?desde:pct)+'%"></i></div>'+(foco&&!ok&&d.min&&falta>0?'<div class="mis-pista">⏱️ <b>'+falta+' min</b> más y es tuya · <b>+'+MIS_PREMIO+' 🌰</b></div>':'')+'</div><div class="mis-val">'+(d.min?hMin(v).replace("0h ",""):v)+'/'+(d.min?hMin(d.meta).replace("0h ",""):d.meta)+'</div></div>';
     }).join("")+
     '<button class="cofre'+(hechas===3&&!M.cofre?' listo':'')+(M.cofre?' abierto':'')+'" onclick="abrirCofre(this)" '+(hechas===3&&!M.cofre?'':'disabled')+'>'+
       '<span class="cofre-ic">🎁</span><span>'+(M.cofre?'Sello del día conseguido · vuelve mañana':hechas===3?'¡Abre tu cofre!':'Cofre: completa las 3 misiones ('+hechas+'/3)')+'</span>'+
       (M.cofre?'<span class="sello-dia" aria-hidden="true">🏵️</span>':'')+'</button>';
   var c=cofFoco&&el.querySelector(".cofre.listo"); if(c)c.focus({preventScroll:true});
+  if(llenar){void el.offsetWidth;el.querySelectorAll(".mis-llena .mis-bar i").forEach(function(i){i.style.width="100%";});
+    setTimeout(function(){for(var k in MIS_LLENA)if(MIS_LLENA[k]<=Date.now())MIS_LLENA[k]=0;renderMisiones();},MIS_LLENA_MS);}
 }
 // Barrita bajo el cronómetro: «🎯 2/3 misiones · la siguiente en 7 min» si a una misión de minutos le faltan ≤ 15 min;
 // tras cumplir una en esta sesión lo refleja 3 min. Va con el tick del cronómetro (solo recalcula al cambiar el minuto);

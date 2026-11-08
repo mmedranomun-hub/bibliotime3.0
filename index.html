@@ -1028,6 +1028,7 @@
   .mis-bar{height:9px;border-radius:var(--r-pill);background:rgba(148,163,184,.25);overflow:hidden;margin-top:5px}
   .mis-bar i{display:block;height:100%;border-radius:var(--r-pill);background:var(--grad-acento);transition:width .8s cubic-bezier(.2,.8,.3,1)}
   .mis.ok .mis-bar i{background:linear-gradient(90deg,var(--ok),var(--ok-osc))}
+  @media(prefers-reduced-motion:reduce){.mis-bar i{transition:none}} /* la barra que termina de llenarse (MIS_LLENA) salta a ✅ */
   .mis-val{font-size:var(--fs-xs);font-weight:800;color:var(--suave);white-space:nowrap;min-width:66px;text-align:right}
   /* Barrita de misiones bajo el cronómetro: informativa, sin cuenta atrás ni rojo */
   .mis-cerca{display:inline-flex;align-items:center;gap:6px;margin:4px 0 10px;padding:4px 12px;border-radius:var(--r-pill);

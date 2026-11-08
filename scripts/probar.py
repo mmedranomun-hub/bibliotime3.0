@@ -484,6 +484,46 @@ PRUEBAS = [
         if(vuelos.length!==1)return 'el cofre vuela dos veces';
         return true;
       }finally{window.showToast=st;window.sinMovimiento=sm;window.volarSemillas=vs;k.forEach(x=>DATA[x]=o[x]);closeModal();limpia();renderMisiones();renderSemillas();}"""),
+    ("la misión de minutos cumplida con «Misiones de hoy» a la vista termina de llenar su barra (~90 % → 100 %, .8 s) antes del ✅; fuera de la vista o con reducir movimiento, salto directo", """
+      var k=['misiones','sessions','acciones','semillasPremio'],o={};k.forEach(x=>o[x]=DATA[x]);
+      var t0={running:studyTimer.running,start:studyTimer.start,bibIndex:studyTimer.bibIndex,tick:studyTimer.tick};
+      var espera=ms=>new Promise(r=>setTimeout(r,ms)),st=window.showToast,sm=window.sinMovimiento,ev=window.encolarVuelo,ce=window.celebrar,si=window.setInterval,nuevos=0;
+      var fila=()=>document.querySelector('#missionsCard [data-m="m25"]'),barra=()=>fila().querySelector('.mis-bar i');
+      var prepara=min=>{studyTimer.running=true;studyTimer.tick=t0.tick||1;studyTimer.bibIndex=-1;studyTimer.start=Date.now()-min*60000-500;
+        MIS_LLENA={};DATA.misiones={fecha:ymd(),ids:['m25','agenda','pomo'],hechas:{},cofre:false};renderMisiones();};
+      window.showToast=()=>{};window.encolarVuelo=()=>{};window.celebrar=()=>{};window.setInterval=function(){nuevos++;return si.apply(this,arguments);};
+      try{
+        closeModal();goView('study');DATA.sessions=[];DATA.acciones={fecha:ymd()};window.sinMovimiento=()=>false;
+        prepara(22);$('missionsCard').scrollIntoView({block:'center'});await espera(80);
+        if(fila().classList.contains('ok')||barra().style.width!=='88%')return 'antes: '+barra().style.width;
+        if(!/width/.test(getComputedStyle(barra()).transitionProperty)||Math.abs(parseFloat(getComputedStyle(barra()).transitionDuration)-.8)>.01)return 'sin la transición de .8 s';
+        studyTimer.start=Date.now()-25*60000-500;comprobarMisiones();
+        if(!DATA.misiones.hechas.m25)return 'no cumple la misión';
+        if(fila().classList.contains('ok')||/✅/.test(fila().querySelector('.mis-ic').textContent))return 'salta a ✅ sin llenar la barra';
+        if(barra().style.width!=='100%')return 'la barra no va al 100 %: '+barra().style.width;
+        var w0=barra().getBoundingClientRect().width,wt=barra().parentNode.getBoundingClientRect().width;
+        if(w0>=wt-1)return 'la barra llega de golpe';
+        await espera(300);renderMisiones();
+        if(fila().classList.contains('ok'))return 'un repintado a mitad corta el llenado';
+        await espera(900);
+        if(!fila().classList.contains('ok')||!/✅/.test(fila().querySelector('.mis-ic').textContent))return 'no pasa a ✅ tras llenarse';
+        if(barra().style.width!=='100%')return 'la barra cumplida no está llena';
+        renderMisiones();if(!fila().classList.contains('ok'))return 'se vuelve a llenar al repintar';
+        // con reducir movimiento: ✅ al instante
+        window.sinMovimiento=()=>true;prepara(22);studyTimer.start=Date.now()-25*60000-500;comprobarMisiones();
+        if(!fila().classList.contains('ok'))return 'con reducir movimiento no salta a ✅';
+        var rm=[].some.call(document.styleSheets,sh=>{try{return [].some.call(sh.cssRules,x=>x.media&&/reduced-motion/.test(x.media.mediaText)&&/mis-bar i[^}]*transition:\\s*none/.test(x.cssText));}catch(e){return false;}});
+        if(!rm)return 'sin regla CSS de reducir movimiento';
+        // fuera de la vista (otra pestaña): ✅ al instante
+        window.sinMovimiento=()=>false;prepara(22);goView('map');studyTimer.start=Date.now()-25*60000-500;comprobarMisiones();
+        if(!fila().classList.contains('ok'))return 'fuera de la vista no salta a ✅';
+        // al cargar con la misión ya cumplida, nada se llena
+        MIS_LLENA={};goView('study');renderMisiones();if(!fila().classList.contains('ok')||document.querySelector('.mis-llena'))return 'se llena al cargar';
+        await espera(60);if(nuevos)return 'crea intervalos nuevos';
+        return true;
+      }finally{window.showToast=st;window.sinMovimiento=sm;window.encolarVuelo=ev;window.celebrar=ce;window.setInterval=si;
+        studyTimer.running=t0.running;studyTimer.start=t0.start;studyTimer.bibIndex=t0.bibIndex;studyTimer.tick=t0.tick;
+        k.forEach(x=>DATA[x]=o[x]);renderStudy();renderMisiones();renderSemillas();}"""),
     ("el 🧊 del cofre vuela a la pastilla de la racha al cerrar la ventana (una vez, tras las 🌰; con reducir movimiento, solo la cifra)", """
       await cargarExtra();
       var k=['misiones','acciones','sellosMisiones','cofresAbiertos','semillasPremio','streakFreezes'],o={};k.forEach(x=>o[x]=DATA[x]);
