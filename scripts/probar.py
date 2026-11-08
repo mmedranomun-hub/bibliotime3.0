@@ -629,6 +629,41 @@ PRUEBAS = [
         }
         return true;
       }finally{f.remove();if(t0===null)h.removeAttribute('data-theme');else h.setAttribute('data-theme',t0);}"""),
+    ("al abrir el cofre, la tarjeta en oro recibe una vez el barrido --destello de .mis-brilla (.cofre-brilla, .6 s, en pausa bajo la ventana); nunca al recargar con el cofre abierto, quieta con reducir movimiento", """
+      await cargarExtra();
+      var k=['misiones','sellosMisiones','cofresAbiertos','semillasPremio','streakFreezes'],o={};k.forEach(x=>o[x]=DATA[x]);
+      var sm=window.sinMovimiento,ev=window.encolarVuelo,ce=window.celebrar,cf=window.confeti,st=window.showToast;
+      var cof=()=>document.querySelector('#missionsCard .cofre'),af=()=>getComputedStyle(cof(),'::after');
+      var lista=()=>{var M=misionesDeHoy();M.cofre=false;M.ids.forEach(id=>M.hechas[id]=M.hechas[id]||new Date().toISOString());renderMisiones();return M;};
+      window.encolarVuelo=()=>{};window.celebrar=()=>{};window.confeti=()=>{};window.showToast=()=>{};
+      try{
+        closeModal();goView('study');window.sinMovimiento=()=>false;
+        lista();
+        if(!cof().classList.contains('listo')||document.querySelector('.cofre-brilla'))return 'brilla antes de abrir';
+        abrirCofre(cof());
+        if(!cof().classList.contains('abierto')||!cof().classList.contains('cofre-brilla'))return 'no brilla al abrir';
+        var a=af();
+        if(a.animationName!=='cofreBrilla'||Math.abs(parseFloat(a.animationDuration)-.6)>.01||a.animationIterationCount!=='1')return 'brillo mal: '+a.animationName+' '+a.animationDuration;
+        if(!/linear-gradient/.test(a.backgroundImage))return 'el brillo no es un barrido';
+        if(CSS.supports('selector(:has(a))')&&a.animationPlayState!=='paused')return 'barre debajo de la ventana: '+a.animationPlayState;
+        closeModal();
+        if(af().animationPlayState!=='running')return 'no barre al cerrar la ventana';
+        if(getComputedStyle(cof()).overflow!=='visible')return 'recorta el sello';
+        var css=[].map.call(document.styleSheets,sh=>{try{return [].map.call(sh.cssRules,x=>x.cssText).join(' ');}catch(e){return '';}}).join(' ');
+        if(!/\\.cofre-brilla::after[^}]*var\\(--destello\\)/.test(css))return 'el brillo no usa --destello';
+        // repintado siguiente (cada 30 s con el cronómetro) y recarga con el cofre ya abierto: oro quieto
+        renderMisiones();
+        if(document.querySelector('.cofre-brilla'))return 'vuelve a brillar al repintar';
+        $('missionsCard').innerHTML='';renderMisiones();
+        if(!cof().classList.contains('abierto')||document.querySelector('.cofre-brilla')||af().animationName!=='none')return 'brilla al recargar con el cofre abierto';
+        // con reducir movimiento: ni clase, y regla @media que lo apaga
+        window.sinMovimiento=()=>true;lista();abrirCofre(cof());closeModal();
+        if(!cof().classList.contains('abierto')||document.querySelector('.cofre-brilla'))return 'con reducir movimiento brilla';
+        var rm=[].some.call(document.styleSheets,sh=>{try{return [].some.call(sh.cssRules,x=>x.media&&/reduced-motion/.test(x.media.mediaText)&&/cofre-brilla::after[^}]*display:\\s*none/.test(x.cssText));}catch(e){return false;}});
+        if(!rm)return 'sin regla CSS de reducir movimiento para el brillo del cofre';
+        return true;
+      }finally{window.sinMovimiento=sm;window.encolarVuelo=ev;window.celebrar=ce;window.confeti=cf;window.showToast=st;closeModal();
+        k.forEach(x=>DATA[x]=o[x]);renderMisiones();renderSemillas();}"""),
     ("el 🧊 del cofre vuela a la pastilla de la racha al cerrar la ventana (una vez, tras las 🌰; con reducir movimiento, solo la cifra)", """
       await cargarExtra();
       var k=['misiones','acciones','sellosMisiones','cofresAbiertos','semillasPremio','streakFreezes'],o={};k.forEach(x=>o[x]=DATA[x]);

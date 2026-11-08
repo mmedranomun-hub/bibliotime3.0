@@ -3587,6 +3587,9 @@ function renderMisiones(){
   var antes={}, vista=misAVista(el), ahora=Date.now(), llenar=false;
   el.querySelectorAll(".mis[data-m]").forEach(function(r){var i=r.querySelector(".mis-bar i");antes[r.getAttribute("data-m")]={ok:r.classList.contains("ok"),llena:r.classList.contains("mis-llena"),w:i?parseFloat(i.style.width)||0:0};});
   var ae=document.activeElement, cofFoco=!!(ae&&ae.classList&&ae.classList.contains("cofre")&&el.contains(ae)); // el repintado no le quita el foco
+  // el repintado que abre el cofre (venía .listo y ya M.cofre) le pone .cofre-brilla: el barrido --destello de .mis-brilla en
+  // la tarjeta en oro, una vez. Al cargar con el cofre abierto no hay .listo antes, y el repintado siguiente ya no la lleva.
+  var cofBrilla=M.cofre&&!!el.querySelector(".cofre.listo")&&!sinMovimiento();
   var finDia=new Date();finDia.setHours(24,0,0,0);var qm=Math.max(0,Math.round((finDia-Date.now())/60000)), quedan=qm>=60?Math.floor(qm/60)+" h":qm+" min";
   el.innerHTML='<div class="mis-head"><div class="section-title" style="margin:0">🎯 Misiones de hoy</div><span class="mis-time">⏳ '+quedan+'</span></div>'+
     M.ids.map(function(id){
@@ -3603,7 +3606,7 @@ function renderMisiones(){
       return '<div class="mis'+(ok?' ok':'')+(desde!==""?' mis-llena':'')+(brilla?' mis-brilla':'')+(foco?' mis-foco':'')+'" data-m="'+id+'"><div class="mis-ic">'+(ok?'✅':d.icon)+'</div><div class="mis-main"><div class="mis-txt">'+escapeHTML(d.txt)+'</div>'+
         '<div class="mis-bar"><i style="width:'+(desde!==""?desde:pct)+'%"></i></div>'+(foco&&!ok&&d.min&&falta>0?'<div class="mis-pista">⏱️ <b>'+falta+' min</b> más y es tuya · <b>+'+MIS_PREMIO+' 🌰</b></div>':'')+'</div><div class="mis-val"'+(vd<v?' data-de="'+vd+'" data-a="'+v+'"':'')+'>'+(d.min?misMin(vd):v)+'/'+(d.min?misMin(d.meta):d.meta)+'</div></div>';
     }).join("")+
-    '<button class="cofre'+(hechas===3&&!M.cofre?' listo':'')+(M.cofre?' abierto':'')+'" onclick="abrirCofre(this)" '+(hechas===3&&!M.cofre?'':'disabled')+'>'+
+    '<button class="cofre'+(hechas===3&&!M.cofre?' listo':'')+(M.cofre?' abierto':'')+(cofBrilla?' cofre-brilla':'')+'" onclick="abrirCofre(this)" '+(hechas===3&&!M.cofre?'':'disabled')+'>'+
       '<span class="cofre-ic">🎁</span><span>'+(M.cofre?'Sello del día conseguido · vuelve mañana':hechas===3?'¡Abre tu cofre!':'Cofre: completa las 3 misiones ('+hechas+'/3)')+'</span>'+
       (M.cofre?'<span class="sello-dia" aria-hidden="true">🏵️</span>':'')+'</button>';
   var c=cofFoco&&el.querySelector(".cofre.listo"); if(c)c.focus({preventScroll:true});

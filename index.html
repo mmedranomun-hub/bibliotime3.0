@@ -1073,6 +1073,14 @@
   /* abierto: el sello del día 🏵️ queda estampado en la tarjeta (solo lo logrado, en oro) */
   .cofre.abierto{position:relative;border:2px solid var(--liga-oro);background:var(--liga-oro-bg);color:var(--liga-oro-tx);padding-right:56px}
   .cofre.abierto .cofre-ic{filter:none}
+  /* recién abierto (.cofre-brilla, solo el repintado que lo abre): el barrido --destello de .mis-brilla, .6 s, una vez. Va por
+     background-position (sin overflow:hidden, que recortaría el sello al estamparse) y espera en pausa mientras la ventana
+     del cofre lo tapa: se ve al cerrarla */
+  .cofre.abierto.cofre-brilla::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+    background-image:linear-gradient(90deg,transparent,var(--destello),transparent);background-repeat:no-repeat;background-size:50% 100%;background-position:-100% 0;animation:cofreBrilla .6s ease-out forwards}
+  body:has(#modalRoot .modal-bg) .cofre.cofre-brilla::after{animation-play-state:paused}
+  @keyframes cofreBrilla{to{background-position:200% 0}}
+  @media(prefers-reduced-motion:reduce){.cofre.cofre-brilla::after{display:none;animation:none}}
   .sello-dia{position:absolute;right:10px;top:50%;margin-top:-20px;width:40px;height:40px;display:grid;place-items:center;border-radius:50%;
     border:2px dashed var(--liga-oro);font-size:var(--fs-2xl);line-height:1;transform:rotate(-12deg)}
   .sello-dia.estampa{animation:estampa .55s cubic-bezier(.2,.9,.3,1.2) both}
