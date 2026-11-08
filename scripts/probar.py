@@ -564,7 +564,7 @@ PRUEBAS = [
       }finally{window.showToast=st;window.sinMovimiento=sm;window.encolarVuelo=ev;window.celebrar=ce;window.setInterval=si;
         studyTimer.running=t0.running;studyTimer.start=t0.start;studyTimer.bibIndex=t0.bibIndex;studyTimer.tick=t0.tick;
         k.forEach(x=>DATA[x]=o[x]);renderStudy();renderMisiones();renderSemillas();}"""),
-    ("al pasar a ✅ tras llenarse, la misión de minutos brilla una vez (.mis-brilla: barrido --glass-fuerte de .6 s) y su contador funde a --ok-tx en .3 s; nunca al cargar ni al repintar, quieto con reducir movimiento", """
+    ("al pasar a ✅ tras llenarse, la misión de minutos brilla una vez (.mis-brilla: barrido --destello de .6 s) y su contador funde a --ok-tx en .3 s; nunca al cargar ni al repintar, quieto con reducir movimiento", """
       var k=['misiones','sessions','acciones','semillasPremio'],o={};k.forEach(x=>o[x]=DATA[x]);
       var t0={running:studyTimer.running,start:studyTimer.start,bibIndex:studyTimer.bibIndex,tick:studyTimer.tick};
       var espera=ms=>new Promise(r=>setTimeout(r,ms)),st=window.showToast,sm=window.sinMovimiento,ev=window.encolarVuelo,ce=window.celebrar,si=window.setInterval,nuevos=0;
@@ -591,7 +591,7 @@ PRUEBAS = [
         var cv=getComputedStyle(val());
         if(cv.animationName!=='misValOk'||Math.abs(parseFloat(cv.animationDuration)-.3)>.01)return 'el contador no funde: '+cv.animationName;
         var css=[].map.call(document.styleSheets,sh=>{try{return [].map.call(sh.cssRules,x=>x.cssText).join(' ');}catch(e){return '';}}).join(' ');
-        if(!/\\.mis-bar i::after[^}]*var\\(--glass-fuerte\\)/.test(css))return 'el brillo no usa --glass-fuerte';
+        if(!/\\.mis-bar i::after[^}]*var\\(--destello\\)/.test(css))return 'el brillo no usa --destello';
         if(!/\\.mis\\.ok \\.mis-val\\s*\\{[^}]*var\\(--ok-tx\\)/.test(css))return 'el contador cumplido no va en --ok-tx';
         // al repintar ya no brilla, pero la cifra sigue verde
         renderMisiones();
@@ -611,6 +611,24 @@ PRUEBAS = [
       }finally{window.showToast=st;window.sinMovimiento=sm;window.encolarVuelo=ev;window.celebrar=ce;window.setInterval=si;
         studyTimer.running=t0.running;studyTimer.start=t0.start;studyTimer.bibIndex=t0.bibIndex;studyTimer.tick=t0.tick;
         k.forEach(x=>DATA[x]=o[x]);renderStudy();renderMisiones();renderSemillas();}"""),
+    ("el barrido de .mis-brilla es luz en claro y en oscuro (--destello blanco, nunca la pizarra de --glass-fuerte)", """
+      var h=document.documentElement,t0=h.getAttribute('data-theme');
+      var f=document.createElement('div');f.className='mis mis-brilla';f.innerHTML='<div class="mis-bar"><i style="width:50%"></i></div>';
+      document.body.appendChild(f);
+      var lee=tema=>{h.setAttribute('data-theme',tema);var bg=getComputedStyle(f.querySelector('i'),'::after').backgroundImage;
+        var m=bg.match(/rgba?\\((\\d+),\\s*(\\d+),\\s*(\\d+)(?:,\\s*([\\d.]+))?\\)/g)||[];
+        var c=m.map(x=>x.match(/[\\d.]+/g).map(Number)).filter(v=>(v[3]===undefined?1:v[3])>0);
+        return {bg:bg,c:c};};
+      try{
+        for(var [tema,amin,amax] of [['light',.45,.65],['dark',.25,.45]]){
+          var r=lee(tema);
+          if(r.c.length!==1)return tema+': el barrido no tiene un solo color visible: '+r.bg;
+          var v=r.c[0];
+          if(v[0]<240||v[1]<240||v[2]<240)return tema+': el barrido no es blanco: '+r.bg;
+          if(v[3]<amin||v[3]>amax)return tema+': opacidad del barrido fuera de rango: '+v[3];
+        }
+        return true;
+      }finally{f.remove();if(t0===null)h.removeAttribute('data-theme');else h.setAttribute('data-theme',t0);}"""),
     ("el 🧊 del cofre vuela a la pastilla de la racha al cerrar la ventana (una vez, tras las 🌰; con reducir movimiento, solo la cifra)", """
       await cargarExtra();
       var k=['misiones','acciones','sellosMisiones','cofresAbiertos','semillasPremio','streakFreezes'],o={};k.forEach(x=>o[x]=DATA[x]);

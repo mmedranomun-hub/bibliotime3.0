@@ -63,6 +63,7 @@
     --texto:#0f172a; --suave:#475569;
     --bg:#dbeafe; --bg-grad:linear-gradient(160deg,#dbeafe,#ede9fe); --blanco:255,255,255;
     --glass:rgba(255,255,255,.62); --glass-fuerte:rgba(255,255,255,.85); --borde:rgba(255,255,255,.55);
+    --destello:rgba(255,255,255,.55);                      /* luz que barre una barra al cumplir (blanca también en oscuro) */
     --sombra:0 8px 32px rgba(2,6,23,.18);
     --barra-a:.9; --barra-b:.72;                           /* opacidad de la barra superior */
     /* Categorías de la agenda (fondo tenue + texto oscuro del mismo matiz) */
@@ -108,6 +109,7 @@
     --texto:#e5e7eb; --suave:#a3b0c2;
     --bg:#0b1220; --bg-grad:linear-gradient(160deg,#0b1220,#1a1440); --blanco:30,41,59;
     --glass:rgba(30,41,59,.72); --glass-fuerte:rgba(30,41,59,.94); --borde:rgba(148,163,184,.22);
+    --destello:rgba(255,255,255,.35);
     --sombra:0 8px 32px rgba(0,0,0,.45);
     --barra-a:.94; --barra-b:.86;
     --ev-ex-bg:rgba(251,113,133,.20); --ev-ex-tx:#fecdd3;
@@ -1033,7 +1035,7 @@
   .mis.ok .mis-val{color:var(--ok-tx)}
   /* justo al pasar a ✅ tras llenarse (.mis-brilla, solo ese repintado): brillo único en la barra y cifra que funde a verde */
   .mis.mis-brilla .mis-bar i{position:relative;overflow:hidden}
-  .mis.mis-brilla .mis-bar i::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,var(--glass-fuerte),transparent);transform:translateX(-100%);animation:misBrilla .6s ease-out forwards}
+  .mis.mis-brilla .mis-bar i::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,var(--destello),transparent);transform:translateX(-100%);animation:misBrilla .6s ease-out forwards}
   .mis.mis-brilla .mis-val{animation:misValOk .3s ease}
   @keyframes misBrilla{to{transform:translateX(100%)}}
   @keyframes misValOk{from{color:var(--suave)}}
