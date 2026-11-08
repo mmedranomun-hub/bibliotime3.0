@@ -197,8 +197,8 @@ function itemBib(b) {
 // noindex (la 404): sin canonical ni og:url (se sirve en cualquier URL inexistente), con <meta name="robots" content="noindex">
 // y sin BreadcrumbList; todos los enlaces son absolutos (/…) para que funcionen desde cualquier ruta.
 // trasH1: HTML opcional entre el <h1> y la intro (la 404 pone ahí su «¿Buscabas…?»).
-// migasId: @id opcional del BreadcrumbList (<ruta>#migas: fichas, provincias, localidades y temáticas de provincia y de
-// localidad), para enlazarlo desde su WebPage o CollectionPage con breadcrumb (ver idMigasDe/conMigas).
+// migasId: @id opcional del BreadcrumbList (<ruta>#migas: fichas, índice, provincias, localidades y temáticas de España,
+// de provincia y de localidad), para enlazarlo desde su WebPage o CollectionPage con breadcrumb (ver idMigasDe/conMigas).
 const h1De = new Map(); // ruta → h1 (texto plano): de aquí salen los textos de «¿Buscabas…?» en la 404
 function pagina({ ruta, titulo, descripcion, h1, intro, cuerpo, migas, migasId, ld, cta, head, noindex, trasH1 }) {
   const url = DOMINIO + ruta;
@@ -582,10 +582,11 @@ const modVerif = (lista) => { const v = lista.filter(verificado); return v.lengt
 // NOMBRE_INDICE, sin reciprocidad porque el índice solo lista provincias), como isPartOf con el mismo name que el
 // CollectionPage destino. Es la otra mitad del hasPart: el comprobador falla si no existe, no está enlazada o, cuando la
 // superior es de provincia o la página lo es, la superior no la lleva en su hasPart.
-// migas: true para enlazar su BreadcrumbList (<ruta>#migas) con breadcrumb (temáticas de provincia y de localidad).
+// migas: true para enlazar su BreadcrumbList (<ruta>#migas) con breadcrumb (temáticas de España, de provincia y de localidad).
 // @id de las migas de una página y el breadcrumb que lo enlaza desde su CollectionPage (las fichas lo hacen a mano).
-// En provincias y localidades el penúltimo de las migas es su isPartOf; en las temáticas no (las migas siguen el lugar,
-// provincia › localidad › tema; el isPartOf, la temática superior): ahí es el primer enlace de su «volver».
+// En el índice (/bibliotecas/: el WebSite), provincias, localidades y temáticas de España (el índice) el penúltimo de las
+// migas es su isPartOf; en las temáticas de provincia y de localidad no (las migas siguen el lugar, provincia › localidad
+// › tema; el isPartOf, la temática superior): ahí es el primer enlace de su «volver».
 let nMigasId = 0;
 const idMigasDe = (ruta) => DOMINIO + ruta + "#migas";
 const conMigas = (ruta) => { nMigasId++; return { breadcrumb: { "@id": idMigasDe(ruta) } }; };
@@ -1488,8 +1489,8 @@ temasEspana.forEach(({ t, l }) => {
     ruta: rutaT, titulo: tituloTema(t, l, "España", true), descripcion: descripcionTema(t, l, "España", true),
     h1: esc(titulo), intro: introTema(t, l, "España"),
     cuerpo: `${navTemas(t.slug)}<nav class="locs" aria-label="Provincias">${provs.map((p) => `<a href="#${slug(p)}">${esc(p)} <small>${porP[p].length}</small></a>`).join("")}</nav>${t.antes ? t.antes(l) : ""}${secciones}${ft.html}<p class="volver"><a href="/bibliotecas/">← Todas las provincias</a></p>${t.hoy ? SCRIPT_HOY : ""}`, head: t.hoy ? ESTILO_HOY : "",
-    migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], [t.corto, rutaT]],
-    ld: [ldTema(rutaT, titulo, ordenados, provs.filter((p) => temaProv[t.slug][p]).map((p) => [`Bibliotecas ${t.que} en ${p}`, `/bibliotecas/${slug(p)}/${t.slug}/`]), [NOMBRE_INDICE, "/bibliotecas/"]), ft.ld],
+    migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], [t.corto, rutaT]], migasId: idMigasDe(rutaT),
+    ld: [ldTema(rutaT, titulo, ordenados, provs.filter((p) => temaProv[t.slug][p]).map((p) => [`Bibliotecas ${t.que} en ${p}`, `/bibliotecas/${slug(p)}/${t.slug}/`]), [NOMBRE_INDICE, "/bibliotecas/"], true), ft.ld],
   }));
   urls.push([rutaT, "0.8", fechaMod(ordenados)]);
 });
@@ -1960,8 +1961,8 @@ escribe("/bibliotecas/", pagina({
   ruta: "/bibliotecas/", titulo: tituloIndice, descripcion: descIndice,
   h1: "Bibliotecas de España por provincia", intro: `${todas.length} bibliotecas en ${provincias.length} provincias. Encuentra la tuya y mira en el mapa cuál está abierta ahora.`,
   cuerpo: `${temasEspana.length ? `<nav class="temas" aria-label="Por horario"><span>Por horario:</span>${temasEspana.map(({ t, l }) => `<a href="/bibliotecas/${t.slug}/">${esc(t.corto)} <small>${l.length}</small></a>`).join("")}<a href="${HUB}">Por provincia</a></nav>` : ""}${salas.length || exCiudades.length ? `<nav class="temas" aria-label="Para estudiar"><span>Para estudiar:</span>${salas.length ? `<a href="/bibliotecas/${SALAS_SLUG}/">Salas de estudio <small>${salas.length} ciudades</small></a>` : ""}${exCiudades.length ? `<a href="${EX_RUTA}">Exámenes: 24 h y horario ampliado <small>${plural(exCiudades.length, "ciudad", "ciudades")}</small></a>` : ""}</nav>` : ""}${universidades.length ? `<nav class="temas" aria-label="Por universidad"><span>Por universidad:</span><a href="/bibliotecas/${UNIS_SLUG}/">Todas <small>${universidades.length}</small></a>${universidades.map((u) => `<a href="${u.ruta}" title="Bibliotecas de la ${esc(u.nombre)}">${esc(u.sigla)} <small>${u.lista.length}</small></a>`).join("")}</nav>` : ""}<nav class="locs grande">${provincias.map((p) => `<a href="/bibliotecas/${slug(p)}/">${esc(p)} <small>${porProv[p].length}</small></a>`).join("")}</nav>`,
-  migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"]],
-  ld: ldLugar("/bibliotecas/", tituloIndice.replace(MARCA, ""), descIndice, { ...modIndice,
+  migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"]], migasId: idMigasDe("/bibliotecas/"),
+  ld: ldLugar("/bibliotecas/", tituloIndice.replace(MARCA, ""), descIndice, { ...modIndice, ...conMigas("/bibliotecas/"),
     mainEntity: { "@type": "ItemList", name: "Bibliotecas de España por provincia", numberOfItems: provincias.length,
       itemListElement: provincias.map((p, k) => ({ "@type": "ListItem", position: k + 1, item: { "@type": "WebPage", name: `Bibliotecas en ${p}`, url: `${DOMINIO}/bibliotecas/${slug(p)}/` } })) } }),
 }));
@@ -2092,7 +2093,7 @@ console.log(`isPartOf en provincias y localidades: ${nLugarIsPartOf} páginas`);
 console.log(`isPartOf en salas de estudio, universidades y exámenes (su hub): ${nHubIsPartOf} páginas`);
 console.log(`isPartOf al índice en los hubs (salas, universidades, exámenes y horarios): ${nHubIndice} páginas`);
 console.log(`isPartOf en fichas (su localidad o provincia): ${nFichasIsPartOf} de ${paginaDe.size}`);
-console.log(`breadcrumb {"@id": "<ruta>#migas"} en provincias, localidades y temáticas de provincia y de localidad: ${nMigasId} páginas`);
+console.log(`breadcrumb {"@id": "<ruta>#migas"} en el índice, provincias, localidades y temáticas de España, de provincia y de localidad: ${nMigasId} páginas`);
 console.log(`Provincias con ItemList de sus fichas en el JSON-LD: ${nProvItemList} de ${provincias.length} · elementos: ${nItemsProv}`);
 console.log(`Localidades sin ninguna verificada con «Cerca, con horario verificado» (≤ ${RADIO_VERIF_KM} km del centroide): ${nLocsVerifCerca} · enlaces: ${nEnlacesLocVerifCerca}`);
 console.log(`Fichas con «Cerca, con horario verificado» (≤ ${RADIO_VERIF_KM} km, otra ficha): ${nFichasVerifCerca} de ${paginaDe.size} · enlaces: ${nEnlacesVerifCerca}`);
