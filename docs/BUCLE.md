@@ -31,8 +31,19 @@ Además siguen las rutinas diarias que ya existían (diseño 6:50, rendimiento 7
 tarea del ordenador de Marcos que hace el backlog cada 3 h. El director no toca sus tareas; el optimizador puede
 ajustarlas dentro de los límites de abajo.
 
-Tareas programadas: «Bibliomapa · director» (cada hora, :18), «Bibliomapa · guardián del bucle» (cada hora, :48) y
-«Bibliomapa · optimizador de bucles» (miércoles y domingo, 20:54), en la cuenta de Marcos.
+Tareas programadas: «Bibliomapa · director» (cada hora, :18), «Bibliomapa · guardián del bucle» (cada hora, :48),
+«Bibliomapa · optimizador de bucles» (miércoles y domingo, 20:54), y desde el 13-11-2026 (pedido el 10-11):
+«Bibliomapa · vigía del dominio» (cada día, 9:22 y 19:22) y «Bibliomapa · probador como usuario» (cada día, 11:44 y
+17:44), en la cuenta de Marcos.
+
+**Vigía del dominio** (`docs/DOMINIO.md`): comprueba bibliomapa.es como lo ve el público —responde, título, que coincide
+con `main`, robots/sitemap, páginas indexadas en Google, analítica— y lleva el informe de tráfico y rentabilidad
+(`docs/informes/dominio-AAAA-MM-DD.md`). Lo que necesita a Marcos (Vercel, Search Console, AdSense, fusionar) lo pide.
+
+**Probador como usuario** (`docs/PRUEBAS_USUARIO.md`): usa la app de principio a fin como harían dos amigos
+(Supabase simulado): exámenes compartidos, rezos, sesiones, bosque, historias, kudos, compartir… Apunta cada fricción
+en `docs/informes/usuario-AAAA-MM-DD.md`, la convierte en tareas «Usuario ·» del backlog (las hace el director) y
+añade a `scripts/probar.py` la prueba de lo que encontró roto.
 
 **Guardián:** media hora después de cada director comprueba que el bucle sigue vivo. Si el sistema desactivó el director
 (fallos, cuota) lo reactiva; si la última vuelta falló o lleva más de 2 h sin ejecutarse —lo normal cuando se acaba
@@ -41,11 +52,13 @@ la cuota y luego se regenera— lo relanza en ese momento. Si Marcos lo pausó a
 ## Límites del optimizador (para que el sistema mejore sin descontrolarse)
 - Solo puede tocar tareas programadas cuyo nombre empiece por «Bibliomapa» o «Bibliotime».
 - Puede cambiar prompt, horario o activar/desactivar. **Nunca borra** ninguna (desactivar es reversible).
-- Como mucho 6 tareas «Bibliomapa/Bibliotime» activas a la vez; como mucho crea 1 nueva por revisión, y solo si el
+- Como mucho 8 tareas «Bibliomapa/Bibliotime» activas a la vez; como mucho crea 1 nueva por revisión, y solo si el
   registro demuestra un hueco que ninguna cubre.
 - Nunca más de una ejecución por hora en ninguna tarea (el director ya va cada hora: no se acelera más); nunca tocar tareas de otros temas (correo, La Guardia…).
 - Un cambio del optimizador se evalúa en la revisión siguiente: si las métricas empeoran, se deshace.
 - Todo cambio queda anotado abajo con el porqué.
+- Pausas de Marcos: si él pausó el bucle (tareas desactivadas sin motivo del sistema), no se reactiva nada; la
+  reanudación la hace la tarea «Bibliomapa · reanudar bucle». Pausa actual: 8-11 → viernes 13-11-2026 a las 16:38.
 
 ## Si se acaba el uso del plan
 Las ejecuciones que caigan sin cuota fallan. En cuanto se regenera, la primera que entra (director o guardián) lo
@@ -222,3 +235,4 @@ Formato: `AAAA-MM-DD HH:MM · quién · objetivo(s) · resultado (✅ subido / �
 - 2026-11-08 08:18 · director/agente horarios · Objetivo 1 · ✅ · 1e3c1c5a→cherry-pick · bibliotecas con horario 637 → 646 (España 533 → 542; Las Palmas 5 → 14: Telde Montiano Placeres #672, Arucas #471 —agosto en h.ver—, Teror #581, Puerto del Rosario #512, Gáldar #1707 —verano en h.ver—, Agüimes #1023, Arinaga #1012, Cruce de Arinaga #1033 —asignada por calle y teléfono, ver nota—, ULPGC Veterinaria #2135, de webs municipales y ULPGC); 9 y no 10: no hubo décima con fuente clara; dudas en «España · Las Palmas» (direcciones de #672/#1023/#1012/#1707, Ingenio #1254 ¿traslado?, Guía y Vega de San Mateo contradictorias, La Oliva PDF sin fecha); bloqueadas lpacultura.com, Santa Brígida, Lanzarote y Fuerteventura
 - 2026-11-08 08:18 · director/agente producto · Objetivo 3 (Dopamina · el barrido del cofre recién abierto ya no se pierde si la tarjeta se repinta con la ventana abierta —cada 30 s con el cronómetro—: marca en memoria `COFRE_BRILLA`, `renderMisiones` mantiene `.cofre-brilla` y un `animationend` la quita; se ve una vez al cerrar, nunca al recargar ni con «reducir movimiento»; cierra el riesgo de la vuelta anterior) · ✅ · 8acf907a→cherry-pick · pruebas 56 → 57; app.js gzip 91,0 → 91,1 KB; sin SQL; caché v115; +2 tareas «Dopamina ·» · riesgo: en oscuro el barrido sobre el oro apenas se ve (tarea `--destello-oro` apuntada)
 - 2026-11-08 08:18 · director/agente SEO · Objetivo 4 · ✅ · f8dec3fa→cherry-pick (conflicto en BACKLOG resuelto) · el `WebPage` de cada ficha lleva `@id` `<ficha>#pagina` y su `Library` declara `mainEntityOfPage` recíproco del `about`; el comprobador lo exige (613 fallos → 0); +2 tareas «Objetivo 4 ·» (FAQPage con @id, copias de Library coherentes) · director: con Las Palmas, páginas SEO 1056 → 1070, sitemap 1071, 0 rotos/huérfanas, 622/622 fichas bien; pruebas 57/57, 0 errores; carga CPU 4× 814 ms (sin markercluster)
+- 2026-11-10 08:55 · sesión con Marcos · pausa hasta el viernes 13-11 16:38; título «Bibliotecas de España» en main (PR #17, falta que Marcos lo fusione); nuevos bucles «vigía del dominio» y «probador como usuario»; objetivos 7 (publicar) y 8 (tráfico y rentabilidad) · ✅
