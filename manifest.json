@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "Bibliotecas de Navarra",
+  "name": "Bibliomapa · Bibliotecas de España",
   "short_name": "Bibliotime",
-  "description": "Mapa de más de 2.600 bibliotecas de Navarra y España: horarios, afluencia compartida, modo estudio y sesiones en grupo.",
+  "description": "Bibliotecas y salas de estudio abiertas en toda España: horarios, afluencia, modo estudio con tu propio bosque y exámenes con amigos.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
@@ -33,6 +33,29 @@
   "categories": [
     "education",
     "productivity"
+  ],
+  "shortcuts": [
+    {
+      "name": "Empezar a estudiar",
+      "short_name": "Estudiar",
+      "description": "Abre el cronómetro listo para plantar tu árbol",
+      "url": "./#accion=estudiar",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Te recomiendo ahora",
+      "short_name": "Abiertas ahora",
+      "description": "La biblioteca abierta que más te conviene ahora mismo",
+      "url": "./#accion=ahora",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Abren pronto",
+      "short_name": "Abren pronto",
+      "description": "Bibliotecas cerradas que abren en menos de hora y media",
+      "url": "./#accion=pronto",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
   ],
   "screenshots": [
     {

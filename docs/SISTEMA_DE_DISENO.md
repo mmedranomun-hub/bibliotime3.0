@@ -53,6 +53,8 @@ borrar) se usa siempre `--peligro-tx`; para contadores con número blanco, `--pe
 | `--glass` / `--glass-fuerte` | blanco 62 % / 85 % | pizarra 72 % / 94 % |
 | `--borde` | blanco 55 % | gris 22 % |
 | `--sombra` | 0 8px 32px negro 18 % | 0 8px 32px negro 45 % |
+| `--destello` (luz que barre una barra al cumplir, p. ej. `.mis-brilla`) | blanco 55 % | blanco 35 % (nunca `--glass-fuerte`, que en oscuro es pizarra y se ve como sombra) |
+| `--brillo` (sombra de color de botones y elementos activos) | 0 10px 28px violeta 38 % | igual |
 | `--blanco` | `255,255,255` (para `rgba(var(--blanco),.5)`) | `30,41,59` |
 | `--neutro` / `--neutro-claro` | #94a3b8 / #cbd5e1 | igual |
 
