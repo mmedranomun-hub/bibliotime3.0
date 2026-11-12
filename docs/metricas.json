@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-11-12 16:38",
+  "fecha": "2026-11-12 17:35",
   "pruebas": {
     "arranca: datos y vistas": true,
     "marca España (sin «Navarra» en la cabecera)": true,
@@ -60,17 +60,18 @@
     "«Sesión terminada» lleva «📸 Compartir» (44 px, con etiqueta) y la tarjeta de la sesión se dibuja en 1080×1920 sin red, también sin árbol ni biblioteca": true,
     "historial de Estudio: cada fila lleva 📸 (44×44, «Compartir sesión de <fecha>») y comparte ESA sesión en 1080×1920, con la racha de ese día y sin red": true,
     "perfil: récord con el nombre bien recortado": true,
+    "perfil: «📸 Compartir mi mejor sesión de la semana» sale con sesiones de los últimos 7 días y comparte la más larga; sin sesiones no sale": true,
     "atajos de la app instalada (#accion=estudiar|ahora|pronto)": true,
     "analítica apagada por defecto (index.html y /bibliotecas/ cargan analitica.js con proveedor:null y no piden _vercel/insights ni goatcounter ni ponen cookies; respeta DNT/GPC y local)": true
   },
   "errores_js": [],
-  "carga_ms_cpu4x": 1209,
+  "carga_ms_cpu4x": 1197,
   "carga_ms_cpu4x_min_max": [
-    909,
-    1330
+    891,
+    1304
   ],
-  "primera_pintura_ms_cpu4x": 264,
-  "todas_las_chinchetas_ms_cpu4x": 1251,
+  "primera_pintura_ms_cpu4x": 272,
+  "todas_las_chinchetas_ms_cpu4x": 1217,
   "markercluster": {
     "cargado": false,
     "agrupa": false,
@@ -80,26 +81,26 @@
   },
   "datos": {
     "bibliotecas": 2616,
-    "con_horario_verificado": 666,
+    "con_horario_verificado": 676,
     "provincias_con_horario": 51,
     "provincias_total": 51
   },
   "seo": {
-    "paginas": 1092,
+    "paginas": 1104,
     "sitemap": true
   },
   "peso": {
     "index.html": {
-      "kb": 136.8,
+      "kb": 137.0,
       "kb_gzip": 30.9
     },
     "app.js": {
-      "kb": 307.2,
-      "kb_gzip": 91.2
+      "kb": 307.8,
+      "kb_gzip": 91.4
     },
     "bibliotecas-espana.js": {
-      "kb": 850.1,
-      "kb_gzip": 206.3
+      "kb": 854.1,
+      "kb_gzip": 207.2
     }
   },
   "ok": true

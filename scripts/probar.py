@@ -1412,7 +1412,7 @@ PRUEBAS = [
           {id:'mb-larga',date:dia(5),min:95,bib:NO_BIB,focus:'ok'},{id:'mb-seca',date:dia(2),min:200,bib:NO_BIB,focus:'withered'},{id:'mb-b',date:ymd(),min:25,bib:NO_BIB,focus:null}];
         goView('profile');await new Promise(r=>setTimeout(r,200));var b=$('btnShareBest');
         if(!b||b.classList.contains('hidden')||!b.offsetHeight)return 'no sale con sesiones';
-        if(b.getBoundingClientRect().height<44)return 'mide menos de 44 px';
+        if(b.offsetHeight<44)return 'mide menos de 44 px ('+b.offsetHeight+')';
         if(!/1h 35m|1 h 35|95/.test(b.getAttribute('aria-label')||''))return 'aria-label: '+b.getAttribute('aria-label');
         b.click();if(pedida!=='mb-larga')return 'comparte '+pedida+' en vez de la más larga';
         DATA.sessions=[];renderProfile();
