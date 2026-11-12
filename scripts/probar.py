@@ -1491,6 +1491,40 @@ async def main():
                 fallo_atajo.append(acc)
             await c3.close()
         res["pruebas"]["atajos de la app instalada (#accion=estudiar|ahora|pronto)"] = True if not fallo_atajo else "fallan: " + ", ".join(fallo_atajo)
+        # --- analítica sin cookies (docs/ANALITICA.md): preparada pero APAGADA ---
+        # Se inyecta analitica.js aunque index.html aún no lo cargue, para que la prueba valga ya.
+        fallo_an = []
+        fuente_an = open(os.path.join(RAIZ, "analitica.js"), encoding="utf-8").read() if os.path.exists(os.path.join(RAIZ, "analitica.js")) else ""
+        if not fuente_an:
+            fallo_an.append("no existe analitica.js")
+        elif not __import__("re").search(r"var ANALITICA\s*=\s*\{\s*proveedor\s*:\s*null\s*\}", fuente_an):
+            fallo_an.append("analitica.js no tiene {proveedor:null} por defecto")
+        if fuente_an:
+            c4, p4 = await nueva_pagina()
+            pedidas = []
+            p4.on("request", lambda r: pedidas.append(r.url) if ("_vercel/insights" in r.url or "goatcounter" in r.url or "gc.zgo.at" in r.url) else None)
+            p4.on("pageerror", lambda e: errores.append("analítica: " + str(e)[:200]))
+            await p4.goto(url)
+            await p4.add_script_tag(path=os.path.join(RAIZ, "analitica.js"))
+            await p4.wait_for_timeout(1500)
+            casos = await p4.evaluate("""()=>{
+              var web={protocolo:'https:',host:'bibliomapa.es'},m=Object.assign,D=analiticaDecidir,f=[];
+              if(D(ANALITICA,web)!==null)f.push('por defecto no es null');
+              var v=D({proveedor:'vercel'},web);if(!v||v.src!=='/_vercel/insights/script.js')f.push('vercel: '+JSON.stringify(v));
+              var g=D({proveedor:'goatcounter',codigo:'bibliomapa'},web);if(!g||g.goatcounter!=='https://bibliomapa.goatcounter.com/count')f.push('goatcounter: '+JSON.stringify(g));
+              if(D({proveedor:'goatcounter'},web))f.push('goatcounter sin código carga');
+              if(D({proveedor:'vercel'},m({},web,{dnt:'1'})))f.push('no respeta DNT');
+              if(D({proveedor:'vercel'},m({},web,{gpc:true})))f.push('no respeta GPC');
+              if(D({proveedor:'vercel'},{protocolo:'http:',host:'localhost'})||D({proveedor:'vercel'},{protocolo:'http:',host:'127.0.0.1'}))f.push('carga en local');
+              if(D({proveedor:'vercel'},{protocolo:'file:',host:''}))f.push('carga en file:');
+              if(document.querySelector('script[src*="_vercel/insights"],script[data-goatcounter]'))f.push('ha insertado un script');
+              if(window.va||window.goatcounter)f.push('ha tocado window.va/goatcounter');
+              return f;}""")
+            fallo_an += casos
+            if pedidas:
+                fallo_an.append("pide: " + ", ".join(pedidas))
+            await c4.close()
+        res["pruebas"]["analítica apagada por defecto (analitica.js con proveedor:null no pide _vercel/insights ni goatcounter; respeta DNT/GPC y local)"] = True if not fallo_an else "; ".join(fallo_an)
         # --- datos y SEO (desde la propia app) ---
         res["datos"] = await pg.evaluate("""()=>{
           var conH=BIBLIOTECAS.filter(b=>!b.sinHorario), prov={}, provH={};
