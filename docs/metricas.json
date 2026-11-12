@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-11-12 17:35",
+  "fecha": "2026-11-12 18:36",
   "pruebas": {
     "arranca: datos y vistas": true,
     "marca España (sin «Navarra» en la cabecera)": true,
@@ -52,6 +52,7 @@
     "agenda: añadir examen": true,
     "agenda: aviso «🙏 N amigos rezan por tu examen de mañana» solo con rezos reales": true,
     "temporada de exámenes: fuentes, chip y nota": true,
+    "historial: «✅ N misiones · +N 🌰» bajo la sesión que las cumplió, nada en las demás": true,
     "reacciones 🔥💪🧠: ocultas sin sesión, alternan en local sin tabla": true,
     "liga semanal: Oro/Plata por la semana pasada, mínimo de estudio y sin amigos nada": true,
     "enlace #bib abre la ficha": true,
@@ -65,13 +66,13 @@
     "analítica apagada por defecto (index.html y /bibliotecas/ cargan analitica.js con proveedor:null y no piden _vercel/insights ni goatcounter ni ponen cookies; respeta DNT/GPC y local)": true
   },
   "errores_js": [],
-  "carga_ms_cpu4x": 1197,
+  "carga_ms_cpu4x": 1008,
   "carga_ms_cpu4x_min_max": [
-    891,
-    1304
+    894,
+    1243
   ],
-  "primera_pintura_ms_cpu4x": 272,
-  "todas_las_chinchetas_ms_cpu4x": 1217,
+  "primera_pintura_ms_cpu4x": 256,
+  "todas_las_chinchetas_ms_cpu4x": 1031,
   "markercluster": {
     "cargado": false,
     "agrupa": false,
@@ -81,26 +82,26 @@
   },
   "datos": {
     "bibliotecas": 2616,
-    "con_horario_verificado": 676,
+    "con_horario_verificado": 685,
     "provincias_con_horario": 51,
     "provincias_total": 51
   },
   "seo": {
-    "paginas": 1104,
+    "paginas": 1116,
     "sitemap": true
   },
   "peso": {
     "index.html": {
-      "kb": 137.0,
+      "kb": 137.2,
       "kb_gzip": 30.9
     },
     "app.js": {
-      "kb": 307.8,
-      "kb_gzip": 91.4
+      "kb": 308.8,
+      "kb_gzip": 91.8
     },
     "bibliotecas-espana.js": {
-      "kb": 854.1,
-      "kb_gzip": 207.2
+      "kb": 858.8,
+      "kb_gzip": 208.2
     }
   },
   "ok": true

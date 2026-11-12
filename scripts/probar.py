@@ -1269,6 +1269,25 @@ PRUEBAS = [
       if(con.length){openBibDetailModal(con[0]);var a=document.querySelector('#modalRoot .ex-nota a');closeModal();
         if(!a||a.getAttribute('href')!==examenDeBib(BIBLIOTECAS[con[0]]).f)return 'la ficha no enlaza la fuente';}
       return true;"""),
+    ("historial: «✅ N misiones · +N 🌰» bajo la sesión que las cumplió, nada en las demás", r"""
+      goView('study');await new Promise(r=>setTimeout(r,200));
+      var os=DATA.sessions,om=DATA.misiones,ot=feedTab;
+      try{
+        feedTab='mia';var t0=Date.now()-30*60000,hoy=ymd();
+        DATA.misiones={fecha:hoy,ids:['m25','agenda','largo'],hechas:{m25:new Date(t0+60000).toISOString(),agenda:new Date(t0+120000).toISOString(),largo:new Date(t0-60000).toISOString()},cofre:true};
+        var m=idsMisionesSesion({ts:t0,date:hoy});
+        if(JSON.stringify(m)!=='["m25"]')return 'idsMisionesSesion mal: '+JSON.stringify(m);
+        DATA.sessions=[{id:'p1',date:hoy,min:30,bib:NO_BIB,ts:t0},{id:'p2',date:hoy,min:50,bib:NO_BIB,ts:t0,mis:['m25','largo']},{id:'p3',date:hoy,min:26,bib:NO_BIB,ts:t0,mis:['m25']}];
+        renderSessionFeed();
+        var f=[...document.querySelectorAll('#sessionFeed .feed-item')];
+        if(f.length!==3)return 'filas: '+f.length;
+        var tx=f.map(x=>{var e=x.querySelector('.feed-mis');return e?e.innerText.trim():'';});
+        if(tx[0]!=='✅ 1 misión · +'+MIS_PREMIO+' 🌰')return 'singular: '+tx[0];
+        if(tx[1]!=='✅ 2 misiones · +'+(2*MIS_PREMIO)+' 🌰')return 'plural: '+tx[1];
+        if(tx[2]!=='')return 'sesión sin misiones enseña algo';
+        var b=f[1].querySelector('.feed-mis b');if(!b||b.innerText.indexOf('+'+(2*MIS_PREMIO))<0)return 'premio sin resaltar';
+        return true;
+      }finally{DATA.sessions=os;DATA.misiones=om;feedTab=ot;renderSessionFeed();}"""),
     ("reacciones 🔥💪🧠: ocultas sin sesión, alternan en local sin tabla", """
       if(reaccionesHTML('x','y')!=='')return 'se ven sin sesión';
       var oc=socialClient,ou=SOCIAL.user,of=SOCIAL.friendSessions,ok0=SOCIAL.reactsOk,ot=feedTab,ofr=SOCIAL.friends;

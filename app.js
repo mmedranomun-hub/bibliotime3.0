@@ -2583,7 +2583,7 @@ function renderSessionFeed(force){
     var extra=(s.subject?' · '+escapeHTML(s.subject):'')+(s.focus==="ok"?' <span title="Sesión de foco completada">🌳</span>':(s.focus==="withered"?' <span title="Saliste de la app durante el modo foco">🥀</span>':''));
     return '<div class="feed-item"><div class="fhead"><div class="fplace">'+escapeHTML(lugar)+extra+(s.verif?' <span class="fverif" title="Check-in verificado">✓</span>':'')+'</div><div class="fdate">'+fmtFeedDate(s.date)+'</div></div>'+
       '<div class="fstats"><div class="fstat"><small>Duración</small><b>'+hMin(s.min)+'</b></div><div class="fstat"><small>Valoración</small><b class="fstars">'+valoracion+'</b></div></div>'+
-      prBanner+
+      misSesionHTML(s)+prBanner+
       '<div class="feed-acc"><button type="button" class="feed-share" aria-label="Compartir sesión de '+escapeHTML(new Date(s.date+"T12:00:00").toLocaleDateString("es-ES",{day:"numeric",month:"long",year:"numeric"}))+'" title="Compartir como imagen" onclick="compartirSesionStory('+(s.id?jsArg(s.id):idx)+')">📸</button><button class="linkbtn feed-edit" onclick="editarSesion('+idx+')">Editar</button></div>'+
       (s.note?'<div class="fnote">"'+escapeHTML(s.note)+'"</div>':'')+
       (s.offering?'<div class="foffer">🙏 Ofrecido por '+escapeHTML(s.offering)+'</div>':'')+
@@ -3553,6 +3553,13 @@ function misionesDeHoy(){
   return DATA.misiones;
 }
 var MIS_PREMIO=10; // 🌰 por misión cumplida (comprobarMisiones y la pista «⏱️ N min más y es tuya»)
+// Misiones de estudio que cumplió una sesión: las de hoy marcadas en M.hechas desde que empezó (el tic de 30 s
+// las marca mientras corre; comprobarMisiones, al guardarla). Las de amigos/agenda no son del rato de estudio.
+// (Distinta de misionesDeSesion de app-extra.js, que da las definiciones para «Sesión terminada».)
+// trasGuardarSesion las guarda en s.mis (solo si hay alguna) y el historial pinta «✅ N misiones · +N×MIS_PREMIO 🌰».
+function idsMisionesSesion(s){var M=DATA&&DATA.misiones;if(!s||!s.ts||!M||M.fecha!==ymd())return [];
+  return M.ids.filter(function(id){var t=M.hechas[id];return t&&id!=="social"&&id!=="agenda"&&Date.parse(t)>=s.ts;});}
+function misSesionHTML(s){var n=s.mis&&s.mis.length;return n?'<div class="feed-mis">✅ '+n+(n===1?' misión':' misiones')+' · <b>+'+n*MIS_PREMIO+' 🌰</b></div>':'';}
 function misionDef(id){return MISIONES_POOL.filter(function(m){return m.id===id;})[0];}
 function comprobarMisiones(){
   if(!DATA)return; var M=misionesDeHoy(), h=statsHoy(), nuevas=[];
@@ -3737,7 +3744,9 @@ function trasGuardarSesion(sesion){
   var arbol=primerArbolDelDia(sesion), racha=!!(sesion&&sesion.date===hoy&&deHoy===1);
   if(arbol||racha){CELEB_DIA={arbol:arbol,racha:racha};setTimeout(celebrarDia,350);}
   if(sesion&&sesion.focus!=="withered")comprobarHitoBosque();
-  comprobarMisiones();comprobarEspecieLista();comprobarBibNueva(sesion);renderRacha();renderSemillas();
+  comprobarMisiones();
+  var mis=idsMisionesSesion(sesion);if(mis.length){sesion.mis=mis;saveUserData();renderSessionFeed();}
+  comprobarEspecieLista();comprobarBibNueva(sesion);renderRacha();renderSemillas();
 }
 /* ----- Biblioteca nueva en tu mapa: el primer árbol sano en una biblioteca real (no «Sin biblioteca») donde no
    tenías ninguno da un aviso suave con cuántas llevas (solo suma). Espera como el de la especie (avisoEspecie). ----- */
