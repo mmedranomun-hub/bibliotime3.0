@@ -2584,7 +2584,7 @@ function renderSessionFeed(force){
     return '<div class="feed-item"><div class="fhead"><div class="fplace">'+escapeHTML(lugar)+extra+(s.verif?' <span class="fverif" title="Check-in verificado">✓</span>':'')+'</div><div class="fdate">'+fmtFeedDate(s.date)+'</div></div>'+
       '<div class="fstats"><div class="fstat"><small>Duración</small><b>'+hMin(s.min)+'</b></div><div class="fstat"><small>Valoración</small><b class="fstars">'+valoracion+'</b></div></div>'+
       misSesionHTML(s)+prBanner+
-      '<div class="feed-acc"><button type="button" class="feed-share" aria-label="Compartir sesión de '+escapeHTML(new Date(s.date+"T12:00:00").toLocaleDateString("es-ES",{day:"numeric",month:"long",year:"numeric"}))+'" title="Compartir como imagen" onclick="compartirSesionStory('+(s.id?jsArg(s.id):idx)+')">📸</button><button class="linkbtn feed-edit" onclick="editarSesion('+idx+')">Editar</button></div>'+
+      '<div class="feed-acc"><button type="button" class="feed-share" aria-label="Compartir sesión de '+escapeHTML(new Date(s.date+"T12:00:00").toLocaleDateString("es-ES",{day:"numeric",month:"long",year:"numeric"}))+'" title="Compartir como imagen" onclick="compartirSesionStory('+(s.id?jsArg(s.id):idx)+',null,this)">📸</button><button class="linkbtn feed-edit" onclick="editarSesion('+idx+')">Editar</button></div>'+
       (s.note?'<div class="fnote">"'+escapeHTML(s.note)+'"</div>':'')+
       (s.offering?'<div class="foffer">🙏 Ofrecido por '+escapeHTML(s.offering)+'</div>':'')+
       ownCmt(s)+
@@ -3449,7 +3449,7 @@ window.addEventListener("DOMContentLoaded",function(){
   $("btnFeedback").addEventListener("click",function(){enviarSugerencia();});
   $("btnBlocked").addEventListener("click",abrirBloqueados);
   $("btnShareWeek").addEventListener("click",compartirSemana);
-  $("btnShareBest").addEventListener("click",function(){var id=this.dataset.id;if(id)compartirSesionStory(id,TIT_MEJOR);});
+  $("btnShareBest").addEventListener("click",function(){var id=this.dataset.id;if(id)compartirSesionStory(id,TIT_MEJOR,this);});
 
   // nuevas funciones
   $("panelClose").addEventListener("click",function(e){e.stopPropagation();cerrarLista();});

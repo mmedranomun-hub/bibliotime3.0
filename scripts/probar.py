@@ -1499,7 +1499,7 @@ PRUEBAS = [
         for(var b of bs){var r=b.getBoundingClientRect();if(r.width<44||r.height<44)return 'mide '+r.width+'×'+r.height;
           if(!/^Compartir sesión de \d{1,2} de \w+ de \d{4}$/.test(b.getAttribute('aria-label')||''))return 'etiqueta: '+b.getAttribute('aria-label');}
         if(rachaHasta(dia(9))!==1||rachaHasta(dia(8))!==2||rachaHasta(dia(7))!==3||rachaHasta(dia(30))!==0)return 'racha de ese día mal: '+[9,8,7,30].map(n=>rachaHasta(dia(n)));
-        bs[1].click();bs[2].click();await new Promise(r=>setTimeout(r,800));
+        bs[1].click();await new Promise(r=>setTimeout(r,800));bs[2].click();await new Promise(r=>setTimeout(r,800));
         if(lienzos.length!==2)return 'se generaron '+lienzos.length+' lienzos';
         for(var c of lienzos){if(c.width!==1080||c.height!==1920)return 'tamaño '+c.width+'×'+c.height;if(c.getContext('2d').getImageData(540,700,1,1).data[3]!==255)return 'lienzo vacío';}
         if(pide)return 'pide a la red';
@@ -1552,6 +1552,32 @@ PRUEBAS = [
         abrirResumenSemanal(false);if(ultima())return 'sale solo con árboles secos';
         return true;
       }finally{window.compartirSesionStory=cs;window.compartirLienzo=cl0;window.textoC=tc0;cerrarStory();DATA.sessions=s0;DATA.resumenVisto=rv;goView('map');}"""),
+    ("📸 doble toque: el botón queda desactivado con aria-busy mientras se prepara la imagen y solo se genera y comparte UNA; luego vuelve, también si se cancela la hoja", """
+      await cargarExtra();
+      var s0=DATA.sessions,tab0=feedTab,sh0=navigator.share,cs0=navigator.canShare,ds0=window.dibujarSesionStory,dibujos=0,shares=0,soltar=null;
+      try{
+        closeModal();feedTab='mia';
+        window.dibujarSesionStory=async function(){dibujos++;return ds0.apply(this,arguments);};
+        navigator.canShare=()=>true;navigator.share=function(){shares++;return new Promise((ok,ko)=>{soltar=()=>ko(Object.assign(new Error('cancelada'),{name:'AbortError'}));});};
+        DATA.sessions=[{id:'dt1',date:ymd(),min:45,bib:NO_BIB,focus:'ok',esp:'roble'}];
+        goView('study');renderSessionFeed(true);await new Promise(r=>setTimeout(r,200));
+        var b=document.querySelector('#sessionFeed .feed-share');if(!b)return 'sin botón 📸';
+        b.click();b.click();b.dispatchEvent(new MouseEvent('click',{bubbles:true}));
+        if(!b.disabled||b.getAttribute('aria-busy')!=='true')return 'no se desactiva al tocar';
+        await compartirSesionStory('dt1');
+        for(var i=0;i<40&&!shares;i++)await new Promise(r=>setTimeout(r,50));
+        if(dibujos!==1)return 'se dibujaron '+dibujos+' imágenes';
+        if(shares!==1)return 'se abrió la hoja '+shares+' veces';
+        if(!b.disabled)return 'se reactiva con la hoja abierta';
+        soltar();await new Promise(r=>setTimeout(r,50));
+        if(b.disabled||b.hasAttribute('aria-busy'))return 'no vuelve tras cancelar la hoja';
+        b.click();for(var i=0;i<40&&shares<2;i++)await new Promise(r=>setTimeout(r,50));
+        if(shares!==2)return 'tras cancelar no deja volver a compartir';
+        soltar();await new Promise(r=>setTimeout(r,50));
+        window.dibujarSesionStory=async function(){throw new Error('falla');};b.click();await new Promise(r=>setTimeout(r,50));
+        if(b.disabled||b.hasAttribute('aria-busy'))return 'se queda bloqueado si falla el dibujo';
+        return true;
+      }finally{navigator.share=sh0;navigator.canShare=cs0;window.dibujarSesionStory=ds0;compartiendoSesion=false;DATA.sessions=s0;feedTab=tab0;renderSessionFeed(true);closeModal();goView('map');}"""),
 ]
 
 

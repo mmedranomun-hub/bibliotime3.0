@@ -385,11 +385,22 @@ function rachaHasta(fecha){
 }
 /* id de la sesión (texto) o, en sesiones antiguas sin id, su posición en DATA.sessions (número):
    lo usan «Sesión terminada» (#sessShare) y el 📸 de cada fila del historial de Estudio. `titulo` opcional
-   sustituye «SESIÓN DE ESTUDIO» (TIT_MEJOR desde #btnShareBest y el Wrapped) y el texto de compartir. */
-async function compartirSesionStory(id,titulo){
+   sustituye «SESIÓN DE ESTUDIO» (TIT_MEJOR desde #btnShareBest y el Wrapped) y el texto de compartir.
+   `origen` es el botón 📸 que lo lanzó (si no llega, el del evento en curso): mientras se dibuja y se
+   abre la hoja de compartir queda desactivado con aria-busy, y el candado ignora un segundo toque, así
+   un doble toque no genera dos imágenes ni abre la hoja dos veces. Se restaura siempre en el finally
+   (también si se cancela la hoja o falla el dibujo). */
+var compartiendoSesion=false;
+async function compartirSesionStory(id,titulo,origen){
+  if(compartiendoSesion)return;
   var s=typeof id==="number"?DATA.sessions[id]:DATA.sessions.filter(function(x){return x.id===id;})[0]; if(!s)return;
-  showToast("Preparando tu imagen…");
-  compartirLienzo(await dibujarSesionStory(s,titulo),"mi-sesion.png",(titulo?titulo+": ":"He estudiado ")+hMin(s.min)+" 📚 bibliomapa.es");
+  var b=origen||(window.event&&window.event.currentTarget);if(!(b&&b.tagName==="BUTTON"))b=null;
+  compartiendoSesion=true;if(b){b.disabled=true;b.setAttribute("aria-busy","true");}
+  try{
+    showToast("Preparando tu imagen…");
+    await compartirLienzo(await dibujarSesionStory(s,titulo),"mi-sesion.png",(titulo?titulo+": ":"He estudiado ")+hMin(s.min)+" 📚 bibliomapa.es");
+  }catch(e){showToast("No se pudo preparar la imagen. Prueba otra vez");}
+  finally{compartiendoSesion=false;if(b){b.disabled=false;b.removeAttribute("aria-busy");}}
 }
 async function compartirStoryDia(){
   var hoy=ymd(),ses=DATA.sessions.filter(function(s){return s.date===hoy;});
@@ -412,7 +423,7 @@ function abrirResumenSemanal(auto){
   if(S.top)slides.push({html:'<div class="sv-kicker">LO QUE MÁS ESTUDIASTE</div><div class="sv-min">📚 '+escapeHTML(S.top)+'</div><div class="sv-where">'+hMin(S.topMin)+' ('+Math.round(S.topMin/S.min*100)+'% de tu semana)</div>',ses:null});
   slides.push({html:'<div class="sv-kicker">NIVEL '+(nivelDe(horasTotales())+1)+' · '+escapeHTML(NIVELES[nivelDe(horasTotales())][1].toUpperCase())+'</div><div class="sv-min">🔥 '+streakDays()+'</div><div class="sv-where">'+(streakDays()===1?'día':'días')+' de racha · 🌰 '+semillas()+' semillas</div>'+
     '<div class="sv-acc"><button class="btn sm" onclick="compartirSemanaPasada()">📸 Compartir mi semana</button>'+
-    (b?'<button class="btn sm ghost" id="svBest" aria-label="Compartir en stories tu mejor sesión de la semana pasada: '+hMin(b.min)+'" onclick="compartirSesionStory('+(b.id?jsArg(b.id):DATA.sessions.indexOf(b))+',TIT_MEJOR)">📸 Mi mejor sesión</button>':'')+'</div>',ses:null});
+    (b?'<button class="btn sm ghost" id="svBest" aria-label="Compartir en stories tu mejor sesión de la semana pasada: '+hMin(b.min)+'" onclick="compartirSesionStory('+(b.id?jsArg(b.id):DATA.sessions.indexOf(b))+',TIT_MEJOR,this)">📸 Mi mejor sesión</button>':'')+'</div>',ses:null});
   mostrarStory("Tu semana",null,slides,"yo");
   if(auto)setTimeout(function(){confeti(60);},400);
 }
@@ -1088,7 +1099,7 @@ function pedirValoracion(sesion,horasAntes){
       '<div class="occ-quick" id="sessOcc"><button data-l="libre">🟢 Con sitio</button><button data-l="media">🟡 Media</button><button data-l="llena">🔴 Llena</button></div>':'')+
     '<div class="field" style="margin-top:10px"><input type="text" id="sessNote" placeholder="Nota opcional (ej: terminé el tema 4)"></div>'+
     '<button class="btn" id="sessSave">Guardar</button>'+
-    '<button type="button" class="btn ghost" id="sessShare" style="margin-top:10px;min-height:44px" aria-label="Compartir: crear una imagen de esta sesión para tus stories" onclick="compartirSesionStory(\''+sesion.id+'\')">📸 Compartir</button>'+
+    '<button type="button" class="btn ghost" id="sessShare" style="margin-top:10px;min-height:44px" aria-label="Compartir: crear una imagen de esta sesión para tus stories" onclick="compartirSesionStory(\''+sesion.id+'\',null,this)">📸 Compartir</button>'+
     '<button class="linkbtn" id="sessSkip" style="display:block;margin:12px auto 0">Omitir</button>',
     function(){
       var bn=document.querySelector(".np-bar i");if(bn)setTimeout(function(){bn.style.width=bn.dataset.to+"%";},350);
