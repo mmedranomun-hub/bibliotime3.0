@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-11-12 20:32",
+  "fecha": "2026-11-12 21:37",
   "pruebas": {
     "arranca: datos y vistas": true,
     "marca España (sin «Navarra» en la cabecera)": true,
@@ -53,6 +53,7 @@
     "agenda: aviso «🙏 N amigos rezan por tu examen de mañana» solo con rezos reales": true,
     "temporada de exámenes: fuentes, chip y nota": true,
     "historial: «✅ N misiones · +N 🌰» bajo la sesión que las cumplió, nada en las demás": true,
+    "chip «📅 Fin de semana» + «¿Abierta el sábado a las 17:00?»: filtra con estadoBib(b, fecha) y nunca saca las de horario sin confirmar": true,
     "reacciones 🔥💪🧠: ocultas sin sesión, alternan en local sin tabla": true,
     "liga semanal: Oro/Plata por la semana pasada, mínimo de estudio y sin amigos nada": true,
     "enlace #bib abre la ficha": true,
@@ -69,13 +70,13 @@
     "política de privacidad coherente con analitica.js (proveedor null ⇔ «sin analítica»; el diff de docs/ANALITICA.md se aplica y se detecta encender sin él)": true
   },
   "errores_js": [],
-  "carga_ms_cpu4x": 1004,
+  "carga_ms_cpu4x": 1436,
   "carga_ms_cpu4x_min_max": [
-    911,
-    1092
+    1153,
+    1458
   ],
-  "primera_pintura_ms_cpu4x": 252,
-  "todas_las_chinchetas_ms_cpu4x": 1020,
+  "primera_pintura_ms_cpu4x": 308,
+  "todas_las_chinchetas_ms_cpu4x": 1460,
   "markercluster": {
     "cargado": false,
     "agrupa": false,
@@ -85,26 +86,26 @@
   },
   "datos": {
     "bibliotecas": 2616,
-    "con_horario_verificado": 705,
+    "con_horario_verificado": 715,
     "provincias_con_horario": 51,
     "provincias_total": 51
   },
   "seo": {
-    "paginas": 1139,
+    "paginas": 1151,
     "sitemap": true
   },
   "peso": {
     "index.html": {
-      "kb": 137.5,
-      "kb_gzip": 31.0
+      "kb": 138.7,
+      "kb_gzip": 31.3
     },
     "app.js": {
-      "kb": 309.0,
-      "kb_gzip": 91.9
+      "kb": 311.5,
+      "kb_gzip": 92.8
     },
     "bibliotecas-espana.js": {
-      "kb": 872.1,
-      "kb_gzip": 210.7
+      "kb": 878.6,
+      "kb_gzip": 211.4
     }
   },
   "ok": true
