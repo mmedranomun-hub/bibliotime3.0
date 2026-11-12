@@ -1337,6 +1337,23 @@ PRUEBAS = [
         if(/replace\\("Biblioteca ",""\\)/.test(src))return 'queda un recorte a pelo de «Biblioteca »';
         return true;
       }finally{DATA.sessions=s0;clearTimeout(VUELO.t);VUELO.t=0;VUELO.n=VUELO.h=VUELO.z=0;VUELO.hr=null;closeModal();goView('map');}"""),
+    ("«Sesión terminada» lleva «📸 Compartir» (44 px, con etiqueta) y la tarjeta de la sesión se dibuja en 1080×1920 sin red, también sin árbol ni biblioteca", """
+      var s0=DATA.sessions,pide=0,fetch0=window.fetch;
+      try{
+        await cargarExtra();closeModal();window.fetch=function(){pide++;return fetch0.apply(this,arguments);};
+        var s={id:'cs1',date:ymd(),min:52,ts:Date.now()-60000,bib:'Biblioteca de Navarra',focus:'ok',esp:'cerezo',subject:'Mates',prod:null,note:''};DATA.sessions=[s];pedirValoracion(s,null);
+        var b=$('sessShare');if(!b||b.tagName!=='BUTTON'||!/📸 Compartir/.test(b.innerText))return 'no sale el botón';
+        if(!/compartir/i.test(b.getAttribute('aria-label')||''))return 'sin aria-label';
+        if(b.getBoundingClientRect().height<44)return 'mide menos de 44 px: '+b.getBoundingClientRect().height;
+        var c=await dibujarSesionStory(s);if(c.width!==1080||c.height!==1920)return 'tamaño '+c.width+'×'+c.height;
+        var px=c.getContext('2d').getImageData(540,700,1,1).data;if(px[3]!==255)return 'lienzo vacío';
+        closeModal();var m={id:'cs2',date:ymd(),min:20,ts:Date.now()-60000,bib:NO_BIB,focus:null,esp:null,prod:null,note:''};DATA.sessions=[m];pedirValoracion(m,null);
+        if(!$('sessShare'))return 'sin árbol no sale el botón';
+        c=await dibujarSesionStory(m);if(c.width!==1080||c.height!==1920)return 'sin árbol: '+c.width+'×'+c.height;
+        if(pide)return 'pide a la red';
+        window.__cartaSesion=(await dibujarSesionStory(s)).toDataURL('image/png');
+        return true;
+      }finally{window.fetch=fetch0;DATA.sessions=s0;clearTimeout(VUELO.t);VUELO.t=0;VUELO.n=VUELO.h=VUELO.z=0;VUELO.hr=null;closeModal();goView('map');}"""),
     ("perfil: récord con el nombre bien recortado", """
       var bad=DATA.sessions.length;DATA.sessions.push({id:'t-rec',date:'2026-01-01',min:9999,bib:'Biblioteca de Navarra'});
       try{goView('profile');await new Promise(r=>setTimeout(r,300));

@@ -319,13 +319,13 @@ function lienzoStory(){
   var gr=g.createLinearGradient(0,0,0,H);gr.addColorStop(0,"#5b4bd6");gr.addColorStop(.55,"#a21caf");gr.addColorStop(1,"#f59e0b");g.fillStyle=gr;g.fillRect(0,0,W,H);
   return {c:c,g:g,W:W,H:H};
 }
-function textoC(g,t,x,y,font,color){g.font=font;g.fillStyle=color||"#fff";g.textAlign="center";g.fillText(t,x,y);g.textAlign="left";}
+function textoC(g,t,x,y,font,color){g.font=font;g.fillStyle=color||"#fff";g.textAlign="center";g.fillText(t,x,y,980);g.textAlign="left";}
 async function compartirLienzo(c,nombre,texto){
   var blob=await new Promise(function(r){c.toBlob(r,"image/png");});
   var file=new File([blob],nombre,{type:"image/png"});
   try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:"Bibliomapa",text:texto});return;}}catch(e){if(e&&e.name==="AbortError")return;}
   var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=nombre;document.body.appendChild(a);a.click();a.remove();
-  showToast("Imagen descargada: súbela a tus stories 📸");
+  showToast("Imagen guardada 📸 Súbela a tus stories");
 }
 async function dibujarBosque(g,ses,x0,y0,ancho,alto){
   // suelo
@@ -357,19 +357,27 @@ async function compartirBosque(){
   textoC(g,"bibliomapa.es",W/2,1790,"800 64px system-ui,sans-serif");
   compartirLienzo(L.c,"mi-bosque.png","Mi bosque de estudio 🌳 "+hMin(min)+" · bibliomapa.es");
 }
-async function compartirSesionStory(id){
-  var s=DATA.sessions.filter(function(x){return x.id===id;})[0]; if(!s)return;
-  showToast("Preparando tu imagen…");
-  var L=lienzoStory(),g=L.g,W=L.W;
-  textoC(g,"SESIÓN DE ESTUDIO",W/2,200,"800 44px system-ui,sans-serif","rgba(255,255,255,.85)");
-  var im=await cargarSVG(arbolSVG(s.min,s.focus==="withered",s.subject||s.id,null,s.esp));
-  if(im)g.drawImage(im,W/2-260,330,520,788);
+/* Tarjeta de una sesión (1080×1920, mismo lienzo y letra que la del bosque). Solo datos de la propia
+   sesión: minutos, biblioteca, asignatura, árbol y especie (si quedó sano), racha y fecha. Sin red. */
+async function dibujarSesionStory(s){
+  var L=lienzoStory(),g=L.g,W=L.W,sano=s.focus==="ok",rd=streakDays();
+  var f=new Date((s.date||ymd())+"T12:00:00").toLocaleDateString("es-ES",{weekday:"long",day:"numeric",month:"long"});
+  textoC(g,"SESIÓN DE ESTUDIO",W/2,190,"800 44px system-ui,sans-serif","rgba(255,255,255,.85)");
+  textoC(g,f.charAt(0).toUpperCase()+f.slice(1),W/2,265,"600 44px system-ui,sans-serif","rgba(255,255,255,.85)");
+  var im=sano?await cargarSVG(arbolSVG(s.min,false,s.subject||s.id,null,s.esp)):null;
+  if(im)g.drawImage(im,W/2-260,330,520,788);else textoC(g,"📚",W/2,900,"400 380px system-ui,sans-serif");
   textoC(g,hMin(s.min),W/2,1290,"800 200px system-ui,sans-serif");
   var lugar=s.bib&&s.bib!==NO_BIB?cortoNombre(s.bib):"";
   textoC(g,(lugar?"📍 "+lugar:"")+(s.subject?(lugar?"  ·  ":"")+"📚 "+s.subject:""),W/2,1390,"700 50px system-ui,sans-serif");
-  textoC(g,"🔥 Racha de "+streakDays()+(streakDays()===1?" día":" días"),W/2,1480,"700 56px system-ui,sans-serif");
+  if(sano){var e=especieDe(s.esp);textoC(g,e.icon+" "+ETAPAS_ARBOL[etapaArbol(s.min)][1]+(e.id!=="roble"?" · "+e.nombre:"")+" en mi bosque",W/2,1480,"700 50px system-ui,sans-serif");}
+  if(rd)textoC(g,"🔥 Racha de "+rd+(rd===1?" día":" días"),W/2,sano?1570:1480,"700 56px system-ui,sans-serif");
   textoC(g,"bibliomapa.es",W/2,1790,"800 64px system-ui,sans-serif");
-  compartirLienzo(L.c,"mi-sesion.png","He estudiado "+hMin(s.min)+" 🌳 bibliomapa.es");
+  return L.c;
+}
+async function compartirSesionStory(id){
+  var s=DATA.sessions.filter(function(x){return x.id===id;})[0]; if(!s)return;
+  showToast("Preparando tu imagen…");
+  compartirLienzo(await dibujarSesionStory(s),"mi-sesion.png","He estudiado "+hMin(s.min)+" 📚 bibliomapa.es");
 }
 async function compartirStoryDia(){
   var hoy=ymd(),ses=DATA.sessions.filter(function(s){return s.date===hoy;});
@@ -1052,7 +1060,7 @@ function pedirValoracion(sesion,horasAntes){
       '<div class="occ-quick" id="sessOcc"><button data-l="libre">🟢 Con sitio</button><button data-l="media">🟡 Media</button><button data-l="llena">🔴 Llena</button></div>':'')+
     '<div class="field" style="margin-top:10px"><input type="text" id="sessNote" placeholder="Nota opcional (ej: terminé el tema 4)"></div>'+
     '<button class="btn" id="sessSave">Guardar</button>'+
-    (sesion.focus==="ok"?'<button class="btn ghost" style="margin-top:10px" onclick="compartirSesionStory(\''+sesion.id+'\')">📸 Compartir en stories</button>':'')+
+    '<button type="button" class="btn ghost" id="sessShare" style="margin-top:10px;min-height:44px" aria-label="Compartir: crear una imagen de esta sesión para tus stories" onclick="compartirSesionStory(\''+sesion.id+'\')">📸 Compartir</button>'+
     '<button class="linkbtn" id="sessSkip" style="display:block;margin:12px auto 0">Omitir</button>',
     function(){
       var bn=document.querySelector(".np-bar i");if(bn)setTimeout(function(){bn.style.width=bn.dataset.to+"%";},350);
