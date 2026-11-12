@@ -48,6 +48,8 @@
        índice; su hub). Falla con cualquier BreadcrumbList suelto (sin @id <ruta>#migas o sin breadcrumb que lo enlace).
      - fichas cuyo WebPage no lleva @id <ficha>#pagina y about {"@id": "<ficha>#biblioteca"}, sin Library con ese @id
        en la misma página, o cuya Library no lo devuelve con mainEntityOfPage {"@id": "<ficha>#pagina"} (recíprocos).
+     - fichas con FAQPage cuyo FAQPage no lleva @id <ficha>#faq e isPartOf {"@id": "<ficha>#pagina"} (un WebPage con ese
+       @id en la misma página): un solo grafo, no dos nodos de página sueltos para la misma URL.
 
      - la verificación de Google Search Console: una <meta name="google-site-verification"> vacía, «null»/«undefined» o
        que no parece un código, más de una (en varias páginas o repetida), fuera de la portada (index.html, la única
@@ -116,6 +118,8 @@ const provsIndice = new Set(); // URL (sin dominio) de las provincias del ItemLi
 const wpDe = new Map(), idsListaDe = new Map(); // ruta → WebPage de la ficha · ruta → @id del mainEntity ItemList de su CollectionPage
 const migasDe = new Map(); // ruta → BreadcrumbList del JSON-LD de esa página (las migas)
 const libDe = new Map(); // ruta de la ficha → su Library de nivel superior (@id <ficha>#biblioteca)
+const faqDe = new Map(); // ruta → FAQPage del JSON-LD de esa página
+const nodosPagDe = new Map(); // ruta → @id de sus nodos WebPage (para ver si el isPartOf del FAQPage apunta a uno de la misma página)
 function existe(ruta) {
   const limpia = decodeURIComponent(ruta);
   const f = path.join(RAIZ, limpia);
@@ -148,6 +152,8 @@ for (const [ruta, h] of html) {
       compruebaEspeciales(ruta, x);
       if (x && x["@type"] === "CollectionPage" && !cpDe.has(ruta)) cpDe.set(ruta, x);
       if (x && x["@type"] === "WebPage" && x.about && !wpDe.has(ruta)) wpDe.set(ruta, x);
+      if (x && x["@type"] === "FAQPage") (faqDe.get(ruta) || faqDe.set(ruta, []).get(ruta)).push(x);
+      if (x && x["@type"] === "WebPage" && x["@id"]) (nodosPagDe.get(ruta) || nodosPagDe.set(ruta, new Set()).get(ruta)).add(x["@id"]);
       if (x && x["@type"] === "BreadcrumbList") (migasDe.get(ruta) || migasDe.set(ruta, []).get(ruta)).push(x);
       if (x && x["@type"] === "CollectionPage" && x.mainEntity && x.mainEntity["@type"] === "ItemList")
         idsListaDe.set(ruta, new Set((x.mainEntity.itemListElement || []).map((el) => el && el.item && el.item["@id"]).filter(Boolean)));
@@ -329,6 +335,26 @@ for (const ruta of fichas) {
   if (me !== idPag) { mainEntityMal.push(`${ruta} Library sin mainEntityOfPage {"@id": "${idPag}"}${me ? ` (lleva ${me})` : ""}`); continue; }
   nFichaMainEntity++;
 }
+// FAQPage de las fichas en el mismo grafo: cada FAQPage de una ficha lleva @id <ficha>#faq e isPartOf
+// {"@id": "<ficha>#pagina"}, y ese #pagina es un WebPage de la misma página (no dos nodos de página sueltos para una URL).
+const faqMal = [];
+let nFichaFaq = 0, nFichaFaqBien = 0;
+for (const ruta of fichas) {
+  const lfaq = faqDe.get(ruta);
+  if (!lfaq) continue;
+  nFichaFaq++;
+  const idFaq = DOMINIO + ruta + "#faq", idPag = DOMINIO + ruta + "#pagina";
+  let bien = true;
+  for (const f of lfaq) {
+    if (f["@id"] !== idFaq) { faqMal.push(`${ruta} FAQPage sin @id ${idFaq}${f["@id"] ? ` (lleva ${f["@id"]})` : ""}`); bien = false; continue; }
+    const ip = (f.isPartOf || {})["@id"];
+    if (ip !== idPag) { faqMal.push(`${ruta} FAQPage sin isPartOf {"@id": "${idPag}"}${ip ? ` (lleva ${ip})` : ""}`); bien = false; continue; }
+    if (!(nodosPagDe.get(ruta) || new Set()).has(idPag)) { faqMal.push(`${ruta} FAQPage apunta a ${idPag}, sin WebPage con ese @id en la página`); bien = false; }
+  }
+  if (bien) nFichaFaqBien++;
+}
+// FAQPage de las demás páginas (provincias, localidades, temáticas, hubs…): solo se cuentan (sin nodo #pagina aún).
+const nFaqOtras = [...faqDe.keys()].filter((r) => !fichas.has(r)).length;
 // breadcrumb de provincias, localidades y temáticas de provincia y de localidad: su CollectionPage lo enlaza por @id
 // (<ruta>#migas) a un BreadcrumbList de la misma página cuyo último elemento es la propia página. Penúltimo: en
 // provincias, localidades, temáticas de España (/bibliotecas/<tema>/: el índice) y el propio índice (/bibliotecas/:
@@ -615,6 +641,7 @@ console.log(`hasPart: ${nHasPart} en ${nPagHasPart} páginas (temáticas que enl
 console.log(`Temáticas: España ${nTemas.España} · provincia ${nTemas.provincia} · localidad ${nTemas.localidad} · con isPartOf bien: España ${nIsPartOf.España} · provincia ${nIsPartOf.provincia} · localidad ${nIsPartOf.localidad} · lugares con isPartOf bien: provincias ${nLugarIsPartOf.provincia} · localidades ${nLugarIsPartOf.localidad} · fichas con isPartOf bien: a su localidad ${nFichaIsPartOf.localidad} · a su provincia ${nFichaIsPartOf.provincia} (fuera del ItemList de esa página: ${nFichasFueraLista}) · con isPartOf a su hub bien: ${Object.entries(nHubIsPartOf).map(([t, n]) => `${t} ${n}`).join(" · ")} · hubs con isPartOf al índice bien: ${nHubsIndice} · mal: ${isPartOfMal.length}${isPartOfMal.length ? "\n" + muestra(isPartOfMal, (r) => "  " + r) : ""}`);
 console.log(`Migas de las fichas (breadcrumb del WebPage → BreadcrumbList #migas, penúltimo = isPartOf): ${nFichaMigas} de ${fichas.size} bien · índice, provincias, localidades y temáticas (breadcrumb del CollectionPage → #migas): ${Object.entries(nLugarMigas).map(([t, n]) => `${t} ${n}`).join(" · ")} (temáticas con penúltimo ≠ isPartOf, solo contadas: ${nTemaMigasDistintoIsPartOf}) · hubs, salas de estudio, universidades y exámenes (penúltimo = isPartOf): ${Object.entries(nHubMigas).map(([t, n]) => `${t} ${n}`).join(" · ")} · BreadcrumbList sueltas (sin @id <ruta>#migas enlazado: fallo): ${nMigasSueltas}${nMigasSueltas ? ` (${Object.entries(migasSueltas).map(([t, n]) => `${t} ${n}`).join(" · ")})` : ""} · mal: ${migasMal.length}${migasMal.length ? "\n" + muestra(migasMal, (r) => "  " + r) : ""}`);
 console.log(`mainEntityOfPage de las fichas (WebPage #pagina about Library #biblioteca y Library mainEntityOfPage → #pagina): ${nFichaMainEntity} de ${fichas.size} bien · mal: ${mainEntityMal.length}${mainEntityMal.length ? "\n" + muestra(mainEntityMal, (r) => "  " + r) : ""}`);
+console.log(`FAQPage de las fichas (@id #faq, isPartOf → WebPage #pagina de la misma página): ${nFichaFaqBien} de ${nFichaFaq} bien · mal: ${faqMal.length} · otras páginas con FAQPage (sin comprobar): ${nFaqOtras}${faqMal.length ? "\n" + muestra(faqMal, (r) => "  " + r) : ""}`);
 console.log(`Huérfanas (sin enlace desde otra página generada): ${huerfanas.length}${huerfanas.length ? "\n" + muestra(huerfanas, (r) => "  " + r) : ""}`);
 console.log(`Sitemap: ${enSitemap.size} URL · no existen: ${sitemapRoto.length} · faltan en el sitemap: ${faltanSitemap.length}` +
   (sitemapRoto.length + faltanSitemap.length ? "\n" + muestra(sitemapRoto.concat(faltanSitemap), (r) => "  " + r) : ""));
@@ -632,4 +659,4 @@ for (const [r, h] of [...html, ["/404.html", fs.existsSync(f404) ? fs.readFileSy
 console.log(`Analítica (/analitica.js en el <head>, apagada): ${html.size + 1 - new Set(analiticaMal.map((x) => x.split(":")[0])).size} de ${html.size + 1} páginas (con la 404) · mal: ${analiticaMal.length}${analiticaMal.length ? "\n" + muestra(analiticaMal, (r) => "  " + r) : ""}`);
 console.log(`Search Console (meta google-site-verification): ${gscEn.length ? gscEn.map(([r]) => r).join(", ") : "ninguna (verificación por DNS o pendiente)"} · mal: ${gscMal.length}${gscMal.length ? "\n" + muestra(gscMal, (r) => "  " + r) : ""}`);
 console.log(`IndexNow: ${indexNowClave ? `clave puesta, /${indexNowClave}.txt` : "sin clave (INDEXNOW_CLAVE = null)"} · mal: ${indexNowMal.length}${indexNowMal.length ? "\n" + muestra(indexNowMal, (r) => "  " + r) : ""}`);
-if (analiticaMal.length || gscMal.length || indexNowMal.length || migasMal.length || mainEntityMal.length || indiceMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
+if (analiticaMal.length || gscMal.length || indexNowMal.length || migasMal.length || mainEntityMal.length || faqMal.length || indiceMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);

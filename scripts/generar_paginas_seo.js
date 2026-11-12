@@ -1185,9 +1185,11 @@ ${seccionTemasFicha(b, locConPagina)}
     // Library no admite dateModified: va en el WebPage que la describe (fecha = verificación del horario).
     // Horarios especiales (verano verificado y exámenes con `semana`) en specialOpeningHoursSpecification con sus fechas.
     // WebPage (@id <ficha>#pagina) y Library (@id <ficha>#biblioteca) se apuntan entre sí: about y mainEntityOfPage.
+    // El FAQPage (si hay preguntas) entra en el mismo grafo: @id <ficha>#faq e isPartOf {"@id": "<ficha>#pagina"}, para
+    // que no haya dos nodos de página sueltos para la misma URL. Preguntas y respuestas, sin tocar.
     ld: [{ "@context": "https://schema.org", "@id": idBib, ...libraryLD(b, DOMINIO + ruta), ...(especiales.length ? { specialOpeningHoursSpecification: especiales } : {}), mainEntityOfPage: { "@id": idPag } },
       { "@context": "https://schema.org", "@id": idPag, "@type": "WebPage", name: titulo.replace(MARCA, ""), description: descripcion, url: DOMINIO + ruta,
-        inLanguage: "es-ES", ...parteDe, breadcrumb: { "@id": idMigas }, about: { "@id": idBib }, ...(mod ? { dateModified: mod } : {}) }, ...(fq ? [fq.ld] : [])],
+        inLanguage: "es-ES", ...parteDe, breadcrumb: { "@id": idMigas }, about: { "@id": idBib }, ...(mod ? { dateModified: mod } : {}) }, ...(fq ? [{ "@context": "https://schema.org", "@id": DOMINIO + ruta + "#faq", ...fq.ld, isPartOf: { "@id": idPag } }] : [])],
   }));
   if (especiales.length) nFichasEspeciales++;
   if (tieneVerano(b)) nFichasVerano++;

@@ -40,6 +40,8 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
   botón «Ver en el mapa» (`/#bib=<índice>`), 6 bibliotecas más cercanas de la misma localidad con distancia, migas,
   canonical, JSON-LD `Library` (con `openingHoursSpecification` solo si está verificado) y `FAQPage`
   («¿Abre los domingos…?», «¿A qué hora cierra…?») solo cuando hay horario verificado.
+  Un solo grafo: `WebPage` `<ficha>#pagina` (about → `Library` `<ficha>#biblioteca`, que vuelve con `mainEntityOfPage`)
+  y `FAQPage` `<ficha>#faq` con `isPartOf: {"@id": "<ficha>#pagina"}` (el comprobador falla si falta alguno).
 - Las tarjetas de provincia, localidad y temáticas enlazan el nombre de la biblioteca a su página. Todas en `sitemap.xml`.
 - Crecen solas: cada horario verificado nuevo en una capital genera su página al regenerar.
 
