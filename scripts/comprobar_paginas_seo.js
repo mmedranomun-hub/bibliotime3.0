@@ -53,6 +53,8 @@
        que no parece un código, más de una (en varias páginas o repetida), fuera de la portada (index.html, la única
        que Google mira para la propiedad de prefijo de URL) o distinta de GSC_VERIFICACION de generar_paginas_seo.js
        cuando esta no es null (sin meta en ninguna página y GSC_VERIFICACION = null es lo normal: propiedad por DNS),
+     - la clave de IndexNow: si INDEXNOW_CLAVE de generar_paginas_seo.js no es null, que tenga formato válido y que
+       /<clave>.txt exista en la raíz con exactamente la clave (con null no se exige nada),
      - JSON-LD que no se puede leer, y horarios especiales (specialOpeningHoursSpecification: verano y exámenes de las
        fichas) mal formados o con tramos por fecha que se solapan.
    Uso (desde la raíz del proyecto):  node scripts/comprobar_paginas_seo.js
@@ -577,6 +579,25 @@ const gscMal = [], gscEn = [];
   }
 }
 
+// ---------- Clave de IndexNow ----------
+// Con INDEXNOW_CLAVE = null no se exige nada. Con una clave: formato válido (8-128 de [A-Za-z0-9-]) y /<clave>.txt en la
+// raíz con exactamente la clave (como mucho un salto de línea final); IndexNow lo descarga para comprobar que el aviso
+// es del dueño del dominio.
+const indexNowMal = [];
+let indexNowClave = null;
+{
+  const src = fs.readFileSync(path.join(RAIZ, "scripts", "generar_paginas_seo.js"), "utf8");
+  const mk = src.match(/\nconst INDEXNOW_CLAVE = (null|"[^"\n]*"|'[^'\n]*');/);
+  if (!mk) indexNowMal.push("no encuentro `const INDEXNOW_CLAVE = null;` (o con una clave entre comillas) en generar_paginas_seo.js");
+  else if (mk[1] !== "null") {
+    indexNowClave = mk[1].slice(1, -1);
+    const f = path.join(RAIZ, indexNowClave + ".txt");
+    if (!/^[A-Za-z0-9-]{8,128}$/.test(indexNowClave)) indexNowMal.push(`INDEXNOW_CLAVE = ${mk[1]} no es válida (8 a 128 caracteres, solo letras, cifras y -)`);
+    else if (!fs.existsSync(f)) indexNowMal.push(`falta /${indexNowClave}.txt en la raíz: ejecuta node scripts/generar_paginas_seo.js`);
+    else if (fs.readFileSync(f, "utf8").replace(/\r?\n$/, "") !== indexNowClave) indexNowMal.push(`/${indexNowClave}.txt no contiene exactamente la clave: ejecuta node scripts/generar_paginas_seo.js`);
+  }
+}
+
 const muestra = (l, f) => l.slice(0, 15).map(f).join("\n") + (l.length > 15 ? `\n  … y ${l.length - 15} más` : "");
 console.log(`Páginas: ${html.size} · enlaces internos: ${nEnlaces}`);
 console.log(`Enlaces rotos: ${rotos.length}${rotos.length ? "\n" + muestra(rotos, ([r, u]) => `  ${r} → ${u}`) : ""}`);
@@ -610,4 +631,5 @@ for (const [r, h] of [...html, ["/404.html", fs.existsSync(f404) ? fs.readFileSy
 }
 console.log(`Analítica (/analitica.js en el <head>, apagada): ${html.size + 1 - new Set(analiticaMal.map((x) => x.split(":")[0])).size} de ${html.size + 1} páginas (con la 404) · mal: ${analiticaMal.length}${analiticaMal.length ? "\n" + muestra(analiticaMal, (r) => "  " + r) : ""}`);
 console.log(`Search Console (meta google-site-verification): ${gscEn.length ? gscEn.map(([r]) => r).join(", ") : "ninguna (verificación por DNS o pendiente)"} · mal: ${gscMal.length}${gscMal.length ? "\n" + muestra(gscMal, (r) => "  " + r) : ""}`);
-if (analiticaMal.length || gscMal.length || migasMal.length || mainEntityMal.length || indiceMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
+console.log(`IndexNow: ${indexNowClave ? `clave puesta, /${indexNowClave}.txt` : "sin clave (INDEXNOW_CLAVE = null)"} · mal: ${indexNowMal.length}${indexNowMal.length ? "\n" + muestra(indexNowMal, (r) => "  " + r) : ""}`);
+if (analiticaMal.length || gscMal.length || indexNowMal.length || migasMal.length || mainEntityMal.length || indiceMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);

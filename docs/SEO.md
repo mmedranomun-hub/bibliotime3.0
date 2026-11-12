@@ -478,6 +478,40 @@ pasa: es lo normal con el camino A. Con `null` el generador no toca `index.html`
 4. A las 2-4 semanas: «Páginas» (cuántas indexadas) y «Rendimiento» (búsquedas, clics, impresiones). Son las métricas del
    Objetivo 8 (`docs/OBJETIVOS.md`).
 
+## Bing e IndexNow (sin cuenta extra)
+**Bing Webmaster Tools** no necesita verificación propia: en https://www.bing.com/webmasters entra con la cuenta de
+Google (o Microsoft) → «Importar» desde Google Search Console → elige `bibliomapa.es`. Copia la propiedad y el sitemap.
+Hazlo después de verificar en Search Console (arriba).
+
+**IndexNow** avisa al momento a Bing (y a Yandex, Seznam, Naver…, que lo comparten) de las páginas que cambian, en vez
+de esperar a que las rastreen. Google no lo usa (para Google basta el sitemap). Es gratis y no pide cuenta: solo una
+clave que demuestre que el dominio es tuyo. Con `INDEXNOW_CLAVE = null` (lo que hay ahora) no cambia nada: el generador
+no escribe ningún archivo y el script de avisos solo simula.
+
+### Ponerlo en marcha (una vez)
+1. Genera una clave: en https://www.bing.com/indexnow/getstarted pulsa «Generate API key», o en una terminal
+   `node -e "console.log(require('crypto').randomUUID())"`. Debe tener de 8 a 128 caracteres, solo letras, cifras y `-`.
+   No es secreta (cualquiera puede leer el .txt publicado), pero no la cambies sin motivo.
+2. En `scripts/generar_paginas_seo.js` cambia `const INDEXNOW_CLAVE = null;` por `const INDEXNOW_CLAVE = "tu-clave";`.
+3. Ejecuta `node scripts/generar_paginas_seo.js`: escribe `/<tu-clave>.txt` en la raíz con la clave exacta. Luego
+   `node scripts/comprobar_paginas_seo.js` (falla si la clave está puesta y el .txt falta o no coincide; con `null` no
+   exige nada).
+4. Sube el cambio (commit con el .txt incluido + despliegue en Vercel) y comprueba que https://bibliomapa.es/<tu-clave>.txt
+   abre y muestra la clave.
+
+### Avisar (tras cada despliegue, o cuando el bucle cambie páginas)
+- `node scripts/avisar_indexnow.js --simular` → enseña qué enviaría, sin red. Hazlo primero.
+- `node scripts/avisar_indexnow.js` → envía a `https://api.indexnow.org/indexnow` (POST JSON con `host`, `key`,
+  `keyLocation` y `urlList`) las URL del `sitemap.xml` cuyo `lastmod` es de **hoy** (día de España). El generador solo
+  pone la fecha de hoy cuando una página cambia de verdad, así que no se avisa de lo que no ha cambiado (avisar de más
+  hace que IndexNow ignore los avisos). Máximo 10000 URL por aviso.
+- `node scripts/avisar_indexnow.js --fecha 2026-11-12` → las de un día pasado (si se te olvidó avisar ese día).
+- Respuesta 200 o 202 = recibido. 403 = el .txt aún no está publicado (espera al despliegue). 422 = clave o URL que no
+  coinciden. 429 = demasiados avisos: espera. Con `INDEXNOW_CLAVE = null` el script siempre simula.
+- Solo tiene sentido **después** de desplegar: si avisas antes, Bing rastrea la versión vieja.
+- Métrica: en Bing Webmaster Tools → «IndexNow» se ven las URL recibidas; en «Rendimiento de búsqueda», clics e
+  impresiones de Bing.
+
 ## Hecho (2026-10-27) · La portada enlaza las páginas por ciudad y horario
 - Antes, desde `index.html` solo había un `<a href>` a `bibliotecas/` (en la lista del mapa). Ahora hay 13 enlaces
   rastreables en HTML real (no en `<noscript>` ni creados por JS): al final de la pestaña Perfil, un `<nav class="seo-nav">`

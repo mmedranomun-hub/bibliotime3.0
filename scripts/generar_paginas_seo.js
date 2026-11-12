@@ -373,6 +373,24 @@ if (GSC_VERIFICACION !== null) {
   if (conMeta === sinMeta) { console.error("No encuentro <meta charset> en index.html para poner la verificación de Search Console."); process.exit(1); }
   if (conMeta !== portada) { fs.writeFileSync(fPortada, conMeta); console.log("Search Console: meta google-site-verification puesta en index.html (portada)."); }
 }
+// ---------- IndexNow (Bing, Yandex, Seznam, Naver…: avisa al momento de las URL que cambian) ----------
+// Pega aquí la clave que generes tú (8 a 128 caracteres: letras, cifras y «-»; p. ej. la de
+// https://www.bing.com/indexnow/getstarted o `node -e "console.log(require('crypto').randomUUID())"`). Con null no se
+// toca nada. Con una clave, se escribe /<clave>.txt en la raíz con la clave exacta (sin salto de línea): así IndexNow
+// comprueba que el aviso es del dueño del dominio. Los avisos los manda scripts/avisar_indexnow.js (aparte, a mano o
+// tras cada despliegue). scripts/comprobar_paginas_seo.js falla si la clave está puesta y el .txt falta o no coincide.
+const INDEXNOW_CLAVE = null;
+if (INDEXNOW_CLAVE !== null) {
+  if (typeof INDEXNOW_CLAVE !== "string" || !/^[A-Za-z0-9-]{8,128}$/.test(INDEXNOW_CLAVE)) {
+    console.error("INDEXNOW_CLAVE debe ser null o una clave de 8 a 128 caracteres (solo letras, cifras y -), entre comillas.");
+    process.exit(1);
+  }
+  const fClave = path.join(RAIZ, INDEXNOW_CLAVE + ".txt");
+  if (!fs.existsSync(fClave) || fs.readFileSync(fClave, "utf8") !== INDEXNOW_CLAVE) {
+    fs.writeFileSync(fClave, INDEXNOW_CLAVE);
+    console.log(`IndexNow: clave escrita en /${INDEXNOW_CLAVE}.txt (súbelo con el resto).`);
+  }
+}
 // La portada («/», la app) no la genera este script: su fecha es la del último commit que tocó index.html (hoy si tiene
 // cambios sin subir o si no hay git a mano).
 const lastmodPortada = (() => {
