@@ -1533,9 +1533,43 @@ function popupHTML(b,i){
   var o=occSummary(i);
   s+='<div style="margin-top:10px">'+(o?('<div class="occ-report" style="justify-content:center"><span class="od '+o.info.className+'"></span><span><b>'+o.info.label+'</b></span></div>'):'<div class="occ-empty">⚪ Sin datos recientes de afluencia</div>')+'</div>';
   s+='<button class="btnstudy" onclick="startStudyAt('+i+')">▶ Estudiar aquí</button>';
+  s+=shareBibBtnHTML(i);
   s+='<button class="linkbtn" style="display:block;margin:8px auto 0" onclick="openBibDetailModal('+i+')">Horario, acceso y cómo llegar →</button>';
   s+='</div>';
   return s;
+}
+/* ===== Compartir una biblioteca =====
+   Enlace https://bibliomapa.es/#bib=<índice>-<nombre> (el mismo que entiende comprobarEnlaceCompartido y que
+   usan las páginas SEO). No se enlaza la ficha SEO: su ruta depende de choques de nombres, de la provincia
+   deducida y de temporada-examenes.js, y la app no puede reproducirla con seguridad. Sin red ni datos personales. */
+function slugBib(s){return String(s).normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");}
+function enlaceBib(i){var b=BIBLIOTECAS[i];return "https://bibliomapa.es/#bib="+i+"-"+slugBib(b.nombre).slice(0,40);}
+// «abierta hoy …» solo con horario verificado (fuente https y fecha); si no, solo el nombre.
+function textoCompartirBib(b){
+  var t=b.nombre;
+  if(!b.sinHorario&&/^https?:\/\//.test(b.fuenteHorario||"")&&/^\d{4}-\d{2}-\d{2}$/.test(b.verificadoHorario||"")){
+    var tr=horarioVigente(b)[ahoraEn(b).getDay()]||[];
+    if(tr.length)t+=" · abierta hoy "+tr.map(function(x){return fmtHoras(x[0])+"–"+fmtHoras(x[1]);}).join(", ");
+  }
+  return t+" · en Bibliomapa, bibliotecas para estudiar";
+}
+function shareBibBtnHTML(i){
+  return '<button class="btn sm ghost bib-share" aria-label="'+escapeHTML("Compartir "+BIBLIOTECAS[i].nombre)+'" onclick="event.stopPropagation();compartirBib('+i+')">🔗 Compartir</button>';
+}
+function copiarEnlaceBib(url){
+  function viejo(){try{var ta=document.createElement("textarea");ta.value=url;ta.setAttribute("readonly","");ta.style.position="fixed";ta.style.opacity="0";
+    document.body.appendChild(ta);ta.select();document.execCommand("copy");ta.remove();}catch(e){}showToast("Enlace copiado");}
+  try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(url).then(function(){showToast("Enlace copiado");},viejo);return;}}catch(e){}
+  viejo();
+}
+function compartirBib(i){
+  var b=BIBLIOTECAS[i]; if(!b)return;
+  var url=enlaceBib(i), datos={title:b.nombre+" · Bibliomapa",text:textoCompartirBib(b),url:url};
+  if(navigator.share){
+    try{navigator.share(datos).catch(function(e){if(!(e&&e.name==="AbortError"))copiarEnlaceBib(url);});return;}
+    catch(e){if(e&&e.name==="AbortError")return;}
+  }
+  copiarEnlaceBib(url);
 }
 function recursosHTML(b){
   var RES_LABELS={wifi:"📶 Wifi",enchufes:"🔌 Enchufes",salas_grupo:"👥 Salas de grupo",impresora:"🖨️ Impresora/fotocopias",cafeteria:"☕ Cafetería",silencio:"🤫 Zona de silencio",ordenadores:"💻 Ordenadores"};
@@ -1559,7 +1593,7 @@ function openBibDetailModal(i){
   s+='<div class="dir"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6c5ce7" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span>'+escapeHTML(b.dir)+'</span></div>';
   s+='<div class="bib-actions"><a class="btn sm" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination='+b.lat+','+b.lon+'">🧭 Cómo llegar</a>'+
     (b.tel?'<a class="btn sm ghost" href="tel:'+escapeHTML(b.tel.replace(/\s/g,""))+'">📞 Llamar</a>':'')+
-    (b.web&&/^https?:\/\//.test(b.web)?'<a class="btn sm ghost" target="_blank" rel="noopener" href="'+escapeHTML(b.web)+'">🌐 Web</a>':'')+'</div>';
+    (b.web&&/^https?:\/\//.test(b.web)?'<a class="btn sm ghost" target="_blank" rel="noopener" href="'+escapeHTML(b.web)+'">🌐 Web</a>':'')+'</div>'+shareBibBtnHTML(i);
   s+=notaExamenHTML(b,false);
   var cal=horarioVigente(b),hoy=new Date().getDay(),exHoy=b._examenSem&&b._examen.some(function(e){return tramosExamen(e,new Date())!==null;});
   if(b.sinHorario){

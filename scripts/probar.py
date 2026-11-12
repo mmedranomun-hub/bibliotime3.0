@@ -1492,6 +1492,30 @@ PRUEBAS = [
     ("enlace #bib abre la ficha", """
       location.hash='#bib=104-x';comprobarEnlaceCompartido();await new Promise(r=>setTimeout(r,900));
       return !!document.querySelector('.leaflet-popup-content') || 'no abre la ficha';"""),
+    ("«🔗 Compartir» en el popup: aria-label, navigator.share con el enlace #bib, «Enlace copiado» si falla, y el enlace reabre la misma biblioteca", """
+      var espera=n=>new Promise(r=>setTimeout(r,n)),propio=Object.prototype.hasOwnProperty.call(navigator,'share'),o=propio?navigator.share:null,dato=null;
+      try{
+        var i=Math.min(500,BIBLIOTECAS.length-1),b=BIBLIOTECAS[i];
+        window.__map.closePopup();location.hash='';window.__selBib(i);await espera(900);
+        var bt=document.querySelector('.leaflet-popup-content .bib-share');
+        if(!bt)return 'sin botón en el popup';
+        if(bt.getAttribute('aria-label')!=='Compartir '+b.nombre)return 'aria-label mal: '+bt.getAttribute('aria-label');
+        if(bt.getBoundingClientRect().height<44)return 'botón de menos de 44 px';
+        Object.defineProperty(navigator,'share',{configurable:true,writable:true,value:d=>{dato=d;return Promise.resolve();}});
+        bt.click();await espera(50);
+        if(!dato||dato.url.indexOf('https://bibliomapa.es/#bib='+i+'-')!==0)return 'navigator.share sin el enlace: '+JSON.stringify(dato);
+        if(dato.text.indexOf(b.nombre)<0)return 'texto sin el nombre';
+        if(/abierta hoy/.test(dato.text)&&!(b.verificadoHorario&&b.fuenteHorario))return 'dice «abierta hoy» sin horario verificado';
+        document.querySelectorAll('.toast').forEach(x=>x.remove());
+        navigator.share=()=>Promise.reject(Object.assign(new Error('x'),{name:'AbortError'}));bt.click();await espera(150);
+        if(document.querySelector('.toast'))return 'copia el enlace aunque el usuario cancele';
+        navigator.share=()=>Promise.reject(new Error('no se puede'));bt.click();await espera(300);
+        if(!/Enlace copiado/.test([...document.querySelectorAll('.toast')].map(x=>x.textContent).join()))return 'sin «Enlace copiado» al fallar share';
+        window.__map.closePopup();window.__map.setView([40,-3.7],6,{animate:false});await espera(200);
+        location.hash=dato.url.slice(dato.url.indexOf('#'));comprobarEnlaceCompartido();await espera(1500);
+        var h=document.querySelector('.leaflet-popup-content h2');
+        return (h&&h.textContent===b.nombre)||('el enlace abre otra: '+(h&&h.textContent));
+      }finally{if(propio)navigator.share=o;else delete navigator.share;document.querySelectorAll('.toast').forEach(x=>x.remove());}"""),
     ("al llegar al cofre desde la barrita o la píldora, «¡Abre tu cofre!» recibe el foco (Intro basta) y no lo pierde al repintarse; nada si el cofre no está listo", """
       var k=['misiones','sessions','acciones','semillasPremio','streakFreezes','cofresAbiertos','sellosMisiones'],o={};k.forEach(x=>o[x]=DATA[x]);
       var t0={running:studyTimer.running,start:studyTimer.start,bibIndex:studyTimer.bibIndex,tick:studyTimer.tick},el=$('misCerca'),mi=$('miniMis'),ms=$('miniStudy');
