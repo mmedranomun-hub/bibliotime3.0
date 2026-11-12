@@ -1354,6 +1354,28 @@ PRUEBAS = [
         window.__cartaSesion=(await dibujarSesionStory(s)).toDataURL('image/png');
         return true;
       }finally{window.fetch=fetch0;DATA.sessions=s0;clearTimeout(VUELO.t);VUELO.t=0;VUELO.n=VUELO.h=VUELO.z=0;VUELO.hr=null;closeModal();goView('map');}"""),
+    ("historial de Estudio: cada fila lleva 📸 (44×44, «Compartir sesión de <fecha>») y comparte ESA sesión en 1080×1920, con la racha de ese día y sin red", """
+      var s0=DATA.sessions,f0=DATA.usedFreezeDates,tab0=feedTab,cl0=window.compartirLienzo,pide=0,fetch0=window.fetch,lienzos=[];
+      var dia=n=>{var d=new Date();d.setDate(d.getDate()-n);return ymd(d);};
+      try{
+        await cargarExtra();closeModal();window.fetch=function(){pide++;return fetch0.apply(this,arguments);};
+        window.compartirLienzo=async function(c,nombre){lienzos.push(c);};
+        DATA.usedFreezeDates=[];feedTab='mia';
+        DATA.sessions=[{id:'hs1',date:dia(9),min:40,bib:'Biblioteca de Navarra',focus:'ok',esp:'roble',subject:'Historia'},
+          {date:dia(8),min:25,bib:NO_BIB,focus:'withered'},{id:'hs3',date:dia(7),min:70,bib:'Biblioteca de Navarra',focus:'ok',esp:'cerezo'}];
+        goView('study');renderSessionFeed(true);await new Promise(r=>setTimeout(r,200));
+        var filas=document.querySelectorAll('#sessionFeed .feed-item'),bs=document.querySelectorAll('#sessionFeed .feed-share');
+        if(filas.length!==3||bs.length!==3)return filas.length+' filas y '+bs.length+' botones';
+        for(var b of bs){var r=b.getBoundingClientRect();if(r.width<44||r.height<44)return 'mide '+r.width+'×'+r.height;
+          if(!/^Compartir sesión de \d{1,2} de \w+ de \d{4}$/.test(b.getAttribute('aria-label')||''))return 'etiqueta: '+b.getAttribute('aria-label');}
+        if(rachaHasta(dia(9))!==1||rachaHasta(dia(8))!==2||rachaHasta(dia(7))!==3||rachaHasta(dia(30))!==0)return 'racha de ese día mal: '+[9,8,7,30].map(n=>rachaHasta(dia(n)));
+        bs[1].click();bs[2].click();await new Promise(r=>setTimeout(r,800));
+        if(lienzos.length!==2)return 'se generaron '+lienzos.length+' lienzos';
+        for(var c of lienzos){if(c.width!==1080||c.height!==1920)return 'tamaño '+c.width+'×'+c.height;if(c.getContext('2d').getImageData(540,700,1,1).data[3]!==255)return 'lienzo vacío';}
+        if(pide)return 'pide a la red';
+        window.__cartaHist=lienzos[1].toDataURL('image/png');
+        return true;
+      }finally{window.fetch=fetch0;window.compartirLienzo=cl0;DATA.sessions=s0;DATA.usedFreezeDates=f0;feedTab=tab0;renderSessionFeed(true);closeModal();goView('map');}"""),
     ("perfil: récord con el nombre bien recortado", """
       var bad=DATA.sessions.length;DATA.sessions.push({id:'t-rec',date:'2026-01-01',min:9999,bib:'Biblioteca de Navarra'});
       try{goView('profile');await new Promise(r=>setTimeout(r,300));

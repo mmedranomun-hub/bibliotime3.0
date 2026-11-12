@@ -360,7 +360,7 @@ async function compartirBosque(){
 /* Tarjeta de una sesión (1080×1920, mismo lienzo y letra que la del bosque). Solo datos de la propia
    sesión: minutos, biblioteca, asignatura, árbol y especie (si quedó sano), racha y fecha. Sin red. */
 async function dibujarSesionStory(s){
-  var L=lienzoStory(),g=L.g,W=L.W,sano=s.focus==="ok",rd=streakDays();
+  var L=lienzoStory(),g=L.g,W=L.W,sano=s.focus==="ok",rd=rachaHasta(s.date||ymd());
   var f=new Date((s.date||ymd())+"T12:00:00").toLocaleDateString("es-ES",{weekday:"long",day:"numeric",month:"long"});
   textoC(g,"SESIÓN DE ESTUDIO",W/2,190,"800 44px system-ui,sans-serif","rgba(255,255,255,.85)");
   textoC(g,f.charAt(0).toUpperCase()+f.slice(1),W/2,265,"600 44px system-ui,sans-serif","rgba(255,255,255,.85)");
@@ -374,8 +374,19 @@ async function dibujarSesionStory(s){
   textoC(g,"bibliomapa.es",W/2,1790,"800 64px system-ui,sans-serif");
   return L.c;
 }
+/* Racha que había el día de esa sesión: días seguidos con estudio (o comodín usado) que acaban en esa
+   fecha. Es la misma cuenta que streakDays() pero mirando hacia atrás desde ese día, así una sesión
+   pasada no presume de la racha de hoy. Si ese día no hay sesión registrada, 0 (y no se pinta). */
+function rachaHasta(fecha){
+  var dias={};DATA.sessions.forEach(function(s){dias[s.date]=1;});(DATA.usedFreezeDates||[]).forEach(function(d){dias[d]=1;});
+  if(fecha===ymd())return streakDays();
+  var n=0,d=new Date(fecha+"T12:00:00");while(dias[ymd(d)]){n++;d.setDate(d.getDate()-1);}
+  return n;
+}
+/* id de la sesión (texto) o, en sesiones antiguas sin id, su posición en DATA.sessions (número):
+   lo usan «Sesión terminada» (#sessShare) y el 📸 de cada fila del historial de Estudio. */
 async function compartirSesionStory(id){
-  var s=DATA.sessions.filter(function(x){return x.id===id;})[0]; if(!s)return;
+  var s=typeof id==="number"?DATA.sessions[id]:DATA.sessions.filter(function(x){return x.id===id;})[0]; if(!s)return;
   showToast("Preparando tu imagen…");
   compartirLienzo(await dibujarSesionStory(s),"mi-sesion.png","He estudiado "+hMin(s.min)+" 📚 bibliomapa.es");
 }
