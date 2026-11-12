@@ -21,7 +21,7 @@ Si algo de 1-3 falla, es lo primero del informe y se avisa a Marcos al momento.
   actual si se añade una línea):
   1. **Vercel Web Analytics** (si la web está en Vercel): se activa en el panel del proyecto; luego el bucle añade
      `<script defer src="/_vercel/insights/script.js"></script>`. Gratis en el plan básico con límite de eventos.
-  2. **Google Search Console**: verificar el dominio por DNS y enviar `sitemap.xml`. Da clics e impresiones de Google
+  2. **Google Search Console**: verificar el dominio por DNS y enviar `sitemap.xml` (paso a paso en `docs/SEO.md`, «Verificar bibliomapa.es en Google Search Console»). Da clics e impresiones de Google
      por búsqueda y por página: es la métrica clave del SEO.
   3. Alternativas si no es Vercel: GoatCounter, Plausible o Umami (sin cookies).
 - El bucle puede preparar el código y el texto de privacidad, pero **activar cuentas lo hace Marcos**.

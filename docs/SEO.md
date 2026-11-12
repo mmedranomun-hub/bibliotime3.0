@@ -427,12 +427,56 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
 1. **Conectar el dominio** en Vercel: proyecto `bibliotime` → Settings → Domains → añadir `bibliomapa.es` y
    `www.bibliomapa.es` (redirigir www → sin www) y poner en tu registrador los DNS que te indique Vercel.
 2. **Google Search Console** (search.google.com/search-console): añadir la propiedad de dominio `bibliomapa.es`
-   (verificación por DNS) y enviar `https://bibliomapa.es/sitemap.xml`. Lo mismo en Bing Webmaster Tools.
+   (verificación por DNS) y enviar `https://bibliomapa.es/sitemap.xml`. Lo mismo en Bing Webmaster Tools. Paso a paso,
+   con la alternativa de la etiqueta HTML, en «Verificar bibliomapa.es en Google Search Console» (abajo).
 3. Redirigir 301 la web antigua (`bibliotime-ten.vercel.app`) a bibliomapa.es para no partir la autoridad.
 4. Enlaces de calidad: web de la universidad, delegaciones de alumnos, colegios mayores, blogs de oposiciones,
    la newsletter, notas de prensa locales («una app de un estudiante de Pamplona…»). En SEO local es lo que más pesa
    después del contenido.
 5. Google Play: la ficha enlazando a bibliomapa.es también ayuda.
+
+## Verificar bibliomapa.es en Google Search Console (paso a paso)
+Hace falta que el dominio ya abra la web (paso 1 de arriba). Hay dos caminos; **elige solo uno**.
+
+### Camino A (recomendado): propiedad de dominio con un registro DNS TXT — no toca el código
+Cubre `bibliomapa.es`, `www.bibliomapa.es`, `http` y `https` de una vez, y no se rompe si un día cambia la portada.
+1. Entra en https://search.google.com/search-console con tu cuenta de Google → «Añadir propiedad».
+2. Elige la caja de la izquierda, **«Dominio»**, escribe `bibliomapa.es` (sin `https://` ni `www`) → «Continuar».
+3. Google te enseña un texto como `google-site-verification=AbCd…`. Cópialo entero (botón «Copiar»).
+4. En el panel de tu registrador del dominio (donde compraste bibliomapa.es; o en Vercel → Domains si los DNS están en
+   Vercel) → DNS → «Añadir registro»: **tipo** `TXT`, **nombre/host** `@` (o vacío, según el panel), **valor** el texto
+   copiado, TTL el que venga por defecto. Guarda. No borres los registros que puso Vercel.
+5. Vuelve a Search Console → «Verificar». Si dice que aún no lo encuentra, espera de 10 minutos a unas horas y vuelve a
+   pulsar «Verificar» (los DNS tardan en propagarse). No quites nunca ese TXT: si desaparece, se pierde la verificación.
+6. En `scripts/generar_paginas_seo.js` deja `const GSC_VERIFICACION = null;` (no hace falta nada en el código).
+
+### Camino B: propiedad de prefijo de URL con la etiqueta HTML
+Solo si no puedes tocar los DNS. Cubre únicamente `https://bibliomapa.es/…` (sin www ni http).
+1. Search Console → «Añadir propiedad» → caja de la derecha, **«Prefijo de URL»**: `https://bibliomapa.es/` → «Continuar».
+2. En «Otros métodos de verificación» elige **«Etiqueta HTML»**. Te da algo como
+   `<meta name="google-site-verification" content="AbCd…123" />`. Copia **solo lo de dentro de `content="…"`**.
+3. En `scripts/generar_paginas_seo.js` cambia `const GSC_VERIFICACION = null;` por
+   `const GSC_VERIFICACION = "AbCd…123";` (tu código, entre comillas).
+4. Ejecuta `node scripts/generar_paginas_seo.js` y luego `node scripts/comprobar_paginas_seo.js`. El generador pone la
+   meta una sola vez en la **portada** (`index.html`, justo después de `<meta charset>`), que es la única página donde
+   Google la busca para esta propiedad: en `/bibliotecas/` no serviría. Sin generador, es lo mismo que pegar esa línea
+   tú a mano en `index.html` debajo de `<meta charset="UTF-8">`.
+5. Sube el cambio (commit + despliegue en Vercel), comprueba que https://bibliomapa.es/ ya lo lleva (Ver código fuente)
+   y pulsa «Verificar» en Search Console. No quites la meta después: Google la vuelve a comprobar de vez en cuando.
+
+El comprobador (`scripts/comprobar_paginas_seo.js`) falla si la meta `google-site-verification` aparece vacía, con
+«null»/«undefined» o algo que no parece un código, en más de una página (o dos veces), fuera de la portada, o si
+`GSC_VERIFICACION` tiene un código y `index.html` no lo lleva (falta ejecutar el generador). Con `null` y sin meta,
+pasa: es lo normal con el camino A. Con `null` el generador no toca `index.html` y no cambia ninguna página ni `lastmod`.
+
+### Después de verificar (con cualquiera de los dos caminos)
+1. Search Console → menú «Sitemaps» → en «Añadir un sitemap nuevo» escribe `sitemap.xml` (la URL completa es
+   **https://bibliomapa.es/sitemap.xml**) → «Enviar». Debe salir «Correcto» con las URL del sitemap (1071 el 2026-11-12).
+2. «Inspección de URL» → pega `https://bibliomapa.es/` y `https://bibliomapa.es/bibliotecas/` → «Solicitar indexación».
+3. Bing Webmaster Tools (https://www.bing.com/webmasters) → «Importar desde Google Search Console»: copia la
+   verificación y el sitemap en un clic.
+4. A las 2-4 semanas: «Páginas» (cuántas indexadas) y «Rendimiento» (búsquedas, clics, impresiones). Son las métricas del
+   Objetivo 8 (`docs/OBJETIVOS.md`).
 
 ## Hecho (2026-10-27) · La portada enlaza las páginas por ciudad y horario
 - Antes, desde `index.html` solo había un `<a href>` a `bibliotecas/` (en la lista del mapa). Ahora hay 13 enlaces

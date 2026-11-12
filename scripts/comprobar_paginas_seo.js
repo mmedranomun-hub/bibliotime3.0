@@ -49,11 +49,15 @@
      - fichas cuyo WebPage no lleva @id <ficha>#pagina y about {"@id": "<ficha>#biblioteca"}, sin Library con ese @id
        en la misma página, o cuya Library no lo devuelve con mainEntityOfPage {"@id": "<ficha>#pagina"} (recíprocos).
 
+     - la verificación de Google Search Console: una <meta name="google-site-verification"> vacía, «null»/«undefined» o
+       que no parece un código, más de una (en varias páginas o repetida), fuera de la portada (index.html, la única
+       que Google mira para la propiedad de prefijo de URL) o distinta de GSC_VERIFICACION de generar_paginas_seo.js
+       cuando esta no es null (sin meta en ninguna página y GSC_VERIFICACION = null es lo normal: propiedad por DNS),
      - JSON-LD que no se puede leer, y horarios especiales (specialOpeningHoursSpecification: verano y exámenes de las
        fichas) mal formados o con tramos por fecha que se solapan.
    Uso (desde la raíz del proyecto):  node scripts/comprobar_paginas_seo.js
    Sale con código 1 si hay enlaces rotos, títulos o descripciones repetidos, JSON-LD roto, horarios especiales mal o
-   lastmod mal, una provincia o localidad con fichas sin ItemList, el índice sin su CollectionPage, un hasPart roto, una
+   lastmod mal, la meta de Search Console mal o repetida, una provincia o localidad con fichas sin ItemList, el índice sin su CollectionPage, un hasPart roto, una
    temática, provincia, localidad, ficha, hub, sala de estudio, universidad o ciudad de exámenes sin su isPartOf o la 404 mal, o una página con
    las migas sin enlazar, sueltas o con el penúltimo distinto de su isPartOf. */
 "use strict";
@@ -548,6 +552,31 @@ else {
   }
 }
 
+// ---------- Verificación de Google Search Console ----------
+const gscMal = [], gscEn = [];
+{
+  const todas = [path.join(RAIZ, "404.html"), ...paginas];
+  for (const e of fs.readdirSync(RAIZ, { withFileTypes: true })) if (e.isFile() && /\.html?$/i.test(e.name) && e.name !== "404.html") todas.push(path.join(RAIZ, e.name));
+  for (const f of todas) {
+    if (!fs.existsSync(f)) continue;
+    const rel = "/" + path.relative(RAIZ, f).split(path.sep).join("/");
+    for (const m of fs.readFileSync(f, "utf8").matchAll(/<meta\b[^>]*\bname\s*=\s*["']?google-site-verification\b[^>]*>/gi)) {
+      const c = (m[0].match(/\bcontent\s*=\s*["']([^"']*)["']/i) || [, ""])[1].trim();
+      gscEn.push([rel, c]);
+      if (!c || /^(null|undefined|none|false)$/i.test(c) || !/^[A-Za-z0-9_-]{10,100}$/.test(c)) gscMal.push(`${rel}: content «${c}» no es un código de verificación`);
+      if (rel !== "/index.html") gscMal.push(`${rel}: la meta solo sirve en la portada (/index.html); Google no la mira aquí`);
+    }
+  }
+  if (gscEn.length > 1) gscMal.push(`aparece ${gscEn.length} veces (${gscEn.map(([r]) => r).join(", ")}); debe estar como mucho una vez, en la portada`);
+  const src = fs.readFileSync(path.join(RAIZ, "scripts", "generar_paginas_seo.js"), "utf8");
+  const mc = src.match(/\nconst GSC_VERIFICACION = (null|"[^"\n]*"|'[^'\n]*');/);
+  if (!mc) gscMal.push("no encuentro `const GSC_VERIFICACION = null;` (o con un código entre comillas) en generar_paginas_seo.js");
+  else if (mc[1] !== "null") {
+    const cod = mc[1].slice(1, -1);
+    if (!gscEn.some(([r, c]) => r === "/index.html" && c === cod)) gscMal.push(`GSC_VERIFICACION = ${mc[1]} pero index.html no lleva esa meta: ejecuta node scripts/generar_paginas_seo.js`);
+  }
+}
+
 const muestra = (l, f) => l.slice(0, 15).map(f).join("\n") + (l.length > 15 ? `\n  … y ${l.length - 15} más` : "");
 console.log(`Páginas: ${html.size} · enlaces internos: ${nEnlaces}`);
 console.log(`Enlaces rotos: ${rotos.length}${rotos.length ? "\n" + muestra(rotos, ([r, u]) => `  ${r} → ${u}`) : ""}`);
@@ -580,4 +609,5 @@ for (const [r, h] of [...html, ["/404.html", fs.existsSync(f404) ? fs.readFileSy
   if (/_vercel\/insights|gc\.zgo\.at|goatcounter|googletagmanager|google-analytics/.test(h)) analiticaMal.push(`${r}: script de analítica puesto a mano`);
 }
 console.log(`Analítica (/analitica.js en el <head>, apagada): ${html.size + 1 - new Set(analiticaMal.map((x) => x.split(":")[0])).size} de ${html.size + 1} páginas (con la 404) · mal: ${analiticaMal.length}${analiticaMal.length ? "\n" + muestra(analiticaMal, (r) => "  " + r) : ""}`);
-if (analiticaMal.length || migasMal.length || mainEntityMal.length || indiceMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
+console.log(`Search Console (meta google-site-verification): ${gscEn.length ? gscEn.map(([r]) => r).join(", ") : "ninguna (verificación por DNS o pendiente)"} · mal: ${gscMal.length}${gscMal.length ? "\n" + muestra(gscMal, (r) => "  " + r) : ""}`);
+if (analiticaMal.length || gscMal.length || migasMal.length || mainEntityMal.length || indiceMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);

@@ -352,6 +352,27 @@ try {
     else if (e.name === "index.html") huellaAntes.set("/" + path.relative(RAIZ, dir).split(path.sep).join("/") + "/", huella(fs.readFileSync(f)));
   }
 })(SALIDA);
+// ---------- Verificación de Google Search Console (propiedad «prefijo de URL») ----------
+// Pega aquí SOLO el valor de content="…" que da Search Console al elegir «Etiqueta HTML» (p. ej. "AbCd…123"; sin la
+// etiqueta entera). Con null no se toca nada. Con un código, la meta va en la PORTADA (index.html, la URL https://bibliomapa.es/
+// que Google comprueba), no en /bibliotecas/: Google solo la busca en la página de inicio de la propiedad. Se escribe una
+// sola vez justo después de <meta charset> (si ya está con el mismo código, no cambia nada; con otro, lo sustituye).
+// La alternativa recomendada es la propiedad de DOMINIO con un registro DNS TXT, que no toca el código (docs/SEO.md).
+// scripts/comprobar_paginas_seo.js falla si la meta aparece vacía o «null», en más de una página o fuera de la portada.
+const GSC_VERIFICACION = null;
+if (GSC_VERIFICACION !== null) {
+  if (typeof GSC_VERIFICACION !== "string" || !/^[A-Za-z0-9_-]{10,100}$/.test(GSC_VERIFICACION)) {
+    console.error("GSC_VERIFICACION debe ser null o el código de Search Console (solo letras, cifras, - y _; sin comillas ni la etiqueta entera).");
+    process.exit(1);
+  }
+  const fPortada = path.join(RAIZ, "index.html");
+  const portada = fs.readFileSync(fPortada, "utf8");
+  const meta = `<meta name="google-site-verification" content="${GSC_VERIFICACION}">`;
+  const sinMeta = portada.replace(/[ \t]*<meta\s+name=["']google-site-verification["'][^>]*>\r?\n?/gi, "");
+  const conMeta = sinMeta.replace(/(<meta\s+charset=[^>]*>\r?\n?)/i, `$1${meta}\n`);
+  if (conMeta === sinMeta) { console.error("No encuentro <meta charset> en index.html para poner la verificación de Search Console."); process.exit(1); }
+  if (conMeta !== portada) { fs.writeFileSync(fPortada, conMeta); console.log("Search Console: meta google-site-verification puesta en index.html (portada)."); }
+}
 // La portada («/», la app) no la genera este script: su fecha es la del último commit que tocó index.html (hoy si tiene
 // cambios sin subir o si no hay git a mano).
 const lastmodPortada = (() => {
