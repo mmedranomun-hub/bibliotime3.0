@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-11-12 15:32",
+  "fecha": "2026-11-12 16:38",
   "pruebas": {
     "arranca: datos y vistas": true,
     "marca España (sin «Navarra» en la cabecera)": true,
@@ -44,6 +44,7 @@
     "con las 3 misiones hechas y el cofre sin abrir, la píldora dice «🎁 3/3», lleva al cofre y vuelve a «✅ 3/3» al abrirlo": true,
     "la barrita «· tu cofre te espera 🎁» lleva al cofre y, ya abierto, vuelve a llevar a las misiones": true,
     "«Sesión terminada» con las 3 misiones y el cofre sin abrir: «🎁 Tu cofre de misiones te espera» en --suave y «Abrirlo» guarda y lleva al cofre (nada con 2/3 ni con el cofre abierto)": true,
+    "«Sesión terminada» une la sesión con sus misiones: una línea .ses-mis «✅ <misión> · +10 🌰» por cada misión cumplida desde sesion.ts (--suave, premio en --ok-tx); nada si no cumplió ninguna; si cerró la 3.ª, «¡Misiones completadas!» en .ses-cofre": true,
     "acceso: la ley foral solo en Navarra": true,
     "especies de temporada (cruzan el año)": true,
     "historias y tips": true,
@@ -60,16 +61,16 @@
     "historial de Estudio: cada fila lleva 📸 (44×44, «Compartir sesión de <fecha>») y comparte ESA sesión en 1080×1920, con la racha de ese día y sin red": true,
     "perfil: récord con el nombre bien recortado": true,
     "atajos de la app instalada (#accion=estudiar|ahora|pronto)": true,
-    "analítica apagada por defecto (analitica.js con proveedor:null no pide _vercel/insights ni goatcounter; respeta DNT/GPC y local)": true
+    "analítica apagada por defecto (index.html y /bibliotecas/ cargan analitica.js con proveedor:null y no piden _vercel/insights ni goatcounter ni ponen cookies; respeta DNT/GPC y local)": true
   },
   "errores_js": [],
-  "carga_ms_cpu4x": 1192,
+  "carga_ms_cpu4x": 1209,
   "carga_ms_cpu4x_min_max": [
-    992,
-    1240
+    909,
+    1330
   ],
-  "primera_pintura_ms_cpu4x": 288,
-  "todas_las_chinchetas_ms_cpu4x": 1213,
+  "primera_pintura_ms_cpu4x": 264,
+  "todas_las_chinchetas_ms_cpu4x": 1251,
   "markercluster": {
     "cargado": false,
     "agrupa": false,
@@ -79,12 +80,12 @@
   },
   "datos": {
     "bibliotecas": 2616,
-    "con_horario_verificado": 656,
+    "con_horario_verificado": 666,
     "provincias_con_horario": 51,
     "provincias_total": 51
   },
   "seo": {
-    "paginas": 1082,
+    "paginas": 1092,
     "sitemap": true
   },
   "peso": {
@@ -97,8 +98,8 @@
       "kb_gzip": 91.2
     },
     "bibliotecas-espana.js": {
-      "kb": 843.0,
-      "kb_gzip": 205.7
+      "kb": 850.1,
+      "kb_gzip": 206.3
     }
   },
   "ok": true
