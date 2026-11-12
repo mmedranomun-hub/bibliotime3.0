@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-11-12 21:37",
+  "fecha": "2026-11-12 22:41",
   "pruebas": {
     "arranca: datos y vistas": true,
     "marca España (sin «Navarra» en la cabecera)": true,
@@ -17,6 +17,7 @@
     "semillas que vuelan al marcador (con 🌰 vuelan y el contador acaba en la cifra; sin 🌰 no; con reducir movimiento, cifra directa)": true,
     "pista bajo el saco de semillas: «¡A N 🌰 de plantar <especie>!» solo a 1-10 🌰, en positivo, y se repinta al gastar": true,
     "«¡Qué alegría verte!» al volver tras ≥ 3 días (horas y árbol más grande, sin hablar de la racha perdida)": true,
+    "«📸 Ayer compartiste…» en la bienvenida: una vez, solo si ayer compartiste y hoy no has estudiado": true,
     "biblioteca nueva en tu mapa: aviso suave al cerrar y «📍 bibliotecas exploradas» en el Perfil": true,
     "sello del día: al abrir el cofre se estampa 🏵️ y el Perfil cuenta solo los días logrados": true,
     "pista en el cofre del día: «¡A N 🌰 de plantar <especie>!» bajo el premio solo si quedas a 1-10 🌰 (y nada si el cofre ya te da para ella)": true,
@@ -70,13 +71,13 @@
     "política de privacidad coherente con analitica.js (proveedor null ⇔ «sin analítica»; el diff de docs/ANALITICA.md se aplica y se detecta encender sin él)": true
   },
   "errores_js": [],
-  "carga_ms_cpu4x": 1436,
+  "carga_ms_cpu4x": 924,
   "carga_ms_cpu4x_min_max": [
-    1153,
-    1458
+    818,
+    968
   ],
-  "primera_pintura_ms_cpu4x": 308,
-  "todas_las_chinchetas_ms_cpu4x": 1460,
+  "primera_pintura_ms_cpu4x": 224,
+  "todas_las_chinchetas_ms_cpu4x": 940,
   "markercluster": {
     "cargado": false,
     "agrupa": false,
@@ -86,17 +87,17 @@
   },
   "datos": {
     "bibliotecas": 2616,
-    "con_horario_verificado": 715,
+    "con_horario_verificado": 725,
     "provincias_con_horario": 51,
     "provincias_total": 51
   },
   "seo": {
-    "paginas": 1151,
+    "paginas": 1166,
     "sitemap": true
   },
   "peso": {
     "index.html": {
-      "kb": 138.7,
+      "kb": 139.0,
       "kb_gzip": 31.3
     },
     "app.js": {
@@ -104,8 +105,8 @@
       "kb_gzip": 92.8
     },
     "bibliotecas-espana.js": {
-      "kb": 878.6,
-      "kb_gzip": 211.4
+      "kb": 884.9,
+      "kb_gzip": 212.6
     }
   },
   "ok": true
