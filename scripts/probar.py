@@ -1172,6 +1172,28 @@ PRUEBAS = [
       }finally{clearTimeout(irAMision.t);MIS_FOCO={id:'',hasta:0};
         clearTimeout(VUELO.t);VUELO.t=0;VUELO.n=VUELO.h=VUELO.z=0;VUELO.hr=null;document.querySelectorAll('.saco-semillas,.semilla-vuela').forEach(x=>x.remove());
         k.forEach(x=>DATA[x]=o[x]);saveUserData();closeModal();goView('map');await espera(300);renderStudy();renderSemillas();}"""),
+    ("«Sesión terminada» une la sesión con sus misiones: una línea .ses-mis «✅ <misión> · +10 🌰» por cada misión cumplida desde sesion.ts (--suave, premio en --ok-tx); nada si no cumplió ninguna; si cerró la 3.ª, «¡Misiones completadas!» en .ses-cofre", """
+      var k=['misiones','sessions','acciones'],o={};k.forEach(x=>o[x]=DATA[x]);
+      var hoy=ymd(),ts=Date.now()-30*60000,antes=new Date(ts-3600000).toISOString(),ahora=new Date().toISOString();
+      var abre=hechas=>{closeModal();DATA.misiones={fecha:hoy,ids:['m25','agenda','pomo'],hechas:hechas,cofre:false};var s={id:'sm'+Math.random(),date:hoy,min:30,ts:ts,bib:NO_BIB,focus:'ok',esp:'roble',prod:null,note:''};DATA.sessions=[s];pedirValoracion(s,null);return [].map.call(document.querySelectorAll('#modalRoot .ses-mis'),x=>x.innerText.trim());};
+      var col=v=>{var t=document.createElement('i');t.style.color=v;document.body.appendChild(t);var c=getComputedStyle(t).color;t.remove();return c;};
+      try{
+        await cargarExtra();closeModal();
+        var l=abre({m25:antes});if(l.length)return 'sale con una misión de antes de la sesión: '+l;
+        l=abre({agenda:ahora});if(l.length)return 'atribuye a la sesión «Apunta un examen»: '+l;
+        l=abre({m25:ahora});if(l.length!==1||l[0]!=='✅ Estudia 25 min hoy · +'+MIS_PREMIO+' 🌰')return 'línea mal: '+JSON.stringify(l);
+        var m=$('modalRoot').innerHTML;if(m.indexOf('ses-mis')<m.indexOf('Sesión terminada</h3>')||m.indexOf('ses-mis')>m.indexOf('prodStars'))return 'no va bajo «Sesión terminada»';
+        var e=document.querySelector('#modalRoot .ses-mis'),c=getComputedStyle(e),b=getComputedStyle(e.querySelector('b'));
+        if(c.color!==col('var(--suave)')||b.color!==col('var(--ok-tx)'))return 'colores: '+c.color+' / '+b.color;
+        if(c.fontWeight!=='600'||c.animationName!=='none')return 'peso o animación: '+c.fontWeight+' '+c.animationName;
+        if(/#[0-9a-f]{3,6}|rgb\\(/i.test($('sesMisCss').textContent))return 'colores sueltos en el CSS';
+        if(/Misiones completadas/.test($('modalRoot').innerText))return 'dice «completadas» con 1/3';
+        l=abre({m25:ahora,pomo:ahora,agenda:antes});if(l.length!==2||!/Completa un Pomodoro/.test(l[1]))return 'dos misiones: '+JSON.stringify(l);
+        var cf=document.querySelector('#modalRoot .ses-cofre');if(!cf||!/🎁 ¡Misiones completadas! Tu cofre te espera/.test(cf.innerText))return 'el cofre no lo atribuye a la sesión: '+(cf&&cf.innerText);
+        abre({m25:antes,pomo:antes,agenda:antes});cf=document.querySelector('#modalRoot .ses-cofre');
+        if(!cf||/completadas/.test(cf.innerText)||document.querySelector('#modalRoot .ses-mis'))return 'con las 3 de antes cambia el texto';
+        return true;
+      }finally{k.forEach(x=>DATA[x]=o[x]);saveUserData();closeModal();renderStudy();}"""),
     ("acceso: la ley foral solo en Navarra", """
       for(var i=N_NAVARRA;i<BIBLIOTECAS.length;i++)if(/Ley Foral/.test(accesoAccesibilidadHTML(BIBLIOTECAS[i])))return 'ley foral fuera de Navarra: '+BIBLIOTECAS[i].nombre;
       var nav=BIBLIOTECAS.slice(0,N_NAVARRA).some(b=>/Ley Foral 32\\/2002/.test(accesoAccesibilidadHTML(b)));

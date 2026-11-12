@@ -1048,14 +1048,29 @@ function volarHielo(desde,espera){
    hechas y el cofre sin abrir, una línea en --suave con «Abrirlo» (guarda lo que hayas marcado, cierra y lleva
    al cofre con irAMision("cofre")). Sin rojo, sin prisa, sin animación; con el cofre ya abierto, nada. ----- */
 function cofreEspera(){var M=DATA&&DATA.misiones;return !!M&&M.fecha===ymd()&&!M.cofre&&(M.ids||[]).length===3&&M.ids.every(function(id){return M.hechas&&M.hechas[id];});}
-function cofreEsperaHTML(){
+/* ----- Misiones que ha cumplido esta sesión en «Sesión terminada»: bajo «0:42 h en …», una línea `.ses-mis` por
+   misión con `M.hechas[id]` a partir de `sesion.ts` («✅ Estudia 25 min hoy · +10 🌰», --suave y el premio en --ok-tx).
+   Solo las que se ganan estudiando (no «Da kudos…» ni «Apunta un examen», que no son de la sesión). Sin animación;
+   si no cumplió ninguna, nada. Si una de ellas cerró la 3.ª, la fila del cofre lo atribuye a la sesión. ----- */
+function misionesDeSesion(sesion){
+  var M=DATA&&DATA.misiones;if(!M||M.fecha!==ymd()||!M.hechas||!sesion||!sesion.ts)return [];
+  return (M.ids||[]).map(misionDef).filter(function(d){var t=d&&M.hechas[d.id]&&Date.parse(M.hechas[d.id]);return t&&t>=sesion.ts&&d.id!=="social"&&d.id!=="agenda";});
+}
+function misionesSesionHTML(ds){
+  if(!ds.length)return "";
+  if(!$("sesMisCss")){var st=document.createElement("style");st.id="sesMisCss";
+    st.textContent='.ses-mis-l{margin:-8px 0 14px}.ses-mis{font-size:var(--fs-s);font-weight:600;line-height:1.5;color:var(--suave)}.ses-mis b{color:var(--ok-tx);font-weight:800;white-space:nowrap}';
+    document.head.appendChild(st);}
+  return '<div class="ses-mis-l">'+ds.map(function(d){return '<div class="ses-mis">✅ '+escapeHTML(d.txt)+' · <b>+'+MIS_PREMIO+' 🌰</b></div>';}).join("")+'</div>';
+}
+function cofreEsperaHTML(deSesion){
   if(!cofreEspera())return "";
   if(!$("cofreEsperaCss")){var st=document.createElement("style");st.id="cofreEsperaCss";
     st.textContent='.ses-cofre{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 14px;padding:4px 4px 4px 12px;border-radius:var(--r-m);border:1px solid var(--borde);background:var(--glass);color:var(--suave);font-size:var(--fs-m);font-weight:700;line-height:1.3;text-align:left}'+
       '.ses-cofre-b{flex:none;min-height:44px;min-width:44px;padding:0 16px;border:1.5px solid var(--acento);border-radius:var(--r-pill);background:var(--glass-fuerte);color:var(--acento-tx);font:inherit;font-weight:800;cursor:pointer}'+
       '.ses-cofre-b:focus-visible{outline:2px solid var(--acento);outline-offset:2px}';
     document.head.appendChild(st);}
-  return '<div class="ses-cofre"><span>🎁 Tu cofre de misiones te espera</span><button type="button" class="ses-cofre-b" id="sessCofre" aria-label="Abrirlo: ir a tu cofre de misiones">Abrirlo</button></div>';
+  return '<div class="ses-cofre"><span>'+(deSesion?'🎁 ¡Misiones completadas! Tu cofre te espera':'🎁 Tu cofre de misiones te espera')+'</span><button type="button" class="ses-cofre-b" id="sessCofre" aria-label="Abrirlo: ir a tu cofre de misiones">Abrirlo</button></div>';
 }
 
 /* ----- Sesión terminada (valorar, afluencia, nota) y editar una sesión ----- */
@@ -1063,8 +1078,8 @@ function pedirValoracion(sesion,horasAntes){
   var sel={v:0};
   var plantado=sesion.focus?'<div class="planted'+(sesion.focus==="withered"?' seco':'')+'"><div class="planted-tree">'+arbolSVG(sesion.min,sesion.focus==="withered",sesion.subject||sesion.id,110,sesion.esp)+'</div>'+
     '<div class="planted-txt">'+(sesion.focus==="withered"?'🥀 Tu árbol se marchitó porque saliste de la app. ¡El próximo crecerá!':'🎉 ¡Has plantado un '+ETAPAS_ARBOL[etapaArbol(sesion.min)][1].toLowerCase()+' en tu bosque!'+(Math.floor(sesion.min/5)?'<span class="planted-seeds">🌰 +'+Math.floor(sesion.min/5)+' semillas</span>':''))+'</div></div>':'';
-  var barraNivel=horasAntes!=null?nivelProgresoHTML(horasAntes):'';
-  openModal(plantado+recordSesionHTML(sesion)+cuentaSesionHTML(sesion)+barraNivel+'<h3>Sesión terminada</h3><div class="sub">'+fmtHoras(sesion.min)+' h en '+escapeHTML(cortoNombre(sesion.bib))+(sesion.verif?' · <span class="badge-ok">✓ verificada</span>':'')+'</div>'+cofreEsperaHTML()+
+  var barraNivel=horasAntes!=null?nivelProgresoHTML(horasAntes):'', misSes=misionesDeSesion(sesion);
+  openModal(plantado+recordSesionHTML(sesion)+cuentaSesionHTML(sesion)+barraNivel+'<h3>Sesión terminada</h3><div class="sub">'+fmtHoras(sesion.min)+' h en '+escapeHTML(cortoNombre(sesion.bib))+(sesion.verif?' · <span class="badge-ok">✓ verificada</span>':'')+'</div>'+misionesSesionHTML(misSes)+cofreEsperaHTML(misSes.length>0)+
     '<label style="font-size:var(--fs-s);font-weight:700;color:var(--suave);text-transform:uppercase;letter-spacing:.05em">¿Qué tal ha ido?</label>'+
     '<div class="prodstars" id="prodStars">'+[1,2,3,4,5].map(function(n){return '<button data-v="'+n+'">★</button>';}).join("")+'</div>'+
     (bibIdxDe(sesion)>=0?'<label style="display:block;margin-top:12px;font-size:var(--fs-s);font-weight:700;color:var(--suave);text-transform:uppercase;letter-spacing:.05em">¿Cómo estaba de llena?</label>'+
