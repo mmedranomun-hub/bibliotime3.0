@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-11-12 19:35",
+  "fecha": "2026-11-12 20:32",
   "pruebas": {
     "arranca: datos y vistas": true,
     "marca España (sin «Navarra» en la cabecera)": true,
@@ -63,18 +63,19 @@
     "perfil: récord con el nombre bien recortado": true,
     "perfil: «📸 Compartir mi mejor sesión de la semana» sale con sesiones de los últimos 7 días y comparte la más larga; sin sesiones no sale": true,
     "wrapped: «📸 Mi mejor sesión» comparte la más larga de la semana pasada con «⭐ Mi mejor sesión de la semana»; sin sesiones sanas no sale": true,
+    "📸 doble toque: el botón queda desactivado con aria-busy mientras se prepara la imagen y solo se genera y comparte UNA; luego vuelve, también si se cancela la hoja": true,
     "atajos de la app instalada (#accion=estudiar|ahora|pronto)": true,
     "analítica apagada por defecto (index.html y /bibliotecas/ cargan analitica.js con proveedor:null y no piden _vercel/insights ni goatcounter ni ponen cookies; respeta DNT/GPC y local)": true,
     "política de privacidad coherente con analitica.js (proveedor null ⇔ «sin analítica»; el diff de docs/ANALITICA.md se aplica y se detecta encender sin él)": true
   },
   "errores_js": [],
-  "carga_ms_cpu4x": 1298,
+  "carga_ms_cpu4x": 1004,
   "carga_ms_cpu4x_min_max": [
-    1188,
-    1416
+    911,
+    1092
   ],
-  "primera_pintura_ms_cpu4x": 300,
-  "todas_las_chinchetas_ms_cpu4x": 1318,
+  "primera_pintura_ms_cpu4x": 252,
+  "todas_las_chinchetas_ms_cpu4x": 1020,
   "markercluster": {
     "cargado": false,
     "agrupa": false,
@@ -84,26 +85,26 @@
   },
   "datos": {
     "bibliotecas": 2616,
-    "con_horario_verificado": 695,
+    "con_horario_verificado": 705,
     "provincias_con_horario": 51,
     "provincias_total": 51
   },
   "seo": {
-    "paginas": 1128,
+    "paginas": 1139,
     "sitemap": true
   },
   "peso": {
     "index.html": {
-      "kb": 137.4,
+      "kb": 137.5,
       "kb_gzip": 31.0
     },
     "app.js": {
       "kb": 309.0,
-      "kb_gzip": 91.8
+      "kb_gzip": 91.9
     },
     "bibliotecas-espana.js": {
-      "kb": 865.1,
-      "kb_gzip": 209.5
+      "kb": 872.1,
+      "kb_gzip": 210.7
     }
   },
   "ok": true
