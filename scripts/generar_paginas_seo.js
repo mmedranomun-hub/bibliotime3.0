@@ -201,8 +201,26 @@ function itemBib(b) {
 // de provincia y de localidad, los hubs de horarios, universidades, exámenes y salas de estudio, universidades, ciudades
 // de exámenes y salas de estudio de provincia y localidad), para enlazarlo desde su WebPage o CollectionPage con breadcrumb (ver idMigasDe/conMigas).
 const h1De = new Map(); // ruta → h1 (texto plano): de aquí salen los textos de «¿Buscabas…?» en la 404
-function pagina({ ruta, titulo, descripcion, h1, intro, cuerpo, migas, migasId, ld, cta, head, noindex, trasH1 }) {
+// FAQPage en el mismo grafo que su página (provincias, localidades, temáticas, hubs, salas, universidades, exámenes):
+// si la página lleva un FAQPage sin @id y un CollectionPage de su misma URL, el CollectionPage recibe @id <ruta>#pagina
+// (el mismo patrón que el WebPage de las fichas) y el FAQPage @id <ruta>#faq e isPartOf {"@id": "<ruta>#pagina"}.
+// Preguntas y respuestas no cambian. Las fichas ya lo traen hecho (su FAQPage lleva @id) y no se tocan.
+let nFaqEnGrafo = 0;
+function faqEnGrafo(ruta, ld) {
+  if (!ld) return ld;
+  const lista = [].concat(ld), url = DOMINIO + ruta;
+  const faqs = lista.filter((x) => x && x["@type"] === "FAQPage" && !x["@id"]);
+  const cp = lista.find((x) => x && x["@type"] === "CollectionPage" && x.url === url);
+  if (!faqs.length || !cp) return ld;
+  const idPag = cp["@id"] || url + "#pagina";
+  nFaqEnGrafo++;
+  const nueva = lista.map((x) => (x === cp && !cp["@id"] ? { "@context": cp["@context"], "@id": idPag, ...cp }
+    : faqs.includes(x) ? { "@context": x["@context"], "@id": url + "#faq", ...x, isPartOf: { "@id": idPag } } : x));
+  return Array.isArray(ld) ? nueva : nueva[0];
+}
+function pagina({ ruta, titulo, descripcion, h1, intro, cuerpo, migas, migasId, ld: ld0, cta, head, noindex, trasH1 }) {
   const url = DOMINIO + ruta;
+  const ld = faqEnGrafo(ruta, ld0);
   h1De.set(ruta, h1);
   const migasLD = { "@context": "https://schema.org", ...(migasId ? { "@id": migasId } : {}), "@type": "BreadcrumbList", itemListElement: migas.map((x, k) => ({ "@type": "ListItem", position: k + 1, name: x[0], item: DOMINIO + x[1] })) };
   return `<!DOCTYPE html>
@@ -1186,10 +1204,11 @@ ${seccionTemasFicha(b, locConPagina)}
     // Horarios especiales (verano verificado y exámenes con `semana`) en specialOpeningHoursSpecification con sus fechas.
     // WebPage (@id <ficha>#pagina) y Library (@id <ficha>#biblioteca) se apuntan entre sí: about y mainEntityOfPage.
     // El FAQPage (si hay preguntas) entra en el mismo grafo: @id <ficha>#faq e isPartOf {"@id": "<ficha>#pagina"}, para
-    // que no haya dos nodos de página sueltos para la misma URL. Preguntas y respuestas, sin tocar.
+    // que no haya dos nodos de página sueltos para la misma URL. Preguntas y respuestas, sin tocar. El WebPage lo declara
+    // de vuelta con hasPart {"@id": "<ficha>#faq"} (solo en las fichas con FAQ).
     ld: [{ "@context": "https://schema.org", "@id": idBib, ...libraryLD(b, DOMINIO + ruta), ...(especiales.length ? { specialOpeningHoursSpecification: especiales } : {}), mainEntityOfPage: { "@id": idPag } },
       { "@context": "https://schema.org", "@id": idPag, "@type": "WebPage", name: titulo.replace(MARCA, ""), description: descripcion, url: DOMINIO + ruta,
-        inLanguage: "es-ES", ...parteDe, breadcrumb: { "@id": idMigas }, about: { "@id": idBib }, ...(mod ? { dateModified: mod } : {}) }, ...(fq ? [{ "@context": "https://schema.org", "@id": DOMINIO + ruta + "#faq", ...fq.ld, isPartOf: { "@id": idPag } }] : [])],
+        inLanguage: "es-ES", ...parteDe, breadcrumb: { "@id": idMigas }, about: { "@id": idBib }, ...(fq ? { hasPart: { "@id": DOMINIO + ruta + "#faq" } } : {}), ...(mod ? { dateModified: mod } : {}) }, ...(fq ? [{ "@context": "https://schema.org", "@id": DOMINIO + ruta + "#faq", ...fq.ld, isPartOf: { "@id": idPag } }] : [])],
   }));
   if (especiales.length) nFichasEspeciales++;
   if (tieneVerano(b)) nFichasVerano++;
@@ -2142,6 +2161,7 @@ console.log(`isPartOf en salas de estudio, universidades y exámenes (su hub): $
 console.log(`isPartOf al índice en los hubs (salas, universidades, exámenes y horarios): ${nHubIndice} páginas`);
 console.log(`isPartOf en fichas (su localidad o provincia): ${nFichasIsPartOf} de ${paginaDe.size}`);
 console.log(`breadcrumb {"@id": "<ruta>#migas"} en el índice, provincias, localidades, temáticas de España, de provincia y de localidad, hubs, salas de estudio, universidades y ciudades de exámenes: ${nMigasId} páginas`);
+console.log(`FAQPage en el grafo de su CollectionPage (@id <ruta>#faq, isPartOf → <ruta>#pagina) en páginas que no son ficha: ${nFaqEnGrafo}`);
 console.log(`Provincias con ItemList de sus fichas en el JSON-LD: ${nProvItemList} de ${provincias.length} · elementos: ${nItemsProv}`);
 console.log(`Localidades sin ninguna verificada con «Cerca, con horario verificado» (≤ ${RADIO_VERIF_KM} km del centroide): ${nLocsVerifCerca} · enlaces: ${nEnlacesLocVerifCerca}`);
 console.log(`Fichas con «Cerca, con horario verificado» (≤ ${RADIO_VERIF_KM} km, otra ficha): ${nFichasVerifCerca} de ${paginaDe.size} · enlaces: ${nEnlacesVerifCerca}`);

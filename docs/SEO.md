@@ -41,7 +41,11 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
   canonical, JSON-LD `Library` (con `openingHoursSpecification` solo si está verificado) y `FAQPage`
   («¿Abre los domingos…?», «¿A qué hora cierra…?») solo cuando hay horario verificado.
   Un solo grafo: `WebPage` `<ficha>#pagina` (about → `Library` `<ficha>#biblioteca`, que vuelve con `mainEntityOfPage`)
-  y `FAQPage` `<ficha>#faq` con `isPartOf: {"@id": "<ficha>#pagina"}` (el comprobador falla si falta alguno).
+  y `FAQPage` `<ficha>#faq` con `isPartOf: {"@id": "<ficha>#pagina"}`, que el `WebPage` declara de vuelta con
+  `hasPart: {"@id": "<ficha>#faq"}` (el comprobador falla si falta alguno o no es recíproco).
+- Lo mismo en todas las demás páginas con FAQ (provincias, localidades, temáticas, hubs, salas, universidades,
+  exámenes): `faqEnGrafo()` en `pagina()` da a su `CollectionPage` (el de su misma URL) `@id` `<ruta>#pagina` y al
+  `FAQPage` `@id` `<ruta>#faq` + `isPartOf: {"@id": "<ruta>#pagina"}`. El comprobador lo exige en toda página con `FAQPage`.
 - Las tarjetas de provincia, localidad y temáticas enlazan el nombre de la biblioteca a su página. Todas en `sitemap.xml`.
 - Crecen solas: cada horario verificado nuevo en una capital genera su página al regenerar.
 

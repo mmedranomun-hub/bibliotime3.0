@@ -48,8 +48,11 @@
        índice; su hub). Falla con cualquier BreadcrumbList suelto (sin @id <ruta>#migas o sin breadcrumb que lo enlace).
      - fichas cuyo WebPage no lleva @id <ficha>#pagina y about {"@id": "<ficha>#biblioteca"}, sin Library con ese @id
        en la misma página, o cuya Library no lo devuelve con mainEntityOfPage {"@id": "<ficha>#pagina"} (recíprocos).
-     - fichas con FAQPage cuyo FAQPage no lleva @id <ficha>#faq e isPartOf {"@id": "<ficha>#pagina"} (un WebPage con ese
-       @id en la misma página): un solo grafo, no dos nodos de página sueltos para la misma URL.
+     - cualquier página con FAQPage (fichas, provincias, localidades, temáticas, hubs, salas, universidades, exámenes)
+       cuyo FAQPage no lleva @id <ruta>#faq e isPartOf {"@id": "<ruta>#pagina"} (en la misma página, un WebPage con ese
+       @id en las fichas, un CollectionPage en las demás, con url = la página), o con más de un FAQPage: un solo grafo,
+       no dos nodos de página sueltos para la misma URL. Y fichas cuyo WebPage #pagina no declara hasPart
+       {"@id": "<ficha>#faq"} teniendo FAQPage, o lo declara sin tenerlo (recíproco).
 
      - la verificación de Google Search Console: una <meta name="google-site-verification"> vacía, «null»/«undefined» o
        que no parece un código, más de una (en varias páginas o repetida), fuera de la portada (index.html, la única
@@ -121,7 +124,7 @@ const wpDe = new Map(), idsListaDe = new Map(); // ruta → WebPage de la ficha 
 const migasDe = new Map(); // ruta → BreadcrumbList del JSON-LD de esa página (las migas)
 const libDe = new Map(); // ruta de la ficha → su Library de nivel superior (@id <ficha>#biblioteca)
 const faqDe = new Map(); // ruta → FAQPage del JSON-LD de esa página
-const nodosPagDe = new Map(); // ruta → @id de sus nodos WebPage (para ver si el isPartOf del FAQPage apunta a uno de la misma página)
+const nodosPagDe = new Map(); // ruta → (@id → nodo) de sus WebPage/CollectionPage con url = la página (destino del isPartOf del FAQPage)
 function existe(ruta) {
   const limpia = decodeURIComponent(ruta);
   const f = path.join(RAIZ, limpia);
@@ -155,7 +158,8 @@ for (const [ruta, h] of html) {
       if (x && x["@type"] === "CollectionPage" && !cpDe.has(ruta)) cpDe.set(ruta, x);
       if (x && x["@type"] === "WebPage" && x.about && !wpDe.has(ruta)) wpDe.set(ruta, x);
       if (x && x["@type"] === "FAQPage") (faqDe.get(ruta) || faqDe.set(ruta, []).get(ruta)).push(x);
-      if (x && x["@type"] === "WebPage" && x["@id"]) (nodosPagDe.get(ruta) || nodosPagDe.set(ruta, new Set()).get(ruta)).add(x["@id"]);
+      if (x && (x["@type"] === "WebPage" || x["@type"] === "CollectionPage") && x["@id"] && x.url === DOMINIO + ruta)
+        (nodosPagDe.get(ruta) || nodosPagDe.set(ruta, new Map()).get(ruta)).set(x["@id"], x);
       if (x && x["@type"] === "BreadcrumbList") (migasDe.get(ruta) || migasDe.set(ruta, []).get(ruta)).push(x);
       if (x && x["@type"] === "CollectionPage" && x.mainEntity && x.mainEntity["@type"] === "ItemList")
         idsListaDe.set(ruta, new Set((x.mainEntity.itemListElement || []).map((el) => el && el.item && el.item["@id"]).filter(Boolean)));
@@ -337,26 +341,37 @@ for (const ruta of fichas) {
   if (me !== idPag) { mainEntityMal.push(`${ruta} Library sin mainEntityOfPage {"@id": "${idPag}"}${me ? ` (lleva ${me})` : ""}`); continue; }
   nFichaMainEntity++;
 }
-// FAQPage de las fichas en el mismo grafo: cada FAQPage de una ficha lleva @id <ficha>#faq e isPartOf
-// {"@id": "<ficha>#pagina"}, y ese #pagina es un WebPage de la misma página (no dos nodos de página sueltos para una URL).
+// FAQPage en el mismo grafo que su página, en TODAS las páginas con FAQPage: lleva @id <ruta>#faq e isPartOf
+// {"@id": "<ruta>#pagina"}, y ese #pagina es un nodo de la misma página con url = la página: el WebPage en las fichas,
+// el CollectionPage en las demás (provincias, localidades, temáticas, hubs, salas, universidades, exámenes). No dos
+// nodos de página sueltos para una URL. En las fichas, además, el WebPage #pagina lo declara con hasPart
+// {"@id": "<ficha>#faq"} si y solo si la página tiene ese FAQPage (recíproco).
 const faqMal = [];
-let nFichaFaq = 0, nFichaFaqBien = 0;
-for (const ruta of fichas) {
-  const lfaq = faqDe.get(ruta);
-  if (!lfaq) continue;
-  nFichaFaq++;
+let nFichaFaq = 0, nFichaFaqBien = 0, nOtraFaq = 0, nOtraFaqBien = 0, nFichaHasPart = 0;
+for (const [ruta, lfaq] of faqDe) {
+  const esFicha = fichas.has(ruta), tipo = esFicha ? "WebPage" : "CollectionPage";
+  if (esFicha) nFichaFaq++; else nOtraFaq++;
   const idFaq = DOMINIO + ruta + "#faq", idPag = DOMINIO + ruta + "#pagina";
   let bien = true;
   for (const f of lfaq) {
     if (f["@id"] !== idFaq) { faqMal.push(`${ruta} FAQPage sin @id ${idFaq}${f["@id"] ? ` (lleva ${f["@id"]})` : ""}`); bien = false; continue; }
     const ip = (f.isPartOf || {})["@id"];
     if (ip !== idPag) { faqMal.push(`${ruta} FAQPage sin isPartOf {"@id": "${idPag}"}${ip ? ` (lleva ${ip})` : ""}`); bien = false; continue; }
-    if (!(nodosPagDe.get(ruta) || new Set()).has(idPag)) { faqMal.push(`${ruta} FAQPage apunta a ${idPag}, sin WebPage con ese @id en la página`); bien = false; }
+    const nodo = (nodosPagDe.get(ruta) || new Map()).get(idPag);
+    if (!nodo || nodo["@type"] !== tipo) { faqMal.push(`${ruta} FAQPage apunta a ${idPag}, sin ${tipo} con ese @id y url ${DOMINIO + ruta} en la página`); bien = false; }
   }
-  if (bien) nFichaFaqBien++;
+  if (lfaq.length > 1) { faqMal.push(`${ruta} ${lfaq.length} FAQPage en la misma página`); bien = false; }
+  if (bien) { if (esFicha) nFichaFaqBien++; else nOtraFaqBien++; }
 }
-// FAQPage de las demás páginas (provincias, localidades, temáticas, hubs…): solo se cuentan (sin nodo #pagina aún).
-const nFaqOtras = [...faqDe.keys()].filter((r) => !fichas.has(r)).length;
+for (const ruta of fichas) {
+  const wp = (nodosPagDe.get(ruta) || new Map()).get(DOMINIO + ruta + "#pagina");
+  if (!wp) continue; // sin WebPage #pagina: ya lo cuenta el bloque de fichas (about/mainEntityOfPage)
+  const idFaq = DOMINIO + ruta + "#faq", tieneFaq = (faqDe.get(ruta) || []).some((f) => f["@id"] === idFaq);
+  const hp = [].concat(wp.hasPart || []).map((p) => p && p["@id"]);
+  if (tieneFaq && !hp.includes(idFaq)) faqMal.push(`${ruta} WebPage #pagina sin hasPart {"@id": "${idFaq}"} (su FAQPage apunta a él con isPartOf)`);
+  else if (!tieneFaq && hp.includes(idFaq)) faqMal.push(`${ruta} WebPage #pagina con hasPart ${idFaq} pero sin FAQPage con ese @id en la página`);
+  else if (tieneFaq) nFichaHasPart++;
+}
 // breadcrumb de provincias, localidades y temáticas de provincia y de localidad: su CollectionPage lo enlaza por @id
 // (<ruta>#migas) a un BreadcrumbList de la misma página cuyo último elemento es la propia página. Penúltimo: en
 // provincias, localidades, temáticas de España (/bibliotecas/<tema>/: el índice) y el propio índice (/bibliotecas/:
@@ -643,7 +658,7 @@ console.log(`hasPart: ${nHasPart} en ${nPagHasPart} páginas (temáticas que enl
 console.log(`Temáticas: España ${nTemas.España} · provincia ${nTemas.provincia} · localidad ${nTemas.localidad} · con isPartOf bien: España ${nIsPartOf.España} · provincia ${nIsPartOf.provincia} · localidad ${nIsPartOf.localidad} · lugares con isPartOf bien: provincias ${nLugarIsPartOf.provincia} · localidades ${nLugarIsPartOf.localidad} · fichas con isPartOf bien: a su localidad ${nFichaIsPartOf.localidad} · a su provincia ${nFichaIsPartOf.provincia} (fuera del ItemList de esa página: ${nFichasFueraLista}) · con isPartOf a su hub bien: ${Object.entries(nHubIsPartOf).map(([t, n]) => `${t} ${n}`).join(" · ")} · hubs con isPartOf al índice bien: ${nHubsIndice} · mal: ${isPartOfMal.length}${isPartOfMal.length ? "\n" + muestra(isPartOfMal, (r) => "  " + r) : ""}`);
 console.log(`Migas de las fichas (breadcrumb del WebPage → BreadcrumbList #migas, penúltimo = isPartOf): ${nFichaMigas} de ${fichas.size} bien · índice, provincias, localidades y temáticas (breadcrumb del CollectionPage → #migas): ${Object.entries(nLugarMigas).map(([t, n]) => `${t} ${n}`).join(" · ")} (temáticas con penúltimo ≠ isPartOf, solo contadas: ${nTemaMigasDistintoIsPartOf}) · hubs, salas de estudio, universidades y exámenes (penúltimo = isPartOf): ${Object.entries(nHubMigas).map(([t, n]) => `${t} ${n}`).join(" · ")} · BreadcrumbList sueltas (sin @id <ruta>#migas enlazado: fallo): ${nMigasSueltas}${nMigasSueltas ? ` (${Object.entries(migasSueltas).map(([t, n]) => `${t} ${n}`).join(" · ")})` : ""} · mal: ${migasMal.length}${migasMal.length ? "\n" + muestra(migasMal, (r) => "  " + r) : ""}`);
 console.log(`mainEntityOfPage de las fichas (WebPage #pagina about Library #biblioteca y Library mainEntityOfPage → #pagina): ${nFichaMainEntity} de ${fichas.size} bien · mal: ${mainEntityMal.length}${mainEntityMal.length ? "\n" + muestra(mainEntityMal, (r) => "  " + r) : ""}`);
-console.log(`FAQPage de las fichas (@id #faq, isPartOf → WebPage #pagina de la misma página): ${nFichaFaqBien} de ${nFichaFaq} bien · mal: ${faqMal.length} · otras páginas con FAQPage (sin comprobar): ${nFaqOtras}${faqMal.length ? "\n" + muestra(faqMal, (r) => "  " + r) : ""}`);
+console.log(`FAQPage en el grafo de su página (@id #faq, isPartOf → #pagina de la misma URL): fichas (WebPage) ${nFichaFaqBien} de ${nFichaFaq} bien, con hasPart #faq recíproco ${nFichaHasPart} · demás páginas (CollectionPage) ${nOtraFaqBien} de ${nOtraFaq} bien · mal: ${faqMal.length}${faqMal.length ? "\n" + muestra(faqMal, (r) => "  " + r) : ""}`);
 console.log(`Huérfanas (sin enlace desde otra página generada): ${huerfanas.length}${huerfanas.length ? "\n" + muestra(huerfanas, (r) => "  " + r) : ""}`);
 console.log(`Sitemap: ${enSitemap.size} URL · no existen: ${sitemapRoto.length} · faltan en el sitemap: ${faltanSitemap.length}` +
   (sitemapRoto.length + faltanSitemap.length ? "\n" + muestra(sitemapRoto.concat(faltanSitemap), (r) => "  " + r) : ""));
