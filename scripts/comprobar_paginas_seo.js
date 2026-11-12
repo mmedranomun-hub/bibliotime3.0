@@ -56,7 +56,9 @@
        que Google mira para la propiedad de prefijo de URL) o distinta de GSC_VERIFICACION de generar_paginas_seo.js
        cuando esta no es null (sin meta en ninguna página y GSC_VERIFICACION = null es lo normal: propiedad por DNS),
      - la clave de IndexNow: si INDEXNOW_CLAVE de generar_paginas_seo.js no es null, que tenga formato válido y que
-       /<clave>.txt exista en la raíz con exactamente la clave (con null no se exige nada),
+       /<clave>.txt exista en la raíz con exactamente la clave (con null no se exige nada), y que avisar_indexnow.js
+       siga abortando («despliega primero»): copia temporal con clave ficticia contra servidores en 127.0.0.1, sin red
+       real; salida 0 con el .txt bien servido y 1 con 404 o con otro texto,
      - JSON-LD que no se puede leer, y horarios especiales (specialOpeningHoursSpecification: verano y exámenes de las
        fichas) mal formados o con tramos por fecha que se solapan.
    Uso (desde la raíz del proyecto):  node scripts/comprobar_paginas_seo.js
@@ -659,4 +661,59 @@ for (const [r, h] of [...html, ["/404.html", fs.existsSync(f404) ? fs.readFileSy
 console.log(`Analítica (/analitica.js en el <head>, apagada): ${html.size + 1 - new Set(analiticaMal.map((x) => x.split(":")[0])).size} de ${html.size + 1} páginas (con la 404) · mal: ${analiticaMal.length}${analiticaMal.length ? "\n" + muestra(analiticaMal, (r) => "  " + r) : ""}`);
 console.log(`Search Console (meta google-site-verification): ${gscEn.length ? gscEn.map(([r]) => r).join(", ") : "ninguna (verificación por DNS o pendiente)"} · mal: ${gscMal.length}${gscMal.length ? "\n" + muestra(gscMal, (r) => "  " + r) : ""}`);
 console.log(`IndexNow: ${indexNowClave ? `clave puesta, /${indexNowClave}.txt` : "sin clave (INDEXNOW_CLAVE = null)"} · mal: ${indexNowMal.length}${indexNowMal.length ? "\n" + muestra(indexNowMal, (r) => "  " + r) : ""}`);
-if (analiticaMal.length || gscMal.length || indexNowMal.length || migasMal.length || mainEntityMal.length || faqMal.length || indiceMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
+// ---------- Prueba de «despliega primero» de avisar_indexnow.js ----------
+// Copia avisar_indexnow.js a una carpeta temporal con un generar_paginas_seo.js mínimo (solo una INDEXNOW_CLAVE
+// ficticia), su .txt y un sitemap.xml de una URL; por cada caso levanta un servidor http propio en 127.0.0.1 (puerto
+// libre) que sirve /<clave>.txt y exige: salida 0 si responde 200 con la clave (con y sin salto final) y 1 si da 404 o
+// un texto distinto. Usa --base http://127.0.0.1:<puerto> sin --simular (--simular no comprueba nada): con una base que
+// no es bibliomapa.es el script nunca hace el POST, y además el hijo arranca con un fetch que rechaza todo lo que no sea
+// 127.0.0.1. Los casos van en paralelo (≈ 0,2 s) y la carpeta temporal se borra siempre.
+async function probarAvisoIndexNow() {
+  const os = require("os"), http = require("http"), { spawn } = require("child_process");
+  const mal = [], CLAVE = "clave-ficticia-de-prueba-1234", FECHA = "2026-01-01";
+  // nombre: [estado HTTP, texto servido, salida esperada de avisar_indexnow.js]
+  const casos = { bien: [200, CLAVE, 0], "bien-con-salto": [200, CLAVE + "\n", 0], "404": [404, "Not found", 1], "otro-texto": [200, "otra-clave-distinta", 1] };
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "indexnow-prueba-"));
+  const servidores = [];
+  try {
+    fs.mkdirSync(path.join(tmp, "scripts"));
+    fs.copyFileSync(path.join(RAIZ, "scripts", "avisar_indexnow.js"), path.join(tmp, "scripts", "avisar_indexnow.js"));
+    fs.writeFileSync(path.join(tmp, "scripts", "generar_paginas_seo.js"), `"use strict";\nconst INDEXNOW_CLAVE = "${CLAVE}";\n`);
+    fs.writeFileSync(path.join(tmp, CLAVE + ".txt"), CLAVE + "\n");
+    fs.writeFileSync(path.join(tmp, "sitemap.xml"), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset><url><loc>https://bibliomapa.es/</loc><lastmod>${FECHA}</lastmod></url></urlset>\n`);
+    fs.writeFileSync(path.join(tmp, "sin-red.js"), `const f = globalThis.fetch; globalThis.fetch = (u, o) => /^http:\\/\\/127\\.0\\.0\\.1:\\d+\\//.test(String(u)) ? f(u, o) : Promise.reject(new Error("red real bloqueada en la prueba: " + u));\n`);
+    const res = await Promise.all(Object.entries(casos).map(async ([nombre, [st, txt]]) => {
+      const s = http.createServer((req, r) => {
+        const [e, t] = req.url === `/${CLAVE}.txt` ? [st, txt] : [404, "Not found"];
+        r.writeHead(e, { "Content-Type": "text/plain; charset=utf-8" }); r.end(t);
+      });
+      servidores.push(s);
+      await new Promise((ok, ko) => s.once("error", ko).listen(0, "127.0.0.1", ok));
+      const h = spawn(process.execPath, ["-r", path.join(tmp, "sin-red.js"), path.join(tmp, "scripts", "avisar_indexnow.js"), "--fecha", FECHA, "--base", `http://127.0.0.1:${s.address().port}`],
+        { cwd: tmp, env: { ...process.env, NODE_OPTIONS: "" }, stdio: ["ignore", "pipe", "pipe"] });
+      let out = ""; h.stdout.on("data", (d) => (out += d)); h.stderr.on("data", (d) => (out += d));
+      const reloj = setTimeout(() => h.kill("SIGKILL"), 4000);
+      const code = await new Promise((ok) => h.on("close", (c) => { clearTimeout(reloj); ok(c); }));
+      return [nombre, code, out];
+    }));
+    for (const [nombre, code, out] of res) {
+      const [st, txt, quiere] = casos[nombre];
+      if (/red real bloqueada/.test(out)) mal.push(`${nombre}: intentó salir a la red real`);
+      else if (code !== quiere) mal.push(`${nombre} (HTTP ${st} «${txt.trim()}»): salida ${code}, se esperaba ${quiere} · ${out.trim().split("\n").pop().slice(0, 140)}`);
+      else if (quiere === 0 && !/Clave publicada: .* → 200 con la clave exacta\./.test(out)) mal.push(`${nombre}: salida 0 sin «Clave publicada… 200 con la clave exacta» (¿no comprobó nada?)`);
+    }
+  } catch (e) {
+    mal.push(`prueba: no se pudo hacer (${e.message})`);
+  } finally {
+    for (const s of servidores) s.close();
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+  return [mal, Object.keys(casos).length];
+}
+
+(async () => {
+  const t0 = Date.now();
+  const [avisoMal, nCasos] = await probarAvisoIndexNow();
+  console.log(`IndexNow «despliega primero» (avisar_indexnow.js --base contra servidor local, sin red real): ${nCasos - new Set(avisoMal.map((x) => x.split(" ")[0])).size} de ${nCasos} casos bien (200 con la clave → 0; 404 u otro texto → 1) en ${Date.now() - t0} ms · mal: ${avisoMal.length}${avisoMal.length ? "\n" + muestra(avisoMal, (r) => "  " + r) : ""}`);
+  if (avisoMal.length || analiticaMal.length || gscMal.length || indexNowMal.length || migasMal.length || mainEntityMal.length || faqMal.length || indiceMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
+})();
