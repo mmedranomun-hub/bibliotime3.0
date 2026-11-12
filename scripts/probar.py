@@ -1438,6 +1438,31 @@ PRUEBAS = [
         if(!b.classList.contains('hidden'))return 'sale sin sesiones';
         return true;
       }finally{window.compartirSesionStory=cs;DATA.sessions=s0;renderProfile();goView('map');}"""),
+    ("wrapped: «📸 Mi mejor sesión» comparte la más larga de la semana pasada con «⭐ Mi mejor sesión de la semana»; sin sesiones sanas no sale", """
+      await cargarExtra();
+      var s0=DATA.sessions,rv=DATA.resumenVisto,cs=window.compartirSesionStory,cl0=window.compartirLienzo,tc0=window.textoC,pedida=null,tit=null,textos=[],txt=null;
+      var lun=datosSemana(1).desde,dia=n=>{var d=new Date(lun);d.setDate(d.getDate()+n);return ymd(d);},ultima=()=>{irSlide(STORIES.slides.length-1);return $('svBest');};
+      try{
+        DATA.sessions=[{id:'wb-a',date:dia(0),min:40,bib:NO_BIB,focus:'ok'},{id:'wb-larga',date:dia(3),min:80,bib:NO_BIB,focus:'ok'},
+          {id:'wb-seca',date:dia(2),min:200,bib:NO_BIB,focus:'withered'},{id:'wb-hoy',date:ymd(),min:300,bib:NO_BIB,focus:'ok'}];
+        abrirResumenSemanal(false);var b=ultima();
+        if(!b||!b.offsetHeight)return 'no sale el botón';
+        if(b.offsetHeight<44)return 'mide menos de 44 px ('+b.offsetHeight+')';
+        if(!/1h 20m|1 h 20|80/.test(b.getAttribute('aria-label')||''))return 'aria-label: '+b.getAttribute('aria-label');
+        if(!/Compartir mi semana/.test(b.parentNode.textContent))return 'no está junto a «Compartir mi semana»';
+        window.compartirSesionStory=(id,t)=>{pedida=id;tit=t;};b.click();
+        if(pedida!=='wb-larga')return 'comparte '+pedida+' en vez de la más larga';
+        if(tit!==TIT_MEJOR)return 'título '+tit;
+        window.compartirSesionStory=cs;window.compartirLienzo=(c,n,t)=>{txt=t;};window.textoC=function(g,t){textos.push(t);return tc0.apply(this,arguments);};
+        await compartirSesionStory('wb-larga',TIT_MEJOR);
+        if(textos.indexOf(TIT_MEJOR)<0||textos.indexOf('SESIÓN DE ESTUDIO')>=0)return 'la imagen no lleva el título: '+textos[0];
+        if(!txt||txt.indexOf(TIT_MEJOR)!==0)return 'texto de compartir: '+txt;
+        textos=[];await compartirSesionStory('wb-a');
+        if(textos.indexOf('SESIÓN DE ESTUDIO')<0||/^He estudiado/.test(txt)===false)return 'sin título cambia la imagen normal: '+textos[0]+' / '+txt;
+        cerrarStory();DATA.sessions=[{id:'wb-seca',date:dia(2),min:200,bib:NO_BIB,focus:'withered'}];
+        abrirResumenSemanal(false);if(ultima())return 'sale solo con árboles secos';
+        return true;
+      }finally{window.compartirSesionStory=cs;window.compartirLienzo=cl0;window.textoC=tc0;cerrarStory();DATA.sessions=s0;DATA.resumenVisto=rv;goView('map');}"""),
 ]
 
 

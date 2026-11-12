@@ -2753,11 +2753,13 @@ function renderWeekBars(){
   var b=mejorSesionSemana(),bt=$("btnShareBest");
   if(bt){bt.classList.toggle("hidden",!b);bt.dataset.id=b?b.id:"";if(b)bt.setAttribute("aria-label","Compartir en stories tu mejor sesión de la semana: "+hMin(b.min));}
 }
-function mejorSesionSemana(){
+// Sin lista: últimos 7 días (Perfil). Con lista (p. ej. la semana pasada del Wrapped): la más larga de esa lista.
+function mejorSesionSemana(ses){
   var d=new Date();d.setDate(d.getDate()-6);var desde=ymd(d),b=null;
-  DATA.sessions.forEach(function(s){if(s.date>=desde&&s.focus!=="withered"&&s.min>0&&(!b||s.min>b.min))b=s;});
+  (ses||DATA.sessions).forEach(function(s){if((ses||s.date>=desde)&&s.focus!=="withered"&&s.min>0&&(!b||s.min>b.min))b=s;});
   return b;
 }
+var TIT_MEJOR="⭐ Mi mejor sesión de la semana";
 function computeBestStreak(){
   if(!DATA.sessions.length)return 0;
   var days={};DATA.sessions.forEach(function(s){days[s.date]=true;});
@@ -3447,7 +3449,7 @@ window.addEventListener("DOMContentLoaded",function(){
   $("btnFeedback").addEventListener("click",function(){enviarSugerencia();});
   $("btnBlocked").addEventListener("click",abrirBloqueados);
   $("btnShareWeek").addEventListener("click",compartirSemana);
-  $("btnShareBest").addEventListener("click",function(){var id=this.dataset.id;if(id)compartirSesionStory(id);});
+  $("btnShareBest").addEventListener("click",function(){var id=this.dataset.id;if(id)compartirSesionStory(id,TIT_MEJOR);});
 
   // nuevas funciones
   $("panelClose").addEventListener("click",function(e){e.stopPropagation();cerrarLista();});

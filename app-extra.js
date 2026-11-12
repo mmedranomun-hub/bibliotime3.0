@@ -359,10 +359,10 @@ async function compartirBosque(){
 }
 /* Tarjeta de una sesión (1080×1920, mismo lienzo y letra que la del bosque). Solo datos de la propia
    sesión: minutos, biblioteca, asignatura, árbol y especie (si quedó sano), racha y fecha. Sin red. */
-async function dibujarSesionStory(s){
+async function dibujarSesionStory(s,titulo){
   var L=lienzoStory(),g=L.g,W=L.W,sano=s.focus==="ok",rd=rachaHasta(s.date||ymd());
   var f=new Date((s.date||ymd())+"T12:00:00").toLocaleDateString("es-ES",{weekday:"long",day:"numeric",month:"long"});
-  textoC(g,"SESIÓN DE ESTUDIO",W/2,190,"800 44px system-ui,sans-serif","rgba(255,255,255,.85)");
+  textoC(g,titulo||"SESIÓN DE ESTUDIO",W/2,190,"800 44px system-ui,sans-serif","rgba(255,255,255,.85)");
   textoC(g,f.charAt(0).toUpperCase()+f.slice(1),W/2,265,"600 44px system-ui,sans-serif","rgba(255,255,255,.85)");
   var im=sano?await cargarSVG(arbolSVG(s.min,false,s.subject||s.id,null,s.esp)):null;
   if(im)g.drawImage(im,W/2-260,330,520,788);else textoC(g,"📚",W/2,900,"400 380px system-ui,sans-serif");
@@ -384,11 +384,12 @@ function rachaHasta(fecha){
   return n;
 }
 /* id de la sesión (texto) o, en sesiones antiguas sin id, su posición en DATA.sessions (número):
-   lo usan «Sesión terminada» (#sessShare) y el 📸 de cada fila del historial de Estudio. */
-async function compartirSesionStory(id){
+   lo usan «Sesión terminada» (#sessShare) y el 📸 de cada fila del historial de Estudio. `titulo` opcional
+   sustituye «SESIÓN DE ESTUDIO» (TIT_MEJOR desde #btnShareBest y el Wrapped) y el texto de compartir. */
+async function compartirSesionStory(id,titulo){
   var s=typeof id==="number"?DATA.sessions[id]:DATA.sessions.filter(function(x){return x.id===id;})[0]; if(!s)return;
   showToast("Preparando tu imagen…");
-  compartirLienzo(await dibujarSesionStory(s),"mi-sesion.png","He estudiado "+hMin(s.min)+" 📚 bibliomapa.es");
+  compartirLienzo(await dibujarSesionStory(s,titulo),"mi-sesion.png",(titulo?titulo+": ":"He estudiado ")+hMin(s.min)+" 📚 bibliomapa.es");
 }
 async function compartirStoryDia(){
   var hoy=ymd(),ses=DATA.sessions.filter(function(s){return s.date===hoy;});
@@ -401,7 +402,7 @@ function abrirResumenSemanal(auto){
   if(!S.ses.length){if(!auto)showToast("La semana pasada no hubo sesiones: ¡esta semana sí! 💪");return;}
   DATA.resumenVisto=semanaClave();saveUserData();
   var DIAS=["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
-  var dif=P.min?Math.round((S.min-P.min)/P.min*100):null;
+  var dif=P.min?Math.round((S.min-P.min)/P.min*100):null,b=mejorSesionSemana(S.ses);
   var slides=[
     {html:'<div class="sv-kicker">TU SEMANA</div><div class="sv-min">'+hMin(S.min)+'</div><div class="sv-where">estudiadas en '+S.dias+(S.dias===1?' día':' días')+'</div>'+
       (dif!==null?'<div class="sv-tag">'+(dif>=0?'📈 +'+dif+'% que la semana anterior':'Semana más tranquila ('+dif+'%) · ¡esta a por más! 💪')+'</div>':'<div class="sv-tag">✨ Tu primera semana con datos</div>'),ses:null},
@@ -410,7 +411,8 @@ function abrirResumenSemanal(auto){
   if(S.mejor)slides.push({html:'<div class="sv-kicker">TU MEJOR DÍA</div><div class="sv-min">'+DIAS[new Date(S.mejor+"T00:00:00").getDay()]+'</div><div class="sv-where">'+hMin(S.mejorMin)+' de estudio 🔥</div>',ses:null});
   if(S.top)slides.push({html:'<div class="sv-kicker">LO QUE MÁS ESTUDIASTE</div><div class="sv-min">📚 '+escapeHTML(S.top)+'</div><div class="sv-where">'+hMin(S.topMin)+' ('+Math.round(S.topMin/S.min*100)+'% de tu semana)</div>',ses:null});
   slides.push({html:'<div class="sv-kicker">NIVEL '+(nivelDe(horasTotales())+1)+' · '+escapeHTML(NIVELES[nivelDe(horasTotales())][1].toUpperCase())+'</div><div class="sv-min">🔥 '+streakDays()+'</div><div class="sv-where">'+(streakDays()===1?'día':'días')+' de racha · 🌰 '+semillas()+' semillas</div>'+
-    '<button class="btn sm" style="margin-top:18px" onclick="compartirSemanaPasada()">📸 Compartir mi semana</button>',ses:null});
+    '<div class="sv-acc"><button class="btn sm" onclick="compartirSemanaPasada()">📸 Compartir mi semana</button>'+
+    (b?'<button class="btn sm ghost" id="svBest" aria-label="Compartir en stories tu mejor sesión de la semana pasada: '+hMin(b.min)+'" onclick="compartirSesionStory('+(b.id?jsArg(b.id):DATA.sessions.indexOf(b))+',TIT_MEJOR)">📸 Mi mejor sesión</button>':'')+'</div>',ses:null});
   mostrarStory("Tu semana",null,slides,"yo");
   if(auto)setTimeout(function(){confeti(60);},400);
 }
