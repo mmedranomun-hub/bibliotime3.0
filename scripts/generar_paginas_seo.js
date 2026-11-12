@@ -223,6 +223,7 @@ ${noindex ? "" : `<meta property="og:url" content="${url}">
 <link rel="icon" href="/icons/favicon-32.png" type="image/png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <link rel="stylesheet" href="/seo.css">
+<script src="/analitica.js" defer></script>
 ${noindex ? "" : `<script type="application/ld+json">${JSON.stringify(migasLD)}</script>`}
 ${ld ? `<script type="application/ld+json">${JSON.stringify(ld)}</script>` : ""}
 ${head || ""}</head>
@@ -336,7 +337,8 @@ const SALIDA = path.join(RAIZ, "bibliotecas");
 // deja de fiarse del lastmod si no es exacto) y un cambio de plantilla o de datos sí lo mueve, aunque el horario
 // verificado (dateModified) sea anterior.
 const crypto = require("crypto");
-const huella = (txt) => crypto.createHash("sha1").update(txt).digest("hex");
+// La etiqueta de analitica.js no cuenta: no cambia lo que ve nadie (añadirla no debe mover el lastmod de 1000 URL).
+const huella = (txt) => crypto.createHash("sha1").update(String(txt).replace('<script src="/analitica.js" defer></script>\n', "")).digest("hex");
 const lastmodAntes = new Map(), huellaAntes = new Map(), huellaNueva = new Map();
 try {
   const sm = fs.readFileSync(path.join(RAIZ, "sitemap.xml"), "utf8");

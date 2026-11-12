@@ -1514,7 +1514,8 @@ async def main():
             await c3.close()
         res["pruebas"]["atajos de la app instalada (#accion=estudiar|ahora|pronto)"] = True if not fallo_atajo else "fallan: " + ", ".join(fallo_atajo)
         # --- analítica sin cookies (docs/ANALITICA.md): preparada pero APAGADA ---
-        # Se inyecta analitica.js aunque index.html aún no lo cargue, para que la prueba valga ya.
+        # index.html y las páginas SEO (/bibliotecas/…) cargan analitica.js por su cuenta; se comprueba en las dos que el
+        # archivo se descarga, define ANALITICA/analiticaDecidir y no pide ninguna URL de proveedor ni pone cookies.
         fallo_an = []
         fuente_an = open(os.path.join(RAIZ, "analitica.js"), encoding="utf-8").read() if os.path.exists(os.path.join(RAIZ, "analitica.js")) else ""
         if not fuente_an:
@@ -1526,9 +1527,23 @@ async def main():
             pedidas = []
             p4.on("request", lambda r: pedidas.append(r.url) if ("_vercel/insights" in r.url or "goatcounter" in r.url or "gc.zgo.at" in r.url) else None)
             p4.on("pageerror", lambda e: errores.append("analítica: " + str(e)[:200]))
-            await p4.goto(url)
-            await p4.add_script_tag(path=os.path.join(RAIZ, "analitica.js"))
-            await p4.wait_for_timeout(1500)
+            cargado = []
+            p4.on("response", lambda r: cargado.append(r.status) if r.url.split("?")[0].endswith("/analitica.js") else None)
+            for ruta_an in ["/index.html", "/bibliotecas/madrid/"]:
+                cargado.clear()
+                await p4.goto(f"http://127.0.0.1:{PUERTO}{ruta_an}")
+                await p4.wait_for_timeout(1500)
+                est = await p4.evaluate("""()=>({tag:document.querySelectorAll('script[src$="analitica.js"]').length,
+                  fn:typeof analiticaDecidir==='function'&&typeof ANALITICA==='object'&&ANALITICA.proveedor===null,
+                  cookie:document.cookie,va:!!(window.va||window.goatcounter)})""")
+                if est["tag"] != 1 or cargado != [200]:
+                    fallo_an.append(f"{ruta_an} no carga analitica.js (etiquetas {est['tag']}, respuestas {cargado})")
+                elif not est["fn"]:
+                    fallo_an.append(f"{ruta_an}: analitica.js no se ejecuta o no está apagada")
+                if est["cookie"]:
+                    fallo_an.append(f"{ruta_an} pone cookies: {est['cookie'][:60]}")
+                if est["va"]:
+                    fallo_an.append(f"{ruta_an} ha tocado window.va/goatcounter")
             casos = await p4.evaluate("""()=>{
               var web={protocolo:'https:',host:'bibliomapa.es'},m=Object.assign,D=analiticaDecidir,f=[];
               if(D(ANALITICA,web)!==null)f.push('por defecto no es null');
@@ -1546,7 +1561,7 @@ async def main():
             if pedidas:
                 fallo_an.append("pide: " + ", ".join(pedidas))
             await c4.close()
-        res["pruebas"]["analítica apagada por defecto (analitica.js con proveedor:null no pide _vercel/insights ni goatcounter; respeta DNT/GPC y local)"] = True if not fallo_an else "; ".join(fallo_an)
+        res["pruebas"]["analítica apagada por defecto (index.html y /bibliotecas/ cargan analitica.js con proveedor:null y no piden _vercel/insights ni goatcounter ni ponen cookies; respeta DNT/GPC y local)"] = True if not fallo_an else "; ".join(fallo_an)
         # --- datos y SEO (desde la propia app) ---
         res["datos"] = await pg.evaluate("""()=>{
           var conH=BIBLIOTECAS.filter(b=>!b.sinHorario), prov={}, provH={};

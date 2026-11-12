@@ -571,4 +571,13 @@ console.log(`Sitemap: ${enSitemap.size} URL · no existen: ${sitemapRoto.length}
 console.log(`Lastmod: ${[...lastmodN].sort().map(([d, n]) => `${d} ×${n}`).join(", ")} · mal (falta, formato, futuro o < dateModified): ${lastmodMal.length}` +
   (lastmodMal.length ? "\n" + muestra(lastmodMal, (r) => "  " + r) : ""));
 console.log(`404: ${n404} enlaces internos · provincias enlazadas: ${n404Prov} · «¿Buscabas…?» ${n404Busca} casos ok · slugs-404: ${n404Slugs} rutas ok · mal: ${mal404.length}${mal404.length ? "\n" + muestra(mal404, (r) => "  " + r) : ""}`);
-if (migasMal.length || mainEntityMal.length || indiceMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
+// Analítica (docs/ANALITICA.md): todas las páginas generadas y la 404 cargan /analitica.js (una sola vez, defer, en el
+// <head>) y ninguna lleva a mano un script de proveedor: encenderla es cambiar la línea de analitica.js, no las páginas.
+const analiticaMal = [];
+for (const [r, h] of [...html, ["/404.html", fs.existsSync(f404) ? fs.readFileSync(f404, "utf8") : ""]]) {
+  const cab = h.split("</head>")[0], n = (h.match(/<script src="\/analitica\.js" defer><\/script>/g) || []).length;
+  if (n !== 1 || !cab.includes('<script src="/analitica.js" defer></script>')) analiticaMal.push(`${r}: analitica.js ×${n}${n === 1 ? " fuera del <head>" : ""}`);
+  if (/_vercel\/insights|gc\.zgo\.at|goatcounter|googletagmanager|google-analytics/.test(h)) analiticaMal.push(`${r}: script de analítica puesto a mano`);
+}
+console.log(`Analítica (/analitica.js en el <head>, apagada): ${html.size + 1 - new Set(analiticaMal.map((x) => x.split(":")[0])).size} de ${html.size + 1} páginas (con la 404) · mal: ${analiticaMal.length}${analiticaMal.length ? "\n" + muestra(analiticaMal, (r) => "  " + r) : ""}`);
+if (analiticaMal.length || migasMal.length || mainEntityMal.length || indiceMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);

@@ -19,13 +19,15 @@ elija proveedor. Mientras siga apagada, `privacidad.html` dice la verdad («no u
 - La decisión está en una función pura, `analiticaDecidir(conf, entorno)`, que prueba `scripts/probar.py`
   (prueba «analítica apagada por defecto…»): con la configuración por defecto no se pide ninguna URL de analítica.
 
-## Integración (la hace el director del bucle, una vez)
+## Integración (hecha)
 
-- `index.html`, justo antes de `<script src="app.js"></script>`:
-  `<script src="analitica.js" defer></script>`
-- Páginas SEO (`scripts/generar_paginas_seo.js`, en el `<head>` de la plantilla, y regenerar):
-  `<script src="/analitica.js" defer></script>`
-- `sw.js`: añadir `"./analitica.js"` a la lista de precarga y subir la versión de la caché.
+- `index.html`, justo antes de `<script src="app.js"></script>`: `<script src="analitica.js" defer></script>`
+- **Ya va en las páginas SEO** (2026-11-12): la plantilla de `scripts/generar_paginas_seo.js` pone
+  `<script src="/analitica.js" defer></script>` en el `<head>` de las 1082 páginas de `/bibliotecas/` y de `404.html`
+  (no depende de `app.js`; la etiqueta no cuenta para el `lastmod` del sitemap). `scripts/comprobar_paginas_seo.js`
+  falla si a alguna le falta o si alguien pone a mano un script de proveedor, y la prueba de `probar.py` carga
+  `index.html` y `/bibliotecas/madrid/` y exige que se descargue sin pedir nada de analítica ni poner cookies.
+- `sw.js`: `"./analitica.js"` está en la lista de precarga.
 
 Con la integración hecha y `proveedor: null`, sigue sin medirse nada: solo se descarga un archivo de ~2 KB.
 
