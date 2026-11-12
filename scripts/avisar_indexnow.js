@@ -10,8 +10,13 @@
      node scripts/avisar_indexnow.js                         avisa de las URL con lastmod de hoy
      node scripts/avisar_indexnow.js --fecha 2026-11-12      avisa de las URL con lastmod de ese día
      node scripts/avisar_indexnow.js --simular [--fecha …]   solo imprime lo que enviaría (sin red)
+     node scripts/avisar_indexnow.js --base http://localhost:8000   prueba la comprobación de la clave contra un
+                                                             servidor local y, si pasa, imprime sin enviar nada
+   Antes de enviar (con clave y sin --simular) hace GET a https://bibliomapa.es/<clave>.txt y aborta con código 1
+   («despliega primero») si no responde 200 con exactamente la clave: así no se gasta el aviso en un 403.
    Con INDEXNOW_CLAVE = null siempre simula (no hay clave que enviar). Máximo 10000 URL por aviso (límite de IndexNow).
-   Sale con código 1 si la fecha o la clave están mal, falta el .txt local o IndexNow responde con error. */
+   Sale con código 1 si la fecha o la clave están mal, falta el .txt local, el publicado no responde 200 con la clave
+   o IndexNow responde con error. */
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -24,13 +29,18 @@ const MAX_URL = 10000;
 const args = process.argv.slice(2);
 const simularPedido = args.includes("--simular");
 const iFecha = args.indexOf("--fecha");
+const iBase = args.indexOf("--base");
 const HOY = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Madrid" }); // como el generador
 const fecha = iFecha >= 0 ? args[iFecha + 1] : HOY;
 const sal = (msg) => { console.error(msg); process.exit(1); };
 if (!/^\d{4}-\d\d-\d\d$/.test(fecha || "") || isNaN(Date.parse(fecha + "T00:00:00Z"))) sal("--fecha debe ser AAAA-MM-DD (p. ej. --fecha 2026-11-12).");
 if (fecha > HOY) sal(`--fecha ${fecha} es futura (hoy es ${HOY}).`);
-const desconocidos = args.filter((a, i) => a !== "--simular" && a !== "--fecha" && (iFecha < 0 || i !== iFecha + 1));
-if (desconocidos.length) sal(`Opción desconocida: ${desconocidos.join(" ")}. Uso: node scripts/avisar_indexnow.js [--simular] [--fecha AAAA-MM-DD]`);
+// --base: dónde se comprueba que /<clave>.txt está publicado (por defecto la web real). Solo para probar en local:
+// con una base distinta de https://bibliomapa.es nunca se envía nada a IndexNow (la clave se valida en bibliomapa.es).
+const base = iBase >= 0 ? (args[iBase + 1] || "").replace(/\/+$/, "") : DOMINIO;
+if (!/^https?:\/\/[^\s/]+$/.test(base)) sal("--base debe ser un origen sin ruta, p. ej. --base http://localhost:8000.");
+const desconocidos = args.filter((a, i) => a !== "--simular" && a !== "--fecha" && a !== "--base" && (iFecha < 0 || i !== iFecha + 1) && (iBase < 0 || i !== iBase + 1));
+if (desconocidos.length) sal(`Opción desconocida: ${desconocidos.join(" ")}. Uso: node scripts/avisar_indexnow.js [--simular] [--fecha AAAA-MM-DD] [--base http://localhost:8000]`);
 
 // Clave: la misma constante que usa el generador (una sola fuente de verdad).
 const src = fs.readFileSync(path.join(RAIZ, "scripts", "generar_paginas_seo.js"), "utf8");
@@ -66,8 +76,28 @@ if (simular) {
   process.exit(0);
 }
 
+// GET a <base>/<clave>.txt: tiene que responder 200 con exactamente la clave (se tolera un salto de línea final).
+async function comprobarClavePublicada() {
+  const url = `${base}/${clave}.txt`;
+  let r, txt;
+  try {
+    r = await fetch(url, { headers: { "Cache-Control": "no-cache" }, signal: AbortSignal.timeout(15000) });
+    txt = await r.text();
+  } catch (e) {
+    sal(`No se pudo abrir ${url} (${e.message}): despliega primero (commit con /${clave}.txt + despliegue) y vuelve a avisar.`);
+  }
+  if (r.status !== 200) sal(`${url} responde HTTP ${r.status}, no 200: despliega primero (commit con /${clave}.txt + despliegue) y vuelve a avisar. No se ha enviado nada.`);
+  if (txt.replace(/\r?\n$/, "") !== clave) sal(`${url} responde 200 pero no con exactamente la clave (recibido: ${JSON.stringify(txt.slice(0, 80))}): despliega primero la versión con el .txt correcto. No se ha enviado nada.`);
+  console.log(`Clave publicada: ${url} → 200 con la clave exacta.`);
+}
+
 (async () => {
   if (typeof fetch !== "function") sal("Hace falta Node 18 o más nuevo (fetch).");
+  await comprobarClavePublicada();
+  if (base !== DOMINIO) {
+    console.log(`--base ${base} no es ${DOMINIO}: comprobación hecha, pero no se envía nada a IndexNow (${cuerpo.urlList.length} URL listas).`);
+    process.exit(0);
+  }
   const r = await fetch(ENDPOINT, { method: "POST", headers: { "Content-Type": "application/json; charset=utf-8" }, body: JSON.stringify(cuerpo) });
   const txt = await r.text().catch(() => "");
   // 200 = recibido; 202 = recibido, la clave se validará después. 400/403/422/429 = error (formato, clave, URL ajenas, demasiados avisos).

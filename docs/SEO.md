@@ -506,6 +506,14 @@ no escribe ningún archivo y el script de avisos solo simula.
   pone la fecha de hoy cuando una página cambia de verdad, así que no se avisa de lo que no ha cambiado (avisar de más
   hace que IndexNow ignore los avisos). Máximo 10000 URL por aviso.
 - `node scripts/avisar_indexnow.js --fecha 2026-11-12` → las de un día pasado (si se te olvidó avisar ese día).
+- Antes de enviar, el script abre `https://bibliomapa.es/<clave>.txt` y **aborta sin enviar nada** (salida 1,
+  «despliega primero») si no responde 200 con exactamente la clave (se tolera un salto de línea final), o si no se
+  puede abrir. Así un aviso hecho antes de que el despliegue termine no se gasta en un 403. Si pasa, verás
+  «Clave publicada: … → 200 con la clave exacta.» y después la respuesta de IndexNow.
+- `node scripts/avisar_indexnow.js --base http://localhost:8000` → para probar esa comprobación sin red real: la hace
+  contra un servidor local (p. ej. `python3 -m http.server 8000` en una carpeta con el .txt) y, con una base distinta
+  de `https://bibliomapa.es`, **nunca** envía nada a IndexNow (solo dice cuántas URL estaban listas). Con `--simular`
+  no se comprueba nada (ni red).
 - Respuesta 200 o 202 = recibido. 403 = el .txt aún no está publicado (espera al despliegue). 422 = clave o URL que no
   coinciden. 429 = demasiados avisos: espera. Con `INDEXNOW_CLAVE = null` el script siempre simula.
 - Solo tiene sentido **después** de desplegar: si avisas antes, Bing rastrea la versión vieja.

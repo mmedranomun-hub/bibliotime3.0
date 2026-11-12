@@ -103,6 +103,95 @@ def peso(ruta):
     return {"kb": round(len(d) / 1024, 1), "kb_gzip": round(len(gzip.compress(d)) / 1024, 1)}
 
 
+# --- Coherencia analitica.js ↔ privacidad.html (docs/ANALITICA.md), solo lectura de archivos, sin navegador ---
+def analitica_proveedor(fuente):
+    """Valor de `proveedor` en la línea `var ANALITICA = {...}` de analitica.js: None (null), un texto, o False si no se lee."""
+    import re
+    m = re.search(r"var ANALITICA\s*=\s*\{\s*proveedor\s*:\s*(null|\"([^\"]*)\"|'([^']*)')", fuente)
+    if not m:
+        return False
+    return None if m.group(1) == "null" else (m.group(2) if m.group(2) is not None else m.group(3))
+
+
+def privacidad_coherente(proveedor, html):
+    """Lista de incoherencias entre el proveedor de analítica y lo que dice la política (vacía = coherente)."""
+    f = []
+    dice_sin = "sin analítica" in html or "No usamos herramientas de analítica" in html
+    describe = "Estadística de visitas" in html
+    if proveedor is False:
+        return ["no encuentro `var ANALITICA = {proveedor: …}` en analitica.js"]
+    if proveedor is None:
+        if not dice_sin:
+            f.append("analítica apagada pero privacidad.html ya no dice «sin analítica»")
+        if describe:
+            f.append("analítica apagada pero privacidad.html describe «Estadística de visitas»")
+        return f
+    if dice_sin:
+        f.append(f"proveedor {proveedor!r} pero privacidad.html sigue diciendo «sin analítica» (aplica el diff de docs/ANALITICA.md)")
+    if not describe:
+        f.append(f"proveedor {proveedor!r} pero privacidad.html no tiene el punto «Estadística de visitas»")
+    nombre = {"vercel": "Vercel Web Analytics", "goatcounter": "GoatCounter"}.get(proveedor)
+    if not nombre:
+        f.append(f"proveedor {proveedor!r} desconocido: no hay texto de política para él")
+    elif nombre not in html:
+        f.append(f"proveedor {proveedor!r} pero privacidad.html no nombra a {nombre}")
+    if "[FECHA DEL DÍA QUE SE ENCIENDA]" in html:
+        f.append("privacidad.html conserva el marcador [FECHA DEL DÍA QUE SE ENCIENDA]")
+    return f
+
+
+def aplicar_diff(texto, diff):
+    """Aplica un diff unificado de un solo archivo; cada trozo tiene que encajar exactamente una vez. Lanza ValueError si no."""
+    trozos, act = [], None
+    for l in diff.splitlines():
+        if l.startswith("@@"):
+            act = ([], []); trozos.append(act)
+        elif act is None or l.startswith("\\"):
+            continue
+        elif l[:1] in (" ", ""):
+            act[0].append(l[1:]); act[1].append(l[1:])
+        elif l[0] == "-":
+            act[0].append(l[1:])
+        elif l[0] == "+":
+            act[1].append(l[1:])
+    if not trozos:
+        raise ValueError("el diff no tiene trozos @@")
+    for viejo, nuevo in trozos:
+        v, n = "\n".join(viejo) + "\n", "\n".join(nuevo) + "\n"
+        if texto.count(v) != 1:
+            raise ValueError("un trozo no encaja en privacidad.html: " + (viejo[len(viejo) // 2] if viejo else "")[:80])
+        texto = texto.replace(v, n)
+    return texto
+
+
+def comprobar_privacidad_analitica():
+    """True o el texto del fallo. Comprueba los archivos reales y, con el diff de docs/ANALITICA.md aplicado a una copia
+    en memoria, que encender sin cambiar la política (o cambiarla sin encender) se detecta."""
+    leer = lambda r: open(os.path.join(RAIZ, r), encoding="utf-8").read()
+    try:
+        fuente, html, doc = leer("analitica.js"), leer("privacidad.html"), leer(os.path.join("docs", "ANALITICA.md"))
+    except OSError as e:
+        return f"no se puede leer: {e}"
+    prov = analitica_proveedor(fuente)
+    f = privacidad_coherente(prov, html)
+    import re
+    m = re.search(r"## Diff COMPLETO de `privacidad\.html`.*?```diff\n(.*?)```", doc, re.S)
+    if not m:
+        return "; ".join(f + ["docs/ANALITICA.md no tiene el bloque ```diff de privacidad.html"])
+    if prov is None:  # hoy: el diff tiene que seguir aplicándose sobre la política vigente
+        try:
+            enc = aplicar_diff(html, m.group(1)).replace("[FECHA DEL DÍA QUE SE ENCIENDA]", "1 de enero de 2030")
+        except ValueError as e:
+            return "; ".join(f + [f"el diff de docs/ANALITICA.md ya no se aplica: {e}"])
+        casos = [  # (proveedor, política, ¿debe ser coherente?)
+            ("vercel", enc, True), ("vercel", html, False), (None, enc, False), ("goatcounter", html, False),
+            ("vercel", enc.replace("1 de enero de 2030", "[FECHA DEL DÍA QUE SE ENCIENDA]"), False)]
+        for p_, h_, bien in casos:
+            if (not privacidad_coherente(p_, h_)) != bien:
+                f.append(f"la comprobación no detecta el caso proveedor={p_!r} ({'diff aplicado' if h_ is not html else 'política actual'})")
+    return True if not f else "; ".join(f)
+
+
 SALTAR_BIENVENIDA = """
 var b=document.querySelector('.pick-list button');
 if(b){b.click();await new Promise(r=>setTimeout(r,250));var n=document.querySelector('#obNext');if(n)n.click();
@@ -1621,6 +1710,8 @@ async def main():
                 fallo_an.append("pide: " + ", ".join(pedidas))
             await c4.close()
         res["pruebas"]["analítica apagada por defecto (index.html y /bibliotecas/ cargan analitica.js con proveedor:null y no piden _vercel/insights ni goatcounter ni ponen cookies; respeta DNT/GPC y local)"] = True if not fallo_an else "; ".join(fallo_an)
+        # Sin navegador: encender la analítica sin cambiar privacidad.html (o al revés) hace fallar esta prueba.
+        res["pruebas"]["política de privacidad coherente con analitica.js (proveedor null ⇔ «sin analítica»; el diff de docs/ANALITICA.md se aplica y se detecta encender sin él)"] = comprobar_privacidad_analitica()
         # --- datos y SEO (desde la propia app) ---
         res["datos"] = await pg.evaluate("""()=>{
           var conH=BIBLIOTECAS.filter(b=>!b.sinHorario), prov={}, provH={};

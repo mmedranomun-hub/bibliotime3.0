@@ -81,6 +81,67 @@ actualización». Sin ese cambio la política mentiría.
    estadísticas de código abierto)` (comprobar entonces en goatcounter.com dónde aloja los datos y añadirlo) y la frase de la IP por `Tu IP no se guarda: se usa solo para
    distinguir visitas únicas mediante un identificador anónimo que se descarta en pocas horas.`
 
+## Diff COMPLETO de `privacidad.html` (Vercel; aplicar solo el día que se encienda)
+
+Es el mismo cambio que los tres fragmentos de arriba más la fecha, como parche listo para aplicar. `scripts/probar.py`
+(prueba «política de privacidad coherente con analitica.js») lo aplica cada vez a una copia temporal de
+`privacidad.html` y falla si ya no encaja (por ejemplo, si alguien retoca esas líneas sin actualizar este diff).
+El día de encender:
+
+1. Copia el bloque de abajo (sin las líneas ```) a un archivo, p. ej. `/tmp/privacidad.diff`, y desde la raíz:
+   `patch -p1 < /tmp/privacidad.diff` (o `git apply /tmp/privacidad.diff`).
+2. Sustituye `[FECHA DEL DÍA QUE SE ENCIENDA]` por la fecha real (p. ej. `3 de diciembre de 2026`). La prueba
+   falla mientras quede el marcador.
+3. Si el proveedor es GoatCounter, aplica también la «Variante GoatCounter» de arriba al punto añadido.
+4. Cambia la línea de `analitica.js`, actualiza en `scripts/probar.py` la prueba «analítica apagada por defecto»
+   (hoy exige `proveedor:null`) y ejecuta `python3 scripts/probar.py`: la prueba de coherencia tiene que salir en verde.
+
+```diff
+--- a/privacidad.html
++++ b/privacidad.html
+@@ -18,7 +18,7 @@
+ <header>
+   <h1>Política de privacidad</h1>
+   <p class="sub">App «Bibliomapa · Bibliotecas de España» (Bibliotime)</p>
+-  <span class="date">Última actualización: 20 de octubre de 2026</span>
++  <span class="date">Última actualización: [FECHA DEL DÍA QUE SE ENCIENDA]</span>
+   <p class="sub" style="margin-top:8px">Consulta también las <a href="condiciones.html">condiciones de uso</a>.</p>
+ </header>
+ 
+@@ -29,7 +29,7 @@
+     <li>Si creas una cuenta, guardamos tu <b>correo (en el sistema de inicio de sesión), nombre y un código de amigo</b> para que puedas iniciar sesión y añadir amigos.</li>
+     <li>Tu <b>ubicación GPS nunca sale de tu móvil</b>: se usa solo en el dispositivo para calcular distancias, mostrar «Mi ubicación» y verificar el check-in.</li>
+     <li>Solo compartimos con tus amigos la <b>biblioteca</b> donde estudias, tus sesiones o tus eventos <b>si tú lo activas</b>.</li>
+-    <li><b>Sin publicidad, sin analítica, sin rastreadores</b> y no vendemos tus datos.</li>
++    <li><b>Sin publicidad ni rastreadores</b>: solo contamos visitas de forma anónima y agregada, sin cookies. No vendemos tus datos.</li>
+   </ul>
+ </section>
+ 
+@@ -99,7 +99,7 @@
+   <h2>3. Lo que NO hacemos</h2>
+   <ul>
+     <li>No mostramos publicidad.</li>
+-    <li>No usamos herramientas de analítica, estadísticas de uso, cookies de seguimiento ni identificadores publicitarios.</li>
++    <li>No usamos cookies de seguimiento, identificadores publicitarios ni analítica que te identifique (ver «Estadística de visitas» en el apartado 4).</li>
+     <li>No vendemos ni alquilamos tus datos, ni los usamos para crear perfiles comerciales.</li>
+     <li>No enviamos tus coordenadas GPS a ningún servidor.</li>
+     <li>No tomamos decisiones automatizadas con efectos legales sobre ti.</li>
+@@ -114,6 +114,7 @@
+     <li><b>Teselas del mapa</b>: las imágenes del mapa se descargan de <b>tile.openstreetmap.de</b> (OpenStreetMap Alemania / FOSSGIS e.V.) y, si eliges la capa de relieve, de <b>OpenTopoMap</b> (opentopomap.org). Si se habilita la capa satélite, de <b>MapTiler</b>. Estos servidores reciben tu IP y la zona del mapa que estás viendo, no tu ubicación GPS.</li>
+     <li><b>CDN de librerías</b>: la librería de mapas Leaflet se carga desde <b>unpkg.com</b> (o, de respaldo, <b>cdn.jsdelivr.net</b>), y la librería de Supabase desde <b>cdn.jsdelivr.net</b>. Reciben tu IP al descargar esos archivos.</li>
+     <li><b>Alojamiento de la web</b>: el servidor donde está publicada la app (por ejemplo, GitHub Pages) recibe tu IP y registros técnicos al cargar la página.</li>
++    <li><b>Estadística de visitas</b> (Vercel Web Analytics, de Vercel Inc.): para saber cuánta gente usa Bibliomapa contamos las páginas vistas de forma <b>agregada y anónima, sin cookies</b> y sin guardar nada en tu dispositivo. Se envía la dirección de la página (sin lo que va tras «?» o «#»), la web de la que vienes, el tipo de dispositivo, navegador, sistema y país aproximado. Tu IP no se guarda: el proveedor la usa solo para calcular un identificador diario anónimo que se descarta a las 24 h. No medimos nada de lo que haces dentro de la app (sesiones de estudio, bibliotecas, amigos). Si tu navegador tiene activado «No rastrear» (Do Not Track) o Global Privacy Control, no se carga en absoluto. Base jurídica: interés legítimo en conocer el uso agregado del servicio (art. 6.1.f RGPD).</li>
+     <li><b>Enlaces externos</b>: si pulsas «Cómo llegar» se abre Google Maps con la ubicación de la biblioteca de destino (no la tuya); si compartes por WhatsApp, se abre WhatsApp con el mensaje que tú envías; las webs de las bibliotecas se abren en tu navegador. Desde ese momento se aplican las políticas de privacidad de esos servicios.</li>
+   </ul>
+   <p>No cedemos tus datos a nadie más, salvo obligación legal.</p>
+```
+
+**Por qué no se puede encender sin cambiar la política:** la prueba «política de privacidad coherente con analitica.js»
+de `scripts/probar.py` lee los dos archivos (sin navegador) y falla si `proveedor` no es `null` y `privacidad.html`
+sigue diciendo «sin analítica» / «No usamos herramientas de analítica», no tiene el punto «Estadística de visitas»
+con el nombre del proveedor activo (Vercel Web Analytics o GoatCounter) o conserva el marcador de fecha; y, al revés,
+falla si `proveedor` es `null` y la política ya habla de «Estadística de visitas» o ha dejado de decir «sin analítica».
+
 ## Cómo se medirán las métricas del objetivo 8
 
 | Métrica | Vercel Web Analytics | GoatCounter | Dónde se apunta |
