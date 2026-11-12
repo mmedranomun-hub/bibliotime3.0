@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-11-12 18:36",
+  "fecha": "2026-11-12 19:35",
   "pruebas": {
     "arranca: datos y vistas": true,
     "marca España (sin «Navarra» en la cabecera)": true,
@@ -62,17 +62,19 @@
     "historial de Estudio: cada fila lleva 📸 (44×44, «Compartir sesión de <fecha>») y comparte ESA sesión en 1080×1920, con la racha de ese día y sin red": true,
     "perfil: récord con el nombre bien recortado": true,
     "perfil: «📸 Compartir mi mejor sesión de la semana» sale con sesiones de los últimos 7 días y comparte la más larga; sin sesiones no sale": true,
+    "wrapped: «📸 Mi mejor sesión» comparte la más larga de la semana pasada con «⭐ Mi mejor sesión de la semana»; sin sesiones sanas no sale": true,
     "atajos de la app instalada (#accion=estudiar|ahora|pronto)": true,
-    "analítica apagada por defecto (index.html y /bibliotecas/ cargan analitica.js con proveedor:null y no piden _vercel/insights ni goatcounter ni ponen cookies; respeta DNT/GPC y local)": true
+    "analítica apagada por defecto (index.html y /bibliotecas/ cargan analitica.js con proveedor:null y no piden _vercel/insights ni goatcounter ni ponen cookies; respeta DNT/GPC y local)": true,
+    "política de privacidad coherente con analitica.js (proveedor null ⇔ «sin analítica»; el diff de docs/ANALITICA.md se aplica y se detecta encender sin él)": true
   },
   "errores_js": [],
-  "carga_ms_cpu4x": 1008,
+  "carga_ms_cpu4x": 1298,
   "carga_ms_cpu4x_min_max": [
-    894,
-    1243
+    1188,
+    1416
   ],
-  "primera_pintura_ms_cpu4x": 256,
-  "todas_las_chinchetas_ms_cpu4x": 1031,
+  "primera_pintura_ms_cpu4x": 300,
+  "todas_las_chinchetas_ms_cpu4x": 1318,
   "markercluster": {
     "cargado": false,
     "agrupa": false,
@@ -82,26 +84,26 @@
   },
   "datos": {
     "bibliotecas": 2616,
-    "con_horario_verificado": 685,
+    "con_horario_verificado": 695,
     "provincias_con_horario": 51,
     "provincias_total": 51
   },
   "seo": {
-    "paginas": 1116,
+    "paginas": 1128,
     "sitemap": true
   },
   "peso": {
     "index.html": {
-      "kb": 137.2,
-      "kb_gzip": 30.9
+      "kb": 137.4,
+      "kb_gzip": 31.0
     },
     "app.js": {
-      "kb": 308.8,
+      "kb": 309.0,
       "kb_gzip": 91.8
     },
     "bibliotecas-espana.js": {
-      "kb": 858.8,
-      "kb_gzip": 208.2
+      "kb": 865.1,
+      "kb_gzip": 209.5
     }
   },
   "ok": true
