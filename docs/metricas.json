@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-11-08 07:34",
+  "fecha": "2026-11-12 15:07",
   "pruebas": {
     "arranca: datos y vistas": true,
     "marca España (sin «Navarra» en la cabecera)": true,
@@ -56,17 +56,18 @@
     "enlace #bib abre la ficha": true,
     "al llegar al cofre desde la barrita o la píldora, «¡Abre tu cofre!» recibe el foco (Intro basta) y no lo pierde al repintarse; nada si el cofre no está listo": true,
     "nombres recortados con gramática: «Sesión terminada» dice «h en Biblioteca de Navarra», nunca «en de Navarra»": true,
+    "«Sesión terminada» lleva «📸 Compartir» (44 px, con etiqueta) y la tarjeta de la sesión se dibuja en 1080×1920 sin red, también sin árbol ni biblioteca": true,
     "perfil: récord con el nombre bien recortado": true,
     "atajos de la app instalada (#accion=estudiar|ahora|pronto)": true
   },
   "errores_js": [],
-  "carga_ms_cpu4x": 814,
+  "carga_ms_cpu4x": 1169,
   "carga_ms_cpu4x_min_max": [
-    711,
-    960
+    967,
+    1351
   ],
-  "primera_pintura_ms_cpu4x": 220,
-  "todas_las_chinchetas_ms_cpu4x": 825,
+  "primera_pintura_ms_cpu4x": 264,
+  "todas_las_chinchetas_ms_cpu4x": 1181,
   "markercluster": {
     "cargado": false,
     "agrupa": false,
