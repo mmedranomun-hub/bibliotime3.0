@@ -2749,6 +2749,14 @@ function renderWeekBars(){
     div.innerHTML='<div class="bar" style="height:'+pct+'%" title="'+hMin(mins[i])+'"></div><div class="d">'+labels[i]+'</div>';
     wb.appendChild(div);
   }
+  // 📸 la sesión más larga de los últimos 7 días (no las de árbol seco); sin sesiones, no sale
+  var b=mejorSesionSemana(),bt=$("btnShareBest");
+  if(bt){bt.classList.toggle("hidden",!b);bt.dataset.id=b?b.id:"";if(b)bt.setAttribute("aria-label","Compartir en stories tu mejor sesión de la semana: "+hMin(b.min));}
+}
+function mejorSesionSemana(){
+  var d=new Date();d.setDate(d.getDate()-6);var desde=ymd(d),b=null;
+  DATA.sessions.forEach(function(s){if(s.date>=desde&&s.focus!=="withered"&&s.min>0&&(!b||s.min>b.min))b=s;});
+  return b;
 }
 function computeBestStreak(){
   if(!DATA.sessions.length)return 0;
@@ -3439,6 +3447,7 @@ window.addEventListener("DOMContentLoaded",function(){
   $("btnFeedback").addEventListener("click",function(){enviarSugerencia();});
   $("btnBlocked").addEventListener("click",abrirBloqueados);
   $("btnShareWeek").addEventListener("click",compartirSemana);
+  $("btnShareBest").addEventListener("click",function(){var id=this.dataset.id;if(id)compartirSesionStory(id);});
 
   // nuevas funciones
   $("panelClose").addEventListener("click",function(e){e.stopPropagation();cerrarLista();});

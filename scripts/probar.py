@@ -1404,6 +1404,21 @@ PRUEBAS = [
         var lab=[...document.querySelectorAll('.stat .lab')].map(x=>x.textContent).find(t=>/larga/.test(t))||'';
         return /· Biblioteca de Navarra$/.test(lab) || ('récord: «'+lab+'»');
       }finally{DATA.sessions.splice(bad,1);goView('map');}"""),
+    ("perfil: «📸 Compartir mi mejor sesión de la semana» sale con sesiones de los últimos 7 días y comparte la más larga; sin sesiones no sale", """
+      var s0=DATA.sessions,cs=window.compartirSesionStory,pedida=null,dia=n=>{var d=new Date();d.setDate(d.getDate()-n);return ymd(d);};
+      try{
+        window.compartirSesionStory=id=>{pedida=id;};
+        DATA.sessions=[{id:'mb-vieja',date:dia(9),min:300,bib:NO_BIB,focus:'ok'},{id:'mb-a',date:dia(1),min:40,bib:NO_BIB,focus:'ok'},
+          {id:'mb-larga',date:dia(5),min:95,bib:NO_BIB,focus:'ok'},{id:'mb-seca',date:dia(2),min:200,bib:NO_BIB,focus:'withered'},{id:'mb-b',date:ymd(),min:25,bib:NO_BIB,focus:null}];
+        goView('profile');await new Promise(r=>setTimeout(r,200));var b=$('btnShareBest');
+        if(!b||b.classList.contains('hidden')||!b.offsetHeight)return 'no sale con sesiones';
+        if(b.getBoundingClientRect().height<44)return 'mide menos de 44 px';
+        if(!/1h 35m|1 h 35|95/.test(b.getAttribute('aria-label')||''))return 'aria-label: '+b.getAttribute('aria-label');
+        b.click();if(pedida!=='mb-larga')return 'comparte '+pedida+' en vez de la más larga';
+        DATA.sessions=[];renderProfile();
+        if(!b.classList.contains('hidden'))return 'sale sin sesiones';
+        return true;
+      }finally{window.compartirSesionStory=cs;DATA.sessions=s0;renderProfile();goView('map');}"""),
 ]
 
 
