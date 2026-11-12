@@ -520,6 +520,16 @@ no escribe ningún archivo y el script de avisos solo simula.
 - Métrica: en Bing Webmaster Tools → «IndexNow» se ven las URL recibidas; en «Rendimiento de búsqueda», clics e
   impresiones de Bing.
 
+### En el informe del bucle (para que Marcos sepa cuándo le toca avisar)
+La tarea automática nunca envía avisos a IndexNow. Cada vez que una sesión del bucle regenere las páginas
+(`node scripts/generar_paginas_seo.js`), al terminar ejecuta `node scripts/avisar_indexnow.js --simular` (sin red) y
+anota en el informe de la sesión una línea con el número de URL que imprime:
+- con `INDEXNOW_CLAVE = null`: «IndexNow: N URL con lastmod de hoy (no enviado: clave null)»;
+- con la clave puesta: «IndexNow: N URL con lastmod de hoy (pendiente de que Marcos lo envíe tras desplegar)».
+
+Si N es 0, no hay nada que avisar. Así Marcos sabe si le toca ejecutar `node scripts/avisar_indexnow.js` tras el
+despliegue sin tener que mirar el `sitemap.xml`.
+
 ## Hecho (2026-10-27) · La portada enlaza las páginas por ciudad y horario
 - Antes, desde `index.html` solo había un `<a href>` a `bibliotecas/` (en la lista del mapa). Ahora hay 13 enlaces
   rastreables en HTML real (no en `<noscript>` ni creados por JS): al final de la pestaña Perfil, un `<nav class="seo-nav">`

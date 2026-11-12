@@ -103,7 +103,7 @@ El día de encender:
  <header>
    <h1>Política de privacidad</h1>
    <p class="sub">App «Bibliomapa · Bibliotecas de España» (Bibliotime)</p>
--  <span class="date">Última actualización: 20 de octubre de 2026</span>
+-  <span class="date">Última actualización: 12 de noviembre de 2026</span>
 +  <span class="date">Última actualización: [FECHA DEL DÍA QUE SE ENCIENDA]</span>
    <p class="sub" style="margin-top:8px">Consulta también las <a href="condiciones.html">condiciones de uso</a>.</p>
  </header>
@@ -129,7 +129,7 @@ El día de encender:
 @@ -114,6 +114,7 @@
      <li><b>Teselas del mapa</b>: las imágenes del mapa se descargan de <b>tile.openstreetmap.de</b> (OpenStreetMap Alemania / FOSSGIS e.V.) y, si eliges la capa de relieve, de <b>OpenTopoMap</b> (opentopomap.org). Si se habilita la capa satélite, de <b>MapTiler</b>. Estos servidores reciben tu IP y la zona del mapa que estás viendo, no tu ubicación GPS.</li>
      <li><b>CDN de librerías</b>: la librería de mapas Leaflet se carga desde <b>unpkg.com</b> (o, de respaldo, <b>cdn.jsdelivr.net</b>), y la librería de Supabase desde <b>cdn.jsdelivr.net</b>. Reciben tu IP al descargar esos archivos.</li>
-     <li><b>Alojamiento de la web</b>: el servidor donde está publicada la app (por ejemplo, GitHub Pages) recibe tu IP y registros técnicos al cargar la página.</li>
+     <li><b>Alojamiento de la web</b>: la web y la app están publicadas en <b>Vercel</b> (Vercel Inc., Estados Unidos). Como cualquier servidor web, registra datos técnicos de cada petición (tu dirección IP, la fecha y hora, la página pedida y el tipo de navegador) por seguridad y para que el servicio funcione. Por eso puede haber una transferencia internacional de datos a EE. UU., que se ampara en las garantías adecuadas previstas en el RGPD ofrecidas por el proveedor. Más información en la <a href="https://vercel.com/legal/privacy-policy" rel="noopener">política de privacidad de Vercel</a>.</li>
 +    <li><b>Estadística de visitas</b> (Vercel Web Analytics, de Vercel Inc.): para saber cuánta gente usa Bibliomapa contamos las páginas vistas de forma <b>agregada y anónima, sin cookies</b> y sin guardar nada en tu dispositivo. Se envía la dirección de la página (sin lo que va tras «?» o «#»), la web de la que vienes, el tipo de dispositivo, navegador, sistema y país aproximado. Tu IP no se guarda: el proveedor la usa solo para calcular un identificador diario anónimo que se descarta a las 24 h. No medimos nada de lo que haces dentro de la app (sesiones de estudio, bibliotecas, amigos). Si tu navegador tiene activado «No rastrear» (Do Not Track) o Global Privacy Control, no se carga en absoluto. Base jurídica: interés legítimo en conocer el uso agregado del servicio (art. 6.1.f RGPD).</li>
      <li><b>Enlaces externos</b>: si pulsas «Cómo llegar» se abre Google Maps con la ubicación de la biblioteca de destino (no la tuya); si compartes por WhatsApp, se abre WhatsApp con el mensaje que tú envías; las webs de las bibliotecas se abren en tu navegador. Desde ese momento se aplican las políticas de privacidad de esos servicios.</li>
    </ul>
