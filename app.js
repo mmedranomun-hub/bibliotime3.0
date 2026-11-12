@@ -311,8 +311,9 @@ function deltaTz(tz){
   _deltaTz[k]=v; return v;
 }
 function ahoraEn(b){return new Date(Date.now()+deltaTz(b&&b.tz));}
-function estadoBib(b){const now=ahoraEn(b),d=now.getDay(),m=now.getHours()*60+now.getMinutes();
-  const tr=horarioVigente(b)[d]||[];for(var k=0;k<tr.length;k++){if(m>=tr[k][0]&&m<tr[k][1])return true;}return false;}
+// Con "fecha" (hora de reloj en la biblioteca) dice si estará abierta entonces: temporada y exámenes de esa fecha.
+function estadoBib(b,fecha){const now=fecha||ahoraEn(b),d=now.getDay(),m=now.getHours()*60+now.getMinutes();
+  const tr=horarioVigente(b,fecha)[d]||[];for(var k=0;k<tr.length;k++){if(m>=tr[k][0]&&m<tr[k][1])return true;}return false;}
 
 /* ===== CÓDIGO BAJO DEMANDA (app-extra.js) =====
    Las ventanas y acciones que solo se usan al pulsar un botón (denunciar/bloquear, reportar un horario,
@@ -1681,6 +1682,7 @@ function buildList(){
     if(F.examenes&&!examenDeBib(b))return;
     if(F.abiertas&&!estadoBib(b))return;
     if(F.pronto&&!abrePronto(b))return;
+    if(F.finde&&!abiertaFinde(b))return;
     if(F.tarde&&!abiertaHastaTarde(b))return;
     if(F.libre&&!(b.acceso&&b.acceso.tipo==="libre"))return;
     if(F.wifi&&!(b.recursos&&b.recursos.indexOf("wifi")!==-1))return;
@@ -1698,7 +1700,7 @@ function buildList(){
   }else if(F.tarde){
     idx.sort(function(a,c){return horaCierre(BIBLIOTECAS[c])-horaCierre(BIBLIOTECAS[a]);});
   }
-  if(!idx.length)list.innerHTML='<div class="empty-note">Ninguna biblioteca cumple estos filtros'+(F.wifi?' (el wifi solo figura donde está confirmado)':'')+(F.pronto?' (ninguna cerrada abre en los próximos '+PRONTO_MIN+' min)':'')+(F.tarde?' (ninguna abierta cierra a las 21:00 o más tarde)':'')+(F.examenes?' (solo figuran las que han publicado su calendario de exámenes en su web oficial)':'')+'.</div>';
+  if(!idx.length)list.innerHTML='<div class="empty-note">Ninguna biblioteca cumple estos filtros'+(F.wifi?' (el wifi solo figura donde está confirmado)':'')+(F.pronto?' (ninguna cerrada abre en los próximos '+PRONTO_MIN+' min)':'')+(F.tarde?' (ninguna abierta cierra a las 21:00 o más tarde)':'')+(F.examenes?' (solo figuran las que han publicado su calendario de exámenes en su web oficial)':'')+(F.finde?': ninguna con horario confirmado abre '+findeFrase()+' (las de horario sin confirmar no cuentan). Prueba otra hora o «a cualquier hora»':'')+'.</div>';
   var total=idx.length, LIM=120;
   if(total>LIM){idx=idx.slice(0,LIM);}
   idx.forEach(function(i){
@@ -1710,7 +1712,7 @@ function buildList(){
       distTxt=" · 📍"+(dm<1000?Math.round(dm)+"m":(dm/1000).toFixed(1)+"km");
     }
     var card=document.createElement("div");card.className="card";card.dataset.i=i;
-    card.innerHTML='<h3>'+(esFavorita(i)?'<span class="favmark" title="Favorita">★</span> ':'')+escapeHTML(cortoNombre(b.nombre))+'</h3><div class="row"><span class="dot '+(b.sinHorario?"unk":(abierto?"open":"closed"))+'"></span>'+escapeHTML(estadoTexto(b).txt+(pr?" (en "+(pr.enMin<60?pr.enMin+" min":Math.floor(pr.enMin/60)+" h "+(pr.enMin%60)+" min")+")":"")+(b.ciudad?" · "+b.ciudad:""))+escapeHTML(distTxt)+(b.rating!=null?'<span class="rate">★ '+b.rating.toFixed(1)+'</span>':'')+'</div>'+occStatusHTML(i,true);
+    card.innerHTML='<h3>'+(esFavorita(i)?'<span class="favmark" title="Favorita">★</span> ':'')+escapeHTML(cortoNombre(b.nombre))+'</h3><div class="row"><span class="dot '+(b.sinHorario?"unk":(abierto?"open":"closed"))+'"></span>'+escapeHTML(estadoTexto(b).txt+(pr?" (en "+(pr.enMin<60?pr.enMin+" min":Math.floor(pr.enMin/60)+" h "+(pr.enMin%60)+" min")+")":"")+(b.ciudad?" · "+b.ciudad:""))+escapeHTML(distTxt)+(b.rating!=null?'<span class="rate">★ '+b.rating.toFixed(1)+'</span>':'')+'</div>'+(F.finde?'<div class="finde-h">📅 '+findeHoras(b)+'</div>':'')+occStatusHTML(i,true);
     card.addEventListener("click",function(){window.__selBib(i);});
     list.appendChild(card);
   });
@@ -1725,13 +1727,32 @@ function normTxt(t){return String(t||"").toLowerCase().normalize("NFD").replace(
 // "Abiertas ahora" depende de la hora: se recalcula cada minuto aunque no lleguen datos nuevos.
 setInterval(function(){if(!window.__listReady)return; if(LIST_FILTERS.abiertas||LIST_FILTERS.pronto||LIST_FILTERS.tarde)buildList(); else renderNowCard();},60000);
 (function(){var ls=$("listSearch");if(!ls)return;var tmo;ls.addEventListener("input",function(){clearTimeout(tmo);tmo=setTimeout(buildList,200);});})();
-var LIST_FILTERS=Object.assign({examenes:false,fav:false,abiertas:false,pronto:false,tarde:false,cerca:false,libre:false,wifi:false,horario:false,uni:false},loadJSON("bpna_list_filters",{}));
+var LIST_FILTERS=Object.assign({examenes:false,fav:false,abiertas:false,pronto:false,tarde:false,finde:false,cerca:false,libre:false,wifi:false,horario:false,uni:false},loadJSON("bpna_list_filters",{}));
+// «📅 Fin de semana»: ¿abierta el sábado/domingo de este fin de semana (o del próximo, de lunes a viernes) a una hora?
+// d: 6 sáb, 0 dom, -1 cualquiera de los dos; h: hora en punto o -1 a cualquier hora. Por defecto, sábado a las 17:00.
+// Sin horario confirmado nunca cuenta como abierta (no se inventa).
+var FINDE=Object.assign({d:6,h:17},loadJSON("bpna_finde",{}));
+function findeDias(){return FINDE.d<0?[6,0]:[FINDE.d];}
+function fechaFinde(d,hh){var f=new Date(),w=f.getDay();f.setDate(f.getDate()+(w===0?-1:6-w)+(d===0?1:0));f.setHours(hh<0?12:hh,0,0,0);return f;}
+function abiertaFinde(b){if(b.sinHorario)return false;
+  return findeDias().some(function(d){var f=fechaFinde(d,FINDE.h);return FINDE.h<0?(horarioVigente(b,f)[d]||[]).length>0:estadoBib(b,f);});}
+function findeHoras(b){return findeDias().map(function(d){var t=horarioVigente(b,fechaFinde(d,12))[d]||[];
+  return DIAS[d]+" "+(t.length?t.map(function(x){return fmtHoras(x[0])+"–"+fmtHoras(x[1]);}).join(", "):"cerrada");}).join(" · ");}
+function findeFrase(){return "el "+(FINDE.d<0?"sábado o domingo":FINDE.d?"sábado":"domingo")+(FINDE.h<0?"":" a las "+FINDE.h+":00");}
+(function(){var sd=$("findeDia"),sh=$("findeHora");if(!sd||!sh)return;
+  for(var k=8;k<=22;k++)sh.add(new Option("a las "+k+":00",k));
+  function cambia(){FINDE={d:+sd.value,h:+sh.value};saveJSON("bpna_finde",FINDE);buildList();}
+  sd.addEventListener("change",cambia);sh.addEventListener("change",cambia);
+  $("findeSel").addEventListener("click",function(e){e.stopPropagation();});})();
 function syncListFilterButtons(){
   // «Temporada de exámenes» solo se ve si hay aperturas extraordinarias vigentes o en los próximos 30 días
   var ex=document.querySelector('#listFilters [data-f="examenes"]'),hay=hayTemporadaExamenes();
   if(ex)ex.hidden=!hay; if(!hay&&LIST_FILTERS.examenes)LIST_FILTERS.examenes=false;
   document.querySelectorAll("#listFilters button").forEach(function(btn){btn.classList.toggle("on",!!LIST_FILTERS[btn.dataset.f]);});
   var fb=document.querySelector('#listFilters [data-f="fav"]'),nf=nFavoritas(); if(fb)fb.textContent="★ Favoritas"+(nf?" ("+nf+")":"");
+  var fs=$("findeSel");if(fs){fs.hidden=!LIST_FILTERS.finde;$("findeDia").value=FINDE.d;$("findeHora").value=FINDE.h;
+    var fm=function(x){return x.getDate()+" "+"ene feb mar abr may jun jul ago sep oct nov dic".split(" ")[x.getMonth()];};
+    $("findeFecha").textContent=(new Date().getDay()%6?"Próximo":"Este")+" fin de semana: "+fm(fechaFinde(6,12))+" – "+fm(fechaFinde(0,12));}
 }
 document.querySelectorAll("#listFilters button").forEach(function(btn){
   btn.addEventListener("click",function(e){
@@ -1741,6 +1762,8 @@ document.querySelectorAll("#listFilters button").forEach(function(btn){
     LIST_FILTERS[f]=!LIST_FILTERS[f];
     // "Abren pronto" (cerradas) no se puede combinar con "Abiertas ahora" ni con "Hasta tarde"
     if(LIST_FILTERS[f]){if(f==="pronto"){LIST_FILTERS.abiertas=false;LIST_FILTERS.tarde=false;}else if(f==="abiertas"||f==="tarde")LIST_FILTERS.pronto=false;}
+    // «Fin de semana» mira otro día: no se mezcla con los filtros de «ahora»
+    if(LIST_FILTERS[f]){if(f==="finde")LIST_FILTERS.abiertas=LIST_FILTERS.pronto=LIST_FILTERS.tarde=false;else if(/^(abiertas|pronto|tarde)$/.test(f))LIST_FILTERS.finde=false;}
     saveJSON("bpna_list_filters",LIST_FILTERS);
     if(f==="cerca"&&LIST_FILTERS.cerca&&!window.__userPos){locateMe();}
     buildList();
@@ -3186,7 +3209,7 @@ function renderNowCard(){
 function abrirLista(soloAbiertas){
   // "Otras" abre la lista ya filtrada; con todo cerrado (soloAbiertas=false) se ven todas
   LIST_FILTERS.abiertas=soloAbiertas!==false;
-  if(LIST_FILTERS.abiertas)LIST_FILTERS.pronto=false;
+  if(LIST_FILTERS.abiertas)LIST_FILTERS.pronto=LIST_FILTERS.finde=false;
   if(window.__userPos)LIST_FILTERS.cerca=true;
   saveJSON("bpna_list_filters",LIST_FILTERS);
   $("libPanel").classList.remove("hidden");$("libPanel").classList.remove("collapsed");
@@ -3313,7 +3336,7 @@ function abrirAtajo(acc){
       if(bt&&!studyTimer.running){try{bt.focus({preventScroll:true});}catch(e){}}
     }else if(acc==="pronto"){
       goView("map");
-      LIST_FILTERS.pronto=true;LIST_FILTERS.abiertas=false;LIST_FILTERS.tarde=false;
+      LIST_FILTERS.pronto=true;LIST_FILTERS.abiertas=LIST_FILTERS.tarde=LIST_FILTERS.finde=false;
       saveJSON("bpna_list_filters",LIST_FILTERS);
       $("libPanel").classList.remove("hidden");$("libPanel").classList.remove("collapsed");
       buildList();

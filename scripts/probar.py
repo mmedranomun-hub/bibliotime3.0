@@ -1377,6 +1377,37 @@ PRUEBAS = [
         var b=f[1].querySelector('.feed-mis b');if(!b||b.innerText.indexOf('+'+(2*MIS_PREMIO))<0)return 'premio sin resaltar';
         return true;
       }finally{DATA.sessions=os;DATA.misiones=om;feedTab=ot;renderSessionFeed();}"""),
+    ("chip «📅 Fin de semana» + «¿Abierta el sábado a las 17:00?»: filtra con estadoBib(b, fecha) y nunca saca las de horario sin confirmar", """
+      var oF=Object.assign({},LIST_FILTERS),oD=Object.assign({},FINDE),ls=$('listSearch');
+      try{
+        goView('map');abrirLista(false);Object.keys(LIST_FILTERS).forEach(k=>LIST_FILTERS[k]=false);FINDE={d:6,h:17};ls.value='';buildList();
+        var chip=document.querySelector('#listFilters [data-f="finde"]'),sel=$('findeSel');
+        if(!chip||!sel)return 'sin chip o sin selector';
+        if(!sel.hidden)return 'el selector se ve sin el chip';
+        chip.click();
+        if(!chip.classList.contains('on')||sel.hidden)return 'el chip no activa el selector';
+        if($('findeDia').value!=='6'||$('findeHora').value!=='17')return 'por defecto no es sábado 17:00';
+        for(const s of sel.querySelectorAll('select'))if(s.getBoundingClientRect().height<44||!(s.labels.length||s.getAttribute('aria-label')))return 'desplegable < 44 px o sin etiqueta';
+        var f=fechaFinde(6,17);if(f.getDay()!==6||f.getHours()!==17||f-Date.now()>8*864e5||f-Date.now()<-2*864e5)return 'fecha mal: '+f;
+        var esp=BIBLIOTECAS.filter(b=>!b.sinHorario&&estadoBib(b,f)).length;
+        var tot=()=>{var m=/^(\\d+) de/.exec($('panelCount').textContent);return m?+m[1]:-1;};
+        if(!esp||tot()!==esp)return 'muestra '+tot()+' y deberían ser '+esp;
+        for(const c of document.querySelectorAll('#list .card')){var b=BIBLIOTECAS[+c.dataset.i];
+          if(b.sinHorario||!estadoBib(b,f))return 'sale una que no abre: '+b.nombre;
+          if(!/📅 Sáb \\d/.test(c.innerText))return 'la tarjeta no dice el horario del sábado';}
+        $('findeDia').value='0';$('findeHora').value='-1';$('findeDia').dispatchEvent(new Event('change'));
+        var dom=BIBLIOTECAS.filter(b=>!b.sinHorario&&(horarioVigente(b,fechaFinde(0,12))[0]||[]).length).length;
+        if(tot()!==dom)return 'domingo a cualquier hora: '+tot()+' de '+dom;
+        var sh=BIBLIOTECAS.find(b=>b.sinHorario);if(!sh)return 'no hay bibliotecas sin horario';
+        $('findeDia').value='-1';$('findeDia').dispatchEvent(new Event('change'));ls.value=sh.nombre;buildList();
+        if([...document.querySelectorAll('#list .card')].some(c=>BIBLIOTECAS[+c.dataset.i]===sh))return 'sale una sin horario: '+sh.nombre;
+        if(!document.querySelectorAll('#list .card').length&&!/horario confirmado/.test($('list').innerText))return 'sin texto claro al no haber resultados';
+        document.querySelector('#listFilters [data-f="abiertas"]').click();
+        if(LIST_FILTERS.finde||!sel.hidden)return 'no se desactiva con «Abiertas ahora»';
+        return true;
+      }finally{
+        ls.value='';Object.assign(LIST_FILTERS,oF);FINDE=oD;saveJSON('bpna_list_filters',LIST_FILTERS);saveJSON('bpna_finde',FINDE);buildList();cerrarLista();
+      }"""),
     ("reacciones 🔥💪🧠: ocultas sin sesión, alternan en local sin tabla", """
       if(reaccionesHTML('x','y')!=='')return 'se ven sin sesión';
       var oc=socialClient,ou=SOCIAL.user,of=SOCIAL.friendSessions,ok0=SOCIAL.reactsOk,ot=feedTab,ofr=SOCIAL.friends;

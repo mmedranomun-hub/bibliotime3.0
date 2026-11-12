@@ -185,7 +185,7 @@
   .panel-head .chev{width:16px;height:16px;color:var(--suave);flex-shrink:0;transition:transform .2s}
   .panel.collapsed .chev{transform:rotate(-90deg)}
   .panel.collapsed{max-height:none}
-  .panel.collapsed .list,.panel.collapsed .list-filters{display:none}
+  .panel.collapsed .list,.panel.collapsed .list-filters,.panel.collapsed .finde-sel{display:none}
   .subj-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:var(--fs-s);font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--suave)}
   .focus-toggle{display:flex;align-items:center;gap:6px;text-transform:none;letter-spacing:0;font-size:var(--fs-s);cursor:pointer}
   .subj-chips{display:flex;flex-wrap:wrap;gap:6px}
@@ -294,6 +294,12 @@
   .ex-nota a{color:var(--acento-tx);font-weight:600}
   .ex-nota .ex-fv{color:var(--suave);font-size:var(--fs-xs)}
   .list-filters button[hidden]{display:none}
+  /* «📅 Fin de semana»: frase con dos desplegables (≥ 44 px) bajo los chips; sin animaciones */
+  .finde-sel{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px 8px 0;font-size:var(--fs-m);font-weight:600;color:var(--texto)}
+  .finde-sel[hidden]{display:none}
+  .finde-sel select{min-height:44px;padding:0 10px;border-radius:var(--r-m);border:1px solid var(--neutro);font:inherit;background:rgba(var(--blanco),.8);color:var(--texto)}
+  .finde-sel small{flex-basis:100%;font-size:var(--fs-xs);font-weight:500;color:var(--suave)}
+  .card .finde-h{margin-top:4px;font-size:var(--fs-xs);font-weight:600;color:var(--acento-tx)}
   .hr-viejo{display:block;color:var(--aviso-tx);font-weight:700;margin-top:2px}
   .hr-acciones{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
   .hr-acciones .btn{width:auto;flex:1 1 150px}
@@ -1357,12 +1363,19 @@
         <button data-f="abiertas">● Abiertas ahora</button>
         <button data-f="pronto">⏰ Abren pronto</button>
         <button data-f="tarde">🌙 Hasta tarde</button>
+        <button data-f="finde">📅 Fin de semana</button>
         <button data-f="fav">★ Favoritas</button>
         <button data-f="cerca">📍 Más cercanas</button>
         <button data-f="libre">🎫 Acceso libre</button>
         <button data-f="wifi">📶 Wifi</button>
         <button data-f="horario">🕐 Con horario</button>
         <button data-f="uni">🎓 Universitarias</button>
+      </div>
+      <div class="finde-sel" id="findeSel" role="group" aria-label="Fin de semana: día y hora" hidden>
+        <label for="findeDia">Abierta el</label>
+        <select id="findeDia"><option value="6">sábado</option><option value="0">domingo</option><option value="-1">sáb. o dom.</option></select>
+        <select id="findeHora" aria-label="Hora"><option value="-1">a cualquier hora</option></select>
+        <small id="findeFecha"></small>
       </div>
       <div class="list" id="list"></div>
     </div>
