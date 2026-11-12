@@ -431,6 +431,35 @@ PRUEBAS = [
         if(/Qué alegría/.test(t)||!/racha/.test(t))return 'cambia la bienvenida sin sesiones: '+t;
         return true;
       }finally{DATA.sessions=o;DATA.usedFreezeDates=uf;closeModal();}"""),
+    ("«📸 Ayer compartiste…» en la bienvenida: una vez, solo si ayer compartiste y hoy no has estudiado", """
+      await cargarExtra();
+      var o=DATA.sessions,uc=DATA.ultimaCompartida,cl=window.compartirLienzo,ds=window.dibujarSesionStory,st=window.showToast;
+      var dia=n=>{var d=new Date();d.setDate(d.getDate()-n);return ymd(d);};
+      var mk=(i,n,m)=>({id:'uc'+i,date:dia(n),min:m,ts:Date.now()-n*864e5,bib:NO_BIB,focus:'ok',esp:'roble'});
+      var ver=()=>{closeModal();pintarBienvenidaDiaria();var m=document.querySelector('#modalRoot .bienvenida');return m?m.innerText:'';};
+      try{
+        window.showToast=()=>{};window.dibujarSesionStory=async()=>document.createElement('canvas');
+        DATA.sessions=[mk(0,1,52)];DATA.ultimaCompartida=null;
+        window.compartirLienzo=async()=>false;await compartirSesionStory('uc0',null,null);
+        if(DATA.ultimaCompartida)return 'guarda la marca al cancelar la hoja';
+        window.compartirLienzo=async()=>true;await compartirSesionStory('uc0',null,null);
+        var M=DATA.ultimaCompartida;if(!M||M.fecha!==ymd()||M.min!==52)return 'no guarda {fecha,min} al compartir: '+JSON.stringify(M);
+        DATA.ultimaCompartida={fecha:dia(1),min:52};
+        var t=ver();
+        if(!/📸 Ayer compartiste 0h 52m · ¿plantamos otro árbol hoy\?/.test(t))return 'no sale el mensaje: '+t;
+        if(/apague|perder|peligro/i.test(t))return 'mete presión: '+t;
+        var b=$('bvEstudiar');if(!b||!/Empezar a estudiar/.test(b.innerText))return 'sin botón «Empezar a estudiar»';
+        if(b.getBoundingClientRect().height<44)return 'botón de menos de 44 px';
+        if(document.activeElement!==b)return 'el foco no va al botón';
+        if(getComputedStyle(document.querySelector('.bv-comp')).backgroundColor==='rgba(0, 0, 0, 0)')return 'tarjeta sin estilos (fondo con token)';
+        if(/Ayer compartiste/.test(ver()))return 'sale una segunda vez';
+        DATA.ultimaCompartida={fecha:dia(1),min:52};DATA.sessions=[mk(0,1,52),mk(1,0,25)];
+        if(/Ayer compartiste/.test(ver()))return 'sale habiendo estudiado hoy';
+        DATA.ultimaCompartida={fecha:dia(2),min:52};DATA.sessions=[mk(0,2,52)];
+        if(/Ayer compartiste/.test(ver()))return 'sale con una marca de anteayer';
+        if(!/Estudiar ahora/.test(ver()))return 'cambia la bienvenida normal';
+        return true;
+      }finally{DATA.sessions=o;DATA.ultimaCompartida=uc;window.compartirLienzo=cl;window.dibujarSesionStory=ds;window.showToast=st;compartiendoSesion=false;closeModal();}"""),
     ("biblioteca nueva en tu mapa: aviso suave al cerrar y «📍 bibliotecas exploradas» en el Perfil", """
       var k=['sessions','misiones','acciones','hitosBosque','hitoBosquePend','especiesAvisadas','especieAvisoPend','bibNuevaPend','primerArbol','semillasPremio'],o={};
       k.forEach(x=>o[x]=DATA[x]);

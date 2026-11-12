@@ -323,9 +323,10 @@ function textoC(g,t,x,y,font,color){g.font=font;g.fillStyle=color||"#fff";g.text
 async function compartirLienzo(c,nombre,texto){
   var blob=await new Promise(function(r){c.toBlob(r,"image/png");});
   var file=new File([blob],nombre,{type:"image/png"});
-  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:"Bibliomapa",text:texto});return;}}catch(e){if(e&&e.name==="AbortError")return;}
+  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:"Bibliomapa",text:texto});return true;}}catch(e){if(e&&e.name==="AbortError")return false;}
   var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=nombre;document.body.appendChild(a);a.click();a.remove();
   showToast("Imagen guardada 📸 Súbela a tus stories");
+  return true; // true = compartida o descargada; false = hoja cancelada (compartirSesionStory solo apunta la marca con true)
 }
 async function dibujarBosque(g,ses,x0,y0,ancho,alto){
   // suelo
@@ -398,7 +399,9 @@ async function compartirSesionStory(id,titulo,origen){
   compartiendoSesion=true;if(b){b.disabled=true;b.setAttribute("aria-busy","true");}
   try{
     showToast("Preparando tu imagen…");
-    await compartirLienzo(await dibujarSesionStory(s,titulo),"mi-sesion.png",(titulo?titulo+": ":"He estudiado ")+hMin(s.min)+" 📚 bibliomapa.es");
+    var hecho=await compartirLienzo(await dibujarSesionStory(s,titulo),"mi-sesion.png",(titulo?titulo+": ":"He estudiado ")+hMin(s.min)+" 📚 bibliomapa.es");
+    // «📸 Ayer compartiste…» de la bienvenida de mañana: solo si se compartió o descargó de verdad (no al cancelar)
+    if(hecho){DATA.ultimaCompartida={fecha:ymd(),min:s.min};saveUserData();}
   }catch(e){showToast("No se pudo preparar la imagen. Prueba otra vez");}
   finally{compartiendoSesion=false;if(b){b.disabled=false;b.removeAttribute("aria-busy");}}
 }
@@ -1248,6 +1251,17 @@ function vueltaBienvenidaHTML(nombre){
     '<div class="bv-bosque">'+hito+'</div>';
 }
 
+/* ----- «📸 Ayer compartiste 0h 52m · ¿plantamos otro árbol hoy?»: si ayer (fecha local) compartiste una sesión
+   (DATA.ultimaCompartida, la guarda compartirSesionStory) y hoy aún no has estudiado, la bienvenida diaria lo
+   recuerda UNA vez (marca .vista) para que compartir lleve de vuelta a estudiar. Solo invita: sin racha en peligro.
+   Orden en la ventana: cabecera (racha o «¡Qué alegría verte!») → esta tarjeta → examen → misiones → consejo. ----- */
+function compartidaAyer(){
+  var C=DATA&&DATA.ultimaCompartida, ay=new Date();ay.setDate(ay.getDate()-1);
+  if(!C||C.fecha!==ymd(ay)||C.vista||!(C.min>0))return null;
+  var hoy=ymd();if((DATA.sessions||[]).some(function(s){return s.date===hoy;}))return null;
+  return C;
+}
+
 /* ----- Bienvenida diaria (Duolingo): la ventana; bienvenidaDiaria() de app.js decide si toca y la pide a los 900 ms ----- */
 function pintarBienvenidaDiaria(){
   if(document.querySelector(".modal-bg")||$("storyViewer"))return;
@@ -1255,12 +1269,15 @@ function pintarBienvenidaDiaria(){
   var u=(Brain.getUsers()[CURRENT]||{}).name, nombre=u&&!esInvitado()?", "+u.split(" ")[0]:"";
   var n=streakDays(), M=misionesDeHoy(), tip=TIPS[hashStr(ymd())%TIPS.length], ex=proximoExamen();
   var dEx=ex?Math.round((new Date(ex.k+"T00:00:00")-new Date(ymd()+"T00:00:00"))/864e5):null;
+  var C=compartidaAyer(); if(C){C.vista=ymd();saveUserData();}
   var cab=vueltaBienvenidaHTML(nombre)||'<div class="bv-fuego'+(n?'':' apagado')+'">🔥</div><h3>'+saludo+nombre+'</h3>'+
-    '<div class="sub">'+(n?'Llevas <b>'+n+(n===1?' día':' días')+'</b> de racha. ¡Que no se apague hoy!':'Hoy es un buen día para empezar una racha.')+'</div>';
+    '<div class="sub">'+(n?'Llevas <b>'+n+(n===1?' día':' días')+'</b> de racha.'+(C?'':' ¡Que no se apague hoy!'):'Hoy es un buen día para empezar una racha.')+'</div>';
   openModal('<div class="bienvenida">'+cab+
+    (C?'<div class="bv-comp" role="note">📸 Ayer compartiste <b>'+hMin(C.min)+'</b> · ¿plantamos otro árbol hoy? 🌱</div>':'')+
     (ex&&dEx<=14?'<div class="bv-ex">📅 <b>'+escapeHTML(ex.ev.title)+'</b> · '+(dEx===0?'¡es hoy!':dEx===1?'mañana':'en '+dEx+' días')+'</div>':'')+
     '<div class="bv-mis">🎯 Misiones de hoy: '+M.ids.map(function(id){var d=misionDef(id);return d?d.icon:'';}).join(" ")+' · cofre al completarlas</div>'+
     '<div class="bv-tip">'+tip.e+' <b>'+escapeHTML(tip.t)+'</b>: '+escapeHTML(tip.x)+'</div>'+
-    '<button class="btn" onclick="closeModal();goView(\'study\');setTimeout(function(){var b=$(\'btnStart\');if(b)b.click();},250)">▶ Estudiar ahora</button>'+
-    '<button class="linkbtn" onclick="closeModal()" style="display:block;margin:12px auto 0">Más tarde</button></div>');
+    '<button class="btn bv-go" id="bvEstudiar" onclick="closeModal();goView(\'study\');setTimeout(function(){var b=$(\'btnStart\');if(b)b.click();},250)">▶ '+(C?'Empezar a estudiar':'Estudiar ahora')+'</button>'+
+    '<button class="linkbtn" onclick="closeModal()" style="display:block;margin:12px auto 0">Más tarde</button></div>',
+    C?function(){var b=$("bvEstudiar");if(b)b.focus();}:null);
 }
