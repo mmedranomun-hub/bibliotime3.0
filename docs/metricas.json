@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-11-13 11:10",
+  "fecha": "2026-11-13 16:28",
   "pruebas": {
     "arranca: datos y vistas": true,
     "marca España (sin «Navarra» en la cabecera)": true,
@@ -12,6 +12,7 @@
     "hitos del bosque: al plantar el 10.º árbol, tarjeta y semillas (una sola vez)": true,
     "próxima especie: barra en «Mi bosque» y aviso «ya puedes» una sola vez": true,
     "primer árbol del día: saludo y +5 🌰 una sola vez, sin tapar «Sesión terminada»": true,
+    "«🌳 Dos días seguidos plantando y compartiendo»: sale una vez al terminar la sesión empezada desde «📸 Ayer compartiste…»": true,
     "récord personal en «Sesión terminada» (solo si supera la más larga, sin negativos)": true,
     "contador de minutos en «Sesión terminada» (sube hasta los minutos reales; «Hoy llevas» solo con más sesiones hoy)": true,
     "semillas que vuelan al marcador (con 🌰 vuelan y el contador acaba en la cifra; sin 🌰 no; con reducir movimiento, cifra directa)": true,
@@ -74,13 +75,13 @@
     "política de privacidad coherente con analitica.js (proveedor null ⇔ «sin analítica»; el diff de docs/ANALITICA.md se aplica y se detecta encender sin él)": true
   },
   "errores_js": [],
-  "carga_ms_cpu4x": 624,
+  "carga_ms_cpu4x": 584,
   "carga_ms_cpu4x_min_max": [
-    580,
-    750
+    496,
+    601
   ],
   "primera_pintura_ms_cpu4x": 272,
-  "todas_las_chinchetas_ms_cpu4x": 643,
+  "todas_las_chinchetas_ms_cpu4x": 602,
   "markercluster": {
     "cargado": false,
     "agrupa": false,
@@ -90,12 +91,12 @@
   },
   "datos": {
     "bibliotecas": 2616,
-    "con_horario_verificado": 755,
+    "con_horario_verificado": 761,
     "provincias_con_horario": 51,
     "provincias_total": 51
   },
   "seo": {
-    "paginas": 1197,
+    "paginas": 1206,
     "sitemap": true
   },
   "peso": {
@@ -108,8 +109,8 @@
       "kb_gzip": 94.4
     },
     "bibliotecas-espana.js": {
-      "kb": 903.6,
-      "kb_gzip": 215.9
+      "kb": 910.1,
+      "kb_gzip": 217.3
     }
   },
   "ok": true
