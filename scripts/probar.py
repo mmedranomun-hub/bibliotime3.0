@@ -1798,6 +1798,42 @@ PRUEBAS = [
         if(b.innerHTML!==html0||b.classList.contains('compartida'))return 'no vuelve al texto original: '+b.innerHTML;
         return true;
       }finally{navigator.share=sh0;navigator.canShare=cs0;COMPARTIDA_MS=ms0;compartiendoImagen=false;DATA.sessions=s0;DATA.ultimaCompartida=uc0;FOREST_PERIOD=fp0;closeModal();renderForest();goView('map');}"""),
+    ("📸 ✓ Guardada: sin navigator.share descarga y el botón dice «✓ Guardada»; si la hoja falla con NotAllowedError, descarga igual con «No se pudo abrir compartir · imagen guardada»; cancelar no descarga", """
+      await cargarExtra();
+      var s0=DATA.sessions,uc0=DATA.ultimaCompartida,fp0=FOREST_PERIOD,sh0=navigator.share,cs0=navigator.canShare,st0=window.showToast,ms0=COMPARTIDA_MS,toasts=[],bajadas=[];
+      var pilla=e=>{var a=e.target;if(a&&a.tagName==='A'&&a.hasAttribute('download')){bajadas.push(a.download);e.preventDefault();}};
+      document.addEventListener('click',pilla,true);
+      var espera=async f=>{for(var i=0;i<60&&!f();i++)await new Promise(r=>setTimeout(r,50));};
+      try{
+        closeModal();FOREST_PERIOD='week';COMPARTIDA_MS=900;window.showToast=m=>toasts.push(m);DATA.ultimaCompartida=null;
+        DATA.sessions=[{id:'cg1',date:ymd(),min:40,bib:NO_BIB,focus:'ok',esp:'roble'}];
+        var cv=document.createElement('canvas');cv.width=cv.height=4;
+        navigator.canShare=undefined;navigator.share=undefined;
+        if(await compartirLienzo(cv,'x.png','t')!=='descarga')return 'sin share no devuelve "descarga"';
+        navigator.canShare=()=>true;navigator.share=()=>Promise.resolve();
+        if(await compartirLienzo(cv,'x.png','t')!=='hoja')return 'con share no devuelve "hoja"';
+        navigator.share=()=>Promise.reject(Object.assign(new Error('cancelada'),{name:'AbortError'}));bajadas=[];
+        if(await compartirLienzo(cv,'x.png','t')!==false||bajadas.length)return 'al cancelar descarga o no devuelve false';
+        goView('study');renderForest();
+        var b=[...document.querySelectorAll('#forestCard .forest-acts button')].find(x=>/Compartir/.test(x.innerText));if(!b)return 'sin botón 📸 del bosque';
+        var html0=b.innerHTML;
+        navigator.canShare=undefined;navigator.share=undefined;bajadas=[];toasts=[];
+        b.click();await espera(()=>b.classList.contains('compartida'));
+        if(bajadas[0]!=='mi-bosque.png')return 'sin share no descarga la imagen: '+JSON.stringify(bajadas);
+        if(b.innerText.trim()!=='✓ Guardada')return 'sin share no dice ✓ Guardada: '+b.innerText;
+        if(!toasts.some(t=>/Imagen guardada/.test(t)))return 'sin aviso de imagen guardada: '+JSON.stringify(toasts);
+        await new Promise(r=>setTimeout(r,120));
+        if(!/guardada/i.test((document.getElementById('avisoCompartida')||{}).textContent||''))return 'aria-live no dice guardada';
+        if(!DATA.ultimaCompartida||DATA.ultimaCompartida.tipo!=='bosque')return 'la descarga no cuenta como compartida para la bienvenida';
+        await espera(()=>!b.classList.contains('compartida'));if(b.innerHTML!==html0)return 'no vuelve al texto original';
+        navigator.canShare=()=>true;navigator.share=()=>Promise.reject(Object.assign(new Error('sin gesto'),{name:'NotAllowedError'}));bajadas=[];toasts=[];
+        b.click();await espera(()=>b.classList.contains('compartida'));
+        if(bajadas[0]!=='mi-bosque.png')return 'con NotAllowedError no descarga: '+JSON.stringify(bajadas);
+        if(!toasts.includes('No se pudo abrir compartir · imagen guardada 📸'))return 'sin aviso suave del fallo: '+JSON.stringify(toasts);
+        if(b.innerText.trim()!=='✓ Guardada')return 'con NotAllowedError no dice ✓ Guardada: '+b.innerText;
+        if(b.disabled||b.hasAttribute('aria-busy'))return 'el candado no se restaura';
+        return true;
+      }finally{document.removeEventListener('click',pilla,true);navigator.share=sh0;navigator.canShare=cs0;window.showToast=st0;COMPARTIDA_MS=ms0;compartiendoImagen=false;DATA.sessions=s0;DATA.ultimaCompartida=uc0;FOREST_PERIOD=fp0;closeModal();renderForest();goView('map');}"""),
 ]
 
 

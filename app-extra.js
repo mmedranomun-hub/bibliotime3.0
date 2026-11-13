@@ -320,13 +320,17 @@ function lienzoStory(){
   return {c:c,g:g,W:W,H:H};
 }
 function textoC(g,t,x,y,font,color){g.font=font;g.fillStyle=color||"#fff";g.textAlign="center";g.fillText(t,x,y,980);g.textAlign="left";}
+/* Devuelve el motivo: "hoja" si se compartió con la hoja del sistema (navigator.share), "descarga" si se guardó
+   la imagen, false si se canceló la hoja (AbortError). Si la hoja falla por otra cosa (p. ej. NotAllowedError
+   porque el gesto del usuario caducó mientras se dibujaba), no se pierde la imagen: se descarga con aviso suave. */
 async function compartirLienzo(c,nombre,texto){
   var blob=await new Promise(function(r){c.toBlob(r,"image/png");});
-  var file=new File([blob],nombre,{type:"image/png"});
-  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:"Bibliomapa",text:texto});return true;}}catch(e){if(e&&e.name==="AbortError")return false;}
+  var file=new File([blob],nombre,{type:"image/png"}),fallo=false;
+  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:"Bibliomapa",text:texto});return "hoja";}}
+  catch(e){if(e&&e.name==="AbortError")return false;fallo=true;}
   var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=nombre;document.body.appendChild(a);a.click();a.remove();
-  showToast("Imagen guardada 📸 Súbela a tus stories");
-  return true; // true = compartida o descargada; false = hoja cancelada (compartirSesionStory solo apunta la marca con true)
+  showToast(fallo?"No se pudo abrir compartir · imagen guardada 📸":"Imagen guardada 📸 Súbela a tus stories");
+  return "descarga";
 }
 async function dibujarBosque(g,ses,x0,y0,ancho,alto){
   // suelo
@@ -346,7 +350,8 @@ async function dibujarBosque(g,ses,x0,y0,ancho,alto){
 }
 /* Imagen del bosque de un periodo (por defecto el de la pestaña: FOREST_PERIOD). `origen` es el botón 📸 que
    la lanzó («📸 Compartir» del bosque, «Comparte tu día», «Compartir mi semana»): mismo candado que la sesión.
-   Devuelve true si se compartió o descargó (y guarda DATA.ultimaCompartida tipo "bosque"), false si no. */
+   Devuelve true si se compartió o descargó (y guarda DATA.ultimaCompartida tipo "bosque"), false si no; el motivo
+   ("hoja"/"descarga") lo usa conCandado para que el botón diga «✓ Compartida» o «✓ Guardada». */
 async function compartirBosque(origen,periodo){
   var per=periodo||FOREST_PERIOD,ses=sesionesPeriodo(DATA.sessions,per==="all"?"month":per);
   if(!ses.length){showToast("Planta algún árbol primero 🌱");return false;}
@@ -360,9 +365,9 @@ async function compartirBosque(origen,periodo){
     await dibujarBosque(g,ses,70,560,W-140,1000);
     textoC(g,"Planta tu bosque estudiando",W/2,1700,"600 48px system-ui,sans-serif","rgba(255,255,255,.9)");
     textoC(g,"bibliomapa.es",W/2,1790,"800 64px system-ui,sans-serif");
-    var hecho=await compartirLienzo(L.c,"mi-bosque.png","Mi bosque de estudio 🌳 "+hMin(min)+" · bibliomapa.es");
-    if(hecho){DATA.ultimaCompartida={fecha:ymd(),min:min,tipo:"bosque"};saveUserData();}
-    return hecho;
+    var motivo=await compartirLienzo(L.c,"mi-bosque.png","Mi bosque de estudio 🌳 "+hMin(min)+" · bibliomapa.es");
+    if(motivo){DATA.ultimaCompartida={fecha:ymd(),min:min,tipo:"bosque"};saveUserData();}
+    return motivo;
   });
 }
 /* Tarjeta de una sesión (1080×1920, mismo lienzo y letra que la del bosque). Solo datos de la propia
@@ -399,37 +404,41 @@ async function compartirSesionStory(id,titulo,origen){
   var s=typeof id==="number"?DATA.sessions[id]:DATA.sessions.filter(function(x){return x.id===id;})[0]; if(!s)return false;
   return conCandado(origen,async function(){
     showToast("Preparando tu imagen…");
-    var hecho=await compartirLienzo(await dibujarSesionStory(s,titulo),"mi-sesion.png",(titulo?titulo+": ":"He estudiado ")+hMin(s.min)+" 📚 bibliomapa.es");
-    // «📸 Ayer compartiste…» de la bienvenida de mañana: solo si se compartió o descargó de verdad (no al cancelar)
-    if(hecho){DATA.ultimaCompartida={fecha:ymd(),min:s.min};saveUserData();}
-    return hecho;
+    var motivo=await compartirLienzo(await dibujarSesionStory(s,titulo),"mi-sesion.png",(titulo?titulo+": ":"He estudiado ")+hMin(s.min)+" 📚 bibliomapa.es");
+    // «📸 Ayer compartiste…» de la bienvenida de mañana: si se compartió o se descargó (la descarga es para subirla
+    // a stories, así que también cuenta), nunca al cancelar
+    if(motivo){DATA.ultimaCompartida={fecha:ymd(),min:s.min};saveUserData();}
+    return motivo;
   });
 }
 /* Candado común de las imágenes para stories (sesión y bosque): mientras se dibuja y está abierta la hoja de
    compartir, el botón que lo lanzó queda disabled + aria-busy y cualquier otro toque se ignora, así un doble
    toque no genera dos imágenes ni abre la hoja dos veces. Se restaura siempre en el finally (también si se
-   cancela la hoja o falla el dibujo, con aviso suave). Devuelve lo que devuelva fn (true/false). */
+   cancela la hoja o falla el dibujo, con aviso suave). fn devuelve el motivo ("hoja"/"descarga") o false; conCandado
+   devuelve true/false (así compartirBosque y compartirSesionStory siguen siendo booleanas para quien las llama) y pasa
+   el motivo a marcarCompartida. */
 var compartiendoImagen=false;
 async function conCandado(origen,fn){
   if(compartiendoImagen)return false;
   var b=origen||(window.event&&window.event.currentTarget);if(!(b&&b.tagName==="BUTTON"))b=null;
   compartiendoImagen=true;if(b){b.disabled=true;b.setAttribute("aria-busy","true");}
-  var hecho=false;
-  try{return hecho=!!(await fn());}
-  catch(e){showToast("No se pudo preparar la imagen. Prueba otra vez");return false;}
-  finally{compartiendoImagen=false;if(b){b.disabled=false;b.removeAttribute("aria-busy");if(hecho)marcarCompartida(b);}}
+  var motivo=false;
+  try{motivo=await fn();return !!motivo;}
+  catch(e){motivo=false;showToast("No se pudo preparar la imagen. Prueba otra vez");return false;}
+  finally{compartiendoImagen=false;if(b){b.disabled=false;b.removeAttribute("aria-busy");if(motivo)marcarCompartida(b,motivo);}}
 }
-/* Premio pequeño al compartir: el botón de origen dice «✓ Compartida» (solo «✓» en el 📸 cuadrado del historial)
-   en verde (--ok-tx) 2 s y vuelve a su contenido exacto. Solo con true: si se cancela o falla, no cambia nada.
+/* Premio pequeño al compartir: el botón de origen dice «✓ Compartida» (o «✓ Guardada» si el motivo es "descarga":
+   no se abrió ninguna hoja, la imagen quedó en el dispositivo; solo «✓» en el 📸 cuadrado del historial)
+   en verde (--ok-tx) 2 s y vuelve a su contenido exacto. Solo con motivo: si se cancela o falla, no cambia nada.
    El lector de pantalla lo oye por una región sr-solo aria-live="polite" (el texto del botón no basta: varios
    llevan aria-label, que tapa su contenido). Un segundo true durante esos 2 s no reescribe el texto guardado. */
 var COMPARTIDA_MS=2000;
-function marcarCompartida(b){
-  var v=document.getElementById("avisoCompartida");
+function marcarCompartida(b,motivo){
+  var guardada=motivo==="descarga",v=document.getElementById("avisoCompartida");
   if(!v){v=document.createElement("span");v.id="avisoCompartida";v.className="sr-solo";v.setAttribute("aria-live","polite");document.body.appendChild(v);}
-  v.textContent="";setTimeout(function(){v.textContent="Imagen compartida";},50);
+  v.textContent="";setTimeout(function(){v.textContent=guardada?"Imagen guardada":"Imagen compartida";},50);
   if(b.classList.contains("compartida"))return;
-  var antes=b.innerHTML;b.classList.add("compartida");b.textContent=b.classList.contains("feed-share")?"✓":"✓ Compartida";
+  var antes=b.innerHTML;b.classList.add("compartida");b.textContent=b.classList.contains("feed-share")?"✓":guardada?"✓ Guardada":"✓ Compartida";
   setTimeout(function(){b.innerHTML=antes;b.classList.remove("compartida");},COMPARTIDA_MS);
 }
 async function compartirStoryDia(origen){
