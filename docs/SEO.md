@@ -451,3 +451,28 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
 - Más ciudades en `/bibliotecas/examenes/` en cuanto publiquen su calendario 2026-27 (Barcelona, Valencia…; lista de webs en
   BACKLOG, tarea «Exámenes ·»): basta con añadir la entrada con fuente y fecha a `temporada-examenes.js` y regenerar.
 - Medir en Search Console qué búsquedas traen visitas y reforzar esas páginas.
+
+## Hecho (2026-11-13) · GEO (asistentes de IA) y guías por problema (1080 páginas, antes 1071)
+- **Guías `/estudiar/`** (`scripts/guias_seo.js`, las escribe `generar_paginas_seo.js`): hub + 8 páginas, una por problema que
+  resuelve la app y no por lugar: dónde estudiar hoy, temporizador Pomodoro, concentrarse sin el móvil (alternativa gratis a
+  Forest), estudiar con amigos, organizar exámenes, época de exámenes, ¿estará llena la biblioteca? y oposiciones/MIR.
+- Formato pensado para que buscadores y asistentes de IA citen la página: **la primera frase responde** a la pregunta (en
+  negrita), luego secciones cortas, pasos (`HowTo`), preguntas frecuentes abiertas (`FAQPage`), `WebPage` con `abstract`,
+  `dateModified`, `about` → `WebApplication` (gratis, `Offer` 0 €) y `publisher` → `Organization`. Solo funciones que la app
+  tiene; las cifras ({N} bibliotecas, {V} verificadas, {P} provincias) salen de los datos al regenerar.
+- **`/llms.txt`** (estándar llmstxt.org): resumen para IA con las cifras reales, la procedencia de los datos y enlaces a los hubs
+  y a las guías. Se regenera con el resto.
+- **`robots.txt`** nombra y permite los rastreadores de buscadores y de IA (OAI-SearchBot, ChatGPT-User, GPTBot, ClaudeBot,
+  Claude-SearchBot, PerplexityBot, Google-Extended, Applebot-Extended, Bingbot…).
+- Enlace «Guías» en la cabecera de todas las páginas generadas (cambia la huella y el lastmod de todas una vez).
+
+### Lo que falta y solo puede hacer Marcos (sin esto, nada de lo anterior posiciona)
+1. Publicar en **bibliomapa.es** (Vercel) y que la portada y `/bibliotecas/` respondan 200.
+2. **Google Search Console** y **Bing Webmaster Tools** (Bing alimenta a ChatGPT y Copilot): verificar el dominio y enviar
+   `https://bibliomapa.es/sitemap.xml`. En Search Console, «Inspeccionar URL» → «Solicitar indexación» de la portada,
+   `/bibliotecas/` y `/estudiar/`.
+3. **Perfil de Google Business**: no aplica (no hay local físico); sí crear perfiles de marca con el mismo nombre y enlace
+   (Instagram, TikTok, X, LinkedIn) para que buscadores e IA reconozcan «Bibliomapa» como entidad, y añadirlos a `sameAs`.
+4. **Enlaces desde fuera** (lo que más pesa): delegaciones de estudiantes, consejos de estudiantes, academias de MIR y
+   oposiciones, blogs universitarios, foros (Reddit r/spain, r/oposiciones, Forocoches) y prensa local en época de exámenes.
+

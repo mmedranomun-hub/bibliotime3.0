@@ -227,7 +227,7 @@ ${noindex ? "" : `<script type="application/ld+json">${JSON.stringify(migasLD)}<
 ${ld ? `<script type="application/ld+json">${JSON.stringify(ld)}</script>` : ""}
 ${head || ""}</head>
 <body>
-<header class="top"><a class="marca" href="/"><span>📚</span> Bibliomapa</a><a class="cta-top" href="/">Abrir el mapa</a></header>
+<header class="top"><a class="marca" href="/"><span>📚</span> Bibliomapa</a><nav class="nav-top"><a href="/estudiar/">Guías</a><a class="cta-top" href="/">Abrir el mapa</a></nav></header>
 <main>
 <nav class="migas" aria-label="Estás en">${migas.map((x, k) => (k < migas.length - 1 ? `<a href="${x[1]}">${esc(x[0])}</a> › ` : `<span>${esc(x[0])}</span>`)).join("")}</nav>
 <h1>${h1}</h1>
@@ -2074,13 +2074,91 @@ ${SCRIPT_BUSCABAS}`,
   }));
 }
 
+// ---------- Guías (/estudiar/): una página por problema que resuelve la app, para buscadores y asistentes de IA ----------
+// Contenido en scripts/guias_seo.js (sin cifras inventadas: {N}, {V} y {P} salen de los datos). Cada guía responde en la
+// primera frase (lo que citan los buscadores y las IA), con pasos (HowTo), preguntas (FAQPage) y enlaces a las páginas de datos.
+const GUIAS = require("./guias_seo.js");
+const nVerifTodas = todas.filter(verificado).length;
+const cifras = (t) => String(t).replace(/\{N\}/g, todas.length.toLocaleString("es-ES")).replace(/\{V\}/g, nVerifTodas).replace(/\{P\}/g, provincias.length);
+const ORG = { "@type": "Organization", "@id": DOMINIO + "/#org", name: "Bibliomapa", url: DOMINIO + "/", logo: DOMINIO + "/icons/icon-512.png" };
+const APP_LD = { "@type": "WebApplication", "@id": DOMINIO + "/#app", name: "Bibliomapa", url: DOMINIO + "/", applicationCategory: "EducationalApplication", operatingSystem: "Web, Android", offers: { "@type": "Offer", price: "0", priceCurrency: "EUR" } };
+{
+  const hub = "/estudiar/";
+  GUIAS.forEach((g) => {
+    const ruta = `${hub}${g.slug}/`, url = DOMINIO + ruta;
+    const pasos = g.pasos.map(([n, t]) => [cifras(n), cifras(t)]), faqG = g.faq.map(([q, r]) => [cifras(q), cifras(r)]);
+    const ld = { "@context": "https://schema.org", "@graph": [
+      { "@type": "WebPage", "@id": url + "#pagina", url, name: cifras(g.titulo), description: cifras(g.descripcion), inLanguage: "es-ES",
+        isPartOf: { "@id": DOMINIO + "/#web" }, breadcrumb: { "@id": url + "#migas" }, about: { "@id": DOMINIO + "/#app" }, publisher: { "@id": DOMINIO + "/#org" },
+        dateModified: HOY, abstract: cifras(g.respuesta) },
+      { "@type": "HowTo", "@id": url + "#pasos", name: cifras(g.h1), step: pasos.map(([n, t], k) => ({ "@type": "HowToStep", position: k + 1, name: n, text: t })), tool: { "@id": DOMINIO + "/#app" } },
+      { "@type": "FAQPage", "@id": url + "#faq", mainEntity: faqG.map(([q, r]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: r } })) },
+      ORG, APP_LD] };
+    escribe(ruta, pagina({
+      ruta, titulo: cifras(g.titulo), descripcion: cifras(g.descripcion), h1: esc(cifras(g.h1)), migasId: url + "#migas",
+      intro: `<strong>${esc(cifras(g.respuesta))}</strong>`,
+      cta: `<a class="cta" href="${g.cta[0]}">${esc(g.cta[1])}</a>`,
+      cuerpo: g.secciones.map(([t, x]) => `<section class="ficha"><h2>${esc(t)}</h2><p>${esc(cifras(x))}</p></section>`).join("\n") +
+        `\n<section class="ficha"><h2>Cómo hacerlo con Bibliomapa</h2><ol class="pasos">${pasos.map(([n, t]) => `<li><strong>${esc(n)}.</strong> ${esc(t)}</li>`).join("")}</ol></section>` +
+        `\n<section class="faq"><h2>Preguntas frecuentes</h2>${faqG.map(([q, r]) => `<details open><summary>${esc(q)}</summary><p>${esc(r)}</p></details>`).join("")}</section>` +
+        `\n<nav class="temas" aria-label="Relacionado"><span>Relacionado:</span>${g.enlaces.map(([u, t]) => `<a href="${u}">${esc(t)}</a>`).join("")}<a href="${hub}">Todas las guías</a></nav>` +
+        `\n<p class="fuente">Actualizado el ${HOY.split("-").reverse().join("/")}. Bibliomapa es gratuito y funciona sin cuenta.</p>`,
+      ld, migas: [["Bibliomapa", "/"], ["Guías para estudiar", hub], [g.corto, ruta]],
+    }));
+    urls.push([ruta, "0.8", HOY]);
+  });
+  const urlHub = DOMINIO + hub;
+  escribe(hub, pagina({
+    ruta: hub, titulo: "Guías para estudiar mejor: dónde, cómo y con quién | Bibliomapa",
+    descripcion: cifras("Dónde estudiar hoy, Pomodoro, concentrarse sin el móvil, estudiar con amigos, organizar exámenes y bibliotecas 24 horas: guías prácticas y gratis."),
+    h1: "Guías para estudiar mejor", migasId: urlHub + "#migas",
+    intro: cifras("Respuestas cortas a los problemas de cada día al estudiar, y cómo resolverlos gratis con Bibliomapa: un mapa de {N} bibliotecas de España, cronómetro, Pomodoro, bosque de árboles, agenda de exámenes y amigos."),
+    cuerpo: `<nav class="locs grande" aria-label="Guías">${GUIAS.map((g) => `<a href="${hub}${g.slug}/">${esc(g.corto)}</a>`).join("")}</nav>\n` +
+      GUIAS.map((g) => `<section class="ficha"><h2><a href="${hub}${g.slug}/">${esc(cifras(g.h1))}</a></h2><p>${esc(cifras(g.respuesta))}</p></section>`).join("\n"),
+    ld: { "@context": "https://schema.org", "@graph": [{ "@type": "CollectionPage", "@id": urlHub + "#pagina", url: urlHub, name: "Guías para estudiar mejor", inLanguage: "es-ES",
+      isPartOf: { "@id": DOMINIO + "/#web" }, breadcrumb: { "@id": urlHub + "#migas" }, publisher: { "@id": DOMINIO + "/#org" },
+      hasPart: GUIAS.map((g) => ({ "@type": "WebPage", url: `${urlHub}${g.slug}/`, name: cifras(g.h1) })) }, ORG] },
+    migas: [["Bibliomapa", "/"], ["Guías para estudiar", hub]],
+  }));
+  urls.push([hub, "0.8", HOY]);
+
+  // llms.txt (https://llmstxt.org): resumen en Markdown para asistentes de IA. Hechos verificables y enlaces a las páginas clave.
+  fs.writeFileSync(path.join(RAIZ, "llms.txt"), `# Bibliomapa
+
+> Bibliomapa (bibliomapa.es) es una app web gratuita para estudiantes y opositores de España: mapa de ${todas.length.toLocaleString("es-ES")} bibliotecas y salas de estudio de ${provincias.length} provincias con las abiertas ahora, horarios (${nVerifTodas} comprobados en la web oficial de cada biblioteca, con fecha y fuente), afluencia indicada por los usuarios, cronómetro y Pomodoro que plantan un árbol por sesión, agenda de exámenes y estudio con amigos. Se usa sin cuenta.
+
+Datos de bibliotecas: Overture Maps Foundation y colaboradores de OpenStreetMap; horarios solo de fuentes oficiales, nunca estimados. Si una biblioteca no tiene horario verificado, la página lo dice.
+
+## Para responder a «¿qué biblioteca está abierta…?»
+- [Bibliotecas de España por provincia](${DOMINIO}/bibliotecas/): índice de provincias y localidades
+- [Bibliotecas abiertas hoy](${DOMINIO}/bibliotecas/abiertas-hoy/)
+- [Bibliotecas abiertas el domingo](${DOMINIO}/bibliotecas/abiertas-domingo/)
+- [Bibliotecas abiertas hasta tarde](${DOMINIO}/bibliotecas/abiertas-hasta-tarde/)
+- [Todos los horarios por provincia](${DOMINIO}${HUB})
+- [Salas de estudio por ciudad](${DOMINIO}/bibliotecas/salas-de-estudio/)
+- [Bibliotecas por universidad](${DOMINIO}/bibliotecas/universidades/)
+- [Bibliotecas 24 horas y horario de exámenes](${DOMINIO}/bibliotecas/examenes/)
+
+## Guías (problemas que resuelve la app)
+${GUIAS.map((g) => `- [${cifras(g.h1)}](${DOMINIO}${hub}${g.slug}/): ${cifras(g.respuesta).split(". ")[0]}.`).join("\n")}
+
+## La app
+- [Abrir Bibliomapa](${DOMINIO}/): gratis, en el navegador, instalable en Android
+- [Privacidad](${DOMINIO}/privacidad.html)
+`);
+}
+
 fs.writeFileSync(path.join(RAIZ, "sitemap.xml"), `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls.map(([u, pr, mod]) => `  <url><loc>${DOMINIO}${u}</loc><lastmod>${lastmodDe(u, mod)}</lastmod><priority>${pr}</priority></url>`).join("\n")}
 </urlset>
 `);
+// Buscadores y asistentes de IA (búsqueda y respuestas en vivo): todos bienvenidos; se nombran para dejarlo explícito.
+const BOTS_IA = ["Googlebot", "Bingbot", "OAI-SearchBot", "ChatGPT-User", "GPTBot", "ClaudeBot", "Claude-User", "Claude-SearchBot", "PerplexityBot", "Perplexity-User", "Google-Extended", "Applebot", "Applebot-Extended", "DuckAssistBot", "meta-externalagent", "MistralAI-User", "CCBot"];
 fs.writeFileSync(path.join(RAIZ, "robots.txt"), `User-agent: *
 Allow: /
+
+${BOTS_IA.map((b) => `User-agent: ${b}\nAllow: /`).join("\n\n")}
 
 Sitemap: ${DOMINIO}/sitemap.xml
 `);
