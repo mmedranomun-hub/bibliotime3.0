@@ -58,6 +58,9 @@
        no dos nodos de página sueltos para la misma URL. Y fichas cuyo WebPage #pagina no declara hasPart
        {"@id": "<ficha>#faq"} teniendo FAQPage, o lo declara sin tenerlo (recíproco).
 
+     - la vista previa al compartir: páginas indexables (bibliotecas/… y las guías de /estudiar/) sin og:site_name,
+       og:image absoluta (https://bibliomapa.es/… de un archivo del repo) con og:image:width/height iguales a sus
+       dimensiones reales y og:image:alt, o sin twitter:card (summary o summary_large_image), o con alguna repetida.
      - la verificación de Google Search Console: una <meta name="google-site-verification"> vacía, «null»/«undefined» o
        que no parece un código, más de una (en varias páginas o repetida), fuera de la portada (index.html, la única
        que Google mira para la propiedad de prefijo de URL) o distinta de GSC_VERIFICACION de generar_paginas_seo.js
@@ -716,7 +719,55 @@ for (const [r, h] of [...html, ["/404.html", fs.existsSync(f404) ? fs.readFileSy
   if (/_vercel\/insights|gc\.zgo\.at|goatcounter|googletagmanager|google-analytics/.test(h)) analiticaMal.push(`${r}: script de analítica puesto a mano`);
 }
 console.log(`Analítica (/analitica.js en el <head>, apagada): ${html.size + 1 - new Set(analiticaMal.map((x) => x.split(":")[0])).size} de ${html.size + 1} páginas (con la 404) · mal: ${analiticaMal.length}${analiticaMal.length ? "\n" + muestra(analiticaMal, (r) => "  " + r) : ""}`);
-console.log(`Search Console (meta google-site-verification): ${gscEn.length ? gscEn.map(([r]) => r).join(", ") : "ninguna (verificación por DNS o pendiente)"} · mal: ${gscMal.length}${gscMal.length ? "\n" + muestra(gscMal, (r) => "  " + r) : ""}`);
+// Vista previa al compartir (Objetivo 8): cada página indexable (bibliotecas/… y las guías de /estudiar/) lleva, en el
+// <head> y una sola vez, og:site_name, og:image absoluta a https://bibliomapa.es/… de un archivo que existe en el repo,
+// og:image:width/height iguales a las dimensiones reales del PNG/JPEG, og:image:alt no vacío y twitter:card
+// (summary o summary_large_image). Sin og:image, WhatsApp o Telegram enseñan solo texto al compartir una ficha.
+const vistaMal = [], dimsCache = new Map();
+function dimsImagen(f) {
+  if (dimsCache.has(f)) return dimsCache.get(f);
+  let d = null;
+  try {
+    const b = fs.readFileSync(f);
+    if (b.slice(1, 4).toString() === "PNG") d = [b.readUInt32BE(16), b.readUInt32BE(20)];
+    else if (b[0] === 0xff && b[1] === 0xd8) for (let i = 2; i < b.length - 9;) {
+      if (b[i] !== 0xff) break;
+      const m = b[i + 1], len = b.readUInt16BE(i + 2);
+      if (m >= 0xc0 && m <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(m)) { d = [b.readUInt16BE(i + 7), b.readUInt16BE(i + 5)]; break; }
+      i += 2 + len;
+    }
+  } catch (e) { d = null; }
+  dimsCache.set(f, d);
+  return d;
+}
+const metaCab = (cab, attr, nombre) => [...cab.matchAll(new RegExp(`<meta ${attr}="${nombre.replace(/[.:]/g, "\\$&")}" content="([^"]*)">`, "g"))].map((m) => decodifica(m[1]));
+const guias = [];
+if (fs.existsSync(path.join(RAIZ, "estudiar"))) (function recorreG(dir) {
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    const f = path.join(dir, e.name);
+    if (e.isDirectory()) recorreG(f); else if (e.name === "index.html") guias.push([rutaDe(f), fs.readFileSync(f, "utf8")]);
+  }
+})(path.join(RAIZ, "estudiar"));
+const conVista = [...html, ...guias];
+for (const [r, h] of conVista) {
+  const cab = h.split("</head>")[0];
+  const uno = (attr, n) => { const l = metaCab(cab, attr, n); if (l.length !== 1) vistaMal.push(`${r}: ${n} ×${l.length}`); return l[0]; };
+  const sn = uno("property", "og:site_name");
+  if (sn !== undefined && !sn.trim()) vistaMal.push(`${r}: og:site_name vacío`);
+  const img = uno("property", "og:image"), an = uno("property", "og:image:width"), al = uno("property", "og:image:height"), alt = uno("property", "og:image:alt");
+  const tc = uno("name", "twitter:card");
+  if (tc !== undefined && !["summary", "summary_large_image"].includes(tc)) vistaMal.push(`${r}: twitter:card «${tc}»`);
+  if (alt !== undefined && !alt.trim()) vistaMal.push(`${r}: og:image:alt vacío`);
+  if (img === undefined) continue;
+  if (!img.startsWith(DOMINIO + "/")) { vistaMal.push(`${r}: og:image no absoluta a ${DOMINIO}/ (${img})`); continue; }
+  const fImg = path.join(RAIZ, img.slice(DOMINIO.length + 1).split(/[?#]/)[0]);
+  const d = fs.existsSync(fImg) ? dimsImagen(fImg) : null;
+  if (!fs.existsSync(fImg)) vistaMal.push(`${r}: og:image ${img} no existe en el repo`);
+  else if (!d) vistaMal.push(`${r}: og:image ${img} no es un PNG/JPEG legible`);
+  else if (String(d[0]) !== an || String(d[1]) !== al) vistaMal.push(`${r}: og:image:width/height ${an}×${al} ≠ real ${d[0]}×${d[1]}`);
+}
+console.log(`Vista previa al compartir (og:site_name, og:image absoluta con width/height reales y alt, twitter:card): ${conVista.length - new Set(vistaMal.map((x) => x.split(":")[0])).size} de ${conVista.length} páginas indexables (${html.size} de bibliotecas/ y ${guias.length} guías de /estudiar/) · mal: ${vistaMal.length}${vistaMal.length ? "\n" + muestra(vistaMal, (r) => "  " + r) : ""}`);
+console.log(`Search Console (meta google-site-verification):${gscEn.length ? gscEn.map(([r]) => r).join(", ") : "ninguna (verificación por DNS o pendiente)"} · mal: ${gscMal.length}${gscMal.length ? "\n" + muestra(gscMal, (r) => "  " + r) : ""}`);
 console.log(`IndexNow: ${indexNowClave ? `clave puesta, /${indexNowClave}.txt` : "sin clave (INDEXNOW_CLAVE = null)"} · mal: ${indexNowMal.length}${indexNowMal.length ? "\n" + muestra(indexNowMal, (r) => "  " + r) : ""}`);
 // ---------- Prueba de «despliega primero» de avisar_indexnow.js ----------
 // Copia avisar_indexnow.js a una carpeta temporal con un generar_paginas_seo.js mínimo (solo una INDEXNOW_CLAVE
@@ -772,5 +823,5 @@ async function probarAvisoIndexNow() {
   const t0 = Date.now();
   const [avisoMal, nCasos] = await probarAvisoIndexNow();
   console.log(`IndexNow «despliega primero» (avisar_indexnow.js --base contra servidor local, sin red real): ${nCasos - new Set(avisoMal.map((x) => x.split(" ")[0])).size} de ${nCasos} casos bien (200 con la clave → 0; 404 u otro texto → 1) en ${Date.now() - t0} ms · mal: ${avisoMal.length}${avisoMal.length ? "\n" + muestra(avisoMal, (r) => "  " + r) : ""}`);
-  if (migasVisMal.length || itemMigasMal.length || avisoMal.length || analiticaMal.length || gscMal.length || indexNowMal.length || migasMal.length || mainEntityMal.length || faqMal.length || indiceMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
+  if (migasVisMal.length || itemMigasMal.length || avisoMal.length || vistaMal.length || analiticaMal.length || gscMal.length || indexNowMal.length || migasMal.length || mainEntityMal.length || faqMal.length || indiceMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
 })();

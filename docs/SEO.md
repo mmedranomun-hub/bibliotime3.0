@@ -557,6 +557,18 @@ despliegue sin tener que mirar el `sitemap.xml`.
 - Las páginas generadas ya enlazaban la portada (marca y «Abrir el mapa» de la cabecera, CTA y «Empezar gratis»): sin cambios en el generador.
 - Pendiente: medir en Search Console cuando el dominio esté conectado.
 
+## Hecho (2026-11-13) · Vista previa con imagen al compartir (1196 páginas indexables, sin cambio de número)
+- La plantilla `pagina()` de `scripts/generar_paginas_seo.js` añade a todas las páginas (`/bibliotecas/…`, las guías de
+  `/estudiar/` y la 404) `og:image` absoluta `https://bibliomapa.es/icons/icon-512.png` (`OG_IMAGEN`, PNG 512×512 ya
+  publicado), `og:image:width`/`og:image:height` 512, `og:image:alt` y `twitter:card` `summary` (miniatura cuadrada;
+  `summary_large_image` pediría una imagen 2:1 que no existe). `og:site_name` ya estaba. Así WhatsApp, Telegram o X
+  enseñan logo + título + descripción en vez de solo texto.
+- Esas etiquetas no cuentan para la huella del `lastmod` (como `analitica.js`): añadirlas no movió ninguna fecha del sitemap.
+- `scripts/comprobar_paginas_seo.js` falla si a una página indexable (bibliotecas/ y estudiar/) le falta o tiene repetida
+  cualquiera de ellas, si `og:image` no es `https://bibliomapa.es/…` de un archivo que existe en el repo, o si
+  width/height no son las dimensiones reales del PNG/JPEG (las lee de la cabecera).
+- La portada `index.html` tiene `twitter:card` pero aún no `og:image` (pendiente en el backlog).
+
 ## Siguientes mejoras (en el backlog)
 - Más horarios verificados (las páginas con horario rinden mucho mejor: es lo que la gente busca).
 - Ampliar las páginas por biblioteca a grandes ciudades que no son capital (Gijón, Vigo, Cartagena, Jerez…).

@@ -200,6 +200,10 @@ function itemBib(b) {
 // migasId: @id opcional del BreadcrumbList (<ruta>#migas: fichas, índice, provincias, localidades, temáticas de España,
 // de provincia y de localidad, los hubs de horarios, universidades, exámenes y salas de estudio, universidades, ciudades
 // de exámenes y salas de estudio de provincia y localidad), para enlazarlo desde su WebPage o CollectionPage con breadcrumb (ver idMigasDe/conMigas).
+// Vista previa al compartir (WhatsApp, Telegram, X…): imagen fija ya publicada en el repo, en URL absoluta. Es cuadrada
+// (512×512, el icono de la app), por eso twitter:card es «summary» (miniatura) y no «summary_large_image» (pide 2:1).
+// Si se cambia la imagen, actualizar ancho y alto con sus dimensiones reales (file icons/icon-512.png).
+const OG_IMAGEN = { url: "https://bibliomapa.es/icons/icon-512.png", ancho: 512, alto: 512, alt: "Logotipo de Bibliomapa, el mapa de bibliotecas y salas de estudio de España" };
 const h1De = new Map(); // ruta → h1 (texto plano): de aquí salen los textos de «¿Buscabas…?» en la 404
 // FAQPage en el mismo grafo que su página (provincias, localidades, temáticas, hubs, salas, universidades, exámenes):
 // si la página lleva un FAQPage sin @id y un CollectionPage de su misma URL, el CollectionPage recibe @id <ruta>#pagina
@@ -237,6 +241,11 @@ ${noindex ? `<meta name="robots" content="noindex">` : `<link rel="canonical" hr
 <meta property="og:description" content="${esc(descripcion)}">
 ${noindex ? "" : `<meta property="og:url" content="${url}">
 `}<meta property="og:locale" content="es_ES">
+<meta property="og:image" content="${OG_IMAGEN.url}">
+<meta property="og:image:width" content="${OG_IMAGEN.ancho}">
+<meta property="og:image:height" content="${OG_IMAGEN.alto}">
+<meta property="og:image:alt" content="${esc(OG_IMAGEN.alt)}">
+<meta name="twitter:card" content="summary">
 <meta name="theme-color" content="#6c5ce7">
 <link rel="icon" href="/icons/favicon-32.png" type="image/png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
@@ -355,8 +364,10 @@ const SALIDA = path.join(RAIZ, "bibliotecas");
 // deja de fiarse del lastmod si no es exacto) y un cambio de plantilla o de datos sí lo mueve, aunque el horario
 // verificado (dateModified) sea anterior.
 const crypto = require("crypto");
-// La etiqueta de analitica.js no cuenta: no cambia lo que ve nadie (añadirla no debe mover el lastmod de 1000 URL).
-const huella = (txt) => crypto.createHash("sha1").update(String(txt).replace('<script src="/analitica.js" defer></script>\n', "")).digest("hex");
+// La etiqueta de analitica.js y las de vista previa al compartir (og:image*, twitter:card) no cuentan: no cambian lo que
+// ve quien lee la página ni lo que indexa Google (añadirlas no debe mover el lastmod de 1000 URL).
+const huella = (txt) => crypto.createHash("sha1").update(String(txt).replace('<script src="/analitica.js" defer></script>\n', "")
+  .replace(/<meta (property="og:image[^"]*"|name="twitter:card") content="[^"]*">\n/g, "")).digest("hex");
 const lastmodAntes = new Map(), huellaAntes = new Map(), huellaNueva = new Map();
 try {
   const sm = fs.readFileSync(path.join(RAIZ, "sitemap.xml"), "utf8");
