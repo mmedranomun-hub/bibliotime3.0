@@ -65,6 +65,15 @@ Las ejecuciones que caigan sin cuota fallan. En cuanto se regenera, la primera q
 retoma desde el registro y el backlog; el guardián además reactiva lo que el sistema haya apagado y relanza el director
 sin esperar a su hora. Una línea «⏳ en curso» de hace más de 90 min es de una vuelta cortada: se marca ⚠️ y se sigue. El trabajo a medias nunca se sube (solo lo que pasa `scripts/probar.py`).
 
+## Notas de oficio del director (aprendidas en el registro)
+- **Hora del registro:** hora de Madrid (`TZ=Europe/Madrid date +%H:%M`), no UTC. (La línea «20:49» del 13-11 está en UTC: fue a las 21:49 de Madrid.)
+- **Base de los agentes:** los worktrees de `Agent` nacen de `main`, no de la rama del bucle. Pide a cada agente que empiece con
+  `git fetch origin && git merge origin/claude/bucle-director` (o `git checkout -B trabajo origin/claude/bucle-director`), o tendrá
+  que resolver conflictos y puede rehacer trabajo ya integrado.
+- **IndexNow en el informe:** tras regenerar páginas, ejecuta `node scripts/avisar_indexnow.js --simular` y escribe en la línea del
+  registro «IndexNow: N URL con lastmod de hoy (no enviado: clave null)» —o «enviado por Marcos» cuando tenga clave—. Detalle en
+  `docs/SEO.md` («En el informe del bucle»).
+
 ## Registro de ejecuciones
 Formato: `AAAA-MM-DD HH:MM · quién · objetivo(s) · resultado (✅ subido / ⚠️ a medias / ❌ falló) · commit · métrica que movió`
 
@@ -290,3 +299,4 @@ Formato: `AAAA-MM-DD HH:MM · quién · objetivo(s) · resultado (✅ subido / �
 - 2026-11-13 20:49 · director/agente IndexNow · Objetivo 8 (`probarAvisoIndexNow()` añade servidor caído → 1 «No se pudo abrir…», y `--simular` y clave `null` → 0, «Simulación» y CERO peticiones contadas en el handler; probado a romper en 3 casos) · ✅ · 7f3d7c1→cherry-pick (partió de main: conflicto en la condición de salida resuelto conservando todas las listas de fallos) · casos de IndexNow 4 → 7, ~340 ms · director: páginas SEO 1230 → 1248, sitemap 1249 URL, 0 mal; IndexNow: 1249 URL con lastmod de hoy (no enviado: clave null); pruebas en verde, 0 errores; caché v133; carga CPU 4× 543 ms (sin markercluster)
 - nota del director 20:49: los worktrees de los agentes nacen de `main`, no de la rama del bucle; la próxima vuelta debe pedir a cada agente `git merge origin/claude/bucle-director` antes de empezar
 - 2026-11-13 22:18 · director · ⏳ en curso · (la de las 20:49 sigue en curso: solo datos/SEO) Objetivo 1 (horarios de la provincia con menos verificadas), Objetivo 4 (@id en las referencias isPartOf/hasPart)
+- 2026-11-13 22:30 · director (relanzado por el guardián) · documentación · ✅ · notas de oficio en este archivo: hora de Madrid en el registro, los agentes deben partir de la rama del bucle, IndexNow en el informe (cierra la tarea «Objetivo 8 · IndexNow en el informe del bucle») · sin agentes: la vuelta de las 22:18 sigue ⏳ con menos de 90 min y trabaja en datos/SEO, así que no se toca bibliotecas-espana.js, app.js ni index.html
