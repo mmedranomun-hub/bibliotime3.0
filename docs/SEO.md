@@ -544,7 +544,7 @@ no escribe ningún archivo y el script de avisos solo simula.
   contra un servidor local (p. ej. `python3 -m http.server 8000` en una carpeta con el .txt) y, con una base distinta
   de `https://bibliomapa.es`, **nunca** envía nada a IndexNow (solo dice cuántas URL estaban listas). Con `--simular`
   no se comprueba nada (ni red).
-  `node scripts/comprobar_paginas_seo.js` lo prueba solo en cada pasada (línea «IndexNow «despliega primero»…»): copia temporal con clave ficticia y servidores en 127.0.0.1, exige 0 con el .txt bien servido y 1 con 404 u otro texto; nunca toca la red real.
+  `node scripts/comprobar_paginas_seo.js` lo prueba solo en cada pasada (línea «IndexNow «despliega primero»…»): copia temporal con clave ficticia y servidores en 127.0.0.1, exige 0 con el .txt bien servido, 1 con 404, otro texto o el servidor caído («No se pudo abrir…»), y con `--simular` o `INDEXNOW_CLAVE = null` salida 0, «Simulación» y cero peticiones al servidor local (7 casos); nunca toca la red real.
 - Respuesta 200 o 202 = recibido. 403 = el .txt aún no está publicado (espera al despliegue). 422 = clave o URL que no
   coinciden. 429 = demasiados avisos: espera. Con `INDEXNOW_CLAVE = null` el script siempre simula.
 - Solo tiene sentido **después** de desplegar: si avisas antes, Bing rastrea la versión vieja.

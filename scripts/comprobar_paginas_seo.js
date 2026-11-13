@@ -801,51 +801,73 @@ for (const [r, h] of conVista) {
 console.log(`Vista previa al compartir (og:site_name, og:image absoluta con width/height reales y alt, twitter:card): ${conVista.length - new Set(vistaMal.map((x) => x.split(":")[0])).size} de ${conVista.length} páginas (portada, ${html.size} de bibliotecas/ y ${guias.length} guías de /estudiar/; imagen grande: ${conVista.filter(([, h]) => metaCab(h.split("</head>")[0], "name", "twitter:card")[0] === "summary_large_image").length}) · mal: ${vistaMal.length}${vistaMal.length ? "\n" + muestra(vistaMal, (r) => "  " + r) : ""}`);
 console.log(`Search Console (meta google-site-verification):${gscEn.length ? gscEn.map(([r]) => r).join(", ") : "ninguna (verificación por DNS o pendiente)"} · mal: ${gscMal.length}${gscMal.length ? "\n" + muestra(gscMal, (r) => "  " + r) : ""}`);
 console.log(`IndexNow: ${indexNowClave ? `clave puesta, /${indexNowClave}.txt` : "sin clave (INDEXNOW_CLAVE = null)"} · mal: ${indexNowMal.length}${indexNowMal.length ? "\n" + muestra(indexNowMal, (r) => "  " + r) : ""}`);
-// ---------- Prueba de «despliega primero» de avisar_indexnow.js ----------
-// Copia avisar_indexnow.js a una carpeta temporal con un generar_paginas_seo.js mínimo (solo una INDEXNOW_CLAVE
-// ficticia), su .txt y un sitemap.xml de una URL; por cada caso levanta un servidor http propio en 127.0.0.1 (puerto
-// libre) que sirve /<clave>.txt y exige: salida 0 si responde 200 con la clave (con y sin salto final) y 1 si da 404 o
-// un texto distinto. Usa --base http://127.0.0.1:<puerto> sin --simular (--simular no comprueba nada): con una base que
-// no es bibliomapa.es el script nunca hace el POST, y además el hijo arranca con un fetch que rechaza todo lo que no sea
-// 127.0.0.1. Los casos van en paralelo (≈ 0,2 s) y la carpeta temporal se borra siempre.
+// ---------- Prueba de avisar_indexnow.js contra un servidor local ----------
+// Copia avisar_indexnow.js a dos carpetas temporales («con-clave» y «sin-clave»), cada una con un generar_paginas_seo.js
+// mínimo (INDEXNOW_CLAVE ficticia o null), el .txt y un sitemap.xml de una URL. Por cada caso levanta un servidor http
+// propio en 127.0.0.1 (puerto libre) que sirve /<clave>.txt y CUENTA las peticiones, y lanza
+// --fecha … --base http://127.0.0.1:<puerto>. Exige:
+//  · «despliega primero»: 0 si responde 200 con la clave (con y sin salto final); 1 si da 404 u otro texto; 1 con
+//    «No se pudo abrir…» si el servidor ya está cerrado (puerto cerrado antes de lanzar el script);
+//  · simulación: 0, «Simulación» en la salida y CERO peticiones al servidor, con --simular y con INDEXNOW_CLAVE = null
+//    (se pasa --base igualmente: si la simulación hiciera una petición, el contador lo delata).
+// Con una base que no es bibliomapa.es el script nunca hace el POST, y además el hijo arranca con `-r sin-red.js`, un
+// fetch que rechaza todo lo que no sea 127.0.0.1. Los casos van en paralelo (≈ 0,3 s) y la carpeta se borra siempre.
 async function probarAvisoIndexNow() {
   const os = require("os"), http = require("http"), { spawn } = require("child_process");
   const mal = [], CLAVE = "clave-ficticia-de-prueba-1234", FECHA = "2026-01-01";
-  // nombre: [estado HTTP, texto servido, salida esperada de avisar_indexnow.js]
-  const casos = { bien: [200, CLAVE, 0], "bien-con-salto": [200, CLAVE + "\n", 0], "404": [404, "Not found", 1], "otro-texto": [200, "otra-clave-distinta", 1] };
+  // nombre (sin espacios): { st: estado HTTP, txt: texto servido, quiere: salida esperada, raiz, args extra, cerrado, sim }
+  const casos = {
+    bien: { st: 200, txt: CLAVE, quiere: 0 },
+    "bien-con-salto": { st: 200, txt: CLAVE + "\n", quiere: 0 },
+    "404": { st: 404, txt: "Not found", quiere: 1 },
+    "otro-texto": { st: 200, txt: "otra-clave-distinta", quiere: 1 },
+    "servidor-caido": { st: 200, txt: CLAVE, quiere: 1, cerrado: true },
+    simular: { st: 200, txt: CLAVE, quiere: 0, args: ["--simular"], sim: true },
+    "clave-null": { st: 200, txt: CLAVE, quiere: 0, raiz: "sin-clave", sim: true },
+  };
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "indexnow-prueba-"));
   const servidores = [];
   try {
-    fs.mkdirSync(path.join(tmp, "scripts"));
-    fs.copyFileSync(path.join(RAIZ, "scripts", "avisar_indexnow.js"), path.join(tmp, "scripts", "avisar_indexnow.js"));
-    fs.writeFileSync(path.join(tmp, "scripts", "generar_paginas_seo.js"), `"use strict";\nconst INDEXNOW_CLAVE = "${CLAVE}";\n`);
-    fs.writeFileSync(path.join(tmp, CLAVE + ".txt"), CLAVE + "\n");
-    fs.writeFileSync(path.join(tmp, "sitemap.xml"), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset><url><loc>https://bibliomapa.es/</loc><lastmod>${FECHA}</lastmod></url></urlset>\n`);
+    for (const [dir, valor] of [["con-clave", `"${CLAVE}"`], ["sin-clave", "null"]]) {
+      fs.mkdirSync(path.join(tmp, dir, "scripts"), { recursive: true });
+      fs.copyFileSync(path.join(RAIZ, "scripts", "avisar_indexnow.js"), path.join(tmp, dir, "scripts", "avisar_indexnow.js"));
+      fs.writeFileSync(path.join(tmp, dir, "scripts", "generar_paginas_seo.js"), `"use strict";\nconst INDEXNOW_CLAVE = ${valor};\n`);
+      if (valor !== "null") fs.writeFileSync(path.join(tmp, dir, CLAVE + ".txt"), CLAVE + "\n");
+      fs.writeFileSync(path.join(tmp, dir, "sitemap.xml"), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset><url><loc>https://bibliomapa.es/</loc><lastmod>${FECHA}</lastmod></url></urlset>\n`);
+    }
     fs.writeFileSync(path.join(tmp, "sin-red.js"), `const f = globalThis.fetch; globalThis.fetch = (u, o) => /^http:\\/\\/127\\.0\\.0\\.1:\\d+\\//.test(String(u)) ? f(u, o) : Promise.reject(new Error("red real bloqueada en la prueba: " + u));\n`);
-    const res = await Promise.all(Object.entries(casos).map(async ([nombre, [st, txt]]) => {
+    const res = await Promise.all(Object.entries(casos).map(async ([nombre, c]) => {
+      let peticiones = 0;
       const s = http.createServer((req, r) => {
-        const [e, t] = req.url === `/${CLAVE}.txt` ? [st, txt] : [404, "Not found"];
+        peticiones++;
+        const [e, t] = req.url === `/${CLAVE}.txt` ? [c.st, c.txt] : [404, "Not found"];
         r.writeHead(e, { "Content-Type": "text/plain; charset=utf-8" }); r.end(t);
       });
       servidores.push(s);
       await new Promise((ok, ko) => s.once("error", ko).listen(0, "127.0.0.1", ok));
-      const h = spawn(process.execPath, ["-r", path.join(tmp, "sin-red.js"), path.join(tmp, "scripts", "avisar_indexnow.js"), "--fecha", FECHA, "--base", `http://127.0.0.1:${s.address().port}`],
-        { cwd: tmp, env: { ...process.env, NODE_OPTIONS: "" }, stdio: ["ignore", "pipe", "pipe"] });
+      const puerto = s.address().port;
+      if (c.cerrado) await new Promise((ok) => s.close(ok)); // puerto cerrado: nadie escucha cuando arranca el script
+      const raiz = path.join(tmp, c.raiz || "con-clave");
+      const h = spawn(process.execPath, ["-r", path.join(tmp, "sin-red.js"), path.join(raiz, "scripts", "avisar_indexnow.js"), ...(c.args || []), "--fecha", FECHA, "--base", `http://127.0.0.1:${puerto}`],
+        { cwd: raiz, env: { ...process.env, NODE_OPTIONS: "" }, stdio: ["ignore", "pipe", "pipe"] });
       let out = ""; h.stdout.on("data", (d) => (out += d)); h.stderr.on("data", (d) => (out += d));
       const reloj = setTimeout(() => h.kill("SIGKILL"), 4000);
-      const code = await new Promise((ok) => h.on("close", (c) => { clearTimeout(reloj); ok(c); }));
-      return [nombre, code, out];
+      const code = await new Promise((ok) => h.on("close", (cd) => { clearTimeout(reloj); ok(cd); }));
+      return [nombre, code, out, peticiones];
     }));
-    for (const [nombre, code, out] of res) {
-      const [st, txt, quiere] = casos[nombre];
+    for (const [nombre, code, out, peticiones] of res) {
+      const c = casos[nombre], ult = out.trim().split("\n").pop().slice(0, 140);
       if (/red real bloqueada/.test(out)) mal.push(`${nombre}: intentó salir a la red real`);
-      else if (code !== quiere) mal.push(`${nombre} (HTTP ${st} «${txt.trim()}»): salida ${code}, se esperaba ${quiere} · ${out.trim().split("\n").pop().slice(0, 140)}`);
-      else if (quiere === 0 && !/Clave publicada: .* → 200 con la clave exacta\./.test(out)) mal.push(`${nombre}: salida 0 sin «Clave publicada… 200 con la clave exacta» (¿no comprobó nada?)`);
+      else if (code !== c.quiere) mal.push(`${nombre} (${c.cerrado ? "puerto cerrado" : `HTTP ${c.st} «${c.txt.trim()}»`}${c.args ? " " + c.args.join(" ") : ""}${c.raiz ? " " + c.raiz : ""}): salida ${code}, se esperaba ${c.quiere} · ${ult}`);
+      else if (c.sim && !/Simulación/.test(out)) mal.push(`${nombre}: salida 0 sin «Simulación» en la salida`);
+      else if (c.sim && peticiones) mal.push(`${nombre}: la simulación hizo ${peticiones} petición(es) al servidor local (debe ser 0: sin red)`);
+      else if (c.cerrado && !/No se pudo abrir http:\/\/127\.0\.0\.1:\d+\//.test(out)) mal.push(`${nombre}: salida 1 sin «No se pudo abrir…» · ${ult}`);
+      else if (c.quiere === 0 && !c.sim && !/Clave publicada: .* → 200 con la clave exacta\./.test(out)) mal.push(`${nombre}: salida 0 sin «Clave publicada… 200 con la clave exacta» (¿no comprobó nada?)`);
     }
   } catch (e) {
     mal.push(`prueba: no se pudo hacer (${e.message})`);
   } finally {
-    for (const s of servidores) s.close();
+    for (const s of servidores) if (s.listening) s.close();
     fs.rmSync(tmp, { recursive: true, force: true });
   }
   return [mal, Object.keys(casos).length];
@@ -854,6 +876,6 @@ async function probarAvisoIndexNow() {
 (async () => {
   const t0 = Date.now();
   const [avisoMal, nCasos] = await probarAvisoIndexNow();
-  console.log(`IndexNow «despliega primero» (avisar_indexnow.js --base contra servidor local, sin red real): ${nCasos - new Set(avisoMal.map((x) => x.split(" ")[0])).size} de ${nCasos} casos bien (200 con la clave → 0; 404 u otro texto → 1) en ${Date.now() - t0} ms · mal: ${avisoMal.length}${avisoMal.length ? "\n" + muestra(avisoMal, (r) => "  " + r) : ""}`);
+  console.log(`IndexNow «despliega primero» y simulación (avisar_indexnow.js --base contra servidor local, sin red real): ${nCasos - new Set(avisoMal.map((x) => x.split(" ")[0])).size} de ${nCasos} casos bien (200 con la clave → 0; 404, otro texto o servidor caído → 1; --simular y clave null → 0 sin peticiones) en ${Date.now() - t0} ms · mal: ${avisoMal.length}${avisoMal.length ? "\n" + muestra(avisoMal, (r) => "  " + r) : ""}`);
   if (ariaActualMal.length || cpIdMal.length || migasVisMal.length || itemMigasMal.length || avisoMal.length || vistaMal.length || analiticaMal.length || gscMal.length || indexNowMal.length || migasMal.length || mainEntityMal.length || faqMal.length || indiceMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
 })();
