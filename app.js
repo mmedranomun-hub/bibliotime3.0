@@ -1539,11 +1539,25 @@ function popupHTML(b,i){
   return s;
 }
 /* ===== Compartir una biblioteca =====
-   Enlace https://bibliomapa.es/#bib=<índice>-<nombre> (el mismo que entiende comprobarEnlaceCompartido y que
-   usan las páginas SEO). No se enlaza la ficha SEO: su ruta depende de choques de nombres, de la provincia
-   deducida y de temporada-examenes.js, y la app no puede reproducirla con seguridad. Sin red ni datos personales. */
+   Si la biblioteca tiene ficha SEO, su URL (https://bibliomapa.es/bibliotecas/<prov>/<slug>/: título y vista previa
+   propios). La ruta no se puede deducir en la app (choques de nombres, provincia deducida, temporada-examenes.js):
+   la escribe generar_paginas_seo.js en fichas.json ({índice: ruta}), que se baja en segundo plano tras la carga.
+   Si aún no está, falla o la ruta no casa con el nombre, https://bibliomapa.es/#bib=<índice>-<nombre> (el que entiende
+   comprobarEnlaceCompartido). Tocar el botón nunca usa la red. Sin datos personales. */
 function slugBib(s){return String(s).normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");}
-function enlaceBib(i){var b=BIBLIOTECAS[i];return "https://bibliomapa.es/#bib="+i+"-"+slugBib(b.nombre).slice(0,40);}
+var FICHAS=null;
+function cargarFichas(){
+  return cargarFichas.p||(cargarFichas.p=fetch("fichas.json").then(function(r){if(!r.ok)throw 0;return r.json();})
+    .then(function(j){FICHAS=j&&typeof j==="object"?j:null;},function(){cargarFichas.p=null;}));
+}
+window.addEventListener("load",function(){setTimeout(function(){if(window.requestIdleCallback)requestIdleCallback(cargarFichas,{timeout:5000});else cargarFichas();},3000);});
+// Ruta de la ficha de i, solo si tiene forma de ruta de ficha y empieza como el nombre (fichas.json viejo → #bib=).
+function rutaFicha(i){
+  var r=FICHAS&&FICHAS[i],b=BIBLIOTECAS[i],m=typeof r==="string"&&/^\/bibliotecas\/[a-z0-9-]+\/([a-z0-9-]+)\/$/.exec(r);
+  if(!m||!b)return null;var n=slugBib(b.nombre),k=Math.min(12,n.length,m[1].length);
+  return n.slice(0,k)===m[1].slice(0,k)?r:null;
+}
+function enlaceBib(i){var r=rutaFicha(i);if(r)return "https://bibliomapa.es"+r;var b=BIBLIOTECAS[i];return "https://bibliomapa.es/#bib="+i+"-"+slugBib(b.nombre).slice(0,40);}
 // «abierta hoy …» solo con horario verificado (fuente https y fecha); si no, solo el nombre.
 function textoCompartirBib(b){
   var t=b.nombre;

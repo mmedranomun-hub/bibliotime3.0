@@ -1561,6 +1561,11 @@ temasEspana.forEach(({ t, l }) => {
 
 // páginas de cada biblioteca más buscada
 conPaginaPropia.forEach(paginaBiblioteca);
+// fichas.json: {índice en BIBLIOTECAS: ruta de su ficha}, para que «🔗 Compartir» de la app enlace la ficha (URL indexable
+// con título y vista previa) en vez de la portada con #bib=. La app lo baja en segundo plano; sin él, sigue con #bib=.
+{ const fichasJson = {};
+  [...paginaDe.keys()].sort((a, b) => a - b).forEach((i) => { fichasJson[i] = paginaDe.get(i); });
+  fs.writeFileSync(path.join(RAIZ, "fichas.json"), JSON.stringify(fichasJson) + "\n"); }
 
 // ---------- Páginas «Salas de estudio en <capital>» y su índice de España ----------
 // «3 bibliotecas universitarias y 4 públicas» sin los tipos en cero.

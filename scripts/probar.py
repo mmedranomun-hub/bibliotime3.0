@@ -1495,7 +1495,7 @@ PRUEBAS = [
     ("«🔗 Compartir» en el popup: aria-label, navigator.share con el enlace #bib, «Enlace copiado» si falla, y el enlace reabre la misma biblioteca", """
       var espera=n=>new Promise(r=>setTimeout(r,n)),propio=Object.prototype.hasOwnProperty.call(navigator,'share'),o=propio?navigator.share:null,dato=null;
       try{
-        var i=Math.min(500,BIBLIOTECAS.length-1),b=BIBLIOTECAS[i];
+        var i=Math.min(500,BIBLIOTECAS.length-1);while(i>0&&rutaFicha(i))i--;var b=BIBLIOTECAS[i];
         window.__map.closePopup();location.hash='';window.__selBib(i);await espera(900);
         var bt=document.querySelector('.leaflet-popup-content .bib-share');
         if(!bt)return 'sin botón en el popup';
@@ -1516,6 +1516,25 @@ PRUEBAS = [
         var h=document.querySelector('.leaflet-popup-content h2');
         return (h&&h.textContent===b.nombre)||('el enlace abre otra: '+(h&&h.textContent));
       }finally{if(propio)navigator.share=o;else delete navigator.share;document.querySelectorAll('.toast').forEach(x=>x.remove());}"""),
+    ("«🔗 Compartir» con fichas.json: una biblioteca con ficha comparte https://bibliomapa.es/bibliotecas/…/ (que existe), una sin ficha sigue con #bib=, y sin fichas.json vuelve a #bib=", """
+      var espera=n=>new Promise(r=>setTimeout(r,n)),propio=Object.prototype.hasOwnProperty.call(navigator,'share'),o=propio?navigator.share:null,dato=null,F0=FICHAS;
+      try{
+        await cargarFichas();if(!FICHAS)return 'no carga fichas.json';
+        var ks=Object.keys(FICHAS),buenas=ks.filter(k=>rutaFicha(+k));
+        if(ks.length<100||buenas.length!==ks.length)return 'rutas que no casan con el nombre: '+(ks.length-buenas.length)+' de '+ks.length;
+        var i=+ks.filter(k=>+k>=N_NAVARRA)[0],j=0;while(rutaFicha(j))j++;
+        var r=await fetch(FICHAS[i]);if(!r.ok)return 'la ficha no existe: '+FICHAS[i];
+        Object.defineProperty(navigator,'share',{configurable:true,writable:true,value:d=>{dato=d;return Promise.resolve();}});
+        window.__map.closePopup();location.hash='';window.__selBib(i);await espera(900);
+        var bt=document.querySelector('.leaflet-popup-content .bib-share');if(!bt)return 'sin botón en el popup';
+        bt.click();await espera(50);
+        if(!dato||dato.url!=='https://bibliomapa.es'+FICHAS[i])return 'con ficha no comparte la ficha: '+JSON.stringify(dato);
+        dato=null;compartirBib(j);await espera(50);
+        if(!dato||dato.url.indexOf('https://bibliomapa.es/#bib='+j+'-')!==0)return 'sin ficha no usa #bib=: '+JSON.stringify(dato);
+        FICHAS=null;dato=null;compartirBib(i);await espera(50);
+        if(!dato||dato.url.indexOf('https://bibliomapa.es/#bib='+i+'-')!==0)return 'sin fichas.json no vuelve a #bib=: '+JSON.stringify(dato);
+        return true;
+      }finally{FICHAS=F0;if(propio)navigator.share=o;else delete navigator.share;window.__map.closePopup();document.querySelectorAll('.toast').forEach(x=>x.remove());}"""),
     ("al llegar al cofre desde la barrita o la píldora, «¡Abre tu cofre!» recibe el foco (Intro basta) y no lo pierde al repintarse; nada si el cofre no está listo", """
       var k=['misiones','sessions','acciones','semillasPremio','streakFreezes','cofresAbiertos','sellosMisiones'],o={};k.forEach(x=>o[x]=DATA[x]);
       var t0={running:studyTimer.running,start:studyTimer.start,bibIndex:studyTimer.bibIndex,tick:studyTimer.tick},el=$('misCerca'),mi=$('miniMis'),ms=$('miniStudy');

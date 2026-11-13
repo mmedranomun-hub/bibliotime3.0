@@ -13,6 +13,7 @@ const APP_SHELL = [
   "./plano-navarra.js",
   "./bibliotecas-espana.js",
   "./temporada-examenes.js",
+  "./fichas.json",
   "./manifest.json",
   "./icons/icon-192.png",
   "./icons/icon-512.png"
