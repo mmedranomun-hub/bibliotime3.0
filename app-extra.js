@@ -414,9 +414,23 @@ async function conCandado(origen,fn){
   if(compartiendoImagen)return false;
   var b=origen||(window.event&&window.event.currentTarget);if(!(b&&b.tagName==="BUTTON"))b=null;
   compartiendoImagen=true;if(b){b.disabled=true;b.setAttribute("aria-busy","true");}
-  try{return !!(await fn());}
+  var hecho=false;
+  try{return hecho=!!(await fn());}
   catch(e){showToast("No se pudo preparar la imagen. Prueba otra vez");return false;}
-  finally{compartiendoImagen=false;if(b){b.disabled=false;b.removeAttribute("aria-busy");}}
+  finally{compartiendoImagen=false;if(b){b.disabled=false;b.removeAttribute("aria-busy");if(hecho)marcarCompartida(b);}}
+}
+/* Premio pequeño al compartir: el botón de origen dice «✓ Compartida» (solo «✓» en el 📸 cuadrado del historial)
+   en verde (--ok-tx) 2 s y vuelve a su contenido exacto. Solo con true: si se cancela o falla, no cambia nada.
+   El lector de pantalla lo oye por una región sr-solo aria-live="polite" (el texto del botón no basta: varios
+   llevan aria-label, que tapa su contenido). Un segundo true durante esos 2 s no reescribe el texto guardado. */
+var COMPARTIDA_MS=2000;
+function marcarCompartida(b){
+  var v=document.getElementById("avisoCompartida");
+  if(!v){v=document.createElement("span");v.id="avisoCompartida";v.className="sr-solo";v.setAttribute("aria-live","polite");document.body.appendChild(v);}
+  v.textContent="";setTimeout(function(){v.textContent="Imagen compartida";},50);
+  if(b.classList.contains("compartida"))return;
+  var antes=b.innerHTML;b.classList.add("compartida");b.textContent=b.classList.contains("feed-share")?"✓":"✓ Compartida";
+  setTimeout(function(){b.innerHTML=antes;b.classList.remove("compartida");},COMPARTIDA_MS);
 }
 async function compartirStoryDia(origen){
   var hoy=ymd(),ses=DATA.sessions.filter(function(s){return s.date===hoy;});

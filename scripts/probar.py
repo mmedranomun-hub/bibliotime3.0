@@ -1741,6 +1741,31 @@ PRUEBAS = [
         if(!/📸 Ayer compartiste tu bosque de 2h 10m · ¿plantamos otro árbol hoy\?/.test(t))return 'no sale el texto del bosque: '+t;
         return true;
       }finally{navigator.share=sh0;navigator.canShare=cs0;window.dibujarBosque=db0;compartiendoImagen=false;DATA.sessions=s0;DATA.ultimaCompartida=uc0;FOREST_PERIOD=fp0;closeModal();renderForest();goView('map');}"""),
+    ("📸 ✓ Compartida: al compartir (true) el botón dice «✓ Compartida» en --ok-tx y lo anuncia aria-live; a los 2 s vuelve a «📸 Compartir»; si se cancela no cambia", """
+      await cargarExtra();
+      var s0=DATA.sessions,uc0=DATA.ultimaCompartida,fp0=FOREST_PERIOD,sh0=navigator.share,cs0=navigator.canShare,ms0=COMPARTIDA_MS,ok=null,ko=null;
+      try{
+        if(COMPARTIDA_MS!==2000)return 'no dura 2 s: '+COMPARTIDA_MS;
+        closeModal();FOREST_PERIOD='week';COMPARTIDA_MS=900;
+        navigator.canShare=()=>true;navigator.share=function(){return new Promise((a,r)=>{ok=a;ko=()=>r(Object.assign(new Error('cancelada'),{name:'AbortError'}));});};
+        DATA.sessions=[{id:'ck1',date:ymd(),min:50,bib:NO_BIB,focus:'ok',esp:'roble'}];
+        goView('study');renderForest();
+        var b=[...document.querySelectorAll('#forestCard .forest-acts button')].find(x=>/Compartir/.test(x.innerText));if(!b)return 'sin botón 📸 del bosque';
+        var html0=b.innerHTML,espera=async f=>{for(var i=0;i<60&&!f();i++)await new Promise(r=>setTimeout(r,50));};
+        ok=null;b.click();await espera(()=>ko);ko();ko=null;await espera(()=>!b.disabled);await new Promise(r=>setTimeout(r,60));
+        if(b.innerHTML!==html0||b.classList.contains('compartida'))return 'cambia al cancelar: '+b.innerText;
+        ok=null;b.click();await espera(()=>ok);ok();await espera(()=>b.classList.contains('compartida'));
+        if(b.innerText.trim()!=='✓ Compartida')return 'no dice ✓ Compartida: '+b.innerText;
+        if(b.disabled||b.hasAttribute('aria-busy'))return 'el candado no se restaura';
+        await new Promise(r=>setTimeout(r,320)); // tras la transición de color (.2s)
+        var ok_tx=getComputedStyle(document.documentElement).getPropertyValue('--ok-tx').trim(),tmp=document.createElement('i');tmp.style.color=ok_tx;document.body.appendChild(tmp);
+        var esperado=getComputedStyle(tmp).color;tmp.remove();if(getComputedStyle(b).color!==esperado)return 'color '+getComputedStyle(b).color+' ≠ --ok-tx '+esperado;
+        var v=document.getElementById('avisoCompartida');
+        if(!v||v.getAttribute('aria-live')!=='polite'||!/compartida/i.test(v.textContent))return 'sin aviso aria-live polite';
+        await new Promise(r=>setTimeout(r,800));
+        if(b.innerHTML!==html0||b.classList.contains('compartida'))return 'no vuelve al texto original: '+b.innerHTML;
+        return true;
+      }finally{navigator.share=sh0;navigator.canShare=cs0;COMPARTIDA_MS=ms0;compartiendoImagen=false;DATA.sessions=s0;DATA.ultimaCompartida=uc0;FOREST_PERIOD=fp0;closeModal();renderForest();goView('map');}"""),
 ]
 
 

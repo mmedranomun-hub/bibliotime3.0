@@ -1122,6 +1122,9 @@
   /* Tienda de especies */
   .forest-acts{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
   .forest-acts .btn{width:auto;min-height:44px}
+  /* «✓ Compartida» 2 s en el botón 📸 que lanzó una imagen compartida (marcarCompartida, app-extra.js) */
+  .btn.compartida,.feed-share.compartida{background:rgba(34,197,94,.16);color:var(--ok-tx);border:1px solid rgba(34,197,94,.45);box-shadow:none;transition:background-color .2s,color .2s}
+  @media(prefers-reduced-motion:reduce){.btn.compartida,.feed-share.compartida{transition:none}}
   .shop{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:6px}
   .shop-item{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 8px;border-radius:var(--r-l);border:1px solid var(--borde);background:rgba(var(--blanco),.5);text-align:center;font-size:var(--fs-m)}
   .shop-item.on{border:2px solid var(--acento);box-shadow:var(--brillo)}
