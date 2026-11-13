@@ -1102,13 +1102,28 @@ function cofreEsperaHTML(deSesion){
   return '<div class="ses-cofre"><span>'+(deSesion?'🎁 ¡Misiones completadas! Tu cofre te espera':'🎁 Tu cofre de misiones te espera')+'</span><button type="button" class="ses-cofre-b" id="sessCofre" aria-label="Abrirlo: ir a tu cofre de misiones">Abrirlo</button></div>';
 }
 
+/* ----- «🌳 Dos días seguidos plantando y compartiendo» en «Sesión terminada»: solo si esta sesión se empezó
+   con «▶ Empezar a estudiar» de la bienvenida que decía «📸 Ayer compartiste…» (el botón guarda en VUELTA_COMP la
+   fecha de esa marca). Sale una vez: marca DATA.ultimaCompartida.vuelta=hoy. Solo premio: nada de racha en peligro.
+   Con árbol marchito no sale ni gasta la vuelta (la siguiente sesión sana de esta visita la recoge). Sin animación. ----- */
+var VUELTA_COMP=null;
+function vueltaCompHTML(sesion){
+  var C=DATA&&DATA.ultimaCompartida;
+  if(!VUELTA_COMP||!C||C.fecha!==VUELTA_COMP||C.vuelta||!sesion||sesion.focus==="withered"||sesion.date!==ymd())return "";
+  C.vuelta=ymd();VUELTA_COMP=null;saveUserData();
+  if(!$("vueltaCompCss")){var st=document.createElement("style");st.id="vueltaCompCss";
+    st.textContent='.ses-vuelta{margin:0 0 12px;text-align:center;padding:10px 12px;border-radius:var(--r-m);border:1px solid var(--ok);background:var(--glass);color:var(--ok-tx);font-size:var(--fs-m);font-weight:800;line-height:1.35}';
+    document.head.appendChild(st);}
+  return '<div class="ses-vuelta" role="status">🌳 Dos días seguidos plantando y compartiendo</div>';
+}
+
 /* ----- Sesión terminada (valorar, afluencia, nota) y editar una sesión ----- */
 function pedirValoracion(sesion,horasAntes){
   var sel={v:0};
   var plantado=sesion.focus?'<div class="planted'+(sesion.focus==="withered"?' seco':'')+'"><div class="planted-tree">'+arbolSVG(sesion.min,sesion.focus==="withered",sesion.subject||sesion.id,110,sesion.esp)+'</div>'+
     '<div class="planted-txt">'+(sesion.focus==="withered"?'🥀 Tu árbol se marchitó porque saliste de la app. ¡El próximo crecerá!':'🎉 ¡Has plantado un '+ETAPAS_ARBOL[etapaArbol(sesion.min)][1].toLowerCase()+' en tu bosque!'+(Math.floor(sesion.min/5)?'<span class="planted-seeds">🌰 +'+Math.floor(sesion.min/5)+' semillas</span>':''))+'</div></div>':'';
   var barraNivel=horasAntes!=null?nivelProgresoHTML(horasAntes):'', misSes=misionesDeSesion(sesion);
-  openModal(plantado+recordSesionHTML(sesion)+cuentaSesionHTML(sesion)+barraNivel+'<h3>Sesión terminada</h3><div class="sub">'+fmtHoras(sesion.min)+' h en '+escapeHTML(cortoNombre(sesion.bib))+(sesion.verif?' · <span class="badge-ok">✓ verificada</span>':'')+'</div>'+misionesSesionHTML(misSes)+cofreEsperaHTML(misSes.length>0)+
+  openModal(plantado+vueltaCompHTML(sesion)+recordSesionHTML(sesion)+cuentaSesionHTML(sesion)+barraNivel+'<h3>Sesión terminada</h3><div class="sub">'+fmtHoras(sesion.min)+' h en '+escapeHTML(cortoNombre(sesion.bib))+(sesion.verif?' · <span class="badge-ok">✓ verificada</span>':'')+'</div>'+misionesSesionHTML(misSes)+cofreEsperaHTML(misSes.length>0)+
     '<label style="font-size:var(--fs-s);font-weight:700;color:var(--suave);text-transform:uppercase;letter-spacing:.05em">¿Qué tal ha ido?</label>'+
     '<div class="prodstars" id="prodStars">'+[1,2,3,4,5].map(function(n){return '<button data-v="'+n+'">★</button>';}).join("")+'</div>'+
     (bibIdxDe(sesion)>=0?'<label style="display:block;margin-top:12px;font-size:var(--fs-s);font-weight:700;color:var(--suave);text-transform:uppercase;letter-spacing:.05em">¿Cómo estaba de llena?</label>'+
@@ -1290,7 +1305,7 @@ function pintarBienvenidaDiaria(){
     (ex&&dEx<=14?'<div class="bv-ex">📅 <b>'+escapeHTML(ex.ev.title)+'</b> · '+(dEx===0?'¡es hoy!':dEx===1?'mañana':'en '+dEx+' días')+'</div>':'')+
     '<div class="bv-mis">🎯 Misiones de hoy: '+M.ids.map(function(id){var d=misionDef(id);return d?d.icon:'';}).join(" ")+' · cofre al completarlas</div>'+
     '<div class="bv-tip">'+tip.e+' <b>'+escapeHTML(tip.t)+'</b>: '+escapeHTML(tip.x)+'</div>'+
-    '<button class="btn bv-go" id="bvEstudiar" onclick="closeModal();goView(\'study\');setTimeout(function(){var b=$(\'btnStart\');if(b)b.click();},250)">▶ '+(C?'Empezar a estudiar':'Estudiar ahora')+'</button>'+
+    '<button class="btn bv-go" id="bvEstudiar" onclick="'+(C?'VUELTA_COMP=\''+C.fecha+'\';':'')+'closeModal();goView(\'study\');setTimeout(function(){var b=$(\'btnStart\');if(b)b.click();},250)">▶ '+(C?'Empezar a estudiar':'Estudiar ahora')+'</button>'+
     '<button class="linkbtn" onclick="closeModal()" style="display:block;margin:12px auto 0">Más tarde</button></div>',
     C?function(){var b=$("bvEstudiar");if(b)b.focus();}:null);
 }

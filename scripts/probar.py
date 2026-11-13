@@ -316,6 +316,38 @@ PRUEBAS = [
         if(lv==null)localStorage.removeItem(lk);else localStorage.setItem(lk,lv);
         closeModal();renderForest();renderMisiones();renderRacha();renderSemillas();
       }"""),
+    ("«🌳 Dos días seguidos plantando y compartiendo»: sale una vez al terminar la sesión empezada desde «📸 Ayer compartiste…»", """
+      await cargarExtra();
+      var copia=JSON.stringify(DATA),bs=$('btnStart'),vc=VUELTA_COMP;   // stopStudy toca semillas, misiones, racha…: se deja DATA como estaba
+      var dia=n=>{var d=new Date();d.setDate(d.getDate()-n);return ymd(d);};
+      var sesion=async()=>{arrancarSesion(-1,false);studyTimer.start-=31*60000;stopStudy(false);await new Promise(r=>setTimeout(r,150));
+        document.querySelectorAll('.cuenta').forEach(x=>x.remove());if(window.cerrarFoco)cerrarFoco();
+        var m=document.querySelector('#modalRoot');return m?m.innerText:'';};
+      try{
+        bs.disabled=true;   // que el clic del botón de la bienvenida no abra «¿Dónde estudias?»: la sesión se simula abajo
+        DATA.sessions=[{id:'vc0',date:dia(1),min:52,ts:Date.now()-864e5,bib:NO_BIB,focus:'ok',esp:'roble'}];DATA.ultimaCompartida={fecha:dia(1),min:52};VUELTA_COMP=null;
+        closeModal();pintarBienvenidaDiaria();var b=$('bvEstudiar');
+        if(!b||!/Empezar a estudiar/.test(b.innerText))return 'sin «Empezar a estudiar»';
+        b.click();await new Promise(r=>setTimeout(r,350));
+        if(VUELTA_COMP!==dia(1)||studyTimer.running)return 'el botón no apunta la vuelta: '+VUELTA_COMP;
+        bs.disabled=false;
+        var t=await sesion();
+        if(!/Sesión terminada/.test(t))return 'no abre «Sesión terminada»: '+t.slice(0,80);
+        if(!/🌳 Dos días seguidos plantando y compartiendo/.test(t))return 'no sale el premio: '+t.slice(0,200);
+        if(/apague|perder|peligro|racha/i.test(document.querySelector('.ses-vuelta').innerText))return 'mete presión';
+        if(DATA.ultimaCompartida.vuelta!==ymd())return 'no marca .vuelta: '+JSON.stringify(DATA.ultimaCompartida);
+        if(getComputedStyle(document.querySelector('.ses-vuelta')).color==='rgba(0, 0, 0, 0)')return 'sin estilos';
+        closeModal();if(/Dos días seguidos/.test(await sesion()))return 'sale una segunda vez';
+        // sin pasar por el botón: misma marca de ayer, pero se cierra la bienvenida con «Más tarde»
+        closeModal();DATA.sessions=DATA.sessions.slice(0,1);DATA.ultimaCompartida={fecha:dia(1),min:52};VUELTA_COMP=null;
+        pintarBienvenidaDiaria();closeModal();
+        if(/Dos días seguidos/.test(await sesion()))return 'sale sin haber pulsado el botón';
+        // árbol marchito: no sale ni gasta la vuelta
+        closeModal();DATA.sessions=DATA.sessions.slice(0,1);DATA.ultimaCompartida={fecha:dia(1),min:52};VUELTA_COMP=dia(1);
+        var s={id:'vcw',date:ymd(),min:30,ts:Date.now()-60000,bib:NO_BIB,focus:'withered',esp:'roble',prod:null,note:''};pedirValoracion(s,null);
+        if(document.querySelector('#modalRoot .ses-vuelta')||DATA.ultimaCompartida.vuelta)return 'sale con árbol marchito';
+        return true;
+      }finally{bs.disabled=false;VUELTA_COMP=vc;var c=JSON.parse(copia);Object.keys(DATA).forEach(k=>{if(!(k in c))delete DATA[k];});Object.assign(DATA,c);saveUserData();document.querySelectorAll('.racha-overlay,.cuenta').forEach(x=>x.remove());closeModal();renderStudy();renderProfile();}"""),
     ("récord personal en «Sesión terminada» (solo si supera la más larga, sin negativos)", """
       await cargarExtra();
       var o=DATA.sessions,hoy=ymd(),mk=(i,m,f)=>({id:'rp'+i,date:hoy,min:m,ts:Date.now()-(100-i)*1000,bib:NO_BIB,focus:f||'ok',esp:'roble'});
