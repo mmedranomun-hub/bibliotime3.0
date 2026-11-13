@@ -594,6 +594,22 @@ despliegue sin tener que mirar el `sitemap.xml`.
   width/height no son las dimensiones reales del PNG/JPEG (las lee de la cabecera).
 - La portada `index.html` tiene `twitter:card` pero aún no `og:image` (pendiente en el backlog).
 
+## Hecho (2026-11-13) · Imagen de vista previa por provincia (523 páginas, 208 KB)
+- `python3 scripts/generar_imagen_og.py --provincia <slug>` genera `icons/og/<slug>.png` (1200×630, misma plantilla que la
+  general: logo, «Bibliomapa», «Bibliotecas abiertas / ahora en <Provincia>», raya `--acento2` y dominio). Sin cifras: no
+  caduca. `--top N` genera las N provincias con más fichas; nombre y ranking salen de
+  `node scripts/generar_paginas_seo.js --listar-provincias` (mismos datos que las páginas).
+- Publicadas las 10 con más fichas (Barcelona, Madrid, Valencia, Navarra, Sevilla, Toledo, Baleares, Alicante, Murcia,
+  A Coruña): ~20 KB cada una (PNG de 128 colores), 208 KB en total. Las 51 serían ~1 MB (tarea en el backlog si hay datos
+  de que se comparten).
+- `pagina()` (`ogImagenDe(ruta)`): toda página bajo `/bibliotecas/<prov>/` (provincia, localidades, temáticas, salas y
+  fichas) usa `icons/og/<prov>.png` si existe, con `og:image:alt` «Bibliomapa: bibliotecas abiertas ahora en <Provincia> ·
+  bibliomapa.es»; el resto (hubs de España, universidades, exámenes, guías, 404 y provincias sin imagen), la general.
+  Para añadir una provincia basta con generar su PNG y regenerar las páginas.
+- El comprobador falla si la imagen no existe, no mide 1200×630, una página de provincia con imagen no la usa (o usa la de
+  otra), un PNG de `icons/og/` no lo usa nadie o pasan de 2 MB entre todas. Imprime imágenes, KB y páginas que la usan.
+- `sw.js` no las precachea (WhatsApp y compañía las piden al servidor, no a la app).
+
 ## Siguientes mejoras (en el backlog)
 - Más horarios verificados (las páginas con horario rinden mucho mejor: es lo que la gente busca).
 - Ampliar las páginas por biblioteca a grandes ciudades que no son capital (Gijón, Vigo, Cartagena, Jerez…).

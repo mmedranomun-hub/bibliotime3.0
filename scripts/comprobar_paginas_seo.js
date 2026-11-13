@@ -783,7 +783,8 @@ console.log(`Analítica (/analitica.js en el <head>, apagada): ${html.size + 1 -
 // <head> y una sola vez, og:site_name, og:image absoluta a https://bibliomapa.es/… de un archivo que existe en el repo,
 // og:image:width/height iguales a las dimensiones reales del PNG/JPEG, og:image:alt no vacío y twitter:card
 // (summary o summary_large_image). Sin og:image, WhatsApp o Telegram enseñan solo texto al compartir una ficha.
-const vistaMal = [], dimsCache = new Map();
+const vistaMal = [], dimsCache = new Map(), ogProvUsadas = new Set();
+let nOgProv = 0;
 function dimsImagen(f) {
   if (dimsCache.has(f)) return dimsCache.get(f);
   let d = null;
@@ -829,8 +830,21 @@ for (const [r, h] of conVista) {
   if (!fs.existsSync(fImg)) vistaMal.push(`${r}: og:image ${img} no existe en el repo`);
   else if (!d) vistaMal.push(`${r}: og:image ${img} no es un PNG/JPEG legible`);
   else if (String(d[0]) !== an || String(d[1]) !== al) vistaMal.push(`${r}: og:image:width/height ${an}×${al} ≠ real ${d[0]}×${d[1]}`);
-  else if (tc === "summary_large_image" && d[0] < 1.5 * d[1]) vistaMal.push(`${r}: summary_large_image con imagen no apaisada ${d[0]}×${d[1]}`);
+  else if (d[0] !== 1200 || d[1] !== 630) vistaMal.push(`${r}: og:image ${img} mide ${d[0]}×${d[1]}, no 1200×630`);
+  // Imagen por provincia: si existe icons/og/<prov>.png, toda página bajo /bibliotecas/<prov>/ la usa (y su alt nombra la
+  // provincia); si no existe, la general. Una página de provincia con la imagen de otra también falla.
+  const mp = /^\/bibliotecas\/([a-z0-9-]+)\//.exec(r), mi = /\/icons\/og\/([a-z0-9-]+)\.png$/.exec(img);
+  const propia = mp && fs.existsSync(path.join(RAIZ, "icons", "og", mp[1] + ".png")) && fs.existsSync(path.join(RAIZ, "bibliotecas", mp[1], "index.html"));
+  if (propia) {
+    if (!mi || mi[1] !== mp[1]) vistaMal.push(`${r}: existe icons/og/${mp[1]}.png pero og:image es ${img}`);
+    else { nOgProv++; ogProvUsadas.add(mi[1]); if (!/ahora en .+ · bibliomapa\.es$/.test(alt || "")) vistaMal.push(`${r}: og:image:alt sin «ahora en <Provincia>» (${alt})`); }
+  } else if (mi && !(mp && mp[1] === mi[1])) vistaMal.push(`${r}: og:image de provincia ${img} en una página que no es de /bibliotecas/${mi[1]}/`);
 }
+const ogEnDisco = fs.existsSync(path.join(RAIZ, "icons", "og")) ? fs.readdirSync(path.join(RAIZ, "icons", "og")).filter((f) => f.endsWith(".png")) : [];
+const kbOg = Math.round(ogEnDisco.reduce((s, f) => s + fs.statSync(path.join(RAIZ, "icons", "og", f)).size, 0) / 1024);
+ogEnDisco.filter((f) => !ogProvUsadas.has(f.slice(0, -4))).forEach((f) => vistaMal.push(`icons/og/${f}: ninguna página la usa (¿slug de provincia mal escrito?)`));
+if (kbOg > 2048) vistaMal.push(`icons/og/: ${kbOg} KB entre todas (máximo 2048 KB)`);
+console.log(`Imagen de vista previa por provincia (icons/og/<prov>.png, 1200×630): ${ogEnDisco.length} imágenes, ${kbOg} KB, ${nOgProv} páginas con la de su provincia`);
 console.log(`Vista previa al compartir (og:site_name, og:image absoluta con width/height reales y alt, twitter:card): ${conVista.length - new Set(vistaMal.map((x) => x.split(":")[0])).size} de ${conVista.length} páginas (portada, ${html.size} de bibliotecas/ y ${guias.length} guías de /estudiar/; imagen grande: ${conVista.filter(([, h]) => metaCab(h.split("</head>")[0], "name", "twitter:card")[0] === "summary_large_image").length}) · mal: ${vistaMal.length}${vistaMal.length ? "\n" + muestra(vistaMal, (r) => "  " + r) : ""}`);
 console.log(`Search Console (meta google-site-verification):${gscEn.length ? gscEn.map(([r]) => r).join(", ") : "ninguna (verificación por DNS o pendiente)"} · mal: ${gscMal.length}${gscMal.length ? "\n" + muestra(gscMal, (r) => "  " + r) : ""}`);
 console.log(`IndexNow: ${indexNowClave ? `clave puesta, /${indexNowClave}.txt` : "sin clave (INDEXNOW_CLAVE = null)"} · mal: ${indexNowMal.length}${indexNowMal.length ? "\n" + muestra(indexNowMal, (r) => "  " + r) : ""}`);

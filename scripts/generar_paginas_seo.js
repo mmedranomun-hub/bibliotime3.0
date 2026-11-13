@@ -212,6 +212,23 @@ function refPagina(name, url) { nRefId++; return { "@type": "CollectionPage", "@
 // «summary_large_image» (imagen grande) y no «summary» (miniatura). La portada (index.html) lleva las mismas etiquetas.
 // Si se cambia la imagen, actualizar ancho y alto con sus dimensiones reales (el comprobador lo exige).
 const OG_IMAGEN = { url: "https://bibliomapa.es/icons/og-bibliomapa.png", ancho: 1200, alto: 630, alt: "Bibliomapa: bibliotecas abiertas ahora en toda España · bibliomapa.es" };
+// Por provincia: si existe icons/og/<slug>.png (scripts/generar_imagen_og.py --provincia <slug>, misma plantilla 1200×630
+// con «Bibliotecas abiertas ahora en <Provincia>», sin cifras), las páginas de esa provincia (/bibliotecas/<slug>/ y todo lo
+// que cuelga: localidades, temáticas, salas y fichas) la usan; el resto de páginas, la general. Solo las provincias con más
+// fichas tienen imagen propia (ver `--listar-provincias` y el docstring del script de Python): vigilar el peso del repo.
+const ogProvCache = new Map();
+function ogImagenDe(ruta) {
+  const m = /^\/bibliotecas\/([a-z0-9-]+)\//.exec(ruta || "");
+  if (!m || typeof nombreProvDeSlug === "undefined" || !nombreProvDeSlug.has(m[1])) return OG_IMAGEN;
+  const ps = m[1];
+  if (!ogProvCache.has(ps)) {
+    const rel = "icons/og/" + ps + ".png";
+    ogProvCache.set(ps, fs.existsSync(path.join(RAIZ, rel))
+      ? { url: DOMINIO + "/" + rel, ancho: 1200, alto: 630, alt: `Bibliomapa: bibliotecas abiertas ahora en ${nombreProvDeSlug.get(ps)} · bibliomapa.es` }
+      : OG_IMAGEN);
+  }
+  return ogProvCache.get(ps);
+}
 const h1De = new Map(); // ruta → h1 (texto plano): de aquí salen los textos de «¿Buscabas…?» en la 404
 // FAQPage en el mismo grafo que su página (provincias, localidades, temáticas, hubs, salas, universidades, exámenes):
 // si la página lleva un FAQPage sin @id y un CollectionPage de su misma URL, el CollectionPage recibe @id <ruta>#pagina
@@ -232,6 +249,7 @@ function faqEnGrafo(ruta, ld) {
 }
 function pagina({ ruta, titulo, descripcion, h1, intro, cuerpo, migas, migasId, ld: ld0, cta, head, noindex, trasH1 }) {
   const url = DOMINIO + ruta;
+  const OG = ogImagenDe(ruta);
   const ld = faqEnGrafo(ruta, ld0);
   h1De.set(ruta, h1);
   const migasLD = { "@context": "https://schema.org", ...(migasId ? { "@id": migasId } : {}), "@type": "BreadcrumbList", itemListElement: migas.map((x, k) => ({ "@type": "ListItem", position: k + 1, name: x[0], item: DOMINIO + x[1] })) };
@@ -249,12 +267,12 @@ ${noindex ? `<meta name="robots" content="noindex">` : `<link rel="canonical" hr
 <meta property="og:description" content="${esc(descripcion)}">
 ${noindex ? "" : `<meta property="og:url" content="${url}">
 `}<meta property="og:locale" content="es_ES">
-<meta property="og:image" content="${OG_IMAGEN.url}">
-<meta property="og:image:width" content="${OG_IMAGEN.ancho}">
-<meta property="og:image:height" content="${OG_IMAGEN.alto}">
-<meta property="og:image:alt" content="${esc(OG_IMAGEN.alt)}">
+<meta property="og:image" content="${OG.url}">
+<meta property="og:image:width" content="${OG.ancho}">
+<meta property="og:image:height" content="${OG.alto}">
+<meta property="og:image:alt" content="${esc(OG.alt)}">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="${OG_IMAGEN.url}">
+<meta name="twitter:image" content="${OG.url}">
 <meta name="theme-color" content="#6c5ce7">
 <link rel="icon" href="/icons/favicon-32.png" type="image/png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
@@ -449,12 +467,21 @@ const lastmodDe = (ruta, mod) => {
   const d = nueva && huellaAntes.get(ruta) === nueva && lastmodAntes.has(ruta) ? lastmodAntes.get(ruta) : HOY;
   return mod && mod > d && mod <= HOY ? mod : d;
 };
+// `node scripts/generar_paginas_seo.js --listar-provincias`: «slug<TAB>Provincia<TAB>fichas» de más a menos fichas y sale
+// antes de borrar o escribir nada. Lo usa scripts/generar_imagen_og.py para el nombre de cada provincia y el ranking por fichas.
+if (process.argv.includes("--listar-provincias")) {
+  const n = {};
+  todas.forEach((b) => (n[b.p] = (n[b.p] || 0) + 1));
+  Object.keys(n).sort((a, b) => n[b] - n[a] || a.localeCompare(b, "es")).forEach((p) => console.log(`${slug(p)}\t${p}\t${n[p]}`));
+  process.exit(0);
+}
 fs.rmSync(SALIDA, { recursive: true, force: true });
 const urls = [["/", "1.0"], ["/bibliotecas/", "0.9"]];
 const escribe = (ruta, html) => { const f = path.join(RAIZ, ruta, "index.html"); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, html); huellaNueva.set(ruta, huella(html)); };
 const porProv = {};
 todas.forEach((b) => (porProv[b.p] = porProv[b.p] || []).push(b));
 const provincias = Object.keys(porProv).sort((a, b) => a.localeCompare(b, "es"));
+const nombreProvDeSlug = new Map(provincias.map((p) => [slug(p), p]));
 const ordenBib = (a, b) => (b.h ? 1 : 0) - (a.h ? 1 : 0) || ({ mayor: 0, universidad: 1, publica: 2, otra: 3 }[a.t] - { mayor: 0, universidad: 1, publica: 2, otra: 3 }[b.t]) || a.n.localeCompare(b.n, "es");
 
 // ---------- Páginas temáticas (solo horarios verificados con fuente) ----------
