@@ -453,6 +453,16 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
   «CollectionPage de la propia página con @id…»). La comparación de migas visibles acepta `<span>` con atributos.
   Probado a romper: páginas anteriores → 1212 y 3 fallos; `aria-current` quitado del final o duplicado → salida 1.
 
+## Hecho (2026-11-13) · `isPartOf`/`hasPart` entre páginas por `@id`
+- Toda referencia `isPartOf`/`hasPart` a otra página lleva, además de `name` y `url`, el `@id` `<url>#pagina` del
+  nodo destino (`refPagina()` en `generar_paginas_seo.js`): Google une las páginas en un grafo en vez de ver un
+  `CollectionPage` anónimo con la misma URL. 0 → 2.217 de 2.217 referencias.
+- `comprobar_paginas_seo.js` (`compruebaRefsId()`, línea «isPartOf/hasPart a otra página con el @id de su nodo…»)
+  falla si una referencia a otra página generada no lleva `@id`, si la página destino no declara un nodo con ese
+  `@id` o si la `url` de ese nodo no coincide. Las referencias dentro de la misma página (`FAQPage` → `#pagina`)
+  las mira la comprobación del FAQ; la portada («/», el `WebSite`) no cuenta.
+- El `@id` cuenta en la huella del `lastmod` (es JSON-LD que Google lee, no como `aria-current` u `og:image`).
+
 ## Lo que tienes que hacer tú (sin esto no sirve de nada)
 1. **Conectar el dominio** en Vercel: proyecto `bibliotime` → Settings → Domains → añadir `bibliomapa.es` y
    `www.bibliomapa.es` (redirigir www → sin www) y poner en tu registrador los DNS que te indique Vercel.

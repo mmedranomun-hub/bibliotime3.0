@@ -193,6 +193,13 @@ function itemBib(b) {
   return f ? { "@id": DOMINIO + f + "#biblioteca", ...libraryLD(b, DOMINIO + f) } : libraryLD(b, DOMINIO + enlaceApp(b));
 }
 
+// Referencia (isPartOf/hasPart) a otra página del sitio: además de name y url, el @id de su nodo (<url>#pagina, el
+// CollectionPage de provincias, localidades, temáticas, hubs, salas, universidades y exámenes), para que Google una la
+// referencia con el nodo de la página destino en vez de crear un CollectionPage anónimo nuevo. scripts/comprobar_paginas_seo.js
+// falla si ese @id no existe como nodo en la página destino.
+let nRefId = 0;
+function refPagina(name, url) { nRefId++; return { "@type": "CollectionPage", "@id": url + "#pagina", name, url }; }
+
 // ---------- Plantilla ----------
 // noindex (la 404): sin canonical ni og:url (se sirve en cualquier URL inexistente), con <meta name="robots" content="noindex">
 // y sin BreadcrumbList; todos los enlaces son absolutos (/…) para que funcionen desde cualquier ruta.
@@ -669,8 +676,8 @@ let nTemaHasPart = 0, nHasPartTema = 0, nTemaIsPartOf = 0;
 const ldTema = (ruta, nombre, l, partes = [], superior = null, migas = false) => {
   if (partes.length) { nTemaHasPart++; nHasPartTema += partes.length; }
   if (superior) nTemaIsPartOf++;
-  return { "@context": "https://schema.org", "@type": "CollectionPage", name: nombre, url: DOMINIO + ruta,
-  inLanguage: "es-ES", dateModified: fechaMod(l), ...(superior ? { isPartOf: { "@type": "CollectionPage", name: superior[0], url: DOMINIO + superior[1] } } : {}), ...(migas ? conMigas(ruta) : {}), ...(partes.length ? { hasPart: partes.map(([name, r]) => ({ "@type": "CollectionPage", name, url: DOMINIO + r })) } : {}), mainEntity: { "@type": "ItemList", name: nombre, numberOfItems: l.length,
+  return { "@context": "https://schema.org", "@id": DOMINIO + ruta + "#pagina", "@type": "CollectionPage", name: nombre, url: DOMINIO + ruta,
+  inLanguage: "es-ES", dateModified: fechaMod(l), ...(superior ? { isPartOf: refPagina(superior[0], DOMINIO + superior[1]) } : {}), ...(migas ? conMigas(ruta) : {}), ...(partes.length ? { hasPart: partes.map(([name, r]) => refPagina(name, DOMINIO + r)) } : {}), mainEntity: { "@type": "ItemList", name: nombre, numberOfItems: l.length,
     itemListElement: l.map((b, k) => ({ "@type": "ListItem", position: k + 1, item: itemBib(b) })) } };
 };
 function textoFechas(lista) {
@@ -1200,7 +1207,7 @@ function paginaBiblioteca(b) {
   // isPartOf del WebPage: la página que ya enlaza su <p class="volver"> (su localidad si tiene página; si no, su
   // provincia), con el mismo name que su CollectionPage. Es la otra mitad de su mainEntity ItemList, donde la ficha está.
   const rutaSup = locConPagina ? `/bibliotecas/${ps}/${slug(b.c)}/` : `/bibliotecas/${ps}/`;
-  const parteDe = nombreLugarDe.has(rutaSup) ? { isPartOf: { "@type": "CollectionPage", name: nombreLugarDe.get(rutaSup), url: DOMINIO + rutaSup } } : {};
+  const parteDe = nombreLugarDe.has(rutaSup) ? { isPartOf: refPagina(nombreLugarDe.get(rutaSup), DOMINIO + rutaSup) } : {};
   if (parteDe.isPartOf) nFichasIsPartOf++;
   escribe(ruta, pagina({
     ruta, titulo, descripcion,
@@ -1440,7 +1447,7 @@ function seccionTemasFicha(b, locConPagina) {
 // scripts/comprobar_paginas_seo.js falla si un hasPart no existe o la página no lo enlaza.
 function partesLugar(prov, loc, { locs = [], salasL = [], exL = [], filtroUni }) {
   const base = `/bibliotecas/${slug(prov)}/${loc ? slug(loc) + "/" : ""}`, donde = loc || prov;
-  const cp = (name, ruta) => ({ "@type": "CollectionPage", name, url: DOMINIO + ruta });
+  const cp = (name, ruta) => refPagina(name, DOMINIO + ruta);
   const l = [
     ...locs.map((c) => cp(`Bibliotecas en ${c}`, `${base}${slug(c)}/`)),
     ...(loc ? TEMAS_LOC : TEMAS).filter((t) => (loc ? temaLoc[t.slug][prov + "|" + loc] : temaProv[t.slug][prov])).map((t) => cp(`Bibliotecas ${t.que} en ${donde}`, `${base}${t.slug}/`)),
@@ -1456,12 +1463,12 @@ let nProvItemList = 0, nItemsProv = 0, nLugarHasPart = 0, nHasPart = 0, nLugarIs
 // provincia, el índice /bibliotecas/), con el mismo name que el CollectionPage destino. Es la otra mitad del hasPart de
 // la provincia y del ItemList del índice; scripts/comprobar_paginas_seo.js falla si no existe, no está enlazada o no es recíproca.
 const NOMBRE_INDICE = "Bibliotecas de España por provincia: abiertas ahora";
-const superiorLugar = (name, ruta) => { nLugarIsPartOf++; return { isPartOf: { "@type": "CollectionPage", name, url: DOMINIO + ruta } }; };
+const superiorLugar = (name, ruta) => { nLugarIsPartOf++; return { isPartOf: refPagina(name, DOMINIO + ruta) }; };
 // isPartOf de los hubs (salas de estudio, universidades, exámenes y horarios): el índice /bibliotecas/, primer enlace de
 // su <p class="volver"> («← Todas las provincias»), con NOMBRE_INDICE como name (el del CollectionPage del índice). Sin
 // reciprocidad: el índice no los lleva en su ItemList (solo provincias). Las temáticas de España lo declaran con ldTema.
 let nHubIndice = 0;
-const parteDeIndice = () => { nHubIndice++; return { isPartOf: { "@type": "CollectionPage", name: NOMBRE_INDICE, url: DOMINIO + "/bibliotecas/" } }; };
+const parteDeIndice = () => { nHubIndice++; return { isPartOf: refPagina(NOMBRE_INDICE, DOMINIO + "/bibliotecas/") }; };
 // name del CollectionPage de cada provincia y localidad (ruta → name), para el isPartOf de las fichas (se generan después).
 const nombreLugarDe = new Map();
 provincias.forEach((p) => {
@@ -1630,7 +1637,7 @@ function faqSalas(s, rk, ex) {
 // con el mismo name que el CollectionPage del hub; por eso el título de cada hub se calcula antes que sus páginas (no
 // coincide con ninguno de ellas: 0 títulos cambiados). Es la otra mitad del hasPart del hub; los hubs, el índice (parteDeIndice).
 let nHubIsPartOf = 0;
-const parteDeHub = (titulo, ruta) => { nHubIsPartOf++; return { isPartOf: { "@type": "CollectionPage", name: titulo.replace(MARCA, ""), url: DOMINIO + ruta } }; };
+const parteDeHub = (titulo, ruta) => { nHubIsPartOf++; return { isPartOf: refPagina(titulo.replace(MARCA, ""), DOMINIO + ruta) }; };
 const tituloHubSalas = (() => {
   if (!salas.length) return "";
   const totE = salas.reduce((t, s) => t + s.est.length, 0);
@@ -1693,7 +1700,7 @@ if (salas.length) {
 <p class="volver"><a href="/bibliotecas/">← Todas las provincias</a>${exCiudades.length ? ` · <a href="${EX_RUTA}">Bibliotecas en exámenes</a>` : ""} · ${enlaceHub}</p>`,
     migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], ["Salas de estudio", ruta]], migasId: idMigasDe(ruta),
     ld: ldLugar(ruta, titulo.replace(MARCA, ""), descripcion, { ...parteDeIndice(), ...conMigas(ruta), dateModified: fechaMod(todasVer),
-      hasPart: orden.map((s) => ({ "@type": "CollectionPage", name: `Salas de estudio en ${s.ciudad}`, url: DOMINIO + s.ruta })) }),
+      hasPart: orden.map((s) => refPagina(`Salas de estudio en ${s.ciudad}`, DOMINIO + s.ruta)) }),
   }));
   urls.push([ruta, "0.8", fechaMod(todasVer)]);
 }
@@ -1842,7 +1849,7 @@ if (universidades.length) {
 <p class="volver"><a href="/bibliotecas/">← Todas las provincias</a>${salas.length ? ` · <a href="/bibliotecas/${SALAS_SLUG}/">Salas de estudio</a>` : ""} · ${enlaceHub}</p>`,
     migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], ["Universidades", ruta]], migasId: idMigasDe(ruta),
     ld: ldLugar(ruta, titulo.replace(MARCA, ""), descripcion, { ...parteDeIndice(), ...conMigas(ruta), dateModified: fechaMod(todasVer),
-      hasPart: universidades.map((u) => ({ "@type": "CollectionPage", name: `Bibliotecas de la ${u.nombre}`, url: DOMINIO + u.ruta })) }),
+      hasPart: universidades.map((u) => refPagina(`Bibliotecas de la ${u.nombre}`, DOMINIO + u.ruta)) }),
   }));
   urls.push([ruta, "0.8", fechaMod(todasVer)]);
 }
@@ -1971,7 +1978,7 @@ ${fq.html}
 <p class="volver"><a href="/bibliotecas/">← Todas las provincias</a>${salas.length ? ` · <a href="/bibliotecas/${SALAS_SLUG}/">Salas de estudio</a>` : ""}${universidades.length ? ` · <a href="/bibliotecas/${UNIS_SLUG}/">Universidades</a>` : ""} · ${enlaceHub}</p>`,
     migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], ["Exámenes", ruta]], migasId: idMigasDe(ruta), head: ESTILO_TABLA_HOR,
     ld: [ldLugar(ruta, titulo.replace(MARCA, ""), descripcion, { ...parteDeIndice(), ...conMigas(ruta), dateModified: fv,
-      hasPart: exCiudades.map((g) => ({ "@type": "CollectionPage", name: `Bibliotecas en exámenes en ${g.ciudad}`, url: DOMINIO + g.ruta })) }), fq.ld],
+      hasPart: exCiudades.map((g) => refPagina(`Bibliotecas en exámenes en ${g.ciudad}`, DOMINIO + g.ruta)) }), fq.ld],
   }));
   urls.push([ruta, "0.8", fv]);
 }
@@ -2020,8 +2027,8 @@ if (temasEspana.length) {
   titulosUsados.add(titulo);
   const dBase = `Bibliotecas abiertas hoy, el domingo, el fin de semana, hasta tarde y en verano en ${provsHub.length} provincias, con salas de estudio y universidades.`;
   const descripcion = [`${dBase} ${verifTodas.length} horarios verificados.`, dBase].find((x) => x.length <= MAX_DESC) || dBase.slice(0, MAX_DESC - 1) + "…";
-  const hasPart = temasEspana.map(({ t }) => ({ "@type": "CollectionPage", name: `Bibliotecas ${t.que} en España`, url: `${DOMINIO}/bibliotecas/${t.slug}/` }))
-    .concat(provsHub.flatMap((p) => TEMAS.filter((t) => temaProv[t.slug][p]).map((t) => ({ "@type": "CollectionPage", name: `Bibliotecas ${t.que} en ${p}`, url: `${DOMINIO}/bibliotecas/${slug(p)}/${t.slug}/` }))));
+  const hasPart = temasEspana.map(({ t }) => refPagina(`Bibliotecas ${t.que} en España`, `${DOMINIO}/bibliotecas/${t.slug}/`))
+    .concat(provsHub.flatMap((p) => TEMAS.filter((t) => temaProv[t.slug][p]).map((t) => refPagina(`Bibliotecas ${t.que} en ${p}`, `${DOMINIO}/bibliotecas/${slug(p)}/${t.slug}/`))));
   escribe(ruta, pagina({
     ruta, titulo, descripcion,
     h1: "Bibliotecas por horario en España",
@@ -2266,3 +2273,4 @@ console.log(`Provincias con ItemList de sus fichas en el JSON-LD: ${nProvItemLis
 console.log(`Localidades sin ninguna verificada con «Cerca, con horario verificado» (≤ ${RADIO_VERIF_KM} km del centroide): ${nLocsVerifCerca} · enlaces: ${nEnlacesLocVerifCerca}`);
 console.log(`Fichas con «Cerca, con horario verificado» (≤ ${RADIO_VERIF_KM} km, otra ficha): ${nFichasVerifCerca} de ${paginaDe.size} · enlaces: ${nEnlacesVerifCerca}`);
 console.log(`Navarra: ${nNavarraConHorario} de ${navarra.length} con horario publicable (fuenteHorario + verificadoHorario en app.js)`);
+console.log(`isPartOf/hasPart a otra página con el @id de su nodo (<url>#pagina): ${nRefId}`);
