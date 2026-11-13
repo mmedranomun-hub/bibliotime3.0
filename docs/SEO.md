@@ -438,6 +438,21 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
   (salen de la misma lista `migas` en `pagina()`); probado a romper texto, destino, número, `position`, `noindex` y
   sitemap del destino → salida 1 en los 6.
 
+## Hecho (2026-11-13) · `aria-current="page"` en la última miga y `@id` `#pagina` en todo `CollectionPage`
+- `pagina()` escribe el `<span>` final de `<nav class="migas">` como `<span aria-current="page">`: los lectores de
+  pantalla anuncian «página actual» (antes 0 de 1212 indexables; ahora 1212, y también la 404). No cambia el aspecto
+  (ningún estilo de `seo.css` mira el atributo; comprobado a 390×844 en claro y oscuro). La huella del `lastmod` lo
+  ignora (como `analitica.js` y las etiquetas `og:image*`/`twitter:*`): no mueve el `lastmod` de ninguna página.
+- `ldLugar()` da siempre `@id` `<ruta>#pagina` al `CollectionPage` (en las páginas con FAQ es el mismo que daba
+  `faqEnGrafo()`, así que su JSON-LD sale idéntico). Lo estrenan las 3 que no tienen FAQ: el índice `/bibliotecas/`,
+  `/bibliotecas/salas-de-estudio/` y `/bibliotecas/universidades/` (468 → 471 `CollectionPage` con `@id`; son las
+  únicas 3 páginas cuyo `lastmod` cambia).
+- `comprobar_paginas_seo.js` falla si la última miga de una página indexable no es `<span aria-current="page">` o si
+  `aria-current` sale más de una vez en las migas (línea «Última miga con aria-current…», por familia), y si algún
+  `CollectionPage` cuya `url` es la propia página (también dentro de un `@graph`) no lleva `@id` `<url>#pagina` (línea
+  «CollectionPage de la propia página con @id…»). La comparación de migas visibles acepta `<span>` con atributos.
+  Probado a romper: páginas anteriores → 1212 y 3 fallos; `aria-current` quitado del final o duplicado → salida 1.
+
 ## Lo que tienes que hacer tú (sin esto no sirve de nada)
 1. **Conectar el dominio** en Vercel: proyecto `bibliotime` → Settings → Domains → añadir `bibliomapa.es` y
    `www.bibliomapa.es` (redirigir www → sin www) y poner en tu registrador los DNS que te indique Vercel.

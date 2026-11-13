@@ -259,7 +259,7 @@ ${head || ""}</head>
 <body>
 <header class="top"><a class="marca" href="/"><span>📚</span> Bibliomapa</a><nav class="nav-top"><a href="/estudiar/">Guías</a><a class="cta-top" href="/">Abrir el mapa</a></nav></header>
 <main>
-<nav class="migas" aria-label="Estás en">${migas.map((x, k) => (k < migas.length - 1 ? `<a href="${x[1]}">${esc(x[0])}</a> › ` : `<span>${esc(x[0])}</span>`)).join("")}</nav>
+<nav class="migas" aria-label="Estás en">${migas.map((x, k) => (k < migas.length - 1 ? `<a href="${x[1]}">${esc(x[0])}</a> › ` : `<span aria-current="page">${esc(x[0])}</span>`)).join("")}</nav>
 <h1>${h1}</h1>
 ${trasH1 || ""}<p class="intro">${intro}</p>
 ${cta || `<a class="cta" href="/">📍 ¿Cuál está abierta ahora cerca de ti? Abrir el mapa</a>`}
@@ -367,9 +367,11 @@ const SALIDA = path.join(RAIZ, "bibliotecas");
 // verificado (dateModified) sea anterior.
 const crypto = require("crypto");
 // La etiqueta de analitica.js y las de vista previa al compartir (og:image*, twitter:card, twitter:image) no cuentan: no cambian lo que
-// ve quien lee la página ni lo que indexa Google (añadirlas no debe mover el lastmod de 1000 URL).
+// ve quien lee la página ni lo que indexa Google (añadirlas no debe mover el lastmod de 1000 URL). Tampoco el
+// aria-current="page" de la última miga: solo lo anuncia el lector de pantalla (el texto y el aspecto no cambian).
 const huella = (txt) => crypto.createHash("sha1").update(String(txt).replace('<script src="/analitica.js" defer></script>\n', "")
-  .replace(/<meta (property="og:image[^"]*"|name="twitter:(card|image)") content="[^"]*">\n/g, "")).digest("hex");
+  .replace(/<meta (property="og:image[^"]*"|name="twitter:(card|image)") content="[^"]*">\n/g, "")
+  .replace(/<span aria-current="page">/g, "<span>")).digest("hex");
 const lastmodAntes = new Map(), huellaAntes = new Map(), huellaNueva = new Map();
 try {
   const sm = fs.readFileSync(path.join(RAIZ, "sitemap.xml"), "utf8");
@@ -1379,7 +1381,9 @@ function descripcionTema(t, lista, donde, espana) {
 
 // Página propia (CollectionPage) con el mismo nombre y descripción que el título y la meta description. isPartOf: el
 // WebSite, salvo que extra traiga otro (provincias, localidades, hubs y sus páginas: la página que enlaza su <p class="volver">).
-const ldLugar = (ruta, nombre, descripcion, extra) => ({ "@context": "https://schema.org", "@type": "CollectionPage", name: nombre,
+// Lleva siempre @id <ruta>#pagina (el nodo de la página, como el WebPage de las fichas): en las que tienen FAQ es el mismo
+// que les daría faqEnGrafo, y así también lo tienen las que no (el índice, salas de estudio y universidades).
+const ldLugar = (ruta, nombre, descripcion, extra) => ({ "@context": "https://schema.org", "@id": DOMINIO + ruta + "#pagina", "@type": "CollectionPage", name: nombre,
   description: descripcion, url: DOMINIO + ruta, inLanguage: "es-ES", isPartOf: { "@type": "WebSite", name: "Bibliomapa", url: DOMINIO + "/" }, ...extra });
 
 // ---------- Vecinas: provincias y localidades cercanas ----------
