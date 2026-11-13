@@ -751,10 +751,11 @@ var RACHA_FOCO_MS=1000;
 function huecosHielo(){var n=Math.min(3,DATA.streakFreezes||0),h="";for(var i=0;i<3;i++)h+='<i class="'+(i<n?"lleno":"libre")+'">'+(i<n?"🧊":"")+'</i>';
   return '<span class="rs-huecos" role="img" aria-label="'+n+' de 3 congeladores'+(n===3?', completo':'')+'">'+h+'</span>'+(n===3?'<span class="rs-completo" aria-hidden="true">¡Completo!</span>':'');}
 function cuantosHielo(){var n=DATA.streakFreezes||0;return "Ya tienes "+n+" de 3"+(n>=3?", el máximo":"");}
-// nuevo==="cofre" (insignia del 🧊 que acaba de volar desde el cofre): antes, «🧊 +1 del cofre de hoy · » en --ok-tx (700),
-// para decir de dónde ha salido. Solo el cofre: el de cada 7 días seguidos se anuncia con su aviso (checkStreakFreezes) y no vuela.
+// nuevo (insignia del 🧊 que acaba de volar): antes, de dónde ha salido en --ok-tx (700): «🧊 +1 del cofre de hoy · » si
+// viene del cofre y «🧊 +1 por 7 días seguidos · » si lo dio la racha (checkStreakFreezes, que también lo hace volar).
 function comoHielo(nuevo){
-  return (nuevo==="cofre"?'<span class="rs-hielo-de">🧊 +1 del cofre de hoy</span> · ':'')+((DATA.streakFreezes||0)>=3?"Tienes el máximo (3). Cada uno salva un día sin estudiar."
+  var de={cofre:"del cofre de hoy",racha:"por 7 días seguidos"}[nuevo];
+  return (de?'<span class="rs-hielo-de">🧊 +1 '+de+'</span> · ':'')+((DATA.streakFreezes||0)>=3?"Tienes el máximo (3). Cada uno salva un día sin estudiar."
     :"Ganas uno cada 7 días seguidos y, a veces, en el cofre del día (máx. 3).");
 }
 // nuevo: desde la insignia del 🧊 recién ganado en el cofre, su hueco (.rs-nuevo) rebota una vez (svRebote; CSS quieto con «reducir movimiento»).
@@ -1040,7 +1041,7 @@ function volarSemillas(desde,ganadas){
   }
 }
 
-/* ----- El 🧊 del cofre vuela a la pastilla de la racha (#streakPill): sale de la ventana del cofre al cerrarla,
+/* ----- El 🧊 del cofre (o el de cada 7 días seguidos, desde su aviso #toastHielo) vuela a la pastilla de la racha (#streakPill): el del cofre sale de su ventana al cerrarla,
    detrás de las 🌰, y la pastilla enseña «🧊 N» un momento con un rebote suave. Con «reducir movimiento», solo la cifra. ----- */
 function estilosVueloHielo(){
   if($("hieloCss"))return;var st=document.createElement("style");st.id="hieloCss";
@@ -1054,11 +1055,11 @@ function estilosVueloHielo(){
     '@media (prefers-reduced-motion:reduce){.pill-hielo{transition:none}.pill-hielo.ph-rebote{animation:none}}';
   document.head.appendChild(st);
 }
-function marcarHieloRacha(p,t){
+function marcarHieloRacha(p,t,ho){
   var c=document.querySelector(".pill-hielo"),f=DATA.streakFreezes||0,quieto=sinMovimiento();
   if(!c){c=document.createElement("button");c.type="button";c.className="pill-hielo";p.parentNode.insertBefore(c,p.nextSibling);
     c.addEventListener("click",function(){abrirRacha("hielo",c._nuevo);});}
-  c._nuevo=t?"":"cofre"; // sin texto = el 🧊 que vuela del cofre (volarHielo solo sale de VUELO.h, que solo llena abrirCofre)
+  c._nuevo=t?"":ho||"cofre"; // sin texto = el 🧊 que acaba de volar; ho = de dónde (VUELO.ho: «cofre» o «racha»)
   c.classList.remove("fuera","ph-rebote");c.textContent=t||"🧊 "+f;p.setAttribute("aria-label",t?"Tu racha sigue a salvo":"Tu racha · "+f+(f===1?" congelador":" congeladores"));
   c.setAttribute("aria-label",t?"Tu racha sigue a salvo: ver racha":"Tienes "+f+(f===1?" congelador":" congeladores")+": ver racha");
   // misma esquina que antes (arriba a la derecha de la pastilla): 9 px por encima y 8 px por fuera
@@ -1070,10 +1071,10 @@ function marcarHieloRacha(p,t){
 function hieloSalva(){
   if(!DATA)return;estilosVueloHielo();var p=$("streakPill");if(p&&p.offsetWidth)marcarHieloRacha(p,"🧊 ✓");
 }
-function volarHielo(desde,espera){
+function volarHielo(desde,espera,ho){
   if(!DATA)return;estilosVueloSemillas();estilosVueloHielo();
   var p=$("streakPill"),pr=p&&p.getBoundingClientRect();if(!pr||!pr.width)return;
-  if(sinMovimiento()||!document.body.animate){marcarHieloRacha(p);return;}
+  if(sinMovimiento()||!document.body.animate){marcarHieloRacha(p,"",ho);return;}
   var tx=pr.left+pr.width/2,ty=pr.top+pr.height/2,ox=desde&&desde.width?desde.left+desde.width/2:innerWidth/2,oy=desde&&desde.width?desde.top+desde.height/2:innerHeight*.5;
   var mx=(ox+tx)/2-30,my=Math.max(24,Math.min(oy,ty)-50);espera=espera|0;
   VUELO_FIN=Math.max(VUELO_FIN,Date.now()+espera+950); // nada más sale de la cola hasta que el 🧊 aterrice
@@ -1084,7 +1085,7 @@ function volarHielo(desde,espera){
     {transform:"translate("+mx+"px,"+my+"px) translate(-50%,-50%) scale(1)",opacity:1,offset:.55},
     {transform:"translate("+tx+"px,"+ty+"px) translate(-50%,-50%) scale(.5)",opacity:.9}
   ],{duration:850,delay:espera,easing:"cubic-bezier(.45,0,.55,1)",fill:"both"});
-  var fin=function(){if(!s.parentNode)return;s.remove();marcarHieloRacha(p);};a.onfinish=fin;a.oncancel=fin;
+  var fin=function(){if(!s.parentNode)return;s.remove();marcarHieloRacha(p,"",ho);};a.onfinish=fin;a.oncancel=fin;
 }
 
 /* ----- «🎁 Tu cofre de misiones te espera» en «Sesión terminada»: si al parar quedan las 3 misiones de hoy
