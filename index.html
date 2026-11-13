@@ -1703,9 +1703,10 @@
 <div id="modalRoot"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer
-        onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js';document.head.appendChild(s);"></script>
+        onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js';s.onload=function(){if(!L.markerClusterGroup){var m=document.createElement('script');m.src='https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js';document.head.appendChild(m);}};document.head.appendChild(s);"></script>
+<!-- Si unpkg falla, Leaflet llega de jsdelivr DESPUÉS de markercluster (que entonces falla sin L): al cargar Leaflet se vuelve a pedir markercluster -->
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" defer
-        onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js';document.head.appendChild(s);"></script>
+        onerror="this.onerror=null;if(!window.L)return;var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js';document.head.appendChild(s);"></script>
 <!-- Bibliotecas del resto de España (datos abiertos de Overture Maps; ver el propio archivo) -->
 <script src="bibliotecas-espana.js"></script>
 <!-- Aperturas extraordinarias y salas de exámenes del curso (solo fuente oficial). Si no carga, la app sigue igual. -->

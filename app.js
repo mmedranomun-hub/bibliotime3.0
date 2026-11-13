@@ -1840,9 +1840,18 @@ function locateMe(){
 }
 // El mapa con chinchetas se monta cuando Leaflet está disponible
 function initMap(){
-  if(typeof L==="undefined"){if((initMap._n=(initMap._n||0)+1)<40)setTimeout(initMap,250);return;}
+  // __mapReady ya mientras espera a Leaflet: otra llamada (p. ej. un segundo enterApp) no monta un segundo mapa
   window.__mapReady=true;
-  var map=L.map("map",{zoomControl:false,scrollWheelZoom:true,minZoom:5,maxZoom:18}).setView([42.812,-1.652],13.5);
+  // Con red lenta Leaflet puede tardar: se le espera hasta 60 s y, si no llega, aviso con «Reintentar»
+  if(typeof L==="undefined"){if((initMap._n=(initMap._n||0)+1)<240)setTimeout(initMap,250);else mapaSinCargar();return;}
+  // markercluster llega justo detrás de Leaflet (o de su copia en jsdelivr): se le esperan hasta 3 s
+  if(!L.markerClusterGroup&&(initMap._c=(initMap._c||0)+1)<12){setTimeout(initMap,250);return;}
+  // Vista inicial ya en L.map: tu biblioteca habitual si la tienes; si no, toda España (península y Baleares).
+  // Antes se abría en Pamplona y luego se encuadraba: se pedían teselas de Pamplona que nadie veía.
+  var hab0=-1;try{hab0=bibHabitual();}catch(e){}
+  var map=L.map("map",{zoomControl:false,scrollWheelZoom:true,minZoom:5,maxZoom:18});
+  if(hab0>=0)map.setView([BIBLIOTECAS[hab0].lat,BIBLIOTECAS[hab0].lon],12,{animate:false});
+  else map.fitBounds(L.latLngBounds([[36.0,-9.3],[43.8,4.3]]),{animate:false});
   window.__map=map;
   L.control.zoom({position:"bottomright"}).addTo(map);
   document.getElementById("map").style.background="#eef2f7";
@@ -1876,12 +1885,8 @@ function initMap(){
     if(++fallos===8&&map.hasLayer(capaCalles)){map.removeLayer(capaCalles);ponerPlano();}
   });
   markers=[];
-  // Vista inicial fijada ANTES de añadir las chinchetas: si se encuadra después, el cambio de
-  // zoom hace que markercluster reagrupe con animación las chinchetas ya puestas (_forceLayout).
-  // Vista inicial: tu biblioteca habitual si la tienes; si no, toda España (península y Baleares).
-  var hab0=-1;try{hab0=bibHabitual();}catch(e){}
-  if(hab0>=0)map.setView([BIBLIOTECAS[hab0].lat,BIBLIOTECAS[hab0].lon],12,{animate:false});
-  else map.fitBounds(L.latLngBounds([[36.0,-9.3],[43.8,4.3]]),{animate:false});
+  // (La vista inicial se fija arriba, ANTES de añadir las chinchetas: si se encuadra después, el cambio
+  // de zoom hace que markercluster reagrupe con animación las chinchetas ya puestas, _forceLayout.)
   // Con miles de bibliotecas, las muy próximas se agrupan, pero el grupo también es una chincheta
   // (con el número encima) y a partir del zoom 11 cada biblioteca tiene la suya.
   window.__marcadoresListos=false;
@@ -1914,6 +1919,13 @@ function initMap(){
   // Paint y segundos de Layerize con CPU 4×). Las lejanas se dibujan en un solo canvas con el mismo
   // aspecto; solo son L.marker las de la vista ampliada a partir del zoom 11, la elegida y la del popup.
   setTimeout(function(){pinesLigeros(map,capaBibs);marcadoresListos();},0);
+}
+// Leaflet no llegó en 60 s (sin red o CDN caídos): en vez de un mapa en blanco, aviso y botón para reintentar
+function mapaSinCargar(){
+  var m=$("map");if(!m)return;
+  m.innerHTML='<div role="alert" style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px;text-align:center;color:var(--texto)">'
+    +'<b>No se pudo cargar el mapa</b><span style="color:var(--suave)">Revisa tu conexión. La lista de bibliotecas sigue funcionando.</span>'
+    +'<button class="btn" style="min-height:44px" onclick="location.reload()">Reintentar</button></div>';
 }
 // Canvas con las chinchetas que no están en el DOM. Cada variante (abierta, cerrada, sin horario, afluencia)
 // se dibuja una vez como sprite copiando el CSS de .chincheta (colores leídos de los tokens del tema).
