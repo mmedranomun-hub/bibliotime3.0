@@ -1324,3 +1324,223 @@ function pintarBienvenidaDiaria(){
     '<button class="linkbtn" onclick="closeModal()" style="display:block;margin:12px auto 0">Más tarde</button></div>',
     C?function(){var b=$("bvEstudiar");if(b)b.focus();}:null);
 }
+/* ----- Ficha de una biblioteca (horario, verificación, confirmaciones, acceso y recursos) (movido desde app.js el 2026-11-13) ----- */
+function recursosHTML(b){
+  var RES_LABELS={wifi:"📶 Wifi",enchufes:"🔌 Enchufes",salas_grupo:"👥 Salas de grupo",impresora:"🖨️ Impresora/fotocopias",cafeteria:"☕ Cafetería",silencio:"🤫 Zona de silencio",ordenadores:"💻 Ordenadores"};
+  var s='<div class="hours"><h4>Aforo y recursos</h4>';
+  s+='<div style="font-size:var(--fs-s);color:var(--suave)">🪑 Aforo: '+(b.capacidad?(b.capacidad+" puestos"):"sin confirmar")+'</div>';
+  s+='<div style="font-size:var(--fs-s);color:var(--suave);margin-top:4px">💶 '+(b.gratuito===true?"Gratuito":(b.gratuito===false?"De pago":"Coste sin confirmar"))+'</div>';
+  if(b.recursos&&b.recursos.length){
+    var txt=b.recursos.map(function(r){return RES_LABELS[r]||r;}).join(" · ");
+    s+='<div style="font-size:var(--fs-s);color:var(--suave);margin-top:4px">'+txt+'</div>';
+  }else{
+    s+='<div style="font-size:var(--fs-xs);color:var(--suave);margin-top:4px;font-style:italic">Recursos disponibles sin confirmar todavía.</div>';
+  }
+  s+='</div>';
+  return s;
+}
+function openBibDetailModal(i){
+  var b=BIBLIOTECAS[i], verano=esVeranoDe(b,new Date()), abierto=estadoBib(b);
+  var s='<div class="pop" style="padding:0"><h2>'+escapeHTML(b.nombre)+'</h2>';
+  s+='<div class="estado '+(b.sinHorario?"unk":(abierto?"open":"closed"))+'">'+(b.sinHorario?"● Horario sin confirmar":(abierto?"● Abierto ahora":"● Cerrado ahora"))+'</div>'+favBtnHTML(i,true);
+  if(b.rating!=null)s+='<div class="rate-line"><b>★ '+b.rating.toFixed(1)+'</b> · '+b.reviews+' reseñas</div>';
+  s+='<div class="dir"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6c5ce7" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span>'+escapeHTML(b.dir)+'</span></div>';
+  s+='<div class="bib-actions"><a class="btn sm" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination='+b.lat+','+b.lon+'">🧭 Cómo llegar</a>'+
+    (b.tel?'<a class="btn sm ghost" href="tel:'+escapeHTML(b.tel.replace(/\s/g,""))+'">📞 Llamar</a>':'')+
+    (b.web&&/^https?:\/\//.test(b.web)?'<a class="btn sm ghost" target="_blank" rel="noopener" href="'+escapeHTML(b.web)+'">🌐 Web</a>':'')+'</div>'+shareBibBtnHTML(i);
+  s+=notaExamenHTML(b,false);
+  var cal=horarioVigente(b),hoy=new Date().getDay(),exHoy=b._examenSem&&b._examen.some(function(e){return tramosExamen(e,new Date())!==null;});
+  if(b.sinHorario){
+    s+='<div class="hours"><h4>Horario</h4><div style="font-size:var(--fs-s);color:var(--suave)">Sin confirmar todavía'+(b.web?': consúltalo en su web.':'.')+
+      ' <button class="linkbtn" onclick="closeModal();enviarSugerencia('+jsArg("Horario de "+b.nombre)+')">¿Lo sabes? Cuéntanoslo</button></div></div>';
+  }else{
+  s+='<div class="hours"><h4>'+(exHoy?"Horario de estos días (exámenes)":(verano?"Horario de verano":"Horario de invierno"))+'</h4><table>';
+  for(var d=1;d<=7;d++){var di=d%7,tr=cal[di]||[];
+    var txt=tr.length?tr.map(function(t){return fmtHoras(t[0])+"–"+fmtHoras(t[1]);}).join(", "):'<span class="closed-day">Cerrado</span>';
+    s+='<tr class="'+(di===hoy?"today":"")+'"><td>'+DIAS[di]+'</td><td>'+txt+'</td></tr>';}
+  s+='</table>'+(b.notaHorario?'<div style="font-size:var(--fs-xs);color:var(--suave);margin-top:6px">'+escapeHTML(b.notaHorario)+'</div>':'')+
+    verificacionHorarioHTML(b)+
+    '<div class="hr-acciones"><button class="btn sm ghost" onclick="confirmarHorario('+i+')">✓ Sigue siendo correcto</button>'+
+    '<button class="btn sm ghost" onclick="reportarHorario('+i+')">⚠ Reportar horario incorrecto</button></div>'+
+    '<div class="hr-conf" id="hrConf"></div></div>';
+  }
+  s+=accesoAccesibilidadHTML(b);
+  s+=recursosHTML(b);
+  s+=occControlsHTML(i);
+  s+='<button class="btnstudy" onclick="closeModal();startStudyAt('+i+')">▶ Estudiar aquí</button>';
+  s+='<button class="linkbtn" style="display:block;margin:10px auto 0;font-size:var(--fs-s)" onclick="closeModal();enviarSugerencia('+jsArg(b.nombre)+')">Avisar de un error en esta ficha</button>';
+  s+='</div>';
+  openModal(s,function(){if(!b.sinHorario)pintarConfirmaciones(b.nombre);});
+}
+/* ===== Verificación del horario y reportes (idea de MassTimes.org) =====
+   La fecha oficial sale solo de los datos (h.fv en bibliotecas-espana.js); nunca se inventa.
+   Las confirmaciones de usuarios se muestran aparte y no sustituyen a esa verificación. */
+const HR_DIAS_VIEJO=180;
+function fmtFechaLarga(iso){var p=String(iso).split("-");return (+p[2])+" de "+MESES[+p[1]-1]+" de "+p[0];}
+function verificacionHorarioHTML(b){
+  var fuente=b.fuenteHorario&&/^https?:\/\//.test(b.fuenteHorario)?'<a target="_blank" rel="noopener" href="'+escapeHTML(b.fuenteHorario)+'">fuente</a>':'';
+  var s='<div class="hr-verif">', aviso='';
+  if(b.verificadoHorario&&/^\d{4}-\d{2}-\d{2}$/.test(b.verificadoHorario)){
+    var dias=Math.floor((Date.now()-new Date(b.verificadoHorario+"T00:00:00").getTime())/86400000);
+    s+='Horario verificado el '+fmtFechaLarga(b.verificadoHorario)+(fuente?' · '+fuente:'');
+    if(dias>HR_DIAS_VIEJO)aviso='<span class="hr-viejo">⚠ Hace más de '+HR_DIAS_VIEJO+' días: puede estar desactualizado</span>';
+  }else{
+    s+='Horario sin fecha de verificación'+(fuente?' · '+fuente:'');
+  }
+  return s+' · puede cambiar en festivos'+aviso+'</div>';
+}
+// Recuento agregado (función horario_confirmaciones del SQL: no expone user_id). Sin la librería de
+// Supabase cargada se usa fetch directo para no descargarla solo por abrir una ficha. Si la función
+// aún no existe en Supabase, no se muestra nada y no se vuelve a pedir en esta visita.
+var HR_RPC_OFF=false;
+function pedirConfirmaciones(nombre){
+  if(HR_RPC_OFF||!socialKeysOk())return Promise.resolve(null);
+  var sb=socialClient();
+  var p=sb?sb.rpc("horario_confirmaciones",{p_bib:nombre}).then(function(r){if(r.error)throw r.error;return r.data;})
+    :fetch(SUPABASE_URL+"/rest/v1/rpc/horario_confirmaciones",{method:"POST",
+      headers:{apikey:SUPABASE_ANON_KEY,"Content-Type":"application/json"},body:JSON.stringify({p_bib:nombre})})
+      .then(function(r){if(!r.ok)throw new Error(r.status);return r.json();});
+  return p.then(function(d){return (d&&d[0])||null;}).catch(function(){HR_RPC_OFF=true;return null;});
+}
+function pintarConfirmaciones(nombre){
+  pedirConfirmaciones(nombre).then(function(d){
+    var el=$("hrConf"); if(!el||!d)return;
+    var n=+d.confirmaciones||0; if(!n){el.textContent="";return;}
+    el.textContent="👍 "+(n===1?"1 persona lo confirmó":n+" personas lo confirmaron")+" en los últimos 90 días (no sustituye a la verificación oficial)";
+  });
+}
+function accesoAccesibilidadHTML(b){
+  var ac=b.acceso||{tipo:"desconocido"}, ax=b.accesibilidad||{};
+  var tipoTxt = ac.tipo==="libre" ? "🔓 Entrada libre y gratuita"
+    : ac.tipo==="restringido" ? "🔒 Acceso restringido / requiere carnet"
+    : "❔ Tipo de acceso: sin confirmar";
+  var s='<div class="hours"><h4>Acceso</h4><div style="font-size:var(--fs-s);color:var(--suave)">'+escapeHTML(tipoTxt)+(ac.detalle?' · '+escapeHTML(ac.detalle):'')+
+    (ac.web&&/^https?:\/\//.test(b.web||"")?(/ en$/.test(ac.detalle)?' ':' · ')+'<a class="linkbtn" target="_blank" rel="noopener" href="'+escapeHTML(b.web)+'">su web ↗</a>':'')+'</div>';
+  var badges=[];
+  if(ax.sillaRuedas===true)badges.push("♿ Accesible en silla de ruedas");
+  if(ax.sillaRuedas===false)badges.push("♿ No adaptada");
+  if(ax.turistas===true)badges.push("🧳 Admite visitantes ocasionales");
+  if(ax.gratisDias)badges.push("🎟️ "+escapeHTML(ax.gratisDias));
+  if(badges.length)s+='<div style="font-size:var(--fs-s);color:var(--suave);margin-top:5px">'+badges.join(" · ")+'</div>';
+  if(ax.notas&&ax.notas!=="Sin confirmar")s+='<div style="font-size:var(--fs-xs);color:var(--suave);margin-top:5px">'+escapeHTML(ax.notas)+'</div>';
+  s+='</div>';
+  return s;
+}
+/* ----- Rezar por el examen de un amigo (movido desde app.js el 2026-11-13) ----- */
+async function prayForExam(localId,ownerId,title,btn){
+  var sb=socialClient(); if(!sb||!SOCIAL.user){showToast("Necesitas amigos y Supabase configurado");return;}
+  if(btn){btn.disabled=true;btn.classList.add("on","pop");var nEl=btn.querySelector(".pray-n");if(nEl)nEl.textContent=(SOCIAL.prayerCounts[localId]||0)+1;var l=btn.querySelector(".pray-lbl");if(l)l.textContent="Rezaste";
+    if(typeof celebrar==="function")celebrar(btn,["🙏","✨","🕯️","💜"]);}
+  var name=(SOCIAL.profile&&SOCIAL.profile.name)||"Alguien";
+  var ins=await sb.from("prayers").insert({event_owner_id:ownerId,event_local_id:localId,event_title:title,prayed_by_id:SOCIAL.user.id,prayed_by_name:name});
+  if(ins.error){
+    if(ins.error.code==="23505"){showToast("Ya habías rezado por este examen 🙏");}
+    else{showToast("No se pudo registrar: "+ins.error.message);}
+    return;
+  }
+  showToast("🙏 Has rezado por el examen de "+title);registrarAccion("social");
+  if(DATA&&!DATA.badges.first_prayer){DATA.badges.first_prayer=new Date().toISOString();saveUserData();}
+  await socialLoadPrayerCounts();
+  renderCalFriendExams();socialRenderFriendEvents();
+  var dm=document.querySelector("#dayEvs");if(dm&&dm.dataset.k)refrescarDiaAmigos(dm.dataset.k);
+}
+/* ----- Añadir amigo por código (movido desde app.js el 2026-11-13) ----- */
+async function socialAddFriendFromInput(){
+  var code=$("friendCodeInput").value.trim().toUpperCase();
+  if(!code){showToast("Pega el código de tu amigo");return;}
+  var sb=socialClient(); if(!sb||!SOCIAL.user){showToast("Configura Supabase e inicia sesión");return;}
+  if(SOCIAL.profile&&code===String(SOCIAL.profile.friend_code).toUpperCase()){showToast("Ese es tu propio código");return;}
+  var pr=await sb.from("profiles").select("id,name,friend_code").eq("friend_code",code).maybeSingle();
+  if(pr.error||!pr.data){showToast("No encuentro ese código");return;}
+  var other=pr.data.id, me=SOCIAL.user.id;
+  var a=await sb.from("friendships").select("id,status").eq("requester_id",me).eq("addressee_id",other).maybeSingle();
+  var b=await sb.from("friendships").select("id,status").eq("requester_id",other).eq("addressee_id",me).maybeSingle();
+  if(a.data||b.data){showToast("Ya existe una solicitud o amistad con esa persona");return;}
+  var ins=await sb.from("friendships").insert({requester_id:me,addressee_id:other,status:"pending"});
+  if(ins.error){showToast("No se pudo enviar: "+ins.error.message);return;}
+  $("friendCodeInput").value="";showToast("Solicitud enviada a "+(pr.data.name||"tu amigo"));socialRefreshAll();
+}
+/* ----- Reaccionar a una sesión (movido desde app.js el 2026-11-13) ----- */
+async function reaccionar(localId,ownerId,emoji){
+  if(!socialClient()||!SOCIAL.user||!REACCIONES.some(function(r){return r[0]===emoji;}))return;
+  var k=reacKey(localId,ownerId), poner=!(SOCIAL.reactsMine[k]&&SOCIAL.reactsMine[k][emoji]);
+  reacAplicar(k,emoji,poner);
+  reacPintar(localId,ownerId,emoji);
+  if(poner){if(navigator.vibrate)try{navigator.vibrate(12);}catch(e){}registrarAccion("social");}
+  if(!SOCIAL.reactsOk){
+    var mias=loadJSON(reacLocalKey(),{})||{};
+    if(poner){mias[k]=mias[k]||{};mias[k][emoji]=true;}else if(mias[k]){delete mias[k][emoji];if(!Object.keys(mias[k]).length)delete mias[k];}
+    saveJSON(reacLocalKey(),mias);return;
+  }
+  var sb=socialClient(), q=sb.from("session_reactions"), res;
+  if(poner)res=await q.insert({session_local_id:localId,session_owner_id:ownerId,user_id:SOCIAL.user.id,emoji:emoji});
+  else res=await q.delete().eq("session_local_id",localId).eq("session_owner_id",ownerId).eq("user_id",SOCIAL.user.id).eq("emoji",emoji);
+  if(!res.error||res.error.code==="23505")return;
+  if(tableMissing(res,"session_reactions")){
+    // la tabla aún no existe: se queda la reacción en este dispositivo
+    SOCIAL.reactsOk=false;saveJSON("bpna_reac_sin_tabla",Date.now());
+    var mias2=loadJSON(reacLocalKey(),{})||{};
+    Object.keys(SOCIAL.reactsMine).forEach(function(kk){var o=SOCIAL.reactsMine[kk];if(Object.keys(o).length)mias2[kk]=Object.assign({},o);});
+    saveJSON(reacLocalKey(),mias2);reacCargarLocal();reacPintar(localId,ownerId,"");return;
+  }
+  reacAplicar(k,emoji,!poner);reacPintar(localId,ownerId,"");
+  showToast("No se pudo guardar la reacción");
+}
+/* ----- Cerrar sesión (movido desde app.js el 2026-11-13) ----- */
+async function logout(){
+  PRESENCIA_VISTA=null;
+  // stopStudy(true): sin el diálogo de valoración, que se quedaba encima del login sin usuario.
+  if(studyTimer.running){stopStudy(true);showToast("Sesión de estudio guardada");}
+  pomoReset();closeModal();releaseWakeLock();
+  if(socialClient()){try{await socialClearPresence();}catch(e){}try{await socialClient().auth.signOut();}catch(e){}}
+  if(SOCIAL.timer)clearInterval(SOCIAL.timer);
+  SOCIAL.comments={};SOCIAL.commentsOpen={};SOCIAL.commentDrafts={};SOCIAL.myCommentsAt=0;
+  // limpia lo social de la cuenta anterior antes de seguir como invitado
+  if(window.__map)SOCIAL.friendMarkers.forEach(function(m){try{window.__map.removeLayer(m);}catch(e){}});
+  SOCIAL.user=null;SOCIAL.profile=null;SOCIAL.friends=[];SOCIAL.requests=[];SOCIAL.sent=[];SOCIAL.events=[];SOCIAL.presence=[];SOCIAL.friendMarkers=[];SOCIAL.timer=null;
+  SOCIAL.friendSessions=[];SOCIAL.leaderboard=[];SOCIAL.room=null;SOCIAL.roomMembers=[];
+  SOCIAL.blocked={};SOCIAL.eventsAll=[];SOCIAL.presenceAll=[];
+  Brain.clearSession();
+  CURRENT=null;DATA=null;
+  entrarComoInvitado();
+}
+/* ----- Bosques de los amigos (movido desde app.js el 2026-11-13) ----- */
+function abrirBosquesAmigos(){
+  var am=(SOCIAL.friends||[]).filter(function(f){return !isBlocked(f.profile.id);});
+  openModal('<h3>🌳 Bosques de tus amigos</h3><div class="sub">Solo cuenta lo que cada uno comparte (últimos 30 días).</div>'+
+    '<div class="pick-list">'+am.map(function(f){return '<button onclick="verBosqueAmigo('+jsArg(f.profile.id)+')"><b>'+escapeHTML(f.profile.name||"Amigo")+'</b></button>';}).join("")+'</div>');
+}
+async function verBosqueAmigo(id){
+  var sb=socialClient(); if(!sb||!SOCIAL.user)return;
+  var nombre=socialNameById(id), desde=new Date();desde.setDate(desde.getDate()-30);
+  openModal('<h3>🌳 El bosque de '+escapeHTML(nombre)+'</h3><div class="sub">Cargando…</div>');
+  var res=await sb.from("shared_sessions").select("local_id,minutes,date,focus,subject,created_at").eq("owner_id",id).gte("date",ymd(desde)).order("created_at",{ascending:true}).limit(300);
+  var ses=(res.data||[]).map(function(s){return {id:s.local_id,min:s.minutes||0,date:s.date,focus:s.focus,subject:s.subject,ts:Date.parse(s.created_at)||0};});
+  openModal('<h3>🌳 El bosque de '+escapeHTML(nombre)+'</h3><div class="sub">'+resumenBosque(ses)+' · últimos 30 días</div>'+
+    bosqueHTML(ses,escapeHTML(nombre)+" aún no ha compartido sesiones.")+
+    '<button class="btn ghost" style="margin-top:14px" onclick="abrirBosquesAmigos()">← Otros amigos</button>');
+}
+/* ----- Compartir dónde estudias (movido desde app.js el 2026-11-13) ----- */
+/* ===================== COMPARTIR ESTADO ===================== */
+function compartirEstado(){
+  if(!studyTimer.running||studyTimer.bibIndex<0){showToast("Empieza una sesión en una biblioteca para compartir dónde estudias");return;}
+  var b=BIBLIOTECAS[studyTimer.bibIndex];
+  var users=Brain.getUsers(); var nombre=(users[CURRENT]&&users[CURRENT].name)||"Alguien";
+  var cierre=minutosHastaCierre(b);
+  var hasta=""; if(cierre>0){var fin=new Date(Date.now()+cierre*60000);hasta=String(fin.getHours()).padStart(2,"0")+":"+String(fin.getMinutes()).padStart(2,"0");}
+  var payload={n:nombre,b:studyTimer.bibIndex,t:Date.now(),h:hasta};
+  var code=btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+  var base=location.href.split("#")[0];
+  var link=base+"#study="+code;
+  var msg=nombre+" está estudiando en "+b.nombre+(hasta?" (hasta ~"+hasta+")":"")+". Ábrelo aquí: "+link;
+  openModal('<h3>Compartir dónde estudias</h3><div class="sub">Manda este enlace a tu grupo. Quien lo abra verá tu sitio en el mapa. Es un dato real que envías tú, no rastreo automático.</div>'+
+    '<div class="sharelink"><input type="text" id="shareInput" readonly value="'+escapeHTML(link)+'"><button class="btn sm" id="shareCopy">Copiar</button></div>'+
+    '<button class="btn" id="shareWa" style="margin-top:12px;background:linear-gradient(135deg,#25d366,#1da851)">Compartir por WhatsApp</button>',
+    function(){
+      $("shareCopy").addEventListener("click",function(){
+        var inp=$("shareInput");inp.select();
+        try{navigator.clipboard.writeText(inp.value);showToast("Enlace copiado");}catch(e){document.execCommand("copy");showToast("Enlace copiado");}
+      });
+      $("shareWa").addEventListener("click",function(){window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank");});
+    });
+}

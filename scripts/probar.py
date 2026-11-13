@@ -1376,6 +1376,7 @@ PRUEBAS = [
         return true;
       }finally{k.forEach(x=>DATA[x]=o[x]);saveUserData();closeModal();renderStudy();}"""),
     ("acceso: la ley foral solo en Navarra", """
+      await cargarExtra(); // la ficha y accesoAccesibilidadHTML viven en app-extra.js
       for(var i=N_NAVARRA;i<BIBLIOTECAS.length;i++)if(/Ley Foral/.test(accesoAccesibilidadHTML(BIBLIOTECAS[i])))return 'ley foral fuera de Navarra: '+BIBLIOTECAS[i].nombre;
       var nav=BIBLIOTECAS.slice(0,N_NAVARRA).some(b=>/Ley Foral 32\\/2002/.test(accesoAccesibilidadHTML(b)));
       var sev=BIBLIOTECAS.findIndex(b=>b.nombre==='Biblioteca Pública Infanta Elena'&&b.ciudad==='Sevilla');
@@ -1447,7 +1448,7 @@ PRUEBAS = [
       if(!chip.hidden){chip.click();var n=document.querySelectorAll('#list .card').length;chip.click();
         if(n!==con.length)return 'el filtro muestra '+n+' de '+con.length;}
       cerrarLista();
-      if(con.length){openBibDetailModal(con[0]);var a=document.querySelector('#modalRoot .ex-nota a');closeModal();
+      if(con.length){await cargarExtra();openBibDetailModal(con[0]);var a=document.querySelector('#modalRoot .ex-nota a');closeModal();
         if(!a||a.getAttribute('href')!==examenDeBib(BIBLIOTECAS[con[0]]).f)return 'la ficha no enlaza la fuente';}
       return true;"""),
     ("historial: «✅ N misiones · +N 🌰» bajo la sesión que las cumplió, nada en las demás", r"""
