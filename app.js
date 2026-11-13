@@ -2488,7 +2488,7 @@ function renderForest(){
     '<div class="seg mini" id="forestSeg">'+Object.keys(P).map(function(k){return '<button data-p="'+k+'" class="'+(k===FOREST_PERIOD?"on":"")+'">'+P[k]+'</button>';}).join("")+'</div></div>'+
     '<div class="forest-sum">'+resumenBosque(ses)+(racha>1?' · 🔥 '+racha+' días':'')+'</div>'+proxHitoHTML()+proxEspecieHTML()+
     bosqueHTML(ses,vacio)+
-    '<div class="forest-acts"><button class="btn sm" onclick="abrirTienda()">'+especieDe(DATA.especie).icon+' Especies · 🌰 <span class="seeds-n">'+semillas()+'</span></button>'+(ses.length?'<button class="btn sm ghost" onclick="compartirBosque()">📸 Compartir</button>':'')+'</div>'+
+    '<div class="forest-acts"><button class="btn sm" onclick="abrirTienda()">'+especieDe(DATA.especie).icon+' Especies · 🌰 <span class="seeds-n">'+semillas()+'</span></button>'+(ses.length?'<button class="btn sm ghost" onclick="compartirBosque(this)">📸 Compartir</button>':'')+'</div>'+
     '<div class="forest-foot">'+(plantarOn()?'Cada sesión planta un árbol: cuanto más estudias, más crece. Si sales de la app más de '+FOCUS_GRACE_SEC+' s, se marchita.':'Plantar árboles está desactivado (actívalo arriba, en «🌳 Plantar árbol»).')+
     (SOCIAL.user&&SOCIAL.friends&&SOCIAL.friends.length?' <button class="linkbtn" onclick="abrirBosquesAmigos()">Ver el bosque de tus amigos →</button>':'')+'</div>';
   el.querySelectorAll("#forestSeg button").forEach(function(b){b.addEventListener("click",function(){FOREST_PERIOD=b.dataset.p;saveJSON("bpna_forest_period",FOREST_PERIOD);renderForest();});});

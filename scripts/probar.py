@@ -459,7 +459,7 @@ PRUEBAS = [
         if(/Ayer compartiste/.test(ver()))return 'sale con una marca de anteayer';
         if(!/Estudiar ahora/.test(ver()))return 'cambia la bienvenida normal';
         return true;
-      }finally{DATA.sessions=o;DATA.ultimaCompartida=uc;window.compartirLienzo=cl;window.dibujarSesionStory=ds;window.showToast=st;compartiendoSesion=false;closeModal();}"""),
+      }finally{DATA.sessions=o;DATA.ultimaCompartida=uc;window.compartirLienzo=cl;window.dibujarSesionStory=ds;window.showToast=st;compartiendoImagen=false;closeModal();}"""),
     ("biblioteca nueva en tu mapa: aviso suave al cerrar y «📍 bibliotecas exploradas» en el Perfil", """
       var k=['sessions','misiones','acciones','hitosBosque','hitoBosquePend','especiesAvisadas','especieAvisoPend','bibNuevaPend','primerArbol','semillasPremio'],o={};
       k.forEach(x=>o[x]=DATA[x]);
@@ -1661,7 +1661,35 @@ PRUEBAS = [
         window.dibujarSesionStory=async function(){throw new Error('falla');};b.click();await new Promise(r=>setTimeout(r,50));
         if(b.disabled||b.hasAttribute('aria-busy'))return 'se queda bloqueado si falla el dibujo';
         return true;
-      }finally{navigator.share=sh0;navigator.canShare=cs0;window.dibujarSesionStory=ds0;compartiendoSesion=false;DATA.sessions=s0;feedTab=tab0;renderSessionFeed(true);closeModal();goView('map');}"""),
+      }finally{navigator.share=sh0;navigator.canShare=cs0;window.dibujarSesionStory=ds0;compartiendoImagen=false;DATA.sessions=s0;feedTab=tab0;renderSessionFeed(true);closeModal();goView('map');}"""),
+    ("📸 bosque: varios toques en «Compartir» del bosque → 1 dibujo y 1 hoja, botón con aria-busy; al compartir devuelve true y la bienvenida dice «Ayer compartiste tu bosque de…»", """
+      await cargarExtra();
+      var s0=DATA.sessions,uc0=DATA.ultimaCompartida,fp0=FOREST_PERIOD,sh0=navigator.share,cs0=navigator.canShare,db0=window.dibujarBosque,dibujos=0,shares=0,ok=null,ko=null;
+      try{
+        closeModal();FOREST_PERIOD='week';DATA.ultimaCompartida=null;
+        window.dibujarBosque=async function(){dibujos++;return db0.apply(this,arguments);};
+        navigator.canShare=()=>true;navigator.share=function(){shares++;return new Promise((a,r)=>{ok=a;ko=()=>r(Object.assign(new Error('cancelada'),{name:'AbortError'}));});};
+        DATA.sessions=[{id:'bq1',date:ymd(),min:70,bib:NO_BIB,focus:'ok',esp:'roble'},{id:'bq2',date:ymd(),min:60,bib:NO_BIB,focus:'ok',esp:'roble'}];
+        goView('study');renderForest();
+        var b=[...document.querySelectorAll('#forestCard .forest-acts button')].find(x=>/Compartir/.test(x.innerText));if(!b)return 'sin botón 📸 del bosque';
+        b.click();b.click();b.dispatchEvent(new MouseEvent('click',{bubbles:true}));
+        if(!b.disabled||b.getAttribute('aria-busy')!=='true')return 'no se desactiva al tocar';
+        if(await compartirSemanaPasada()!==false||await compartirStoryDia()!==false)return 'otro 📸 de bosque no respeta el candado';
+        for(var i=0;i<40&&!shares;i++)await new Promise(r=>setTimeout(r,50));
+        if(dibujos!==1)return 'se dibujaron '+dibujos+' bosques';
+        if(shares!==1)return 'se abrió la hoja '+shares+' veces';
+        if(!b.disabled)return 'se reactiva con la hoja abierta';
+        ko();await new Promise(r=>setTimeout(r,50));
+        if(b.disabled||b.hasAttribute('aria-busy'))return 'no vuelve tras cancelar la hoja';
+        if(DATA.ultimaCompartida)return 'guarda la marca al cancelar';
+        var p=compartirBosque(null,'day');for(var i=0;i<40&&shares<2;i++)await new Promise(r=>setTimeout(r,50));
+        ok();if(await p!==true)return 'compartirBosque no devuelve true al compartir';
+        var M=DATA.ultimaCompartida;if(!M||M.tipo!=='bosque'||M.min!==130||M.fecha!==ymd())return 'marca mal guardada: '+JSON.stringify(M);
+        var d=new Date();d.setDate(d.getDate()-1);DATA.ultimaCompartida={fecha:ymd(d),min:130,tipo:'bosque'};DATA.sessions=[];
+        pintarBienvenidaDiaria();var t=(document.querySelector('#modalRoot .bienvenida')||{}).innerText||'';
+        if(!/📸 Ayer compartiste tu bosque de 2h 10m · ¿plantamos otro árbol hoy\?/.test(t))return 'no sale el texto del bosque: '+t;
+        return true;
+      }finally{navigator.share=sh0;navigator.canShare=cs0;window.dibujarBosque=db0;compartiendoImagen=false;DATA.sessions=s0;DATA.ultimaCompartida=uc0;FOREST_PERIOD=fp0;closeModal();renderForest();goView('map');}"""),
 ]
 
 

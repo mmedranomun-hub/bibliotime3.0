@@ -344,19 +344,26 @@ async function dibujarBosque(g,ses,x0,y0,ancho,alto){
     imgs.forEach(function(im,k){if(!im)return;var h=alturaArbol(trozo[k].min)*esc,w=anchos[k];g.drawImage(im,x,base-h,w,h);x+=w;});
   }
 }
-async function compartirBosque(){
-  var ses=sesionesPeriodo(DATA.sessions,FOREST_PERIOD==="all"?"month":FOREST_PERIOD);
-  if(!ses.length){showToast("Planta algún árbol primero 🌱");return;}
-  showToast("Preparando tu imagen…");
-  var L=lienzoStory(),g=L.g,W=L.W,vivos=ses.filter(function(s){return s.focus!=="withered";}).length,min=ses.reduce(function(a,s){return a+s.min;},0);
-  var P={day:"HOY",week:"ESTA SEMANA",month:"ESTE MES",all:"ESTE MES",lastweek:"MI SEMANA"}[FOREST_PERIOD];
-  textoC(g,"MI BOSQUE · "+P,W/2,190,"800 44px system-ui,sans-serif","rgba(255,255,255,.85)");
-  textoC(g,hMin(min),W/2,370,"800 190px system-ui,sans-serif");
-  var rd=streakDays();textoC(g,"🌳 "+vivos+(vivos===1?" árbol":" árboles")+"   🔥 "+rd+(rd===1?" día":" días"),W/2,470,"700 56px system-ui,sans-serif");
-  await dibujarBosque(g,ses,70,560,W-140,1000);
-  textoC(g,"Planta tu bosque estudiando",W/2,1700,"600 48px system-ui,sans-serif","rgba(255,255,255,.9)");
-  textoC(g,"bibliomapa.es",W/2,1790,"800 64px system-ui,sans-serif");
-  compartirLienzo(L.c,"mi-bosque.png","Mi bosque de estudio 🌳 "+hMin(min)+" · bibliomapa.es");
+/* Imagen del bosque de un periodo (por defecto el de la pestaña: FOREST_PERIOD). `origen` es el botón 📸 que
+   la lanzó («📸 Compartir» del bosque, «Comparte tu día», «Compartir mi semana»): mismo candado que la sesión.
+   Devuelve true si se compartió o descargó (y guarda DATA.ultimaCompartida tipo "bosque"), false si no. */
+async function compartirBosque(origen,periodo){
+  var per=periodo||FOREST_PERIOD,ses=sesionesPeriodo(DATA.sessions,per==="all"?"month":per);
+  if(!ses.length){showToast("Planta algún árbol primero 🌱");return false;}
+  return conCandado(origen,async function(){
+    showToast("Preparando tu imagen…");
+    var L=lienzoStory(),g=L.g,W=L.W,vivos=ses.filter(function(s){return s.focus!=="withered";}).length,min=ses.reduce(function(a,s){return a+s.min;},0);
+    var P={day:"HOY",week:"ESTA SEMANA",month:"ESTE MES",all:"ESTE MES",lastweek:"MI SEMANA"}[per];
+    textoC(g,"MI BOSQUE · "+P,W/2,190,"800 44px system-ui,sans-serif","rgba(255,255,255,.85)");
+    textoC(g,hMin(min),W/2,370,"800 190px system-ui,sans-serif");
+    var rd=streakDays();textoC(g,"🌳 "+vivos+(vivos===1?" árbol":" árboles")+"   🔥 "+rd+(rd===1?" día":" días"),W/2,470,"700 56px system-ui,sans-serif");
+    await dibujarBosque(g,ses,70,560,W-140,1000);
+    textoC(g,"Planta tu bosque estudiando",W/2,1700,"600 48px system-ui,sans-serif","rgba(255,255,255,.9)");
+    textoC(g,"bibliomapa.es",W/2,1790,"800 64px system-ui,sans-serif");
+    var hecho=await compartirLienzo(L.c,"mi-bosque.png","Mi bosque de estudio 🌳 "+hMin(min)+" · bibliomapa.es");
+    if(hecho){DATA.ultimaCompartida={fecha:ymd(),min:min,tipo:"bosque"};saveUserData();}
+    return hecho;
+  });
 }
 /* Tarjeta de una sesión (1080×1920, mismo lienzo y letra que la del bosque). Solo datos de la propia
    sesión: minutos, biblioteca, asignatura, árbol y especie (si quedó sano), racha y fecha. Sin red. */
@@ -387,28 +394,34 @@ function rachaHasta(fecha){
 /* id de la sesión (texto) o, en sesiones antiguas sin id, su posición en DATA.sessions (número):
    lo usan «Sesión terminada» (#sessShare) y el 📸 de cada fila del historial de Estudio. `titulo` opcional
    sustituye «SESIÓN DE ESTUDIO» (TIT_MEJOR desde #btnShareBest y el Wrapped) y el texto de compartir.
-   `origen` es el botón 📸 que lo lanzó (si no llega, el del evento en curso): mientras se dibuja y se
-   abre la hoja de compartir queda desactivado con aria-busy, y el candado ignora un segundo toque, así
-   un doble toque no genera dos imágenes ni abre la hoja dos veces. Se restaura siempre en el finally
-   (también si se cancela la hoja o falla el dibujo). */
-var compartiendoSesion=false;
+   `origen` es el botón 📸 que lo lanzó (si no llega, el del evento en curso); ver conCandado. */
 async function compartirSesionStory(id,titulo,origen){
-  if(compartiendoSesion)return;
-  var s=typeof id==="number"?DATA.sessions[id]:DATA.sessions.filter(function(x){return x.id===id;})[0]; if(!s)return;
-  var b=origen||(window.event&&window.event.currentTarget);if(!(b&&b.tagName==="BUTTON"))b=null;
-  compartiendoSesion=true;if(b){b.disabled=true;b.setAttribute("aria-busy","true");}
-  try{
+  var s=typeof id==="number"?DATA.sessions[id]:DATA.sessions.filter(function(x){return x.id===id;})[0]; if(!s)return false;
+  return conCandado(origen,async function(){
     showToast("Preparando tu imagen…");
     var hecho=await compartirLienzo(await dibujarSesionStory(s,titulo),"mi-sesion.png",(titulo?titulo+": ":"He estudiado ")+hMin(s.min)+" 📚 bibliomapa.es");
     // «📸 Ayer compartiste…» de la bienvenida de mañana: solo si se compartió o descargó de verdad (no al cancelar)
     if(hecho){DATA.ultimaCompartida={fecha:ymd(),min:s.min};saveUserData();}
-  }catch(e){showToast("No se pudo preparar la imagen. Prueba otra vez");}
-  finally{compartiendoSesion=false;if(b){b.disabled=false;b.removeAttribute("aria-busy");}}
+    return hecho;
+  });
 }
-async function compartirStoryDia(){
+/* Candado común de las imágenes para stories (sesión y bosque): mientras se dibuja y está abierta la hoja de
+   compartir, el botón que lo lanzó queda disabled + aria-busy y cualquier otro toque se ignora, así un doble
+   toque no genera dos imágenes ni abre la hoja dos veces. Se restaura siempre en el finally (también si se
+   cancela la hoja o falla el dibujo, con aviso suave). Devuelve lo que devuelva fn (true/false). */
+var compartiendoImagen=false;
+async function conCandado(origen,fn){
+  if(compartiendoImagen)return false;
+  var b=origen||(window.event&&window.event.currentTarget);if(!(b&&b.tagName==="BUTTON"))b=null;
+  compartiendoImagen=true;if(b){b.disabled=true;b.setAttribute("aria-busy","true");}
+  try{return !!(await fn());}
+  catch(e){showToast("No se pudo preparar la imagen. Prueba otra vez");return false;}
+  finally{compartiendoImagen=false;if(b){b.disabled=false;b.removeAttribute("aria-busy");}}
+}
+async function compartirStoryDia(origen){
   var hoy=ymd(),ses=DATA.sessions.filter(function(s){return s.date===hoy;});
-  if(!ses.length){showToast("Estudia un poco y comparte tu día 🌱");return;}
-  var prev=FOREST_PERIOD;FOREST_PERIOD="day";await compartirBosque();FOREST_PERIOD=prev;
+  if(!ses.length){showToast("Estudia un poco y comparte tu día 🌱");return false;}
+  return compartirBosque(origen||(window.event&&window.event.currentTarget),"day");
 }
 /* ----- Resumen semanal tipo «Wrapped» ----- */
 function abrirResumenSemanal(auto){
@@ -425,12 +438,12 @@ function abrirResumenSemanal(auto){
   if(S.mejor)slides.push({html:'<div class="sv-kicker">TU MEJOR DÍA</div><div class="sv-min">'+DIAS[new Date(S.mejor+"T00:00:00").getDay()]+'</div><div class="sv-where">'+hMin(S.mejorMin)+' de estudio 🔥</div>',ses:null});
   if(S.top)slides.push({html:'<div class="sv-kicker">LO QUE MÁS ESTUDIASTE</div><div class="sv-min">📚 '+escapeHTML(S.top)+'</div><div class="sv-where">'+hMin(S.topMin)+' ('+Math.round(S.topMin/S.min*100)+'% de tu semana)</div>',ses:null});
   slides.push({html:'<div class="sv-kicker">NIVEL '+(nivelDe(horasTotales())+1)+' · '+escapeHTML(NIVELES[nivelDe(horasTotales())][1].toUpperCase())+'</div><div class="sv-min">🔥 '+streakDays()+'</div><div class="sv-where">'+(streakDays()===1?'día':'días')+' de racha · 🌰 '+semillas()+' semillas</div>'+
-    '<div class="sv-acc"><button class="btn sm" onclick="compartirSemanaPasada()">📸 Compartir mi semana</button>'+
+    '<div class="sv-acc"><button class="btn sm" onclick="compartirSemanaPasada(this)">📸 Compartir mi semana</button>'+
     (b?'<button class="btn sm ghost" id="svBest" aria-label="Compartir en stories tu mejor sesión de la semana pasada: '+hMin(b.min)+'" onclick="compartirSesionStory('+(b.id?jsArg(b.id):DATA.sessions.indexOf(b))+',TIT_MEJOR,this)">📸 Mi mejor sesión</button>':'')+'</div>',ses:null});
   mostrarStory("Tu semana",null,slides,"yo");
   if(auto)setTimeout(function(){confeti(60);},400);
 }
-async function compartirSemanaPasada(){var prev=FOREST_PERIOD;FOREST_PERIOD="lastweek";try{await compartirBosque();}finally{FOREST_PERIOD=prev;}}
+function compartirSemanaPasada(origen){return compartirBosque(origen||(window.event&&window.event.currentTarget),"lastweek");}
 /* ----- Bienvenida de la primera visita (3 pasos) ----- */
 function onboarding(){
   DATA.onboarded=true;saveUserData(); // si cierra la ventana, no se vuelve a mostrar
@@ -774,7 +787,7 @@ function abrirStoryMia(){
   var slides=mias.map(function(x){return {html:slideHTML(x,"Tú"),ses:null};});
   var h=statsHoy();
   slides.push({html:'<div class="sv-min">'+(h.min?hMin(h.min)+' hoy':'Tu día está por empezar')+'</div><div class="sv-where">🔥 Racha de '+streakDays()+' días · 🌰 '+semillas()+' semillas</div>'+
-    '<button class="btn sm" style="margin-top:18px" onclick="compartirStoryDia()">📸 Compartir en stories</button>'+
+    '<button class="btn sm" style="margin-top:18px;min-height:44px" onclick="compartirStoryDia(this)">📸 Compartir en stories</button>'+
     (h.min?'':'<button class="btn sm ghost" style="margin-top:10px;background:#fff" onclick="cerrarStory();goView(\'study\')">▶ Empezar a estudiar</button>'),ses:null});
   mostrarStory("Tu día",null,slides,"yo");
 }
@@ -1252,7 +1265,7 @@ function vueltaBienvenidaHTML(nombre){
 }
 
 /* ----- «📸 Ayer compartiste 0h 52m · ¿plantamos otro árbol hoy?»: si ayer (fecha local) compartiste una sesión
-   (DATA.ultimaCompartida, la guarda compartirSesionStory) y hoy aún no has estudiado, la bienvenida diaria lo
+   (DATA.ultimaCompartida, la guardan compartirSesionStory y compartirBosque) y hoy aún no has estudiado, la bienvenida diaria lo
    recuerda UNA vez (marca .vista) para que compartir lleve de vuelta a estudiar. Solo invita: sin racha en peligro.
    Orden en la ventana: cabecera (racha o «¡Qué alegría verte!») → esta tarjeta → examen → misiones → consejo. ----- */
 function compartidaAyer(){
@@ -1273,7 +1286,7 @@ function pintarBienvenidaDiaria(){
   var cab=vueltaBienvenidaHTML(nombre)||'<div class="bv-fuego'+(n?'':' apagado')+'">🔥</div><h3>'+saludo+nombre+'</h3>'+
     '<div class="sub">'+(n?'Llevas <b>'+n+(n===1?' día':' días')+'</b> de racha.'+(C?'':' ¡Que no se apague hoy!'):'Hoy es un buen día para empezar una racha.')+'</div>';
   openModal('<div class="bienvenida">'+cab+
-    (C?'<div class="bv-comp" role="note">📸 Ayer compartiste <b>'+hMin(C.min)+'</b> · ¿plantamos otro árbol hoy? 🌱</div>':'')+
+    (C?'<div class="bv-comp" role="note">📸 Ayer compartiste '+(C.tipo==="bosque"?'tu bosque de ':'')+'<b>'+hMin(C.min)+'</b> · ¿plantamos otro árbol hoy? 🌱</div>':'')+
     (ex&&dEx<=14?'<div class="bv-ex">📅 <b>'+escapeHTML(ex.ev.title)+'</b> · '+(dEx===0?'¡es hoy!':dEx===1?'mañana':'en '+dEx+' días')+'</div>':'')+
     '<div class="bv-mis">🎯 Misiones de hoy: '+M.ids.map(function(id){var d=misionDef(id);return d?d.icon:'';}).join(" ")+' · cofre al completarlas</div>'+
     '<div class="bv-tip">'+tip.e+' <b>'+escapeHTML(tip.t)+'</b>: '+escapeHTML(tip.x)+'</div>'+
