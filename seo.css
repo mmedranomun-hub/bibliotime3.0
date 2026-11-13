@@ -88,3 +88,6 @@ footer{max-width:760px;margin:0 auto;padding:0 16px 32px;font-size:var(--fs-s);c
 .lista-ex{list-style:none;padding:0;margin:0}
 .lista-ex li{padding:8px 0;border-top:1px solid var(--linea);font-size:var(--fs-m)}
 .lista-ex li small{color:var(--suave)}
+.nav-top{display:flex;align-items:center;gap:14px}
+.nav-top>a:not(.cta-top){font-weight:700;font-size:var(--fs-m);color:var(--acento-tx);text-decoration:none}
+.pasos{margin:0;padding-left:20px;line-height:1.6}.pasos li{margin:6px 0}

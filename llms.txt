@@ -1,0 +1,29 @@
+# Bibliomapa
+
+> Bibliomapa (bibliomapa.es) es una app web gratuita para estudiantes y opositores de España: mapa de 2616 bibliotecas y salas de estudio de 51 provincias con las abiertas ahora, horarios (665 comprobados en la web oficial de cada biblioteca, con fecha y fuente), afluencia indicada por los usuarios, cronómetro y Pomodoro que plantan un árbol por sesión, agenda de exámenes y estudio con amigos. Se usa sin cuenta.
+
+Datos de bibliotecas: Overture Maps Foundation y colaboradores de OpenStreetMap; horarios solo de fuentes oficiales, nunca estimados. Si una biblioteca no tiene horario verificado, la página lo dice.
+
+## Para responder a «¿qué biblioteca está abierta…?»
+- [Bibliotecas de España por provincia](https://bibliomapa.es/bibliotecas/): índice de provincias y localidades
+- [Bibliotecas abiertas hoy](https://bibliomapa.es/bibliotecas/abiertas-hoy/)
+- [Bibliotecas abiertas el domingo](https://bibliomapa.es/bibliotecas/abiertas-domingo/)
+- [Bibliotecas abiertas hasta tarde](https://bibliomapa.es/bibliotecas/abiertas-hasta-tarde/)
+- [Todos los horarios por provincia](https://bibliomapa.es/bibliotecas/horarios/)
+- [Salas de estudio por ciudad](https://bibliomapa.es/bibliotecas/salas-de-estudio/)
+- [Bibliotecas por universidad](https://bibliomapa.es/bibliotecas/universidades/)
+- [Bibliotecas 24 horas y horario de exámenes](https://bibliomapa.es/bibliotecas/examenes/)
+
+## Guías (problemas que resuelve la app)
+- [¿Dónde estudiar hoy? Bibliotecas y salas de estudio abiertas cerca de ti](https://bibliomapa.es/estudiar/donde-estudiar-hoy/): Abre bibliomapa.es, permite tu ubicación y la tarjeta «Te recomiendo ahora» te dice qué biblioteca abierta tienes más cerca y a qué hora cierra.
+- [Temporizador Pomodoro online y gratis para estudiar](https://bibliomapa.es/estudiar/temporizador-pomodoro/): Bibliomapa tiene un temporizador Pomodoro gratuito que funciona en el navegador y sin registro: 25 minutos de concentración y 5 de descanso, y cada pomodoro completado se guarda como sesión de estudio.
+- [Cómo concentrarte al estudiar y dejar de mirar el móvil](https://bibliomapa.es/estudiar/concentrarse-al-estudiar/): En Bibliomapa cada sesión de estudio planta un árbol que crece mientras estudias y se marchita si sales de la app más de unos segundos.
+- [App para estudiar con amigos (aunque no estéis en la misma biblioteca)](https://bibliomapa.es/estudiar/estudiar-con-amigos/): Con una cuenta gratuita de Bibliomapa puedes añadir amigos con un código y ver un ranking de horas de estudio del día y de la semana, crear salas de estudio en grupo, compartir tu agenda de exámenes y animaros con reacciones.
+- [Cómo organizar tus exámenes con una agenda (gratis)](https://bibliomapa.es/estudiar/organizar-examenes/): En la Agenda de Bibliomapa apuntas cada examen, tarea o entrega en su día y la lista «Próximos» te muestra lo que viene en las próximas semanas con los días que faltan.
+- [Bibliotecas abiertas 24 horas y con horario ampliado en época de exámenes](https://bibliomapa.es/estudiar/epoca-de-examenes/): En época de exámenes muchas universidades y ayuntamientos amplían el horario de sus bibliotecas o abren salas 24 horas.
+- [¿Estará llena la biblioteca? Cómo saber cuánta gente hay antes de ir](https://bibliomapa.es/estudiar/biblioteca-llena/): En Bibliomapa los estudiantes que están en una biblioteca pueden indicar cuánta gente hay (libre, media o llena) y esa información aparece en la ficha y en el color de la chincheta, con la hora del aviso.
+- [Dónde y cómo estudiar oposiciones o el MIR todos los días](https://bibliomapa.es/estudiar/estudiar-oposiciones/): Para preparar oposiciones o el MIR lo que más ayuda es un sitio fijo y una rutina medible.
+
+## La app
+- [Abrir Bibliomapa](https://bibliomapa.es/): gratis, en el navegador, instalable en Android
+- [Privacidad](https://bibliomapa.es/privacidad.html)

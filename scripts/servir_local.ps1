@@ -21,6 +21,9 @@ $mimeMap = @{
     ".jpeg" = "image/jpeg"
     ".svg"  = "image/svg+xml"
     ".ico"  = "image/x-icon"
+    ".txt"  = "text/plain; charset=utf-8"
+    ".xml"  = "application/xml; charset=utf-8"
+    ".webmanifest" = "application/manifest+json"
 }
 
 while ($listener.IsListening) {
@@ -28,9 +31,12 @@ while ($listener.IsListening) {
     $request = $context.Request
     $response = $context.Response
 
+    try {
     $localPath = [System.Uri]::UnescapeDataString($request.Url.LocalPath)
-    if ($localPath -eq "/") { $localPath = "/index.html" }
+    # Las páginas de /bibliotecas/… y /estudiar/… son carpetas con su index.html dentro
+    if ($localPath.EndsWith("/")) { $localPath = $localPath + "index.html" }
     $filePath = Join-Path $Root ($localPath.TrimStart("/"))
+    if (Test-Path $filePath -PathType Container) { $filePath = Join-Path $filePath "index.html" }
 
     if (Test-Path $filePath -PathType Leaf) {
         $ext = [System.IO.Path]::GetExtension($filePath).ToLower()
@@ -46,4 +52,8 @@ while ($listener.IsListening) {
         $response.OutputStream.Write($msg, 0, $msg.Length)
     }
     $response.OutputStream.Close()
+    } catch {
+        # Si el navegador corta una descarga, se sigue sirviendo en vez de parar el servidor
+        try { $response.Abort() } catch {}
+    }
 }
