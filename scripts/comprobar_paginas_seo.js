@@ -58,9 +58,11 @@
        no dos nodos de página sueltos para la misma URL. Y fichas cuyo WebPage #pagina no declara hasPart
        {"@id": "<ficha>#faq"} teniendo FAQPage, o lo declara sin tenerlo (recíproco).
 
-     - la vista previa al compartir: páginas indexables (bibliotecas/… y las guías de /estudiar/) sin og:site_name,
-       og:image absoluta (https://bibliomapa.es/… de un archivo del repo) con og:image:width/height iguales a sus
-       dimensiones reales y og:image:alt, o sin twitter:card (summary o summary_large_image), o con alguna repetida.
+     - la vista previa al compartir: la portada (index.html) y las páginas indexables (bibliotecas/… y las guías de
+       /estudiar/) sin og:site_name, og:image absoluta (https://bibliomapa.es/… de un archivo del repo) con
+       og:image:width/height iguales a sus dimensiones reales y og:image:alt, o sin twitter:card (summary o
+       summary_large_image), o con alguna repetida; con summary_large_image, twitter:image igual a og:image y la imagen
+       apaisada (ancho ≥ 1,5 × alto; si no, X la recorta).
      - la verificación de Google Search Console: una <meta name="google-site-verification"> vacía, «null»/«undefined» o
        que no parece un código, más de una (en varias páginas o repetida), fuera de la portada (index.html, la única
        que Google mira para la propiedad de prefijo de URL) o distinta de GSC_VERIFICACION de generar_paginas_seo.js
@@ -748,7 +750,8 @@ if (fs.existsSync(path.join(RAIZ, "estudiar"))) (function recorreG(dir) {
     if (e.isDirectory()) recorreG(f); else if (e.name === "index.html") guias.push([rutaDe(f), fs.readFileSync(f, "utf8")]);
   }
 })(path.join(RAIZ, "estudiar"));
-const conVista = [...html, ...guias];
+const fPortada = path.join(RAIZ, "index.html");
+const conVista = [["/index.html", fs.existsSync(fPortada) ? fs.readFileSync(fPortada, "utf8") : ""], ...html, ...guias];
 for (const [r, h] of conVista) {
   const cab = h.split("</head>")[0];
   const uno = (attr, n) => { const l = metaCab(cab, attr, n); if (l.length !== 1) vistaMal.push(`${r}: ${n} ×${l.length}`); return l[0]; };
@@ -759,14 +762,18 @@ for (const [r, h] of conVista) {
   if (tc !== undefined && !["summary", "summary_large_image"].includes(tc)) vistaMal.push(`${r}: twitter:card «${tc}»`);
   if (alt !== undefined && !alt.trim()) vistaMal.push(`${r}: og:image:alt vacío`);
   if (img === undefined) continue;
+  const ti = metaCab(cab, "name", "twitter:image");
+  if (ti.length > 1) vistaMal.push(`${r}: twitter:image ×${ti.length}`);
+  if (tc === "summary_large_image" && ti[0] !== img) vistaMal.push(`${r}: twitter:image (${ti[0]}) ≠ og:image con summary_large_image`);
   if (!img.startsWith(DOMINIO + "/")) { vistaMal.push(`${r}: og:image no absoluta a ${DOMINIO}/ (${img})`); continue; }
   const fImg = path.join(RAIZ, img.slice(DOMINIO.length + 1).split(/[?#]/)[0]);
   const d = fs.existsSync(fImg) ? dimsImagen(fImg) : null;
   if (!fs.existsSync(fImg)) vistaMal.push(`${r}: og:image ${img} no existe en el repo`);
   else if (!d) vistaMal.push(`${r}: og:image ${img} no es un PNG/JPEG legible`);
   else if (String(d[0]) !== an || String(d[1]) !== al) vistaMal.push(`${r}: og:image:width/height ${an}×${al} ≠ real ${d[0]}×${d[1]}`);
+  else if (tc === "summary_large_image" && d[0] < 1.5 * d[1]) vistaMal.push(`${r}: summary_large_image con imagen no apaisada ${d[0]}×${d[1]}`);
 }
-console.log(`Vista previa al compartir (og:site_name, og:image absoluta con width/height reales y alt, twitter:card): ${conVista.length - new Set(vistaMal.map((x) => x.split(":")[0])).size} de ${conVista.length} páginas indexables (${html.size} de bibliotecas/ y ${guias.length} guías de /estudiar/) · mal: ${vistaMal.length}${vistaMal.length ? "\n" + muestra(vistaMal, (r) => "  " + r) : ""}`);
+console.log(`Vista previa al compartir (og:site_name, og:image absoluta con width/height reales y alt, twitter:card): ${conVista.length - new Set(vistaMal.map((x) => x.split(":")[0])).size} de ${conVista.length} páginas (portada, ${html.size} de bibliotecas/ y ${guias.length} guías de /estudiar/; imagen grande: ${conVista.filter(([, h]) => metaCab(h.split("</head>")[0], "name", "twitter:card")[0] === "summary_large_image").length}) · mal: ${vistaMal.length}${vistaMal.length ? "\n" + muestra(vistaMal, (r) => "  " + r) : ""}`);
 console.log(`Search Console (meta google-site-verification):${gscEn.length ? gscEn.map(([r]) => r).join(", ") : "ninguna (verificación por DNS o pendiente)"} · mal: ${gscMal.length}${gscMal.length ? "\n" + muestra(gscMal, (r) => "  " + r) : ""}`);
 console.log(`IndexNow: ${indexNowClave ? `clave puesta, /${indexNowClave}.txt` : "sin clave (INDEXNOW_CLAVE = null)"} · mal: ${indexNowMal.length}${indexNowMal.length ? "\n" + muestra(indexNowMal, (r) => "  " + r) : ""}`);
 // ---------- Prueba de «despliega primero» de avisar_indexnow.js ----------
