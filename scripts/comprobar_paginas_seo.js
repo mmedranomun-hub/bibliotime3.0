@@ -46,6 +46,10 @@
        y en los hubs (horarios, universidades, exámenes y salas de estudio), las universidades y las ciudades de
        exámenes y las salas de estudio de provincia y localidad, con el penúltimo igual a la url de su isPartOf (el
        índice; su hub). Falla con cualquier BreadcrumbList suelto (sin @id <ruta>#migas o sin breadcrumb que lo enlace).
+     - migas visibles distintas de las del JSON-LD en cualquier página indexable: los <a href>/<span> de <nav class="migas">
+       frente a los name/item del BreadcrumbList <ruta>#migas (mismo orden y position, mismo texto decodificado, mismo
+       destino; el <span> final es la propia página), y cada item que no sea / ni una página generada con index.html, sin
+       noindex y en el sitemap.
      - fichas cuyo WebPage no lleva @id <ficha>#pagina y about {"@id": "<ficha>#biblioteca"}, sin Library con ese @id
        en la misma página, o cuya Library no lo devuelve con mainEntityOfPage {"@id": "<ficha>#pagina"} (recíprocos).
      - cualquier página con FAQPage (fichas, provincias, localidades, temáticas, hubs, salas, universidades, exámenes)
@@ -68,7 +72,7 @@
    Sale con código 1 si hay enlaces rotos, títulos o descripciones repetidos, JSON-LD roto, horarios especiales mal o
    lastmod mal, la meta de Search Console mal o repetida, una provincia o localidad con fichas sin ItemList, el índice sin su CollectionPage, un hasPart roto, una
    temática, provincia, localidad, ficha, hub, sala de estudio, universidad o ciudad de exámenes sin su isPartOf o la 404 mal, o una página con
-   las migas sin enlazar, sueltas o con el penúltimo distinto de su isPartOf. */
+   las migas sin enlazar, sueltas, con el penúltimo distinto de su isPartOf, distintas de las visibles o hacia una página no indexable. */
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -492,6 +496,41 @@ for (const m of sitemap.matchAll(/<url>([\s\S]*?)<\/url>/g)) {
   if (lm > HOY) lastmodMal.push(`${loc} lastmod ${lm} posterior a hoy`);
   if (modPagina.has(loc) && lm < modPagina.get(loc)) lastmodMal.push(`${loc} lastmod ${lm} anterior a su dateModified ${modPagina.get(loc)}`);
 }
+// Migas visibles = migas del JSON-LD, en todas las páginas generadas indexables: los <a href>/<span> de
+// <nav class="migas"> y los ListItem del BreadcrumbList <ruta>#migas, en el mismo orden (position 1, 2, …), con el mismo
+// texto (entidades HTML decodificadas) y el mismo destino (href = item; el <span> final, sin enlace, = la propia página).
+// Y cada item es / o una página generada con index.html, sin noindex y en el sitemap. Por familia; fallo si hay alguna.
+const decodificaTexto = (s) => decodifica(s.replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(+n)).replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCodePoint(parseInt(n, 16))).replace(/&nbsp;/g, " "));
+const noindex = (h) => /<meta name="robots" content="[^"]*noindex/i.test(h);
+const migasVisMal = [], nMigasVis = {}, migasVisMalFam = {}, itemMigasMal = [], itemMigasMalFam = {};
+let nMigasVisPag = 0, nItemsMigas = 0;
+for (const [ruta, h] of html) {
+  if (noindex(h)) continue;
+  const f = familiaMigas(ruta), mal = (m) => { migasVisMal.push(`${ruta} (${f}) ${m}`); migasVisMalFam[f] = (migasVisMalFam[f] || 0) + 1; };
+  const navs = [...h.matchAll(/<nav class="migas"[^>]*>([\s\S]*?)<\/nav>/g)];
+  const bc = (migasDe.get(ruta) || []).find((x) => x["@id"] === DOMINIO + ruta + "#migas");
+  if (navs.length !== 1) { mal(`${navs.length} <nav class="migas"> (se espera 1)`); continue; }
+  if (!bc) { mal(`sin BreadcrumbList ${DOMINIO + ruta}#migas`); continue; }
+  const vis = [...navs[0][1].matchAll(/<a href="([^"]*)">([\s\S]*?)<\/a>|<span>([\s\S]*?)<\/span>/g)]
+    .map((m) => m[3] === undefined ? { href: decodifica(m[1]), txt: decodificaTexto(m[2]) } : { href: null, txt: decodificaTexto(m[3]) });
+  const ld = bc.itemListElement || [];
+  let dif = vis.length !== ld.length ? `${vis.length} migas visibles y ${ld.length} en el JSON-LD` : "";
+  for (let i = 0; !dif && i < ld.length; i++) {
+    const v = vis[i], x = ld[i] || {}, item = typeof x.item === "string" ? x.item : (x.item || {})["@id"];
+    const destino = v.href === null ? (i === ld.length - 1 ? DOMINIO + ruta : "(span sin enlace antes del final)") : v.href.startsWith("/") ? DOMINIO + v.href : v.href;
+    if (x.position !== i + 1) dif = `posición ${i + 1}: position ${x.position}`;
+    else if (v.txt !== x.name) dif = `posición ${i + 1}: texto «${v.txt}» y name «${x.name}»`;
+    else if (destino !== item) dif = `posición ${i + 1}: destino ${destino} e item ${item}`;
+  }
+  if (dif) { mal(dif); continue; }
+  nMigasVis[f] = (nMigasVis[f] || 0) + 1; nMigasVisPag++;
+  for (const x of ld) {
+    const item = typeof x.item === "string" ? x.item : (x.item || {})["@id"] || "", u = item.startsWith(DOMINIO) ? item.slice(DOMINIO.length) : null;
+    nItemsMigas++;
+    const por = u === null ? "fuera de " + DOMINIO : u === "/" ? "" : !html.has(u) ? "sin index.html generado" : noindex(html.get(u)) ? "con noindex" : !enSitemap.has(u) ? "fuera del sitemap" : "";
+    if (por) { itemMigasMal.push(`${ruta} (${f}) item ${item || "falta"} ${por}`); itemMigasMalFam[f] = (itemMigasMalFam[f] || 0) + 1; }
+  }
+}
 
 // 404: no cuenta como enlace entrante (no quita huérfanas) ni entra en el resto de comprobaciones (no se indexa).
 const f404 = path.join(RAIZ, "404.html"), mal404 = [];
@@ -657,6 +696,9 @@ console.log(`Índice /bibliotecas/: CollectionPage ${indiceCP ? "sí" : "NO"} ·
 console.log(`hasPart: ${nHasPart} en ${nPagHasPart} páginas (temáticas que enlazan sus partes: ${nTemasPartes}) · rotos o sin enlace en el HTML: ${hasPartMal.length}${hasPartMal.length ? "\n" + muestra(hasPartMal, (r) => "  " + r) : ""}`);
 console.log(`Temáticas: España ${nTemas.España} · provincia ${nTemas.provincia} · localidad ${nTemas.localidad} · con isPartOf bien: España ${nIsPartOf.España} · provincia ${nIsPartOf.provincia} · localidad ${nIsPartOf.localidad} · lugares con isPartOf bien: provincias ${nLugarIsPartOf.provincia} · localidades ${nLugarIsPartOf.localidad} · fichas con isPartOf bien: a su localidad ${nFichaIsPartOf.localidad} · a su provincia ${nFichaIsPartOf.provincia} (fuera del ItemList de esa página: ${nFichasFueraLista}) · con isPartOf a su hub bien: ${Object.entries(nHubIsPartOf).map(([t, n]) => `${t} ${n}`).join(" · ")} · hubs con isPartOf al índice bien: ${nHubsIndice} · mal: ${isPartOfMal.length}${isPartOfMal.length ? "\n" + muestra(isPartOfMal, (r) => "  " + r) : ""}`);
 console.log(`Migas de las fichas (breadcrumb del WebPage → BreadcrumbList #migas, penúltimo = isPartOf): ${nFichaMigas} de ${fichas.size} bien · índice, provincias, localidades y temáticas (breadcrumb del CollectionPage → #migas): ${Object.entries(nLugarMigas).map(([t, n]) => `${t} ${n}`).join(" · ")} (temáticas con penúltimo ≠ isPartOf, solo contadas: ${nTemaMigasDistintoIsPartOf}) · hubs, salas de estudio, universidades y exámenes (penúltimo = isPartOf): ${Object.entries(nHubMigas).map(([t, n]) => `${t} ${n}`).join(" · ")} · BreadcrumbList sueltas (sin @id <ruta>#migas enlazado: fallo): ${nMigasSueltas}${nMigasSueltas ? ` (${Object.entries(migasSueltas).map(([t, n]) => `${t} ${n}`).join(" · ")})` : ""} · mal: ${migasMal.length}${migasMal.length ? "\n" + muestra(migasMal, (r) => "  " + r) : ""}`);
+const porFam = (o) => Object.entries(o).map(([t, n]) => `${t} ${n}`).join(" · ") || "0";
+console.log(`Migas visibles = JSON-LD (<nav class="migas"> ↔ BreadcrumbList #migas: orden, texto y destino) en las indexables: ${nMigasVisPag} de ${[...html.values()].filter((h) => !noindex(h)).length} bien (${porFam(nMigasVis)}) · discordancias: ${migasVisMal.length}${migasVisMal.length ? ` (${porFam(migasVisMalFam)})` : ""} · items de las migas (${nItemsMigas}) que no son / ni página indexable del sitemap: ${itemMigasMal.length}${itemMigasMal.length ? ` (${porFam(itemMigasMalFam)})` : ""}` +
+  (migasVisMal.length + itemMigasMal.length ? "\n" + muestra(migasVisMal.concat(itemMigasMal), (r) => "  " + r) : ""));
 console.log(`mainEntityOfPage de las fichas (WebPage #pagina about Library #biblioteca y Library mainEntityOfPage → #pagina): ${nFichaMainEntity} de ${fichas.size} bien · mal: ${mainEntityMal.length}${mainEntityMal.length ? "\n" + muestra(mainEntityMal, (r) => "  " + r) : ""}`);
 console.log(`FAQPage en el grafo de su página (@id #faq, isPartOf → #pagina de la misma URL): fichas (WebPage) ${nFichaFaqBien} de ${nFichaFaq} bien, con hasPart #faq recíproco ${nFichaHasPart} · demás páginas (CollectionPage) ${nOtraFaqBien} de ${nOtraFaq} bien · mal: ${faqMal.length}${faqMal.length ? "\n" + muestra(faqMal, (r) => "  " + r) : ""}`);
 console.log(`Huérfanas (sin enlace desde otra página generada): ${huerfanas.length}${huerfanas.length ? "\n" + muestra(huerfanas, (r) => "  " + r) : ""}`);
@@ -730,5 +772,5 @@ async function probarAvisoIndexNow() {
   const t0 = Date.now();
   const [avisoMal, nCasos] = await probarAvisoIndexNow();
   console.log(`IndexNow «despliega primero» (avisar_indexnow.js --base contra servidor local, sin red real): ${nCasos - new Set(avisoMal.map((x) => x.split(" ")[0])).size} de ${nCasos} casos bien (200 con la clave → 0; 404 u otro texto → 1) en ${Date.now() - t0} ms · mal: ${avisoMal.length}${avisoMal.length ? "\n" + muestra(avisoMal, (r) => "  " + r) : ""}`);
-  if (avisoMal.length || analiticaMal.length || gscMal.length || indexNowMal.length || migasMal.length || mainEntityMal.length || faqMal.length || indiceMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
+  if (migasVisMal.length || itemMigasMal.length || avisoMal.length || analiticaMal.length || gscMal.length || indexNowMal.length || migasMal.length || mainEntityMal.length || faqMal.length || indiceMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
 })();

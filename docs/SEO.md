@@ -429,6 +429,15 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
 - `comprobar_paginas_seo.js` falla también si una temática enlaza sus partes (nav «Por localidad» o cabecera de sección
   hacia `/bibliotecas/<prov>/<tema>/`) sin declararlas en su `hasPart`. Hoy: 849 `hasPart` en 130 páginas, 0 mal.
 
+## Hecho (2026-11-13) · Migas visibles = migas del JSON-LD (solo cambia el comprobador)
+- `comprobar_paginas_seo.js` (línea «Migas visibles = JSON-LD…») compara en todas las páginas generadas sin `noindex` los
+  `<a href>`/`<span>` de su único `<nav class="migas">` con el `BreadcrumbList` `<ruta>#migas`: mismo número, `position`
+  1, 2, …, mismo texto (entidades HTML decodificadas, también `&#NN;`) y mismo destino (`href` = `item`; el `<span>`
+  final, sin enlace, = la propia página). Además cada `item` debe ser `/` o una página generada con `index.html`, sin
+  `noindex` y en `sitemap.xml`. Por familia; cualquier discordancia es fallo. Hoy: 1187 de 1187 bien, 4899 `item`, 0 mal
+  (salen de la misma lista `migas` en `pagina()`); probado a romper texto, destino, número, `position`, `noindex` y
+  sitemap del destino → salida 1 en los 6.
+
 ## Lo que tienes que hacer tú (sin esto no sirve de nada)
 1. **Conectar el dominio** en Vercel: proyecto `bibliotime` → Settings → Domains → añadir `bibliomapa.es` y
    `www.bibliomapa.es` (redirigir www → sin www) y poner en tu registrador los DNS que te indique Vercel.
