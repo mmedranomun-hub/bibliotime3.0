@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-11-13 16:28",
+  "fecha": "2026-11-13 16:54",
   "pruebas": {
     "arranca: datos y vistas": true,
     "marca España (sin «Navarra» en la cabecera)": true,
@@ -70,18 +70,19 @@
     "wrapped: «📸 Mi mejor sesión» comparte la más larga de la semana pasada con «⭐ Mi mejor sesión de la semana»; sin sesiones sanas no sale": true,
     "📸 doble toque: el botón queda desactivado con aria-busy mientras se prepara la imagen y solo se genera y comparte UNA; luego vuelve, también si se cancela la hoja": true,
     "📸 bosque: varios toques en «Compartir» del bosque → 1 dibujo y 1 hoja, botón con aria-busy; al compartir devuelve true y la bienvenida dice «Ayer compartiste tu bosque de…»": true,
+    "📸 ✓ Compartida: al compartir (true) el botón dice «✓ Compartida» en --ok-tx y lo anuncia aria-live; a los 2 s vuelve a «📸 Compartir»; si se cancela no cambia": true,
     "atajos de la app instalada (#accion=estudiar|ahora|pronto)": true,
     "analítica apagada por defecto (index.html y /bibliotecas/ cargan analitica.js con proveedor:null y no piden _vercel/insights ni goatcounter ni ponen cookies; respeta DNT/GPC y local)": true,
     "política de privacidad coherente con analitica.js (proveedor null ⇔ «sin analítica»; el diff de docs/ANALITICA.md se aplica y se detecta encender sin él)": true
   },
   "errores_js": [],
-  "carga_ms_cpu4x": 584,
+  "carga_ms_cpu4x": 654,
   "carga_ms_cpu4x_min_max": [
-    496,
-    601
+    647,
+    717
   ],
-  "primera_pintura_ms_cpu4x": 272,
-  "todas_las_chinchetas_ms_cpu4x": 602,
+  "primera_pintura_ms_cpu4x": 280,
+  "todas_las_chinchetas_ms_cpu4x": 671,
   "markercluster": {
     "cargado": false,
     "agrupa": false,
@@ -91,26 +92,26 @@
   },
   "datos": {
     "bibliotecas": 2616,
-    "con_horario_verificado": 761,
+    "con_horario_verificado": 767,
     "provincias_con_horario": 51,
     "provincias_total": 51
   },
   "seo": {
-    "paginas": 1206,
+    "paginas": 1212,
     "sitemap": true
   },
   "peso": {
     "index.html": {
-      "kb": 139.6,
-      "kb_gzip": 31.6
+      "kb": 140.4,
+      "kb_gzip": 31.7
     },
     "app.js": {
       "kb": 316.0,
       "kb_gzip": 94.4
     },
     "bibliotecas-espana.js": {
-      "kb": 910.1,
-      "kb_gzip": 217.3
+      "kb": 915.5,
+      "kb_gzip": 218.5
     }
   },
   "ok": true
