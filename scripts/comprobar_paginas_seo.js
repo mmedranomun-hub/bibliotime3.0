@@ -670,7 +670,13 @@ else {
       if (!existe(`/bibliotecas/${ps}/`)) mal404.push(`slugs-404: provincia ${ps} sin página`);
       for (const l of locs) rutas.push(`/bibliotecas/${ps}/${slug(l)}/`);
       for (const k of temas) if (!(S.t || [])[k]) mal404.push(`slugs-404: índice de temática ${k} sin entrada (${ps})`); else rutas.push(`/bibliotecas/${ps}/${S.t[k][0]}/`);
+      // Fichas (tercer elemento, hoy ninguno: ver «¿Buscabas…?» con fichas en docs/SEO.md): nombre o [slug, nombre].
+      for (const f of (S.p[ps][2] || [])) rutas.push(`/bibliotecas/${ps}/${typeof f === "string" ? slug(f) : f[0]}/`);
     }
+    // Tope de tamaño (2026-11-14): con las 722 fichas «biblioteca-…» verificadas pasaría de 3,3 a ~33 KB; por encima
+    // de 8 KB la 404 pesa más de lo que ayuda.
+    const kb = Buffer.byteLength(jsonTxt) / 1024;
+    if (kb > 8) mal404.push(`slugs-404 ocupa ${kb.toFixed(1)} KB (tope 8 KB)`);
     for (const r of rutas) if (!existe(r)) mal404.push(`slugs-404: ${r} no existe`); else n404Slugs++;
     if (/href|<a\b/.test(jsonTxt)) mal404.push("slugs-404 lleva enlaces");
     if ((S.e || []).length < 5 || Object.keys(S.p || {}).length < 40) mal404.push(`slugs-404 incompleto (${(S.e || []).length} de España, ${Object.keys(S.p || {}).length} provincias)`);
@@ -709,7 +715,15 @@ else {
       ["/bibliotecas/abiertas-domingos/", "¿Buscabas bibliotecas abiertas el domingo en España[/bibliotecas/abiertas-domingo/]?"],
       ["/bibliotecas/horario/", "¿Buscabas bibliotecas por horario en España[/bibliotecas/horarios/]?"],
       ["/abiertas-hoy/", "¿Buscabas bibliotecas abiertas hoy en España[/bibliotecas/abiertas-hoy/]?"], ["/abiertas-domingos/", ""],
-      ["/navarra/pamplna/", "¿Buscabas Navarra[/bibliotecas/navarra/]?"]];
+      ["/navarra/pamplna/", "¿Buscabas Navarra[/bibliotecas/navarra/]?"],
+      // Fichas mal escritas: slugs-404 no las lleva (pesarían ~33 KB), así que caen a la provincia; nunca a una
+      // localidad o temática por parecido, ni a nada fuera de /bibliotecas/.
+      ["/bibliotecas/navarra/biblioteca-de-navara/", "¿Buscabas Navarra[/bibliotecas/navarra/]?"],
+      ["/bibliotecas/Navarra/Biblioteca-P%C3%BAblica-de-Tafala/", "¿Buscabas Navarra[/bibliotecas/navarra/]?"],
+      ["/bibliotecas/vizcaya/biblioteca-de-bidebarrieta/", "¿Buscabas Bizkaia[/bibliotecas/bizkaia/]?"],
+      ["/bibliotecas/madrid/biblioteca-getafe/", "¿Buscabas Madrid[/bibliotecas/madrid/]?"],
+      ["/bibliotecas/navara/biblioteca-de-navarra/", "¿Buscabas Navarra[/bibliotecas/navarra/]?"],
+      ["/biblioteca-de-navarra/", ""]];
     // Casos sacados de los datos (no de la lista fija): cada provincia que la 404 enlaza (`provs`, páginas con
     // <section class="loc">; nombre = texto de su enlace en #prov-404) por `/<slug>/` y `/bibliotecas/<slug sin guiones>/`,
     // y cada clave de ALIAS_404 (leída del código de generar_paginas_seo.js) por `/bibliotecas/<clave>/`. Así un cambio

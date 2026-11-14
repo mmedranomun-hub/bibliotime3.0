@@ -360,6 +360,24 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
 - `comprobar_paginas_seo.js` falla si una página de provincia (`/bibliotecas/<prov>/` con secciones por localidad) o de
   localidad que enlaza a alguna ficha no lleva `mainEntity` `ItemList` en su `CollectionPage`.
 
+## Medido y descartado (2026-11-14) · «¿Buscabas…?» con fichas (solo cambia el comprobador)
+- Idea: si `/bibliotecas/<provincia>/biblioteca-…/` no existe (`/bibliotecas/navarra/biblioteca-de-navara/`), sugerir la
+  ficha más parecida de esa provincia metiendo las fichas en `slugs-404`. Tope acordado: ~8 KB.
+- Medido con el generador: `slugs-404` ocupa 3,3 KB (3.923 bytes en la 404). De las 817 fichas, 770 tienen slug
+  `biblioteca-…` y 722 de ellas horario verificado, así que limitarlo a las verificadas casi no recorta: con nombre (o
+  `[slug, nombre]` si no coinciden) pasaría a ~32,8 KB, y con los slugs solos (sin «biblioteca-» ni nombres) ~19 KB más.
+  Las dos superan el tope de largo: no se hace, y la 404 no cambia.
+- Lo que sí queda: esas rutas caen a la provincia (como antes) y `comprobar_paginas_seo.js` lo fija con 6 casos nuevos
+  (169 → 175): `biblioteca-de-navara`, `Biblioteca-P%C3%BAblica-de-Tafala`, por alias (`vizcaya/biblioteca-de-bidebarrieta`
+  → Bizkaia), `madrid/biblioteca-getafe` → Madrid (no la localidad Getafe por prefijo), provincia mal escrita
+  (`navara/biblioteca-de-navarra` → Navarra) y `/biblioteca-de-navarra/` → nada. Además falla si `slugs-404` pasa de 8 KB
+  y, si algún día lleva fichas (tercer elemento de cada provincia: nombre o `[slug, nombre]`), si alguna no existe.
+- Probado rompiéndolo en una copia de la 404: una ficha inexistente en Navarra → «slugs-404: /bibliotecas/navarra/no-existe/
+  no existe»; 6 KB de relleno → «slugs-404 ocupa 9.7 KB (tope 8 KB)»; un script que mande `biblioteca-getafe` a la
+  localidad → 1 caso mal. Con la 404 de verdad, 0 mal.
+- Si se quisiera de verdad, la salida sería no incrustar: bajar solo al llegar a una ruta `biblioteca-…` un JSON por
+  provincia (ver BACKLOG), sin tocar el peso de la 404 para el resto.
+
 ## Hecho (2026-11-02) · Casos de «¿Buscabas…?» sacados de los datos (solo cambia el comprobador)
 - Además de la lista fija, `comprobar_paginas_seo.js` genera casos: para cada provincia que la 404 enlaza (páginas
   `/bibliotecas/<slug>/` con `<section class="loc">`; nombre = texto de su enlace en `#prov-404`), `/<slug>/` y
