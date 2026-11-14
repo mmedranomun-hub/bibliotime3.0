@@ -1790,6 +1790,35 @@ PRUEBAS = [
         abrirResumenSemanal(false);if(ultima())return 'sale solo con árboles secos';
         return true;
       }finally{window.compartirSesionStory=cs;window.compartirLienzo=cl0;window.textoC=tc0;cerrarStory();DATA.sessions=s0;DATA.resumenVisto=rv;goView('map');}"""),
+    ("wrapped: en la tarjeta «Tu sesión más larga» el botón «📸 Compartir esta sesión» (44 px, aria-label) comparte esa sesión con TIT_MEJOR sin avanzar la historia; los lados siguen avanzando", """
+      await cargarExtra();
+      var s0=DATA.sessions,rv=DATA.resumenVisto,cs=window.compartirSesionStory,pedida=null,tit=null,llegan=0;
+      var lun=datosSemana(1).desde,dia=n=>{var d=new Date(lun);d.setDate(d.getDate()+n);return ymd(d);};
+      try{
+        DATA.sessions=[{id:'wl-a',date:dia(0),min:40,bib:NO_BIB,focus:'ok'},{id:'wl-larga',date:dia(3),min:80,bib:NO_BIB,focus:'ok'},{id:'wl-hoy',date:ymd(),min:300,bib:NO_BIB,focus:'ok'}];
+        abrirResumenSemanal(false);irSlide(1);
+        if(!/Tu sesión más larga: 1h 20m/.test(document.querySelector('#storyViewer .sv-body').textContent))return 'la tarjeta no dice 1h 20m';
+        var b=document.querySelector('#storyViewer .sv-body .sv-larga');
+        if(!b||!b.offsetHeight)return 'no sale el botón en la tarjeta';
+        if(b.offsetHeight<44)return 'mide menos de 44 px ('+b.offsetHeight+')';
+        if(!/Compartir esta sesión/.test(b.textContent))return 'texto: '+b.textContent;
+        if(!/1h 20m/.test(b.getAttribute('aria-label')||''))return 'aria-label: '+b.getAttribute('aria-label');
+        var r=b.getBoundingClientRect(),enc=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);
+        if(!(enc===b||b.contains(enc)))return 'el botón queda tapado por '+(enc&&enc.className);
+        $('storyViewer').addEventListener('click',()=>llegan++);
+        window.compartirSesionStory=(id,t)=>{pedida=id;tit=t;};b.click();
+        if(pedida!=='wl-larga')return 'comparte '+pedida+' en vez de la más larga';
+        if(tit!==TIT_MEJOR)return 'título '+tit;
+        if(llegan)return 'el toque se propaga al visor';
+        await new Promise(r=>setTimeout(r,7300));
+        if(!$('storyViewer')||STORIES.slide!==1)return 'la historia avanza sola tras tocar 📸 (tarjeta '+STORIES.slide+')';
+        document.querySelector('#storyViewer .sv-tap.der').click();
+        if(STORIES.slide!==2)return 'tocar el lado ya no avanza';
+        cerrarStory();DATA.sessions=[{id:'wl-a',date:dia(0),min:40,bib:NO_BIB,focus:'ok'},{id:'wl-seca',date:dia(2),min:200,bib:NO_BIB,focus:'withered'}];
+        abrirResumenSemanal(false);irSlide(1);
+        if(document.querySelector('#storyViewer .sv-larga'))return 'sale aunque la más larga es un árbol seco (compartiría otra)';
+        return true;
+      }finally{window.compartirSesionStory=cs;cerrarStory();DATA.sessions=s0;DATA.resumenVisto=rv;goView('map');}"""),
     ("📸 doble toque: el botón queda desactivado con aria-busy mientras se prepara la imagen y solo se genera y comparte UNA; luego vuelve, también si se cancela la hoja", """
       await cargarExtra();
       var s0=DATA.sessions,tab0=feedTab,sh0=navigator.share,cs0=navigator.canShare,ds0=window.dibujarSesionStory,dibujos=0,shares=0,soltar=null;

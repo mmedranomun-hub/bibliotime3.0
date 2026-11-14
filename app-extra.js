@@ -462,7 +462,9 @@ function abrirResumenSemanal(auto){
   var slides=[
     {html:'<div class="sv-kicker">TU SEMANA</div><div class="sv-min">'+hMin(S.min)+'</div><div class="sv-where">estudiadas en '+S.dias+(S.dias===1?' día':' días')+'</div>'+
       (dif!==null?'<div class="sv-tag">'+(dif>=0?'📈 +'+dif+'% que la semana anterior':'Semana más tranquila ('+dif+'%) · ¡esta a por más! 💪')+'</div>':'<div class="sv-tag">✨ Tu primera semana con datos</div>'),ses:null},
-    {html:'<div class="sv-tree">'+arbolSVG(Math.max(S.larga,1),false,"semana",170,DATA.especie)+'</div><div class="sv-min">'+S.vivos+(S.vivos===1?' árbol':' árboles')+'</div><div class="sv-where">'+(S.secos?'y '+S.secos+' marchito'+(S.secos===1?'':'s')+' 🥀':'¡ni uno marchito! 🏆')+'</div><div class="sv-hace">Tu sesión más larga: '+hMin(S.larga)+'</div>',ses:null}
+    {html:'<div class="sv-tree">'+arbolSVG(Math.max(S.larga,1),false,"semana",170,DATA.especie)+'</div><div class="sv-min">'+S.vivos+(S.vivos===1?' árbol':' árboles')+'</div><div class="sv-where">'+(S.secos?'y '+S.secos+' marchito'+(S.secos===1?'':'s')+' 🥀':'¡ni uno marchito! 🏆')+'</div><div class="sv-hace">Tu sesión más larga: '+hMin(S.larga)+'</div>'+
+      // 📸 esa misma sesión (solo si la más larga es sana: con árbol seco, mejorSesionSemana sería otra y no cuadraría)
+      (b&&b.min===S.larga?'<button class="btn sm ghost sv-larga" aria-label="Compartir en stories tu sesión más larga de la semana pasada: '+hMin(b.min)+'" onclick="event.stopPropagation();pausarStory();compartirSesionStory('+(b.id?jsArg(b.id):DATA.sessions.indexOf(b))+',TIT_MEJOR,this)">📸 Compartir esta sesión</button>':''),ses:null}
   ];
   if(S.mejor)slides.push({html:'<div class="sv-kicker">TU MEJOR DÍA</div><div class="sv-min">'+DIAS[new Date(S.mejor+"T00:00:00").getDay()]+'</div><div class="sv-where">'+hMin(S.mejorMin)+' de estudio 🔥</div>',ses:null});
   if(S.top)slides.push({html:'<div class="sv-kicker">LO QUE MÁS ESTUDIASTE</div><div class="sv-min">📚 '+escapeHTML(S.top)+'</div><div class="sv-where">'+hMin(S.topMin)+' ('+Math.round(S.topMin/S.min*100)+'% de tu semana)</div>',ses:null});
@@ -857,6 +859,9 @@ function irSlide(n){
   var bar=o.querySelector(".sv-bars span.activa i");if(bar){bar.style.animationDuration=dur+"ms";}
   STORIES.timer=setTimeout(function(){irSlide(STORIES.slide+1);},dur);
 }
+/* Al tocar un 📸 dentro de una historia: se para el avance automático (la barra queda quieta) para que, al volver de
+   la hoja de compartir, sigas en la misma tarjeta. Tocar los lados o las flechas sigue avanzando como siempre. */
+function pausarStory(){clearTimeout(STORIES.timer);var i=document.querySelector("#storyViewer .sv-bars span.activa i");if(i)i.style.animationPlayState="paused";}
 function teclaStory(e){if(e.key==="Escape")cerrarStory();else if(e.key==="ArrowRight")irSlide(STORIES.slide+1);else if(e.key==="ArrowLeft")irSlide(STORIES.slide-1);}
 function cerrarStory(){clearTimeout(STORIES.timer);var o=$("storyViewer");if(o)o.remove();document.removeEventListener("keydown",teclaStory);renderStories();}
 
