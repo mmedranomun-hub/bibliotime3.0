@@ -1773,6 +1773,31 @@ PRUEBAS = [
         if(!/📸 Ayer compartiste tu bosque de 2h 10m · ¿plantamos otro árbol hoy\?/.test(t))return 'no sale el texto del bosque: '+t;
         return true;
       }finally{navigator.share=sh0;navigator.canShare=cs0;window.dibujarBosque=db0;compartiendoImagen=false;DATA.sessions=s0;DATA.ultimaCompartida=uc0;FOREST_PERIOD=fp0;closeModal();renderForest();goView('map');}"""),
+    ("📸 semana: «Compartir mi semana» guarda DATA.ultimaCompartida tipo 'semana' solo al compartir (no al cancelar) y mañana la bienvenida dice «Ayer compartiste tu semana de…» sin romper la vuelta", """
+      await cargarExtra();
+      var s0=DATA.sessions,uc0=DATA.ultimaCompartida,sh0=navigator.share,cs0=navigator.canShare,ok=null,ko=null,vc0=VUELTA_COMP;
+      try{
+        closeModal();DATA.ultimaCompartida=null;
+        navigator.canShare=()=>true;navigator.share=function(){return new Promise((a,r)=>{ok=a;ko=()=>r(Object.assign(new Error('cancelada'),{name:'AbortError'}));});};
+        DATA.sessions=[{id:'sw1',date:ymd(),min:200,ts:Date.now(),bib:NO_BIB,focus:'ok',esp:'roble'},{id:'sw2',date:ymd(),min:120,ts:Date.now(),bib:NO_BIB,focus:'ok',esp:'roble'}];
+        var espera=async f=>{for(var i=0;i<60&&!f();i++)await new Promise(r=>setTimeout(r,50));};
+        var p=compartirSemana();await espera(()=>ko);ko();ko=null;
+        if(await p!==false)return 'no devuelve false al cancelar';
+        if(DATA.ultimaCompartida)return 'guarda la marca al cancelar: '+JSON.stringify(DATA.ultimaCompartida);
+        ok=null;p=compartirSemana();await espera(()=>ok);ok();
+        if(await p!==true)return 'no devuelve true al compartir';
+        var M=DATA.ultimaCompartida;if(!M||M.tipo!=='semana'||M.min!==320||M.fecha!==ymd())return 'marca mal guardada: '+JSON.stringify(M);
+        var d=new Date();d.setDate(d.getDate()-1);var ayer=ymd(d);DATA.ultimaCompartida={fecha:ayer,min:320,tipo:'semana'};DATA.sessions=[];
+        pintarBienvenidaDiaria();var bv=document.querySelector('#modalRoot .bv-comp'),t=bv?bv.innerText:'';
+        if(!/📸 Ayer compartiste tu semana de 5h 20m · ¿plantamos otro árbol hoy\?/.test(t))return 'no sale el texto de la semana: '+t;
+        if(bv.getAttribute('role')!=='note')return 'sin role=note';
+        if(/bosque/.test(t))return 'dice bosque en vez de semana';
+        if(!/onclick/.test(document.getElementById('bvEstudiar').outerHTML)||!/Empezar a estudiar/.test(document.getElementById('bvEstudiar').innerText))return 'sin invitación a estudiar';
+        closeModal();VUELTA_COMP=ayer;
+        var s={id:'sw3',date:ymd(),min:30,ts:Date.now(),bib:NO_BIB,focus:'ok',esp:'roble'};DATA.sessions=[s];
+        if(!/Dos días seguidos/.test(vueltaCompHTML(s)))return 'la semana compartida rompe la vuelta';
+        return true;
+      }finally{navigator.share=sh0;navigator.canShare=cs0;compartiendoImagen=false;VUELTA_COMP=vc0;DATA.sessions=s0;DATA.ultimaCompartida=uc0;closeModal();goView('map');}"""),
     ("📸 ✓ Compartida: al compartir (true) el botón dice «✓ Compartida» en --ok-tx y lo anuncia aria-live; a los 2 s vuelve a «📸 Compartir»; si se cancela no cambia", """
       await cargarExtra();
       var s0=DATA.sessions,uc0=DATA.ultimaCompartida,fp0=FOREST_PERIOD,sh0=navigator.share,cs0=navigator.canShare,ms0=COMPARTIDA_MS,ok=null,ko=null;

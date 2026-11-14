@@ -172,7 +172,11 @@ function compartirSemana(origen){
     var x=bx+k*bw+bw*.18,ww=bw*.64;g.beginPath();if(g.roundRect)g.roundRect(x,base-h,ww,h,18);else g.rect(x,base-h,ww,h);g.fill();
     g.fillStyle="rgba(255,255,255,.9)";g.font="700 36px system-ui,sans-serif";g.textAlign="center";g.fillText(dias[k],x+ww/2,base+56);g.textAlign="left";});
   g.fillStyle="#fff";g.font="800 40px system-ui,sans-serif";g.fillText("bibliomapa.es",80,H-80);
-  return compartirLienzo(c,"mi-semana.png","Mi semana de estudio 📚 "+hMin(total)+" · bibliomapa.es");
+  var motivo=await compartirLienzo(c,"mi-semana.png","Mi semana de estudio 📚 "+hMin(total)+" · bibliomapa.es");
+  // «📸 Ayer compartiste tu semana de…» de la bienvenida de mañana (tipo "semana", min = total semanal): solo si se
+  // compartió o descargó, nunca al cancelar. También vale para la vuelta («Dos días seguidos plantando y compartiendo»)
+  if(motivo){DATA.ultimaCompartida={fecha:ymd(),min:total,tipo:"semana"};saveUserData();}
+  return motivo;
   });
 }
 /* ----- Reportar o confirmar un horario ----- */
@@ -1306,7 +1310,7 @@ function vueltaBienvenidaHTML(nombre){
 }
 
 /* ----- «📸 Ayer compartiste 0h 52m · ¿plantamos otro árbol hoy?»: si ayer (fecha local) compartiste una sesión
-   (DATA.ultimaCompartida, la guardan compartirSesionStory y compartirBosque) y hoy aún no has estudiado, la bienvenida diaria lo
+   (DATA.ultimaCompartida, la guardan compartirSesionStory, compartirBosque y compartirSemana) y hoy aún no has estudiado, la bienvenida diaria lo
    recuerda UNA vez (marca .vista) para que compartir lleve de vuelta a estudiar. Solo invita: sin racha en peligro.
    Orden en la ventana: cabecera (racha o «¡Qué alegría verte!») → esta tarjeta → examen → misiones → consejo. ----- */
 function compartidaAyer(){
@@ -1327,7 +1331,7 @@ function pintarBienvenidaDiaria(){
   var cab=vueltaBienvenidaHTML(nombre)||'<div class="bv-fuego'+(n?'':' apagado')+'">🔥</div><h3>'+saludo+nombre+'</h3>'+
     '<div class="sub">'+(n?'Llevas <b>'+n+(n===1?' día':' días')+'</b> de racha.'+(C?'':' ¡Que no se apague hoy!'):'Hoy es un buen día para empezar una racha.')+'</div>';
   openModal('<div class="bienvenida">'+cab+
-    (C?'<div class="bv-comp" role="note">📸 Ayer compartiste '+(C.tipo==="bosque"?'tu bosque de ':'')+'<b>'+hMin(C.min)+'</b> · ¿plantamos otro árbol hoy? 🌱</div>':'')+
+    (C?'<div class="bv-comp" role="note">📸 Ayer compartiste '+(C.tipo==="bosque"?'tu bosque de ':C.tipo==="semana"?'tu semana de ':'')+'<b>'+hMin(C.min)+'</b> · ¿plantamos otro árbol hoy? 🌱</div>':'')+
     (ex&&dEx<=14?'<div class="bv-ex">📅 <b>'+escapeHTML(ex.ev.title)+'</b> · '+(dEx===0?'¡es hoy!':dEx===1?'mañana':'en '+dEx+' días')+'</div>':'')+
     '<div class="bv-mis">🎯 Misiones de hoy: '+M.ids.map(function(id){var d=misionDef(id);return d?d.icon:'';}).join(" ")+' · cofre al completarlas</div>'+
     '<div class="bv-tip">'+tip.e+' <b>'+escapeHTML(tip.t)+'</b>: '+escapeHTML(tip.x)+'</div>'+
