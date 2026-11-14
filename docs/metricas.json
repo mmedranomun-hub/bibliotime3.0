@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-11-14 02:30",
+  "fecha": "2026-11-14 02:37",
   "pruebas": {
     "arranca: datos y vistas": true,
     "marca España (sin «Navarra» en la cabecera)": true,
@@ -79,13 +79,13 @@
     "política de privacidad coherente con analitica.js (proveedor null ⇔ «sin analítica»; el diff de docs/ANALITICA.md se aplica y se detecta encender sin él)": true
   },
   "errores_js": [],
-  "carga_ms_cpu4x": 475,
+  "carga_ms_cpu4x": 389,
   "carga_ms_cpu4x_min_max": [
-    432,
-    544
+    350,
+    416
   ],
-  "primera_pintura_ms_cpu4x": 232,
-  "todas_las_chinchetas_ms_cpu4x": 487,
+  "primera_pintura_ms_cpu4x": 168,
+  "todas_las_chinchetas_ms_cpu4x": 405,
   "markercluster": {
     "cargado": false,
     "agrupa": false,
@@ -95,12 +95,12 @@
   },
   "datos": {
     "bibliotecas": 2616,
-    "con_horario_verificado": 824,
+    "con_horario_verificado": 834,
     "provincias_con_horario": 51,
     "provincias_total": 51
   },
   "seo": {
-    "paginas": 1281,
+    "paginas": 1293,
     "sitemap": true
   },
   "peso": {
@@ -113,8 +113,8 @@
       "kb_gzip": 90.1
     },
     "bibliotecas-espana.js": {
-      "kb": 962.9,
-      "kb_gzip": 225.8
+      "kb": 968.5,
+      "kb_gzip": 226.9
     }
   },
   "ok": true
