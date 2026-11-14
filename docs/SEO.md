@@ -493,6 +493,11 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
   `@id` o si la `url` de ese nodo no coincide. Las referencias dentro de la misma página (`FAQPage` → `#pagina`)
   las mira la comprobación del FAQ; la portada («/», el `WebSite`) no cuenta.
 - El `@id` cuenta en la huella del `lastmod` (es JSON-LD que Google lee, no como `aria-current` u `og:image`).
+- (2026-11-14) También el `item` de las provincias en el `ItemList` del índice `/bibliotecas/` es `refPagina()`
+  (antes `WebPage` sin `@id`), y `compruebaRefsId()` mira el `item` (objeto) de todo `ItemList`/`BreadcrumbList` que
+  apunta a otra página generada: las provincias del índice y las `Library` `<ficha>#biblioteca` de las listas
+  (8.290 de 8.290 referencias). La página destino sale del `@id` cuando lo hay, así que un `@id` de una página con la
+  `url` de otra falla. Los `item` que son solo una URL (migas) no son nodos y solo se cuentan.
 
 ## Lo que tienes que hacer tú (sin esto no sirve de nada)
 1. **Conectar el dominio** en Vercel: proyecto `bibliotime` → Settings → Domains → añadir `bibliomapa.es` y

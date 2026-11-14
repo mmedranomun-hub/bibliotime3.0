@@ -193,7 +193,7 @@ function itemBib(b) {
   return f ? { "@id": DOMINIO + f + "#biblioteca", ...libraryLD(b, DOMINIO + f) } : libraryLD(b, DOMINIO + enlaceApp(b));
 }
 
-// Referencia (isPartOf/hasPart) a otra página del sitio: además de name y url, el @id de su nodo (<url>#pagina, el
+// Referencia (isPartOf/hasPart, y el item de las provincias en el ItemList del índice) a otra página del sitio: además de name y url, el @id de su nodo (<url>#pagina, el
 // CollectionPage de provincias, localidades, temáticas, hubs, salas, universidades y exámenes), para que Google una la
 // referencia con el nodo de la página destino en vez de crear un CollectionPage anónimo nuevo. scripts/comprobar_paginas_seo.js
 // falla si ese @id no existe como nodo en la página destino.
@@ -2098,7 +2098,7 @@ escribe("/bibliotecas/", pagina({
   migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"]], migasId: idMigasDe("/bibliotecas/"),
   ld: ldLugar("/bibliotecas/", tituloIndice.replace(MARCA, ""), descIndice, { ...modIndice, ...conMigas("/bibliotecas/"),
     mainEntity: { "@type": "ItemList", name: "Bibliotecas de España por provincia", numberOfItems: provincias.length,
-      itemListElement: provincias.map((p, k) => ({ "@type": "ListItem", position: k + 1, item: { "@type": "WebPage", name: `Bibliotecas en ${p}`, url: `${DOMINIO}/bibliotecas/${slug(p)}/` } })) } }),
+      itemListElement: provincias.map((p, k) => ({ "@type": "ListItem", position: k + 1, item: refPagina(`Bibliotecas en ${p}`, `${DOMINIO}/bibliotecas/${slug(p)}/`) })) } }),
 }));
 }
 
@@ -2311,4 +2311,4 @@ console.log(`Provincias con ItemList de sus fichas en el JSON-LD: ${nProvItemLis
 console.log(`Localidades sin ninguna verificada con «Cerca, con horario verificado» (≤ ${RADIO_VERIF_KM} km del centroide): ${nLocsVerifCerca} · enlaces: ${nEnlacesLocVerifCerca}`);
 console.log(`Fichas con «Cerca, con horario verificado» (≤ ${RADIO_VERIF_KM} km, otra ficha): ${nFichasVerifCerca} de ${paginaDe.size} · enlaces: ${nEnlacesVerifCerca}`);
 console.log(`Navarra: ${nNavarraConHorario} de ${navarra.length} con horario publicable (fuenteHorario + verificadoHorario en app.js)`);
-console.log(`isPartOf/hasPart a otra página con el @id de su nodo (<url>#pagina): ${nRefId}`);
+console.log(`isPartOf/hasPart/item a otra página con el @id de su nodo (<url>#pagina): ${nRefId}`);

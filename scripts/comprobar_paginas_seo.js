@@ -602,17 +602,33 @@ function compruebaRefsId() {
   const idsDe = new Map([...nodos].map(([r, l]) => [r, new Map(l.filter((x) => x["@id"] && x["@type"]).map((x) => [x["@id"], x]))]));
   const mal = [];
   let nRefs = 0, nConId = 0;
-  for (const [ruta, l] of nodos) for (const x of l) for (const k of ["isPartOf", "hasPart"]) for (const ref of [].concat(x[k] || [])) {
+  // Además de isPartOf/hasPart, el item (objeto) de cada ListItem de un ItemList/BreadcrumbList que apunta a otra página
+  // generada: las provincias del índice (CollectionPage <provincia>#pagina) y las Library <ficha>#biblioteca de las listas.
+  // Un item que es solo una URL (texto, como en las migas) no es un nodo y no entra; se cuenta aparte, por familia.
+  const nItems = {}, nItemsTexto = {}, suma = (o, f) => { o[f] = (o[f] || 0) + 1; };
+  const refsDe = (x) => {
+    const out = [];
+    for (const k of ["isPartOf", "hasPart"]) for (const ref of [].concat(x[k] || [])) out.push([k, ref]);
+    if ((x["@type"] === "ItemList" || x["@type"] === "BreadcrumbList") && Array.isArray(x.itemListElement))
+      for (const li of x.itemListElement) if (li && li.item) out.push([`${x["@type"]} item`, li.item]);
+    return out;
+  };
+  for (const [ruta, l] of nodos) for (const x of l) for (const [k, ref] of refsDe(x)) {
+    const esItem = k.endsWith(" item");
+    if (esItem && typeof ref === "string") { const d = ref.startsWith(DOMINIO) ? ref.slice(DOMINIO.length).split("#")[0] : ""; if (d && d !== ruta && html.has(d)) suma(nItemsTexto, familiaMigas(ruta)); continue; }
     if (!ref || typeof ref !== "object") continue;
-    const destino = ((ref.url || ref["@id"] || "").startsWith(DOMINIO) ? (ref.url || ref["@id"]).slice(DOMINIO.length).split("#")[0] : "");
+    // La página destino sale del @id si lo hay (así un @id de una página con la url de otra falla abajo), si no de la url.
+    const dir = ref["@id"] || ref.url || "";
+    const destino = dir.startsWith(DOMINIO) ? dir.slice(DOMINIO.length).split("#")[0] : "";
     if (!destino || destino === ruta || destino === "/" || !html.has(destino)) continue; // externa, la misma página, la portada o rota (hasPartMal)
     nRefs++;
+    if (esItem) suma(nItems, familiaMigas(ruta));
     if (!ref["@id"]) mal.push(`${ruta} ${k} ${destino} sin @id`);
     else if (!idsDe.get(destino).has(ref["@id"])) mal.push(`${ruta} ${k} @id ${ref["@id"]}, que ${destino} no declara como nodo`);
     else if (ref.url && idsDe.get(destino).get(ref["@id"]).url !== ref.url) mal.push(`${ruta} ${k} @id ${ref["@id"]} con url ${ref.url}, pero ese nodo tiene url ${idsDe.get(destino).get(ref["@id"]).url}`);
     else nConId++;
   }
-  return { mal, nRefs, nConId };
+  return { mal, nRefs, nConId, nItems, nItemsTexto };
 }
 const refsId = compruebaRefsId();
 const refsIdMal = refsId.mal;
@@ -810,7 +826,7 @@ console.log(`Migas visibles = JSON-LD (<nav class="migas"> ↔ BreadcrumbList #m
 console.log(`Migas como lista (<nav class="migas"><ol><li>, «›» solo por CSS) en las indexables: ${Object.values(nListaMigas).reduce((a, b) => a + b, 0)} (${porFam(nListaMigas)}) · 404: ${n404Migas ? n404Migas + " migas" : "mal"} · mal: ${listaMigasMal.length}${listaMigasMal.length ? "\n" + muestra(listaMigasMal, (r) => "  " + r) : ""}`);
 console.log(`Última miga con aria-current="page" (<span> de la propia página, una sola vez por <nav class="migas">) en las indexables: ${Object.values(nAriaActual).reduce((a, b) => a + b, 0)} (${porFam(nAriaActual)}) · mal: ${ariaActualMal.length}${ariaActualMal.length ? "\n" + muestra(ariaActualMal, (r) => "  " + r) : ""}`);
 console.log(`CollectionPage de la propia página con @id <ruta>#pagina: ${Object.values(nCpId).reduce((a, b) => a + b, 0)} (${porFam(nCpId)}) · sin él: ${cpIdMal.length}${cpIdMal.length ? "\n" + muestra(cpIdMal, (r) => "  " + r) : ""}`);
-console.log(`isPartOf/hasPart a otra página con el @id de su nodo (que existe en la página destino): ${refsId.nConId} de ${refsId.nRefs} · mal: ${refsIdMal.length}${refsIdMal.length ? "\n" + muestra(refsIdMal, (r) => "  " + r) : ""}`);
+console.log(`isPartOf/hasPart e item de ItemList/BreadcrumbList a otra página con el @id de su nodo (que existe en la página destino, con la misma url): ${refsId.nConId} de ${refsId.nRefs} (items objeto: ${porFam(refsId.nItems)}; items que son solo URL, sin nodo: ${porFam(refsId.nItemsTexto)}) · mal: ${refsIdMal.length}${refsIdMal.length ? "\n" + muestra(refsIdMal, (r) => "  " + r) : ""}`);
 console.log(`mainEntityOfPage de las fichas (WebPage #pagina about Library #biblioteca y Library mainEntityOfPage → #pagina): ${nFichaMainEntity} de ${fichas.size} bien · mal: ${mainEntityMal.length}${mainEntityMal.length ? "\n" + muestra(mainEntityMal, (r) => "  " + r) : ""}`);
 console.log(`FAQPage en el grafo de su página (@id #faq, isPartOf → #pagina de la misma URL): fichas (WebPage) ${nFichaFaqBien} de ${nFichaFaq} bien, con hasPart #faq recíproco ${nFichaHasPart} · demás páginas (CollectionPage) ${nOtraFaqBien} de ${nOtraFaq} bien · mal: ${faqMal.length}${faqMal.length ? "\n" + muestra(faqMal, (r) => "  " + r) : ""}`);
 console.log(`Huérfanas (sin enlace desde otra página generada): ${huerfanas.length}${huerfanas.length ? "\n" + muestra(huerfanas, (r) => "  " + r) : ""}`);
