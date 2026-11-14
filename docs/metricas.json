@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-11-14 02:37",
+  "fecha": "2026-11-14 03:30",
   "pruebas": {
     "arranca: datos y vistas": true,
     "marca España (sin «Navarra» en la cabecera)": true,
@@ -71,6 +71,7 @@
     "wrapped: «📸 Mi mejor sesión» comparte la más larga de la semana pasada con «⭐ Mi mejor sesión de la semana»; sin sesiones sanas no sale": true,
     "📸 doble toque: el botón queda desactivado con aria-busy mientras se prepara la imagen y solo se genera y comparte UNA; luego vuelve, también si se cancela la hoja": true,
     "📸 bosque: varios toques en «Compartir» del bosque → 1 dibujo y 1 hoja, botón con aria-busy; al compartir devuelve true y la bienvenida dice «Ayer compartiste tu bosque de…»": true,
+    "📸 semana: «Compartir mi semana» guarda DATA.ultimaCompartida tipo 'semana' solo al compartir (no al cancelar) y mañana la bienvenida dice «Ayer compartiste tu semana de…» sin romper la vuelta": true,
     "📸 ✓ Compartida: al compartir (true) el botón dice «✓ Compartida» en --ok-tx y lo anuncia aria-live; a los 2 s vuelve a «📸 Compartir»; si se cancela no cambia": true,
     "📸 ✓ Guardada: sin navigator.share descarga y el botón dice «✓ Guardada»; si la hoja falla con NotAllowedError, descarga igual con «No se pudo abrir compartir · imagen guardada»; cancelar no descarga": true,
     "📤 «Compartir mi semana» del perfil: si la hoja falla (NotAllowedError) descarga mi-semana.png con «No se pudo abrir compartir · imagen guardada», el botón dice «✓ Guardada» 2 s, aria-live y candado restaurado": true,
@@ -79,13 +80,13 @@
     "política de privacidad coherente con analitica.js (proveedor null ⇔ «sin analítica»; el diff de docs/ANALITICA.md se aplica y se detecta encender sin él)": true
   },
   "errores_js": [],
-  "carga_ms_cpu4x": 389,
+  "carga_ms_cpu4x": 558,
   "carga_ms_cpu4x_min_max": [
-    350,
-    416
+    493,
+    583
   ],
-  "primera_pintura_ms_cpu4x": 168,
-  "todas_las_chinchetas_ms_cpu4x": 405,
+  "primera_pintura_ms_cpu4x": 256,
+  "todas_las_chinchetas_ms_cpu4x": 574,
   "markercluster": {
     "cargado": false,
     "agrupa": false,
@@ -95,12 +96,12 @@
   },
   "datos": {
     "bibliotecas": 2616,
-    "con_horario_verificado": 834,
+    "con_horario_verificado": 844,
     "provincias_con_horario": 51,
     "provincias_total": 51
   },
   "seo": {
-    "paginas": 1293,
+    "paginas": 1305,
     "sitemap": true
   },
   "peso": {
@@ -113,8 +114,8 @@
       "kb_gzip": 90.1
     },
     "bibliotecas-espana.js": {
-      "kb": 968.5,
-      "kb_gzip": 226.9
+      "kb": 974.5,
+      "kb_gzip": 228.1
     }
   },
   "ok": true
