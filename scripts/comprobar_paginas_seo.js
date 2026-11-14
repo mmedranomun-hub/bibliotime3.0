@@ -46,6 +46,14 @@
        y en los hubs (horarios, universidades, exámenes y salas de estudio), las universidades y las ciudades de
        exámenes y las salas de estudio de provincia y localidad, con el penúltimo igual a la url de su isPartOf (el
        índice; su hub). Falla con cualquier BreadcrumbList suelto (sin @id <ruta>#migas o sin breadcrumb que lo enlace).
+     - migas que no son una lista (en las indexables y en la 404): <nav class="migas"> con un solo <ol> y dentro solo
+       <li>, cada uno con un único <a> o <span>, sin «›» en el HTML (el separador lo pone seo.css).
+     - migas visibles distintas de las del JSON-LD en cualquier página indexable: los <a …href…>/<span> de los <li> de
+       <nav class="migas"> (atributos en cualquier orden) frente a los name/item del BreadcrumbList <ruta>#migas (mismo
+       orden y position, mismo texto decodificado, mismo destino; el <span> final es la propia página), y cada item que no
+       sea / ni una página generada con index.html, sin noindex y en el sitemap. Y la última miga sin
+       <span aria-current="page">, aria-current más de una vez o en algún <a> de las migas (también en la 404).
+     - cualquier CollectionPage cuya url sea la propia página (también en @graph) sin @id <url>#pagina.
      - fichas cuyo WebPage no lleva @id <ficha>#pagina y about {"@id": "<ficha>#biblioteca"}, sin Library con ese @id
        en la misma página, o cuya Library no lo devuelve con mainEntityOfPage {"@id": "<ficha>#pagina"} (recíprocos).
      - cualquier página con FAQPage (fichas, provincias, localidades, temáticas, hubs, salas, universidades, exámenes)
@@ -53,7 +61,14 @@
        @id en las fichas, un CollectionPage en las demás, con url = la página), o con más de un FAQPage: un solo grafo,
        no dos nodos de página sueltos para la misma URL. Y fichas cuyo WebPage #pagina no declara hasPart
        {"@id": "<ficha>#faq"} teniendo FAQPage, o lo declara sin tenerlo (recíproco).
+     - isPartOf/hasPart que apuntan a otra página generada sin el @id de su nodo, o con un @id que la página destino no
+       declara como nodo (p. ej. <url>#pagina): las dos páginas deben unirse en un grafo, no con un nodo anónimo.
 
+     - la vista previa al compartir: la portada (index.html) y las páginas indexables (bibliotecas/… y las guías de
+       /estudiar/) sin og:site_name, og:image absoluta (https://bibliomapa.es/… de un archivo del repo) con
+       og:image:width/height iguales a sus dimensiones reales y og:image:alt, o sin twitter:card (summary o
+       summary_large_image), o con alguna repetida; con summary_large_image, twitter:image igual a og:image y la imagen
+       apaisada (ancho ≥ 1,5 × alto; si no, X la recorta).
      - la verificación de Google Search Console: una <meta name="google-site-verification"> vacía, «null»/«undefined» o
        que no parece un código, más de una (en varias páginas o repetida), fuera de la portada (index.html, la única
        que Google mira para la propiedad de prefijo de URL) o distinta de GSC_VERIFICACION de generar_paginas_seo.js
@@ -68,7 +83,7 @@
    Sale con código 1 si hay enlaces rotos, títulos o descripciones repetidos, JSON-LD roto, horarios especiales mal o
    lastmod mal, la meta de Search Console mal o repetida, una provincia o localidad con fichas sin ItemList, el índice sin su CollectionPage, un hasPart roto, una
    temática, provincia, localidad, ficha, hub, sala de estudio, universidad o ciudad de exámenes sin su isPartOf o la 404 mal, o una página con
-   las migas sin enlazar, sueltas o con el penúltimo distinto de su isPartOf. */
+   las migas sin enlazar, sueltas, con el penúltimo distinto de su isPartOf, distintas de las visibles o hacia una página no indexable. */
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -492,15 +507,133 @@ for (const m of sitemap.matchAll(/<url>([\s\S]*?)<\/url>/g)) {
   if (lm > HOY) lastmodMal.push(`${loc} lastmod ${lm} posterior a hoy`);
   if (modPagina.has(loc) && lm < modPagina.get(loc)) lastmodMal.push(`${loc} lastmod ${lm} anterior a su dateModified ${modPagina.get(loc)}`);
 }
+// Migas visibles = migas del JSON-LD, en todas las páginas generadas indexables: los <a href>/<span> de
+// <nav class="migas"> y los ListItem del BreadcrumbList <ruta>#migas, en el mismo orden (position 1, 2, …), con el mismo
+// texto (entidades HTML decodificadas) y el mismo destino (href = item; el <span> final, sin enlace, = la propia página).
+// Y cada item es / o una página generada con index.html, sin noindex y en el sitemap. Por familia; fallo si hay alguna.
+const decodificaTexto = (s) => decodifica(s.replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(+n)).replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCodePoint(parseInt(n, 16))).replace(/&nbsp;/g, " "));
+const noindex = (h) => /<meta name="robots" content="[^"]*noindex/i.test(h);
+// Las migas son una lista: <nav class="migas"> lleva un solo <ol> y dentro solo <li>, cada uno con un único <a> o <span>
+// (el separador «›» lo pone seo.css con .migas li+li::before, así que no puede quedar en el HTML). De cada <li>: <a> y
+// <span> con atributos en cualquier orden (el href se lee de entre ellos; el <span> final lleva aria-current="page").
+// Devuelve { vis: [{href, txt, aActual} | {href: null, txt, actual}], error }.
+function leeMigas(nav) {
+  const ol = /^\s*<ol>([\s\S]*)<\/ol>\s*$/.exec(nav);
+  if (!ol) return { vis: [], error: "sin <ol> como único hijo de <nav class=\"migas\">" };
+  if (/›|&rsaquo;|&#8250;|&#x203a;/i.test(nav)) return { vis: [], error: "separador «›» en el HTML (lo pone el CSS)" };
+  const lis = [...ol[1].matchAll(/<li>([\s\S]*?)<\/li>/g)];
+  if (!lis.length || ol[1].replace(/<li>[\s\S]*?<\/li>/g, "").trim()) return { vis: [], error: "el <ol> de las migas tiene algo fuera de sus <li>" };
+  const vis = [];
+  for (const [, li] of lis) {
+    const m = /^\s*(?:<a(\s[^>]*)?>([^<]*)<\/a>|<span(\s[^>]*)?>([^<]*)<\/span>)\s*$/.exec(li);
+    if (!m) return { vis: [], error: `<li> de las migas sin un único <a> o <span> (texto sin etiquetas): ${li.slice(0, 60)}` };
+    if (m[4] === undefined) {
+      const href = (/\shref="([^"]*)"/.exec(m[1] || "") || [])[1];
+      vis.push({ href: href === undefined ? "(<a> sin href)" : decodifica(href), txt: decodificaTexto(m[2]), aActual: /\saria-current=/.test(m[1] || "") });
+    } else vis.push({ href: null, txt: decodificaTexto(m[4]), actual: /\saria-current="page"/.test(m[3] || "") });
+  }
+  return { vis, error: "" };
+}
+const listaMigasMal = [], nListaMigas = {};
+const migasVisMal = [], nMigasVis = {}, migasVisMalFam = {}, itemMigasMal = [], itemMigasMalFam = {}, ariaActualMal = [], nAriaActual = {};
+let nMigasVisPag = 0, nItemsMigas = 0;
+for (const [ruta, h] of html) {
+  if (noindex(h)) continue;
+  const f = familiaMigas(ruta), mal = (m) => { migasVisMal.push(`${ruta} (${f}) ${m}`); migasVisMalFam[f] = (migasVisMalFam[f] || 0) + 1; };
+  const navs = [...h.matchAll(/<nav class="migas"[^>]*>([\s\S]*?)<\/nav>/g)];
+  const bc = (migasDe.get(ruta) || []).find((x) => x["@id"] === DOMINIO + ruta + "#migas");
+  if (navs.length !== 1) { mal(`${navs.length} <nav class="migas"> (se espera 1)`); continue; }
+  if (!bc) { mal(`sin BreadcrumbList ${DOMINIO + ruta}#migas`); continue; }
+  const { vis, error: errLista } = leeMigas(navs[0][1]);
+  if (errLista) { listaMigasMal.push(`${ruta} (${f}) ${errLista}`); mal(errLista); continue; }
+  nListaMigas[f] = (nListaMigas[f] || 0) + 1;
+  // aria-current="page" solo en la última miga (el <span> de la propia página): los lectores de pantalla anuncian
+  // «página actual». Falla si falta, si aparece en otra miga o si lo lleva un <a> (enlace a otra página).
+  const nActual = (navs[0][1].match(/aria-current=/g) || []).length, aConActual = vis.filter((v) => v.aActual).length;
+  if (!vis.length || !vis[vis.length - 1].actual || nActual !== 1 || aConActual) ariaActualMal.push(`${ruta} (${f}) ${aConActual ? `aria-current en ${aConActual} <a> de las migas (solo el <span> final)` : !vis.length || !vis[vis.length - 1].actual ? "última miga sin <span aria-current=\"page\">" : `aria-current ×${nActual} en <nav class="migas">`}`);
+  else nAriaActual[f] = (nAriaActual[f] || 0) + 1;
+  const ld = bc.itemListElement || [];
+  let dif = vis.length !== ld.length ? `${vis.length} migas visibles y ${ld.length} en el JSON-LD` : "";
+  for (let i = 0; !dif && i < ld.length; i++) {
+    const v = vis[i], x = ld[i] || {}, item = typeof x.item === "string" ? x.item : (x.item || {})["@id"];
+    const destino = v.href === null ? (i === ld.length - 1 ? DOMINIO + ruta : "(span sin enlace antes del final)") : v.href.startsWith("/") ? DOMINIO + v.href : v.href;
+    if (x.position !== i + 1) dif = `posición ${i + 1}: position ${x.position}`;
+    else if (v.txt !== x.name) dif = `posición ${i + 1}: texto «${v.txt}» y name «${x.name}»`;
+    else if (destino !== item) dif = `posición ${i + 1}: destino ${destino} e item ${item}`;
+  }
+  if (dif) { mal(dif); continue; }
+  nMigasVis[f] = (nMigasVis[f] || 0) + 1; nMigasVisPag++;
+  for (const x of ld) {
+    const item = typeof x.item === "string" ? x.item : (x.item || {})["@id"] || "", u = item.startsWith(DOMINIO) ? item.slice(DOMINIO.length) : null;
+    nItemsMigas++;
+    const por = u === null ? "fuera de " + DOMINIO : u === "/" ? "" : !html.has(u) ? "sin index.html generado" : noindex(html.get(u)) ? "con noindex" : !enSitemap.has(u) ? "fuera del sitemap" : "";
+    if (por) { itemMigasMal.push(`${ruta} (${f}) item ${item || "falta"} ${por}`); itemMigasMalFam[f] = (itemMigasMalFam[f] || 0) + 1; }
+  }
+}
+
+// @id del CollectionPage de la propia página: todo CollectionPage cuya url sea la página (índice, provincias, localidades,
+// temáticas, hubs, salas de estudio, universidades y exámenes; también dentro de un @graph) lleva @id <ruta>#pagina, el
+// mismo patrón que el WebPage de las fichas, para que isPartOf/hasPart de otras páginas puedan apuntar a él. Por familia.
+const cpIdMal = [], nCpId = {};
+for (const [ruta, h] of html) {
+  const url = DOMINIO + ruta, f = familiaMigas(ruta);
+  for (const m of h.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)) {
+    let j; try { j = JSON.parse(m[1]); } catch (e) { continue; } // ya cuenta en «JSON-LD ilegible»
+    for (const x of [].concat(j).flatMap((y) => (y && Array.isArray(y["@graph"]) ? y["@graph"] : [y]))) {
+      if (!x || x["@type"] !== "CollectionPage" || x.url !== url) continue;
+      if (x["@id"] === url + "#pagina") nCpId[f] = (nCpId[f] || 0) + 1;
+      else cpIdMal.push(`${ruta} (${f}) CollectionPage sin @id ${url}#pagina${x["@id"] ? ` (lleva ${x["@id"]})` : ""}`);
+    }
+  }
+}
+
+// isPartOf/hasPart hacia OTRA página del sitio: la referencia lleva el @id del nodo destino (además de name y url) y ese
+// @id existe como nodo (con @type) en la página destino; si no, Google ve un CollectionPage anónimo en vez de unir las
+// dos páginas en un grafo. Sin @id, con un @id que la página destino no declara o cuyo nodo tiene otra url: fallo. Las referencias dentro de la
+// misma página (FAQPage → #pagina) ya las mira faqMal; la portada («/», el WebSite) no es página generada y no cuenta.
+function compruebaRefsId() {
+  const nodosLd = (h) => {
+    const out = [];
+    const recorre = (x) => { if (Array.isArray(x)) x.forEach(recorre); else if (x && typeof x === "object") { out.push(x); Object.values(x).forEach(recorre); } };
+    for (const m of h.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)) { try { recorre(JSON.parse(m[1])); } catch (e) { /* ya cuenta en «JSON-LD ilegible» */ } }
+    return out;
+  };
+  const nodos = new Map([...html].map(([r, h]) => [r, nodosLd(h)]));
+  const idsDe = new Map([...nodos].map(([r, l]) => [r, new Map(l.filter((x) => x["@id"] && x["@type"]).map((x) => [x["@id"], x]))]));
+  const mal = [];
+  let nRefs = 0, nConId = 0;
+  for (const [ruta, l] of nodos) for (const x of l) for (const k of ["isPartOf", "hasPart"]) for (const ref of [].concat(x[k] || [])) {
+    if (!ref || typeof ref !== "object") continue;
+    const destino = ((ref.url || ref["@id"] || "").startsWith(DOMINIO) ? (ref.url || ref["@id"]).slice(DOMINIO.length).split("#")[0] : "");
+    if (!destino || destino === ruta || destino === "/" || !html.has(destino)) continue; // externa, la misma página, la portada o rota (hasPartMal)
+    nRefs++;
+    if (!ref["@id"]) mal.push(`${ruta} ${k} ${destino} sin @id`);
+    else if (!idsDe.get(destino).has(ref["@id"])) mal.push(`${ruta} ${k} @id ${ref["@id"]}, que ${destino} no declara como nodo`);
+    else if (ref.url && idsDe.get(destino).get(ref["@id"]).url !== ref.url) mal.push(`${ruta} ${k} @id ${ref["@id"]} con url ${ref.url}, pero ese nodo tiene url ${idsDe.get(destino).get(ref["@id"]).url}`);
+    else nConId++;
+  }
+  return { mal, nRefs, nConId };
+}
+const refsId = compruebaRefsId();
+const refsIdMal = refsId.mal;
 
 // 404: no cuenta como enlace entrante (no quita huérfanas) ni entra en el resto de comprobaciones (no se indexa).
 const f404 = path.join(RAIZ, "404.html"), mal404 = [];
-let n404 = 0, n404Prov = 0, n404Busca = 0, n404Slugs = 0;
+let n404Migas = 0, n404 = 0, n404Prov = 0, n404Busca = 0, n404Slugs = 0;
 if (!fs.existsSync(f404)) mal404.push("falta 404.html");
 else {
   const h = fs.readFileSync(f404, "utf8");
   if (!/<meta name="robots" content="noindex">/.test(h)) mal404.push("sin <meta name=\"robots\" content=\"noindex\">");
   if (/rel="canonical"/.test(h)) mal404.push("lleva canonical");
+  // Sus migas, como las de las indexables: una lista <ol>/<li> sin «›» en el HTML y aria-current solo en el <span> final.
+  const nav404 = [...h.matchAll(/<nav class="migas"[^>]*>([\s\S]*?)<\/nav>/g)];
+  if (nav404.length !== 1) mal404.push(`${nav404.length} <nav class="migas"> (se espera 1)`);
+  else {
+    const { vis, error } = leeMigas(nav404[0][1]);
+    if (error) mal404.push("migas: " + error);
+    else if (!vis[vis.length - 1].actual || vis.some((v) => v.aActual) || (nav404[0][1].match(/aria-current=/g) || []).length !== 1) mal404.push("migas: aria-current=\"page\" no está solo en el <span> final");
+    else n404Migas = vis.length;
+  }
   if (enSitemap.has("/404.html") || enSitemap.has("/404")) mal404.push("está en el sitemap");
   const t = (h.match(/<title>([^<]*)<\/title>/) || [])[1];
   if (t && titulos.has(t)) mal404.push(`título repetido con ${titulos.get(t).join(", ")}`);
@@ -657,6 +790,13 @@ console.log(`Índice /bibliotecas/: CollectionPage ${indiceCP ? "sí" : "NO"} ·
 console.log(`hasPart: ${nHasPart} en ${nPagHasPart} páginas (temáticas que enlazan sus partes: ${nTemasPartes}) · rotos o sin enlace en el HTML: ${hasPartMal.length}${hasPartMal.length ? "\n" + muestra(hasPartMal, (r) => "  " + r) : ""}`);
 console.log(`Temáticas: España ${nTemas.España} · provincia ${nTemas.provincia} · localidad ${nTemas.localidad} · con isPartOf bien: España ${nIsPartOf.España} · provincia ${nIsPartOf.provincia} · localidad ${nIsPartOf.localidad} · lugares con isPartOf bien: provincias ${nLugarIsPartOf.provincia} · localidades ${nLugarIsPartOf.localidad} · fichas con isPartOf bien: a su localidad ${nFichaIsPartOf.localidad} · a su provincia ${nFichaIsPartOf.provincia} (fuera del ItemList de esa página: ${nFichasFueraLista}) · con isPartOf a su hub bien: ${Object.entries(nHubIsPartOf).map(([t, n]) => `${t} ${n}`).join(" · ")} · hubs con isPartOf al índice bien: ${nHubsIndice} · mal: ${isPartOfMal.length}${isPartOfMal.length ? "\n" + muestra(isPartOfMal, (r) => "  " + r) : ""}`);
 console.log(`Migas de las fichas (breadcrumb del WebPage → BreadcrumbList #migas, penúltimo = isPartOf): ${nFichaMigas} de ${fichas.size} bien · índice, provincias, localidades y temáticas (breadcrumb del CollectionPage → #migas): ${Object.entries(nLugarMigas).map(([t, n]) => `${t} ${n}`).join(" · ")} (temáticas con penúltimo ≠ isPartOf, solo contadas: ${nTemaMigasDistintoIsPartOf}) · hubs, salas de estudio, universidades y exámenes (penúltimo = isPartOf): ${Object.entries(nHubMigas).map(([t, n]) => `${t} ${n}`).join(" · ")} · BreadcrumbList sueltas (sin @id <ruta>#migas enlazado: fallo): ${nMigasSueltas}${nMigasSueltas ? ` (${Object.entries(migasSueltas).map(([t, n]) => `${t} ${n}`).join(" · ")})` : ""} · mal: ${migasMal.length}${migasMal.length ? "\n" + muestra(migasMal, (r) => "  " + r) : ""}`);
+const porFam = (o) => Object.entries(o).map(([t, n]) => `${t} ${n}`).join(" · ") || "0";
+console.log(`Migas visibles = JSON-LD (<nav class="migas"> ↔ BreadcrumbList #migas: orden, texto y destino) en las indexables: ${nMigasVisPag} de ${[...html.values()].filter((h) => !noindex(h)).length} bien (${porFam(nMigasVis)}) · discordancias: ${migasVisMal.length}${migasVisMal.length ? ` (${porFam(migasVisMalFam)})` : ""} · items de las migas (${nItemsMigas}) que no son / ni página indexable del sitemap: ${itemMigasMal.length}${itemMigasMal.length ? ` (${porFam(itemMigasMalFam)})` : ""}` +
+  (migasVisMal.length + itemMigasMal.length ? "\n" + muestra(migasVisMal.concat(itemMigasMal), (r) => "  " + r) : ""));
+console.log(`Migas como lista (<nav class="migas"><ol><li>, «›» solo por CSS) en las indexables: ${Object.values(nListaMigas).reduce((a, b) => a + b, 0)} (${porFam(nListaMigas)}) · 404: ${n404Migas ? n404Migas + " migas" : "mal"} · mal: ${listaMigasMal.length}${listaMigasMal.length ? "\n" + muestra(listaMigasMal, (r) => "  " + r) : ""}`);
+console.log(`Última miga con aria-current="page" (<span> de la propia página, una sola vez por <nav class="migas">) en las indexables: ${Object.values(nAriaActual).reduce((a, b) => a + b, 0)} (${porFam(nAriaActual)}) · mal: ${ariaActualMal.length}${ariaActualMal.length ? "\n" + muestra(ariaActualMal, (r) => "  " + r) : ""}`);
+console.log(`CollectionPage de la propia página con @id <ruta>#pagina: ${Object.values(nCpId).reduce((a, b) => a + b, 0)} (${porFam(nCpId)}) · sin él: ${cpIdMal.length}${cpIdMal.length ? "\n" + muestra(cpIdMal, (r) => "  " + r) : ""}`);
+console.log(`isPartOf/hasPart a otra página con el @id de su nodo (que existe en la página destino): ${refsId.nConId} de ${refsId.nRefs} · mal: ${refsIdMal.length}${refsIdMal.length ? "\n" + muestra(refsIdMal, (r) => "  " + r) : ""}`);
 console.log(`mainEntityOfPage de las fichas (WebPage #pagina about Library #biblioteca y Library mainEntityOfPage → #pagina): ${nFichaMainEntity} de ${fichas.size} bien · mal: ${mainEntityMal.length}${mainEntityMal.length ? "\n" + muestra(mainEntityMal, (r) => "  " + r) : ""}`);
 console.log(`FAQPage en el grafo de su página (@id #faq, isPartOf → #pagina de la misma URL): fichas (WebPage) ${nFichaFaqBien} de ${nFichaFaq} bien, con hasPart #faq recíproco ${nFichaHasPart} · demás páginas (CollectionPage) ${nOtraFaqBien} de ${nOtraFaq} bien · mal: ${faqMal.length}${faqMal.length ? "\n" + muestra(faqMal, (r) => "  " + r) : ""}`);
 console.log(`Huérfanas (sin enlace desde otra página generada): ${huerfanas.length}${huerfanas.length ? "\n" + muestra(huerfanas, (r) => "  " + r) : ""}`);
@@ -674,53 +814,158 @@ for (const [r, h] of [...html, ["/404.html", fs.existsSync(f404) ? fs.readFileSy
   if (/_vercel\/insights|gc\.zgo\.at|goatcounter|googletagmanager|google-analytics/.test(h)) analiticaMal.push(`${r}: script de analítica puesto a mano`);
 }
 console.log(`Analítica (/analitica.js en el <head>, apagada): ${html.size + 1 - new Set(analiticaMal.map((x) => x.split(":")[0])).size} de ${html.size + 1} páginas (con la 404) · mal: ${analiticaMal.length}${analiticaMal.length ? "\n" + muestra(analiticaMal, (r) => "  " + r) : ""}`);
-console.log(`Search Console (meta google-site-verification): ${gscEn.length ? gscEn.map(([r]) => r).join(", ") : "ninguna (verificación por DNS o pendiente)"} · mal: ${gscMal.length}${gscMal.length ? "\n" + muestra(gscMal, (r) => "  " + r) : ""}`);
+// Vista previa al compartir (Objetivo 8): cada página indexable (bibliotecas/… y las guías de /estudiar/) lleva, en el
+// <head> y una sola vez, og:site_name, og:image absoluta a https://bibliomapa.es/… de un archivo que existe en el repo,
+// og:image:width/height iguales a las dimensiones reales del PNG/JPEG, og:image:alt no vacío y twitter:card
+// (summary o summary_large_image). Sin og:image, WhatsApp o Telegram enseñan solo texto al compartir una ficha.
+const vistaMal = [], dimsCache = new Map(), ogProvUsadas = new Set();
+let nOgProv = 0;
+function dimsImagen(f) {
+  if (dimsCache.has(f)) return dimsCache.get(f);
+  let d = null;
+  try {
+    const b = fs.readFileSync(f);
+    if (b.slice(1, 4).toString() === "PNG") d = [b.readUInt32BE(16), b.readUInt32BE(20)];
+    else if (b[0] === 0xff && b[1] === 0xd8) for (let i = 2; i < b.length - 9;) {
+      if (b[i] !== 0xff) break;
+      const m = b[i + 1], len = b.readUInt16BE(i + 2);
+      if (m >= 0xc0 && m <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(m)) { d = [b.readUInt16BE(i + 7), b.readUInt16BE(i + 5)]; break; }
+      i += 2 + len;
+    }
+  } catch (e) { d = null; }
+  dimsCache.set(f, d);
+  return d;
+}
+const metaCab = (cab, attr, nombre) => [...cab.matchAll(new RegExp(`<meta ${attr}="${nombre.replace(/[.:]/g, "\\$&")}" content="([^"]*)">`, "g"))].map((m) => decodifica(m[1]));
+const guias = [];
+if (fs.existsSync(path.join(RAIZ, "estudiar"))) (function recorreG(dir) {
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    const f = path.join(dir, e.name);
+    if (e.isDirectory()) recorreG(f); else if (e.name === "index.html") guias.push([rutaDe(f), fs.readFileSync(f, "utf8")]);
+  }
+})(path.join(RAIZ, "estudiar"));
+const fPortada = path.join(RAIZ, "index.html");
+const conVista = [["/index.html", fs.existsSync(fPortada) ? fs.readFileSync(fPortada, "utf8") : ""], ...html, ...guias];
+for (const [r, h] of conVista) {
+  const cab = h.split("</head>")[0];
+  const uno = (attr, n) => { const l = metaCab(cab, attr, n); if (l.length !== 1) vistaMal.push(`${r}: ${n} ×${l.length}`); return l[0]; };
+  const sn = uno("property", "og:site_name");
+  if (sn !== undefined && !sn.trim()) vistaMal.push(`${r}: og:site_name vacío`);
+  const img = uno("property", "og:image"), an = uno("property", "og:image:width"), al = uno("property", "og:image:height"), alt = uno("property", "og:image:alt");
+  const tc = uno("name", "twitter:card");
+  if (tc !== undefined && !["summary", "summary_large_image"].includes(tc)) vistaMal.push(`${r}: twitter:card «${tc}»`);
+  if (alt !== undefined && !alt.trim()) vistaMal.push(`${r}: og:image:alt vacío`);
+  if (img === undefined) continue;
+  const ti = metaCab(cab, "name", "twitter:image");
+  if (ti.length > 1) vistaMal.push(`${r}: twitter:image ×${ti.length}`);
+  if (tc === "summary_large_image" && ti[0] !== img) vistaMal.push(`${r}: twitter:image (${ti[0]}) ≠ og:image con summary_large_image`);
+  if (!img.startsWith(DOMINIO + "/")) { vistaMal.push(`${r}: og:image no absoluta a ${DOMINIO}/ (${img})`); continue; }
+  const fImg = path.join(RAIZ, img.slice(DOMINIO.length + 1).split(/[?#]/)[0]);
+  const d = fs.existsSync(fImg) ? dimsImagen(fImg) : null;
+  if (!fs.existsSync(fImg)) vistaMal.push(`${r}: og:image ${img} no existe en el repo`);
+  else if (!d) vistaMal.push(`${r}: og:image ${img} no es un PNG/JPEG legible`);
+  else if (String(d[0]) !== an || String(d[1]) !== al) vistaMal.push(`${r}: og:image:width/height ${an}×${al} ≠ real ${d[0]}×${d[1]}`);
+  else if (d[0] !== 1200 || d[1] !== 630) vistaMal.push(`${r}: og:image ${img} mide ${d[0]}×${d[1]}, no 1200×630`);
+  // Imagen por provincia: si existe icons/og/<prov>.png, toda página bajo /bibliotecas/<prov>/ la usa (y su alt nombra la
+  // provincia); si no existe, la general. Una página de provincia con la imagen de otra también falla.
+  const mp = /^\/bibliotecas\/([a-z0-9-]+)\//.exec(r), mi = /\/icons\/og\/([a-z0-9-]+)\.png$/.exec(img);
+  const propia = mp && fs.existsSync(path.join(RAIZ, "icons", "og", mp[1] + ".png")) && fs.existsSync(path.join(RAIZ, "bibliotecas", mp[1], "index.html"));
+  if (propia) {
+    if (!mi || mi[1] !== mp[1]) vistaMal.push(`${r}: existe icons/og/${mp[1]}.png pero og:image es ${img}`);
+    else { nOgProv++; ogProvUsadas.add(mi[1]); if (!/ahora en .+ · bibliomapa\.es$/.test(alt || "")) vistaMal.push(`${r}: og:image:alt sin «ahora en <Provincia>» (${alt})`); }
+  } else if (mi && !(mp && mp[1] === mi[1])) vistaMal.push(`${r}: og:image de provincia ${img} en una página que no es de /bibliotecas/${mi[1]}/`);
+}
+const ogEnDisco = fs.existsSync(path.join(RAIZ, "icons", "og")) ? fs.readdirSync(path.join(RAIZ, "icons", "og")).filter((f) => f.endsWith(".png")) : [];
+const kbOg = Math.round(ogEnDisco.reduce((s, f) => s + fs.statSync(path.join(RAIZ, "icons", "og", f)).size, 0) / 1024);
+ogEnDisco.filter((f) => !ogProvUsadas.has(f.slice(0, -4))).forEach((f) => vistaMal.push(`icons/og/${f}: ninguna página la usa (¿slug de provincia mal escrito?)`));
+if (kbOg > 2048) vistaMal.push(`icons/og/: ${kbOg} KB entre todas (máximo 2048 KB)`);
+console.log(`Imagen de vista previa por provincia (icons/og/<prov>.png, 1200×630): ${ogEnDisco.length} imágenes, ${kbOg} KB, ${nOgProv} páginas con la de su provincia`);
+console.log(`Vista previa al compartir (og:site_name, og:image absoluta con width/height reales y alt, twitter:card): ${conVista.length - new Set(vistaMal.map((x) => x.split(":")[0])).size} de ${conVista.length} páginas (portada, ${html.size} de bibliotecas/ y ${guias.length} guías de /estudiar/; imagen grande: ${conVista.filter(([, h]) => metaCab(h.split("</head>")[0], "name", "twitter:card")[0] === "summary_large_image").length}) · mal: ${vistaMal.length}${vistaMal.length ? "\n" + muestra(vistaMal, (r) => "  " + r) : ""}`);
+// Versión de seo.css: toda página generada (bibliotecas/…, guías de /estudiar/ y la 404) enlaza el CSS una sola vez como
+// /seo.css?v=<8 hex del sha1 de seo.css>, igual que SEO_CSS_V del generador. Sin ?v= o con una huella vieja, sw.js
+// (cache-first por URL exacta) puede servir el CSS anterior con el HTML nuevo. Si falla: node scripts/generar_paginas_seo.js.
+const cssV = require("crypto").createHash("sha1").update(fs.readFileSync(path.join(RAIZ, "seo.css"))).digest("hex").slice(0, 8);
+const cssMal = [];
+const conCss = [...html, ...guias, ...(fs.existsSync(f404) ? [["/404.html", fs.readFileSync(f404, "utf8")]] : [])];
+for (const [r, h] of conCss) {
+  const refs = [...h.matchAll(/(?:href|src)="\/?seo\.css([^"]*)"/g)].map((m) => m[1]);
+  if (refs.length !== 1) cssMal.push(`${r}: enlaza seo.css ${refs.length} veces (se espera 1)`);
+  for (const q of refs) {
+    const m = /^\?v=([0-9a-f]+)$/.exec(q);
+    if (!m) cssMal.push(`${r}: seo.css sin ?v=<huella> («seo.css${q}»)`);
+    else if (m[1] !== cssV) cssMal.push(`${r}: seo.css?v=${m[1]} ≠ huella del seo.css actual (${cssV}): regenera las páginas`);
+  }
+}
+console.log(`seo.css versionado (/seo.css?v=${cssV}, sha1 del archivo): ${conCss.length - new Set(cssMal.map((x) => x.split(":")[0])).size} de ${conCss.length} páginas (${html.size} de bibliotecas/, ${guias.length} de /estudiar/ y la 404) · mal: ${cssMal.length}${cssMal.length ? "\n" + muestra(cssMal, (r) => "  " + r) : ""}`);
+console.log(`Search Console (meta google-site-verification):${gscEn.length ? gscEn.map(([r]) => r).join(", ") : "ninguna (verificación por DNS o pendiente)"} · mal: ${gscMal.length}${gscMal.length ? "\n" + muestra(gscMal, (r) => "  " + r) : ""}`);
 console.log(`IndexNow: ${indexNowClave ? `clave puesta, /${indexNowClave}.txt` : "sin clave (INDEXNOW_CLAVE = null)"} · mal: ${indexNowMal.length}${indexNowMal.length ? "\n" + muestra(indexNowMal, (r) => "  " + r) : ""}`);
-// ---------- Prueba de «despliega primero» de avisar_indexnow.js ----------
-// Copia avisar_indexnow.js a una carpeta temporal con un generar_paginas_seo.js mínimo (solo una INDEXNOW_CLAVE
-// ficticia), su .txt y un sitemap.xml de una URL; por cada caso levanta un servidor http propio en 127.0.0.1 (puerto
-// libre) que sirve /<clave>.txt y exige: salida 0 si responde 200 con la clave (con y sin salto final) y 1 si da 404 o
-// un texto distinto. Usa --base http://127.0.0.1:<puerto> sin --simular (--simular no comprueba nada): con una base que
-// no es bibliomapa.es el script nunca hace el POST, y además el hijo arranca con un fetch que rechaza todo lo que no sea
-// 127.0.0.1. Los casos van en paralelo (≈ 0,2 s) y la carpeta temporal se borra siempre.
+// ---------- Prueba de avisar_indexnow.js contra un servidor local ----------
+// Copia avisar_indexnow.js a dos carpetas temporales («con-clave» y «sin-clave»), cada una con un generar_paginas_seo.js
+// mínimo (INDEXNOW_CLAVE ficticia o null), el .txt y un sitemap.xml de una URL. Por cada caso levanta un servidor http
+// propio en 127.0.0.1 (puerto libre) que sirve /<clave>.txt y CUENTA las peticiones, y lanza
+// --fecha … --base http://127.0.0.1:<puerto>. Exige:
+//  · «despliega primero»: 0 si responde 200 con la clave (con y sin salto final); 1 si da 404 u otro texto; 1 con
+//    «No se pudo abrir…» si el servidor ya está cerrado (puerto cerrado antes de lanzar el script);
+//  · simulación: 0, «Simulación» en la salida y CERO peticiones al servidor, con --simular y con INDEXNOW_CLAVE = null
+//    (se pasa --base igualmente: si la simulación hiciera una petición, el contador lo delata).
+// Con una base que no es bibliomapa.es el script nunca hace el POST, y además el hijo arranca con `-r sin-red.js`, un
+// fetch que rechaza todo lo que no sea 127.0.0.1. Los casos van en paralelo (≈ 0,3 s) y la carpeta se borra siempre.
 async function probarAvisoIndexNow() {
   const os = require("os"), http = require("http"), { spawn } = require("child_process");
   const mal = [], CLAVE = "clave-ficticia-de-prueba-1234", FECHA = "2026-01-01";
-  // nombre: [estado HTTP, texto servido, salida esperada de avisar_indexnow.js]
-  const casos = { bien: [200, CLAVE, 0], "bien-con-salto": [200, CLAVE + "\n", 0], "404": [404, "Not found", 1], "otro-texto": [200, "otra-clave-distinta", 1] };
+  // nombre (sin espacios): { st: estado HTTP, txt: texto servido, quiere: salida esperada, raiz, args extra, cerrado, sim }
+  const casos = {
+    bien: { st: 200, txt: CLAVE, quiere: 0 },
+    "bien-con-salto": { st: 200, txt: CLAVE + "\n", quiere: 0 },
+    "404": { st: 404, txt: "Not found", quiere: 1 },
+    "otro-texto": { st: 200, txt: "otra-clave-distinta", quiere: 1 },
+    "servidor-caido": { st: 200, txt: CLAVE, quiere: 1, cerrado: true },
+    simular: { st: 200, txt: CLAVE, quiere: 0, args: ["--simular"], sim: true },
+    "clave-null": { st: 200, txt: CLAVE, quiere: 0, raiz: "sin-clave", sim: true },
+  };
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "indexnow-prueba-"));
   const servidores = [];
   try {
-    fs.mkdirSync(path.join(tmp, "scripts"));
-    fs.copyFileSync(path.join(RAIZ, "scripts", "avisar_indexnow.js"), path.join(tmp, "scripts", "avisar_indexnow.js"));
-    fs.writeFileSync(path.join(tmp, "scripts", "generar_paginas_seo.js"), `"use strict";\nconst INDEXNOW_CLAVE = "${CLAVE}";\n`);
-    fs.writeFileSync(path.join(tmp, CLAVE + ".txt"), CLAVE + "\n");
-    fs.writeFileSync(path.join(tmp, "sitemap.xml"), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset><url><loc>https://bibliomapa.es/</loc><lastmod>${FECHA}</lastmod></url></urlset>\n`);
+    for (const [dir, valor] of [["con-clave", `"${CLAVE}"`], ["sin-clave", "null"]]) {
+      fs.mkdirSync(path.join(tmp, dir, "scripts"), { recursive: true });
+      fs.copyFileSync(path.join(RAIZ, "scripts", "avisar_indexnow.js"), path.join(tmp, dir, "scripts", "avisar_indexnow.js"));
+      fs.writeFileSync(path.join(tmp, dir, "scripts", "generar_paginas_seo.js"), `"use strict";\nconst INDEXNOW_CLAVE = ${valor};\n`);
+      if (valor !== "null") fs.writeFileSync(path.join(tmp, dir, CLAVE + ".txt"), CLAVE + "\n");
+      fs.writeFileSync(path.join(tmp, dir, "sitemap.xml"), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset><url><loc>https://bibliomapa.es/</loc><lastmod>${FECHA}</lastmod></url></urlset>\n`);
+    }
     fs.writeFileSync(path.join(tmp, "sin-red.js"), `const f = globalThis.fetch; globalThis.fetch = (u, o) => /^http:\\/\\/127\\.0\\.0\\.1:\\d+\\//.test(String(u)) ? f(u, o) : Promise.reject(new Error("red real bloqueada en la prueba: " + u));\n`);
-    const res = await Promise.all(Object.entries(casos).map(async ([nombre, [st, txt]]) => {
+    const res = await Promise.all(Object.entries(casos).map(async ([nombre, c]) => {
+      let peticiones = 0;
       const s = http.createServer((req, r) => {
-        const [e, t] = req.url === `/${CLAVE}.txt` ? [st, txt] : [404, "Not found"];
+        peticiones++;
+        const [e, t] = req.url === `/${CLAVE}.txt` ? [c.st, c.txt] : [404, "Not found"];
         r.writeHead(e, { "Content-Type": "text/plain; charset=utf-8" }); r.end(t);
       });
       servidores.push(s);
       await new Promise((ok, ko) => s.once("error", ko).listen(0, "127.0.0.1", ok));
-      const h = spawn(process.execPath, ["-r", path.join(tmp, "sin-red.js"), path.join(tmp, "scripts", "avisar_indexnow.js"), "--fecha", FECHA, "--base", `http://127.0.0.1:${s.address().port}`],
-        { cwd: tmp, env: { ...process.env, NODE_OPTIONS: "" }, stdio: ["ignore", "pipe", "pipe"] });
+      const puerto = s.address().port;
+      if (c.cerrado) await new Promise((ok) => s.close(ok)); // puerto cerrado: nadie escucha cuando arranca el script
+      const raiz = path.join(tmp, c.raiz || "con-clave");
+      const h = spawn(process.execPath, ["-r", path.join(tmp, "sin-red.js"), path.join(raiz, "scripts", "avisar_indexnow.js"), ...(c.args || []), "--fecha", FECHA, "--base", `http://127.0.0.1:${puerto}`],
+        { cwd: raiz, env: { ...process.env, NODE_OPTIONS: "" }, stdio: ["ignore", "pipe", "pipe"] });
       let out = ""; h.stdout.on("data", (d) => (out += d)); h.stderr.on("data", (d) => (out += d));
       const reloj = setTimeout(() => h.kill("SIGKILL"), 4000);
-      const code = await new Promise((ok) => h.on("close", (c) => { clearTimeout(reloj); ok(c); }));
-      return [nombre, code, out];
+      const code = await new Promise((ok) => h.on("close", (cd) => { clearTimeout(reloj); ok(cd); }));
+      return [nombre, code, out, peticiones];
     }));
-    for (const [nombre, code, out] of res) {
-      const [st, txt, quiere] = casos[nombre];
+    for (const [nombre, code, out, peticiones] of res) {
+      const c = casos[nombre], ult = out.trim().split("\n").pop().slice(0, 140);
       if (/red real bloqueada/.test(out)) mal.push(`${nombre}: intentó salir a la red real`);
-      else if (code !== quiere) mal.push(`${nombre} (HTTP ${st} «${txt.trim()}»): salida ${code}, se esperaba ${quiere} · ${out.trim().split("\n").pop().slice(0, 140)}`);
-      else if (quiere === 0 && !/Clave publicada: .* → 200 con la clave exacta\./.test(out)) mal.push(`${nombre}: salida 0 sin «Clave publicada… 200 con la clave exacta» (¿no comprobó nada?)`);
+      else if (code !== c.quiere) mal.push(`${nombre} (${c.cerrado ? "puerto cerrado" : `HTTP ${c.st} «${c.txt.trim()}»`}${c.args ? " " + c.args.join(" ") : ""}${c.raiz ? " " + c.raiz : ""}): salida ${code}, se esperaba ${c.quiere} · ${ult}`);
+      else if (c.sim && !/Simulación/.test(out)) mal.push(`${nombre}: salida 0 sin «Simulación» en la salida`);
+      else if (c.sim && peticiones) mal.push(`${nombre}: la simulación hizo ${peticiones} petición(es) al servidor local (debe ser 0: sin red)`);
+      else if (c.cerrado && !/No se pudo abrir http:\/\/127\.0\.0\.1:\d+\//.test(out)) mal.push(`${nombre}: salida 1 sin «No se pudo abrir…» · ${ult}`);
+      else if (c.quiere === 0 && !c.sim && !/Clave publicada: .* → 200 con la clave exacta\./.test(out)) mal.push(`${nombre}: salida 0 sin «Clave publicada… 200 con la clave exacta» (¿no comprobó nada?)`);
     }
   } catch (e) {
     mal.push(`prueba: no se pudo hacer (${e.message})`);
   } finally {
-    for (const s of servidores) s.close();
+    for (const s of servidores) if (s.listening) s.close();
     fs.rmSync(tmp, { recursive: true, force: true });
   }
   return [mal, Object.keys(casos).length];
@@ -729,6 +974,6 @@ async function probarAvisoIndexNow() {
 (async () => {
   const t0 = Date.now();
   const [avisoMal, nCasos] = await probarAvisoIndexNow();
-  console.log(`IndexNow «despliega primero» (avisar_indexnow.js --base contra servidor local, sin red real): ${nCasos - new Set(avisoMal.map((x) => x.split(" ")[0])).size} de ${nCasos} casos bien (200 con la clave → 0; 404 u otro texto → 1) en ${Date.now() - t0} ms · mal: ${avisoMal.length}${avisoMal.length ? "\n" + muestra(avisoMal, (r) => "  " + r) : ""}`);
-  if (avisoMal.length || analiticaMal.length || gscMal.length || indexNowMal.length || migasMal.length || mainEntityMal.length || faqMal.length || indiceMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
+  console.log(`IndexNow «despliega primero» y simulación (avisar_indexnow.js --base contra servidor local, sin red real): ${nCasos - new Set(avisoMal.map((x) => x.split(" ")[0])).size} de ${nCasos} casos bien (200 con la clave → 0; 404, otro texto o servidor caído → 1; --simular y clave null → 0 sin peticiones) en ${Date.now() - t0} ms · mal: ${avisoMal.length}${avisoMal.length ? "\n" + muestra(avisoMal, (r) => "  " + r) : ""}`);
+  if (cssMal.length || listaMigasMal.length || ariaActualMal.length || cpIdMal.length || refsIdMal.length || migasVisMal.length || itemMigasMal.length || avisoMal.length || vistaMal.length || analiticaMal.length || gscMal.length || indexNowMal.length || migasMal.length || mainEntityMal.length || faqMal.length || indiceMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
 })();

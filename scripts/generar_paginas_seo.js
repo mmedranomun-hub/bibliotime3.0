@@ -193,6 +193,13 @@ function itemBib(b) {
   return f ? { "@id": DOMINIO + f + "#biblioteca", ...libraryLD(b, DOMINIO + f) } : libraryLD(b, DOMINIO + enlaceApp(b));
 }
 
+// Referencia (isPartOf/hasPart) a otra página del sitio: además de name y url, el @id de su nodo (<url>#pagina, el
+// CollectionPage de provincias, localidades, temáticas, hubs, salas, universidades y exámenes), para que Google una la
+// referencia con el nodo de la página destino en vez de crear un CollectionPage anónimo nuevo. scripts/comprobar_paginas_seo.js
+// falla si ese @id no existe como nodo en la página destino.
+let nRefId = 0;
+function refPagina(name, url) { nRefId++; return { "@type": "CollectionPage", "@id": url + "#pagina", name, url }; }
+
 // ---------- Plantilla ----------
 // noindex (la 404): sin canonical ni og:url (se sirve en cualquier URL inexistente), con <meta name="robots" content="noindex">
 // y sin BreadcrumbList; todos los enlaces son absolutos (/…) para que funcionen desde cualquier ruta.
@@ -200,6 +207,33 @@ function itemBib(b) {
 // migasId: @id opcional del BreadcrumbList (<ruta>#migas: fichas, índice, provincias, localidades, temáticas de España,
 // de provincia y de localidad, los hubs de horarios, universidades, exámenes y salas de estudio, universidades, ciudades
 // de exámenes y salas de estudio de provincia y localidad), para enlazarlo desde su WebPage o CollectionPage con breadcrumb (ver idMigasDe/conMigas).
+// Vista previa al compartir (WhatsApp, Telegram, X…): imagen fija ya publicada en el repo, en URL absoluta. Es la
+// apaisada 1200×630 de scripts/generar_imagen_og.py (logo + lema + dominio), por eso twitter:card es
+// «summary_large_image» (imagen grande) y no «summary» (miniatura). La portada (index.html) lleva las mismas etiquetas.
+// Si se cambia la imagen, actualizar ancho y alto con sus dimensiones reales (el comprobador lo exige).
+const OG_IMAGEN = { url: "https://bibliomapa.es/icons/og-bibliomapa.png", ancho: 1200, alto: 630, alt: "Bibliomapa: bibliotecas abiertas ahora en toda España · bibliomapa.es" };
+// Por provincia: si existe icons/og/<slug>.png (scripts/generar_imagen_og.py --provincia <slug>, misma plantilla 1200×630
+// con «Bibliotecas abiertas ahora en <Provincia>», sin cifras), las páginas de esa provincia (/bibliotecas/<slug>/ y todo lo
+// que cuelga: localidades, temáticas, salas y fichas) la usan; el resto de páginas, la general. Solo las provincias con más
+// fichas tienen imagen propia (ver `--listar-provincias` y el docstring del script de Python): vigilar el peso del repo.
+const ogProvCache = new Map();
+function ogImagenDe(ruta) {
+  const m = /^\/bibliotecas\/([a-z0-9-]+)\//.exec(ruta || "");
+  if (!m || typeof nombreProvDeSlug === "undefined" || !nombreProvDeSlug.has(m[1])) return OG_IMAGEN;
+  const ps = m[1];
+  if (!ogProvCache.has(ps)) {
+    const rel = "icons/og/" + ps + ".png";
+    ogProvCache.set(ps, fs.existsSync(path.join(RAIZ, rel))
+      ? { url: DOMINIO + "/" + rel, ancho: 1200, alto: 630, alt: `Bibliomapa: bibliotecas abiertas ahora en ${nombreProvDeSlug.get(ps)} · bibliomapa.es` }
+      : OG_IMAGEN);
+  }
+  return ogProvCache.get(ps);
+}
+// Versión de seo.css: 8 hex del sha1 de su contenido, en la URL (/seo.css?v=…). sw.js sirve lo propio cache-first por URL
+// exacta, así que sin ella quien tuviera el seo.css anterior en caché vería una vez el HTML nuevo con estilos viejos; con
+// ella, HTML nuevo → URL nueva → CSS nuevo de la red. La huella del lastmod ignora el ?v= (ver `huella`): cambiar el CSS
+// no mueve ninguna fecha del sitemap. scripts/comprobar_paginas_seo.js exige que el ?v= coincida con el seo.css actual.
+const SEO_CSS_V = require("crypto").createHash("sha1").update(fs.readFileSync(path.join(RAIZ, "seo.css"))).digest("hex").slice(0, 8);
 const h1De = new Map(); // ruta → h1 (texto plano): de aquí salen los textos de «¿Buscabas…?» en la 404
 // FAQPage en el mismo grafo que su página (provincias, localidades, temáticas, hubs, salas, universidades, exámenes):
 // si la página lleva un FAQPage sin @id y un CollectionPage de su misma URL, el CollectionPage recibe @id <ruta>#pagina
@@ -220,6 +254,7 @@ function faqEnGrafo(ruta, ld) {
 }
 function pagina({ ruta, titulo, descripcion, h1, intro, cuerpo, migas, migasId, ld: ld0, cta, head, noindex, trasH1 }) {
   const url = DOMINIO + ruta;
+  const OG = ogImagenDe(ruta);
   const ld = faqEnGrafo(ruta, ld0);
   h1De.set(ruta, h1);
   const migasLD = { "@context": "https://schema.org", ...(migasId ? { "@id": migasId } : {}), "@type": "BreadcrumbList", itemListElement: migas.map((x, k) => ({ "@type": "ListItem", position: k + 1, name: x[0], item: DOMINIO + x[1] })) };
@@ -237,10 +272,16 @@ ${noindex ? `<meta name="robots" content="noindex">` : `<link rel="canonical" hr
 <meta property="og:description" content="${esc(descripcion)}">
 ${noindex ? "" : `<meta property="og:url" content="${url}">
 `}<meta property="og:locale" content="es_ES">
+<meta property="og:image" content="${OG.url}">
+<meta property="og:image:width" content="${OG.ancho}">
+<meta property="og:image:height" content="${OG.alto}">
+<meta property="og:image:alt" content="${esc(OG.alt)}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="${OG.url}">
 <meta name="theme-color" content="#6c5ce7">
 <link rel="icon" href="/icons/favicon-32.png" type="image/png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
-<link rel="stylesheet" href="/seo.css">
+<link rel="stylesheet" href="/seo.css?v=${SEO_CSS_V}">
 <script src="/analitica.js" defer></script>
 ${noindex ? "" : `<script type="application/ld+json">${JSON.stringify(migasLD)}</script>`}
 ${ld ? `<script type="application/ld+json">${JSON.stringify(ld)}</script>` : ""}
@@ -248,7 +289,7 @@ ${head || ""}</head>
 <body>
 <header class="top"><a class="marca" href="/"><span>📚</span> Bibliomapa</a><nav class="nav-top"><a href="/estudiar/">Guías</a><a class="cta-top" href="/">Abrir el mapa</a></nav></header>
 <main>
-<nav class="migas" aria-label="Estás en">${migas.map((x, k) => (k < migas.length - 1 ? `<a href="${x[1]}">${esc(x[0])}</a> › ` : `<span>${esc(x[0])}</span>`)).join("")}</nav>
+<nav class="migas" aria-label="Estás en"><ol>${migas.map((x, k) => `<li>${k < migas.length - 1 ? `<a href="${x[1]}">${esc(x[0])}</a>` : `<span aria-current="page">${esc(x[0])}</span>`}</li>`).join("")}</ol></nav>
 <h1>${h1}</h1>
 ${trasH1 || ""}<p class="intro">${intro}</p>
 ${cta || `<a class="cta" href="/">📍 ¿Cuál está abierta ahora cerca de ti? Abrir el mapa</a>`}
@@ -355,8 +396,18 @@ const SALIDA = path.join(RAIZ, "bibliotecas");
 // deja de fiarse del lastmod si no es exacto) y un cambio de plantilla o de datos sí lo mueve, aunque el horario
 // verificado (dateModified) sea anterior.
 const crypto = require("crypto");
-// La etiqueta de analitica.js no cuenta: no cambia lo que ve nadie (añadirla no debe mover el lastmod de 1000 URL).
-const huella = (txt) => crypto.createHash("sha1").update(String(txt).replace('<script src="/analitica.js" defer></script>\n', "")).digest("hex");
+// La etiqueta de analitica.js y las de vista previa al compartir (og:image*, twitter:card, twitter:image) no cuentan: no cambian lo que
+// ve quien lee la página ni lo que indexa Google (añadirlas no debe mover el lastmod de 1000 URL). Tampoco el
+// aria-current="page" de la última miga: solo lo anuncia el lector de pantalla (el texto y el aspecto no cambian). Ni las
+// migas como lista (<ol><li>, con el «›» puesto por CSS): se reducen al marcado anterior (<a>…</a> › <a>…</a> › <span>)
+// antes de la huella, así que el cambio de marcado no mueve ninguna fecha y un cambio de texto o destino sí.
+// Ni el ?v= de seo.css (SEO_CSS_V): es la huella del CSS, no contenido de la página; se quita antes de la huella.
+const migasPlanas = (t) => t.replace(/<nav class="migas"([^>]*)><ol>([\s\S]*?)<\/ol><\/nav>/g,
+  (_, a, l) => `<nav class="migas"${a}>${l.replace(/<\/li><li>/g, " › ").replace(/<\/?li>/g, "")}</nav>`);
+const huella = (txt) => crypto.createHash("sha1").update(migasPlanas(String(txt).replace('<script src="/analitica.js" defer></script>\n', "")
+  .replace(/<link rel="stylesheet" href="\/seo\.css\?v=[0-9a-f]+">/, '<link rel="stylesheet" href="/seo.css">')
+  .replace(/<meta (property="og:image[^"]*"|name="twitter:(card|image)") content="[^"]*">\n/g, ""))
+  .replace(/<span aria-current="page">/g, "<span>")).digest("hex");
 const lastmodAntes = new Map(), huellaAntes = new Map(), huellaNueva = new Map();
 try {
   const sm = fs.readFileSync(path.join(RAIZ, "sitemap.xml"), "utf8");
@@ -427,12 +478,21 @@ const lastmodDe = (ruta, mod) => {
   const d = nueva && huellaAntes.get(ruta) === nueva && lastmodAntes.has(ruta) ? lastmodAntes.get(ruta) : HOY;
   return mod && mod > d && mod <= HOY ? mod : d;
 };
+// `node scripts/generar_paginas_seo.js --listar-provincias`: «slug<TAB>Provincia<TAB>fichas» de más a menos fichas y sale
+// antes de borrar o escribir nada. Lo usa scripts/generar_imagen_og.py para el nombre de cada provincia y el ranking por fichas.
+if (process.argv.includes("--listar-provincias")) {
+  const n = {};
+  todas.forEach((b) => (n[b.p] = (n[b.p] || 0) + 1));
+  Object.keys(n).sort((a, b) => n[b] - n[a] || a.localeCompare(b, "es")).forEach((p) => console.log(`${slug(p)}\t${p}\t${n[p]}`));
+  process.exit(0);
+}
 fs.rmSync(SALIDA, { recursive: true, force: true });
 const urls = [["/", "1.0"], ["/bibliotecas/", "0.9"]];
 const escribe = (ruta, html) => { const f = path.join(RAIZ, ruta, "index.html"); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, html); huellaNueva.set(ruta, huella(html)); };
 const porProv = {};
 todas.forEach((b) => (porProv[b.p] = porProv[b.p] || []).push(b));
 const provincias = Object.keys(porProv).sort((a, b) => a.localeCompare(b, "es"));
+const nombreProvDeSlug = new Map(provincias.map((p) => [slug(p), p]));
 const ordenBib = (a, b) => (b.h ? 1 : 0) - (a.h ? 1 : 0) || ({ mayor: 0, universidad: 1, publica: 2, otra: 3 }[a.t] - { mayor: 0, universidad: 1, publica: 2, otra: 3 }[b.t]) || a.n.localeCompare(b.n, "es");
 
 // ---------- Páginas temáticas (solo horarios verificados con fuente) ----------
@@ -654,8 +714,8 @@ let nTemaHasPart = 0, nHasPartTema = 0, nTemaIsPartOf = 0;
 const ldTema = (ruta, nombre, l, partes = [], superior = null, migas = false) => {
   if (partes.length) { nTemaHasPart++; nHasPartTema += partes.length; }
   if (superior) nTemaIsPartOf++;
-  return { "@context": "https://schema.org", "@type": "CollectionPage", name: nombre, url: DOMINIO + ruta,
-  inLanguage: "es-ES", dateModified: fechaMod(l), ...(superior ? { isPartOf: { "@type": "CollectionPage", name: superior[0], url: DOMINIO + superior[1] } } : {}), ...(migas ? conMigas(ruta) : {}), ...(partes.length ? { hasPart: partes.map(([name, r]) => ({ "@type": "CollectionPage", name, url: DOMINIO + r })) } : {}), mainEntity: { "@type": "ItemList", name: nombre, numberOfItems: l.length,
+  return { "@context": "https://schema.org", "@id": DOMINIO + ruta + "#pagina", "@type": "CollectionPage", name: nombre, url: DOMINIO + ruta,
+  inLanguage: "es-ES", dateModified: fechaMod(l), ...(superior ? { isPartOf: refPagina(superior[0], DOMINIO + superior[1]) } : {}), ...(migas ? conMigas(ruta) : {}), ...(partes.length ? { hasPart: partes.map(([name, r]) => refPagina(name, DOMINIO + r)) } : {}), mainEntity: { "@type": "ItemList", name: nombre, numberOfItems: l.length,
     itemListElement: l.map((b, k) => ({ "@type": "ListItem", position: k + 1, item: itemBib(b) })) } };
 };
 function textoFechas(lista) {
@@ -1185,7 +1245,7 @@ function paginaBiblioteca(b) {
   // isPartOf del WebPage: la página que ya enlaza su <p class="volver"> (su localidad si tiene página; si no, su
   // provincia), con el mismo name que su CollectionPage. Es la otra mitad de su mainEntity ItemList, donde la ficha está.
   const rutaSup = locConPagina ? `/bibliotecas/${ps}/${slug(b.c)}/` : `/bibliotecas/${ps}/`;
-  const parteDe = nombreLugarDe.has(rutaSup) ? { isPartOf: { "@type": "CollectionPage", name: nombreLugarDe.get(rutaSup), url: DOMINIO + rutaSup } } : {};
+  const parteDe = nombreLugarDe.has(rutaSup) ? { isPartOf: refPagina(nombreLugarDe.get(rutaSup), DOMINIO + rutaSup) } : {};
   if (parteDe.isPartOf) nFichasIsPartOf++;
   escribe(ruta, pagina({
     ruta, titulo, descripcion,
@@ -1366,7 +1426,9 @@ function descripcionTema(t, lista, donde, espana) {
 
 // Página propia (CollectionPage) con el mismo nombre y descripción que el título y la meta description. isPartOf: el
 // WebSite, salvo que extra traiga otro (provincias, localidades, hubs y sus páginas: la página que enlaza su <p class="volver">).
-const ldLugar = (ruta, nombre, descripcion, extra) => ({ "@context": "https://schema.org", "@type": "CollectionPage", name: nombre,
+// Lleva siempre @id <ruta>#pagina (el nodo de la página, como el WebPage de las fichas): en las que tienen FAQ es el mismo
+// que les daría faqEnGrafo, y así también lo tienen las que no (el índice, salas de estudio y universidades).
+const ldLugar = (ruta, nombre, descripcion, extra) => ({ "@context": "https://schema.org", "@id": DOMINIO + ruta + "#pagina", "@type": "CollectionPage", name: nombre,
   description: descripcion, url: DOMINIO + ruta, inLanguage: "es-ES", isPartOf: { "@type": "WebSite", name: "Bibliomapa", url: DOMINIO + "/" }, ...extra });
 
 // ---------- Vecinas: provincias y localidades cercanas ----------
@@ -1423,7 +1485,7 @@ function seccionTemasFicha(b, locConPagina) {
 // scripts/comprobar_paginas_seo.js falla si un hasPart no existe o la página no lo enlaza.
 function partesLugar(prov, loc, { locs = [], salasL = [], exL = [], filtroUni }) {
   const base = `/bibliotecas/${slug(prov)}/${loc ? slug(loc) + "/" : ""}`, donde = loc || prov;
-  const cp = (name, ruta) => ({ "@type": "CollectionPage", name, url: DOMINIO + ruta });
+  const cp = (name, ruta) => refPagina(name, DOMINIO + ruta);
   const l = [
     ...locs.map((c) => cp(`Bibliotecas en ${c}`, `${base}${slug(c)}/`)),
     ...(loc ? TEMAS_LOC : TEMAS).filter((t) => (loc ? temaLoc[t.slug][prov + "|" + loc] : temaProv[t.slug][prov])).map((t) => cp(`Bibliotecas ${t.que} en ${donde}`, `${base}${t.slug}/`)),
@@ -1439,12 +1501,12 @@ let nProvItemList = 0, nItemsProv = 0, nLugarHasPart = 0, nHasPart = 0, nLugarIs
 // provincia, el índice /bibliotecas/), con el mismo name que el CollectionPage destino. Es la otra mitad del hasPart de
 // la provincia y del ItemList del índice; scripts/comprobar_paginas_seo.js falla si no existe, no está enlazada o no es recíproca.
 const NOMBRE_INDICE = "Bibliotecas de España por provincia: abiertas ahora";
-const superiorLugar = (name, ruta) => { nLugarIsPartOf++; return { isPartOf: { "@type": "CollectionPage", name, url: DOMINIO + ruta } }; };
+const superiorLugar = (name, ruta) => { nLugarIsPartOf++; return { isPartOf: refPagina(name, DOMINIO + ruta) }; };
 // isPartOf de los hubs (salas de estudio, universidades, exámenes y horarios): el índice /bibliotecas/, primer enlace de
 // su <p class="volver"> («← Todas las provincias»), con NOMBRE_INDICE como name (el del CollectionPage del índice). Sin
 // reciprocidad: el índice no los lleva en su ItemList (solo provincias). Las temáticas de España lo declaran con ldTema.
 let nHubIndice = 0;
-const parteDeIndice = () => { nHubIndice++; return { isPartOf: { "@type": "CollectionPage", name: NOMBRE_INDICE, url: DOMINIO + "/bibliotecas/" } }; };
+const parteDeIndice = () => { nHubIndice++; return { isPartOf: refPagina(NOMBRE_INDICE, DOMINIO + "/bibliotecas/") }; };
 // name del CollectionPage de cada provincia y localidad (ruta → name), para el isPartOf de las fichas (se generan después).
 const nombreLugarDe = new Map();
 provincias.forEach((p) => {
@@ -1561,6 +1623,11 @@ temasEspana.forEach(({ t, l }) => {
 
 // páginas de cada biblioteca más buscada
 conPaginaPropia.forEach(paginaBiblioteca);
+// fichas.json: {índice en BIBLIOTECAS: ruta de su ficha}, para que «🔗 Compartir» de la app enlace la ficha (URL indexable
+// con título y vista previa) en vez de la portada con #bib=. La app lo baja en segundo plano; sin él, sigue con #bib=.
+{ const fichasJson = {};
+  [...paginaDe.keys()].sort((a, b) => a - b).forEach((i) => { fichasJson[i] = paginaDe.get(i); });
+  fs.writeFileSync(path.join(RAIZ, "fichas.json"), JSON.stringify(fichasJson) + "\n"); }
 
 // ---------- Páginas «Salas de estudio en <capital>» y su índice de España ----------
 // «3 bibliotecas universitarias y 4 públicas» sin los tipos en cero.
@@ -1608,7 +1675,7 @@ function faqSalas(s, rk, ex) {
 // con el mismo name que el CollectionPage del hub; por eso el título de cada hub se calcula antes que sus páginas (no
 // coincide con ninguno de ellas: 0 títulos cambiados). Es la otra mitad del hasPart del hub; los hubs, el índice (parteDeIndice).
 let nHubIsPartOf = 0;
-const parteDeHub = (titulo, ruta) => { nHubIsPartOf++; return { isPartOf: { "@type": "CollectionPage", name: titulo.replace(MARCA, ""), url: DOMINIO + ruta } }; };
+const parteDeHub = (titulo, ruta) => { nHubIsPartOf++; return { isPartOf: refPagina(titulo.replace(MARCA, ""), DOMINIO + ruta) }; };
 const tituloHubSalas = (() => {
   if (!salas.length) return "";
   const totE = salas.reduce((t, s) => t + s.est.length, 0);
@@ -1671,7 +1738,7 @@ if (salas.length) {
 <p class="volver"><a href="/bibliotecas/">← Todas las provincias</a>${exCiudades.length ? ` · <a href="${EX_RUTA}">Bibliotecas en exámenes</a>` : ""} · ${enlaceHub}</p>`,
     migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], ["Salas de estudio", ruta]], migasId: idMigasDe(ruta),
     ld: ldLugar(ruta, titulo.replace(MARCA, ""), descripcion, { ...parteDeIndice(), ...conMigas(ruta), dateModified: fechaMod(todasVer),
-      hasPart: orden.map((s) => ({ "@type": "CollectionPage", name: `Salas de estudio en ${s.ciudad}`, url: DOMINIO + s.ruta })) }),
+      hasPart: orden.map((s) => refPagina(`Salas de estudio en ${s.ciudad}`, DOMINIO + s.ruta)) }),
   }));
   urls.push([ruta, "0.8", fechaMod(todasVer)]);
 }
@@ -1820,7 +1887,7 @@ if (universidades.length) {
 <p class="volver"><a href="/bibliotecas/">← Todas las provincias</a>${salas.length ? ` · <a href="/bibliotecas/${SALAS_SLUG}/">Salas de estudio</a>` : ""} · ${enlaceHub}</p>`,
     migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], ["Universidades", ruta]], migasId: idMigasDe(ruta),
     ld: ldLugar(ruta, titulo.replace(MARCA, ""), descripcion, { ...parteDeIndice(), ...conMigas(ruta), dateModified: fechaMod(todasVer),
-      hasPart: universidades.map((u) => ({ "@type": "CollectionPage", name: `Bibliotecas de la ${u.nombre}`, url: DOMINIO + u.ruta })) }),
+      hasPart: universidades.map((u) => refPagina(`Bibliotecas de la ${u.nombre}`, DOMINIO + u.ruta)) }),
   }));
   urls.push([ruta, "0.8", fechaMod(todasVer)]);
 }
@@ -1949,7 +2016,7 @@ ${fq.html}
 <p class="volver"><a href="/bibliotecas/">← Todas las provincias</a>${salas.length ? ` · <a href="/bibliotecas/${SALAS_SLUG}/">Salas de estudio</a>` : ""}${universidades.length ? ` · <a href="/bibliotecas/${UNIS_SLUG}/">Universidades</a>` : ""} · ${enlaceHub}</p>`,
     migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], ["Exámenes", ruta]], migasId: idMigasDe(ruta), head: ESTILO_TABLA_HOR,
     ld: [ldLugar(ruta, titulo.replace(MARCA, ""), descripcion, { ...parteDeIndice(), ...conMigas(ruta), dateModified: fv,
-      hasPart: exCiudades.map((g) => ({ "@type": "CollectionPage", name: `Bibliotecas en exámenes en ${g.ciudad}`, url: DOMINIO + g.ruta })) }), fq.ld],
+      hasPart: exCiudades.map((g) => refPagina(`Bibliotecas en exámenes en ${g.ciudad}`, DOMINIO + g.ruta)) }), fq.ld],
   }));
   urls.push([ruta, "0.8", fv]);
 }
@@ -1998,8 +2065,8 @@ if (temasEspana.length) {
   titulosUsados.add(titulo);
   const dBase = `Bibliotecas abiertas hoy, el domingo, el fin de semana, hasta tarde y en verano en ${provsHub.length} provincias, con salas de estudio y universidades.`;
   const descripcion = [`${dBase} ${verifTodas.length} horarios verificados.`, dBase].find((x) => x.length <= MAX_DESC) || dBase.slice(0, MAX_DESC - 1) + "…";
-  const hasPart = temasEspana.map(({ t }) => ({ "@type": "CollectionPage", name: `Bibliotecas ${t.que} en España`, url: `${DOMINIO}/bibliotecas/${t.slug}/` }))
-    .concat(provsHub.flatMap((p) => TEMAS.filter((t) => temaProv[t.slug][p]).map((t) => ({ "@type": "CollectionPage", name: `Bibliotecas ${t.que} en ${p}`, url: `${DOMINIO}/bibliotecas/${slug(p)}/${t.slug}/` }))));
+  const hasPart = temasEspana.map(({ t }) => refPagina(`Bibliotecas ${t.que} en España`, `${DOMINIO}/bibliotecas/${t.slug}/`))
+    .concat(provsHub.flatMap((p) => TEMAS.filter((t) => temaProv[t.slug][p]).map((t) => refPagina(`Bibliotecas ${t.que} en ${p}`, `${DOMINIO}/bibliotecas/${slug(p)}/${t.slug}/`))));
   escribe(ruta, pagina({
     ruta, titulo, descripcion,
     h1: "Bibliotecas por horario en España",
@@ -2244,3 +2311,4 @@ console.log(`Provincias con ItemList de sus fichas en el JSON-LD: ${nProvItemLis
 console.log(`Localidades sin ninguna verificada con «Cerca, con horario verificado» (≤ ${RADIO_VERIF_KM} km del centroide): ${nLocsVerifCerca} · enlaces: ${nEnlacesLocVerifCerca}`);
 console.log(`Fichas con «Cerca, con horario verificado» (≤ ${RADIO_VERIF_KM} km, otra ficha): ${nFichasVerifCerca} de ${paginaDe.size} · enlaces: ${nEnlacesVerifCerca}`);
 console.log(`Navarra: ${nNavarraConHorario} de ${navarra.length} con horario publicable (fuenteHorario + verificadoHorario en app.js)`);
+console.log(`isPartOf/hasPart a otra página con el @id de su nodo (<url>#pagina): ${nRefId}`);

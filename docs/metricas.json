@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-11-13 09:37",
+  "fecha": "2026-11-14 03:30",
   "pruebas": {
     "arranca: datos y vistas": true,
     "marca España (sin «Navarra» en la cabecera)": true,
@@ -12,6 +12,7 @@
     "hitos del bosque: al plantar el 10.º árbol, tarjeta y semillas (una sola vez)": true,
     "próxima especie: barra en «Mi bosque» y aviso «ya puedes» una sola vez": true,
     "primer árbol del día: saludo y +5 🌰 una sola vez, sin tapar «Sesión terminada»": true,
+    "«🌳 Dos días seguidos plantando y compartiendo»: sale una vez al terminar la sesión empezada desde «📸 Ayer compartiste…»": true,
     "récord personal en «Sesión terminada» (solo si supera la más larga, sin negativos)": true,
     "contador de minutos en «Sesión terminada» (sube hasta los minutos reales; «Hoy llevas» solo con más sesiones hoy)": true,
     "semillas que vuelan al marcador (con 🌰 vuelan y el contador acaba en la cifra; sin 🌰 no; con reducir movimiento, cifra directa)": true,
@@ -30,6 +31,7 @@
     "al abrir el cofre, la tarjeta en oro recibe una vez el barrido --destello de .mis-brilla (.cofre-brilla, .6 s, en pausa bajo la ventana); nunca al recargar con el cofre abierto, quieta con reducir movimiento": true,
     "el barrido del cofre sigue pendiente si la tarjeta se repinta con la ventana abierta (p. ej. el tick de 30 s) y se ve una sola vez al cerrarla": true,
     "el 🧊 del cofre vuela a la pastilla de la racha al cerrar la ventana (una vez, tras las 🌰; con reducir movimiento, solo la cifra)": true,
+    "el 🧊 ganado por 7 días seguidos vuela del aviso a la pastilla de la racha y la racha dice «🧊 +1 por 7 días seguidos» (no «del cofre»); con reducir movimiento, solo la cifra": true,
     "cuando un 🧊 salva la racha, la pastilla enseña «🧊 ✓» un instante en azul calmado (sin hablar del día perdido; con reducir movimiento, quieta)": true,
     "tocar la insignia «🧊 N» abre la racha con «🧊 Congeladores» resaltada 1 s con borde --acento (botón accesible de 44 px; con reducir movimiento, sin transición)": true,
     "la ventana de la racha dice bajo «🧊 Congeladores» cómo se gana uno (cada 7 días seguidos y a veces en el cofre, máx. 3) en --suave; con 3, «Tienes el máximo (3)»": true,
@@ -59,6 +61,7 @@
     "liga semanal: Oro/Plata por la semana pasada, mínimo de estudio y sin amigos nada": true,
     "enlace #bib abre la ficha": true,
     "«🔗 Compartir» en el popup: aria-label, navigator.share con el enlace #bib, «Enlace copiado» si falla, y el enlace reabre la misma biblioteca": true,
+    "«🔗 Compartir» con fichas.json: una biblioteca con ficha comparte https://bibliomapa.es/bibliotecas/…/ (que existe), una sin ficha sigue con #bib=, y sin fichas.json vuelve a #bib=": true,
     "al llegar al cofre desde la barrita o la píldora, «¡Abre tu cofre!» recibe el foco (Intro basta) y no lo pierde al repintarse; nada si el cofre no está listo": true,
     "nombres recortados con gramática: «Sesión terminada» dice «h en Biblioteca de Navarra», nunca «en de Navarra»": true,
     "«Sesión terminada» lleva «📸 Compartir» (44 px, con etiqueta) y la tarjeta de la sesión se dibuja en 1080×1920 sin red, también sin árbol ni biblioteca": true,
@@ -68,18 +71,22 @@
     "wrapped: «📸 Mi mejor sesión» comparte la más larga de la semana pasada con «⭐ Mi mejor sesión de la semana»; sin sesiones sanas no sale": true,
     "📸 doble toque: el botón queda desactivado con aria-busy mientras se prepara la imagen y solo se genera y comparte UNA; luego vuelve, también si se cancela la hoja": true,
     "📸 bosque: varios toques en «Compartir» del bosque → 1 dibujo y 1 hoja, botón con aria-busy; al compartir devuelve true y la bienvenida dice «Ayer compartiste tu bosque de…»": true,
+    "📸 semana: «Compartir mi semana» guarda DATA.ultimaCompartida tipo 'semana' solo al compartir (no al cancelar) y mañana la bienvenida dice «Ayer compartiste tu semana de…» sin romper la vuelta": true,
+    "📸 ✓ Compartida: al compartir (true) el botón dice «✓ Compartida» en --ok-tx y lo anuncia aria-live; a los 2 s vuelve a «📸 Compartir»; si se cancela no cambia": true,
+    "📸 ✓ Guardada: sin navigator.share descarga y el botón dice «✓ Guardada»; si la hoja falla con NotAllowedError, descarga igual con «No se pudo abrir compartir · imagen guardada»; cancelar no descarga": true,
+    "📤 «Compartir mi semana» del perfil: si la hoja falla (NotAllowedError) descarga mi-semana.png con «No se pudo abrir compartir · imagen guardada», el botón dice «✓ Guardada» 2 s, aria-live y candado restaurado": true,
     "atajos de la app instalada (#accion=estudiar|ahora|pronto)": true,
     "analítica apagada por defecto (index.html y /bibliotecas/ cargan analitica.js con proveedor:null y no piden _vercel/insights ni goatcounter ni ponen cookies; respeta DNT/GPC y local)": true,
     "política de privacidad coherente con analitica.js (proveedor null ⇔ «sin analítica»; el diff de docs/ANALITICA.md se aplica y se detecta encender sin él)": true
   },
   "errores_js": [],
-  "carga_ms_cpu4x": 984,
+  "carga_ms_cpu4x": 558,
   "carga_ms_cpu4x_min_max": [
-    838,
-    1079
+    493,
+    583
   ],
-  "primera_pintura_ms_cpu4x": 268,
-  "todas_las_chinchetas_ms_cpu4x": 998,
+  "primera_pintura_ms_cpu4x": 256,
+  "todas_las_chinchetas_ms_cpu4x": 574,
   "markercluster": {
     "cargado": false,
     "agrupa": false,
@@ -89,26 +96,26 @@
   },
   "datos": {
     "bibliotecas": 2616,
-    "con_horario_verificado": 745,
+    "con_horario_verificado": 844,
     "provincias_con_horario": 51,
     "provincias_total": 51
   },
   "seo": {
-    "paginas": 1187,
+    "paginas": 1305,
     "sitemap": true
   },
   "peso": {
     "index.html": {
-      "kb": 139.2,
-      "kb_gzip": 31.4
+      "kb": 140.4,
+      "kb_gzip": 31.7
     },
     "app.js": {
-      "kb": 313.8,
-      "kb_gzip": 93.5
+      "kb": 301.0,
+      "kb_gzip": 90.1
     },
     "bibliotecas-espana.js": {
-      "kb": 897.8,
-      "kb_gzip": 214.8
+      "kb": 974.5,
+      "kb_gzip": 228.1
     }
   },
   "ok": true

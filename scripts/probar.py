@@ -316,6 +316,38 @@ PRUEBAS = [
         if(lv==null)localStorage.removeItem(lk);else localStorage.setItem(lk,lv);
         closeModal();renderForest();renderMisiones();renderRacha();renderSemillas();
       }"""),
+    ("«🌳 Dos días seguidos plantando y compartiendo»: sale una vez al terminar la sesión empezada desde «📸 Ayer compartiste…»", """
+      await cargarExtra();
+      var copia=JSON.stringify(DATA),bs=$('btnStart'),vc=VUELTA_COMP;   // stopStudy toca semillas, misiones, racha…: se deja DATA como estaba
+      var dia=n=>{var d=new Date();d.setDate(d.getDate()-n);return ymd(d);};
+      var sesion=async()=>{arrancarSesion(-1,false);studyTimer.start-=31*60000;stopStudy(false);await new Promise(r=>setTimeout(r,150));
+        document.querySelectorAll('.cuenta').forEach(x=>x.remove());if(window.cerrarFoco)cerrarFoco();
+        var m=document.querySelector('#modalRoot');return m?m.innerText:'';};
+      try{
+        bs.disabled=true;   // que el clic del botón de la bienvenida no abra «¿Dónde estudias?»: la sesión se simula abajo
+        DATA.sessions=[{id:'vc0',date:dia(1),min:52,ts:Date.now()-864e5,bib:NO_BIB,focus:'ok',esp:'roble'}];DATA.ultimaCompartida={fecha:dia(1),min:52};VUELTA_COMP=null;
+        closeModal();pintarBienvenidaDiaria();var b=$('bvEstudiar');
+        if(!b||!/Empezar a estudiar/.test(b.innerText))return 'sin «Empezar a estudiar»';
+        b.click();await new Promise(r=>setTimeout(r,350));
+        if(VUELTA_COMP!==dia(1)||studyTimer.running)return 'el botón no apunta la vuelta: '+VUELTA_COMP;
+        bs.disabled=false;
+        var t=await sesion();
+        if(!/Sesión terminada/.test(t))return 'no abre «Sesión terminada»: '+t.slice(0,80);
+        if(!/🌳 Dos días seguidos plantando y compartiendo/.test(t))return 'no sale el premio: '+t.slice(0,200);
+        if(/apague|perder|peligro|racha/i.test(document.querySelector('.ses-vuelta').innerText))return 'mete presión';
+        if(DATA.ultimaCompartida.vuelta!==ymd())return 'no marca .vuelta: '+JSON.stringify(DATA.ultimaCompartida);
+        if(getComputedStyle(document.querySelector('.ses-vuelta')).color==='rgba(0, 0, 0, 0)')return 'sin estilos';
+        closeModal();if(/Dos días seguidos/.test(await sesion()))return 'sale una segunda vez';
+        // sin pasar por el botón: misma marca de ayer, pero se cierra la bienvenida con «Más tarde»
+        closeModal();DATA.sessions=DATA.sessions.slice(0,1);DATA.ultimaCompartida={fecha:dia(1),min:52};VUELTA_COMP=null;
+        pintarBienvenidaDiaria();closeModal();
+        if(/Dos días seguidos/.test(await sesion()))return 'sale sin haber pulsado el botón';
+        // árbol marchito: no sale ni gasta la vuelta
+        closeModal();DATA.sessions=DATA.sessions.slice(0,1);DATA.ultimaCompartida={fecha:dia(1),min:52};VUELTA_COMP=dia(1);
+        var s={id:'vcw',date:ymd(),min:30,ts:Date.now()-60000,bib:NO_BIB,focus:'withered',esp:'roble',prod:null,note:''};pedirValoracion(s,null);
+        if(document.querySelector('#modalRoot .ses-vuelta')||DATA.ultimaCompartida.vuelta)return 'sale con árbol marchito';
+        return true;
+      }finally{bs.disabled=false;VUELTA_COMP=vc;var c=JSON.parse(copia);Object.keys(DATA).forEach(k=>{if(!(k in c))delete DATA[k];});Object.assign(DATA,c);saveUserData();document.querySelectorAll('.racha-overlay,.cuenta').forEach(x=>x.remove());closeModal();renderStudy();renderProfile();}"""),
     ("récord personal en «Sesión terminada» (solo si supera la más larga, sin negativos)", """
       await cargarExtra();
       var o=DATA.sessions,hoy=ymd(),mk=(i,m,f)=>({id:'rp'+i,date:hoy,min:m,ts:Date.now()-(100-i)*1000,bib:NO_BIB,focus:f||'ok',esp:'roble'});
@@ -847,6 +879,37 @@ PRUEBAS = [
         c=document.querySelector('.pill-hielo');if(!c||c.textContent.trim()!=='🧊 2'||c.classList.contains('ph-rebote'))return 'con reducir movimiento no da solo la cifra';
         return true;
       }finally{window.showToast=st;window.sinMovimiento=sm;window.hashStr=hs;window.volarHielo=vh;k.forEach(x=>DATA[x]=o[x]);closeModal();limpia();renderMisiones();renderSemillas();renderRacha();}"""),
+    ("el 🧊 ganado por 7 días seguidos vuela del aviso a la pastilla de la racha y la racha dice «🧊 +1 por 7 días seguidos» (no «del cofre»); con reducir movimiento, solo la cifra", """
+      await cargarExtra();
+      var k=['sessions','streakFreezes','usedFreezeDates','lastFreezeEarnedAtStreak'],o={};k.forEach(x=>o[x]=DATA[x]);
+      var espera=ms=>new Promise(r=>setTimeout(r,ms)),sm=window.sinMovimiento,vh=window.volarHielo,vuelos=[];
+      var limpia=()=>document.querySelectorAll('.pill-hielo,.hielo-vuela,.toast').forEach(x=>x.remove());
+      var hace=n=>{var d=new Date();d.setDate(d.getDate()-n);return ymd(d);};
+      var gana=()=>{var ss=[];for(var i=0;i<7;i++)ss.push({id:'zr'+i,date:hace(i),min:30,ts:Date.now()-i*864e5,bib:NO_BIB});
+        DATA.sessions=ss;DATA.usedFreezeDates=[];DATA.streakFreezes=0;DATA.lastFreezeEarnedAtStreak=0;renderRacha();checkStreakFreezes();};
+      window.volarHielo=function(r,e,ho){vuelos.push([r,e,ho]);return vh.apply(this,arguments);};
+      try{
+        closeModal();goView('study');while(VUELO.t||VUELO.n||VUELO.h)await espera(250);await espera(1500);limpia();
+        gana();
+        if(DATA.streakFreezes!==1)return 'no se gana el congelador';
+        var t=$('toastHielo');if(!t)return 'sin aviso';var tr=t.getBoundingClientRect();
+        await espera(700);
+        if(vuelos.length!==1||vuelos[0][2]!=='racha')return 'no vuela o sin origen racha: '+JSON.stringify(vuelos.map(v=>v[2]));
+        var r=vuelos[0][0];if(!r||Math.abs(r.top-tr.top)>40)return 'no sale del aviso';
+        if(!document.querySelector('.hielo-vuela'))return 'no se ve el 🧊 volando';
+        await espera(1300);
+        var c=document.querySelector('.pill-hielo');
+        if(!c||c.textContent.trim()!=='🧊 1')return 'la pastilla no enseña 🧊 1: '+(c&&c.textContent);
+        c.click();await espera(50);
+        var de=document.querySelector('#modalRoot .rs-hielo-de');
+        if(!de||!/por 7 días seguidos/.test(de.textContent)||/cofre/.test(de.textContent))return 'atribuye mal el 🧊: '+(de&&de.textContent);
+        closeModal();renderStudy();await espera(700);
+        if(vuelos.length!==1)return 'vuela dos veces';
+        limpia();window.sinMovimiento=()=>true;vuelos=[];gana();await espera(700);
+        if(document.querySelector('.hielo-vuela'))return 'vuela con reducir movimiento';
+        c=document.querySelector('.pill-hielo');if(!c||c.textContent.trim()!=='🧊 1'||c.classList.contains('ph-rebote')||c._nuevo!=='racha')return 'con reducir movimiento no da solo la cifra';
+        return true;
+      }finally{window.sinMovimiento=sm;window.volarHielo=vh;k.forEach(x=>DATA[x]=o[x]);closeModal();limpia();renderRacha();}"""),
     ("cuando un 🧊 salva la racha, la pastilla enseña «🧊 ✓» un instante en azul calmado (sin hablar del día perdido; con reducir movimiento, quieta)", """
       await cargarExtra();
       var k=['sessions','streakFreezes','usedFreezeDates','lastFreezeEarnedAtStreak'],o={};k.forEach(x=>o[x]=DATA[x]);
@@ -1313,6 +1376,7 @@ PRUEBAS = [
         return true;
       }finally{k.forEach(x=>DATA[x]=o[x]);saveUserData();closeModal();renderStudy();}"""),
     ("acceso: la ley foral solo en Navarra", """
+      await cargarExtra(); // la ficha y accesoAccesibilidadHTML viven en app-extra.js
       for(var i=N_NAVARRA;i<BIBLIOTECAS.length;i++)if(/Ley Foral/.test(accesoAccesibilidadHTML(BIBLIOTECAS[i])))return 'ley foral fuera de Navarra: '+BIBLIOTECAS[i].nombre;
       var nav=BIBLIOTECAS.slice(0,N_NAVARRA).some(b=>/Ley Foral 32\\/2002/.test(accesoAccesibilidadHTML(b)));
       var sev=BIBLIOTECAS.findIndex(b=>b.nombre==='Biblioteca Pública Infanta Elena'&&b.ciudad==='Sevilla');
@@ -1384,7 +1448,7 @@ PRUEBAS = [
       if(!chip.hidden){chip.click();var n=document.querySelectorAll('#list .card').length;chip.click();
         if(n!==con.length)return 'el filtro muestra '+n+' de '+con.length;}
       cerrarLista();
-      if(con.length){openBibDetailModal(con[0]);var a=document.querySelector('#modalRoot .ex-nota a');closeModal();
+      if(con.length){await cargarExtra();openBibDetailModal(con[0]);var a=document.querySelector('#modalRoot .ex-nota a');closeModal();
         if(!a||a.getAttribute('href')!==examenDeBib(BIBLIOTECAS[con[0]]).f)return 'la ficha no enlaza la fuente';}
       return true;"""),
     ("historial: «✅ N misiones · +N 🌰» bajo la sesión que las cumplió, nada en las demás", r"""
@@ -1495,7 +1559,7 @@ PRUEBAS = [
     ("«🔗 Compartir» en el popup: aria-label, navigator.share con el enlace #bib, «Enlace copiado» si falla, y el enlace reabre la misma biblioteca", """
       var espera=n=>new Promise(r=>setTimeout(r,n)),propio=Object.prototype.hasOwnProperty.call(navigator,'share'),o=propio?navigator.share:null,dato=null;
       try{
-        var i=Math.min(500,BIBLIOTECAS.length-1),b=BIBLIOTECAS[i];
+        var i=Math.min(500,BIBLIOTECAS.length-1);while(i>0&&rutaFicha(i))i--;var b=BIBLIOTECAS[i];
         window.__map.closePopup();location.hash='';window.__selBib(i);await espera(900);
         var bt=document.querySelector('.leaflet-popup-content .bib-share');
         if(!bt)return 'sin botón en el popup';
@@ -1516,6 +1580,25 @@ PRUEBAS = [
         var h=document.querySelector('.leaflet-popup-content h2');
         return (h&&h.textContent===b.nombre)||('el enlace abre otra: '+(h&&h.textContent));
       }finally{if(propio)navigator.share=o;else delete navigator.share;document.querySelectorAll('.toast').forEach(x=>x.remove());}"""),
+    ("«🔗 Compartir» con fichas.json: una biblioteca con ficha comparte https://bibliomapa.es/bibliotecas/…/ (que existe), una sin ficha sigue con #bib=, y sin fichas.json vuelve a #bib=", """
+      var espera=n=>new Promise(r=>setTimeout(r,n)),propio=Object.prototype.hasOwnProperty.call(navigator,'share'),o=propio?navigator.share:null,dato=null,F0=FICHAS;
+      try{
+        await cargarFichas();if(!FICHAS)return 'no carga fichas.json';
+        var ks=Object.keys(FICHAS),buenas=ks.filter(k=>rutaFicha(+k));
+        if(ks.length<100||buenas.length!==ks.length)return 'rutas que no casan con el nombre: '+(ks.length-buenas.length)+' de '+ks.length;
+        var i=+ks.filter(k=>+k>=N_NAVARRA)[0],j=0;while(rutaFicha(j))j++;
+        var r=await fetch(FICHAS[i]);if(!r.ok)return 'la ficha no existe: '+FICHAS[i];
+        Object.defineProperty(navigator,'share',{configurable:true,writable:true,value:d=>{dato=d;return Promise.resolve();}});
+        window.__map.closePopup();location.hash='';window.__selBib(i);await espera(900);
+        var bt=document.querySelector('.leaflet-popup-content .bib-share');if(!bt)return 'sin botón en el popup';
+        bt.click();await espera(50);
+        if(!dato||dato.url!=='https://bibliomapa.es'+FICHAS[i])return 'con ficha no comparte la ficha: '+JSON.stringify(dato);
+        dato=null;compartirBib(j);await espera(50);
+        if(!dato||dato.url.indexOf('https://bibliomapa.es/#bib='+j+'-')!==0)return 'sin ficha no usa #bib=: '+JSON.stringify(dato);
+        FICHAS=null;dato=null;compartirBib(i);await espera(50);
+        if(!dato||dato.url.indexOf('https://bibliomapa.es/#bib='+i+'-')!==0)return 'sin fichas.json no vuelve a #bib=: '+JSON.stringify(dato);
+        return true;
+      }finally{FICHAS=F0;if(propio)navigator.share=o;else delete navigator.share;window.__map.closePopup();document.querySelectorAll('.toast').forEach(x=>x.remove());}"""),
     ("al llegar al cofre desde la barrita o la píldora, «¡Abre tu cofre!» recibe el foco (Intro basta) y no lo pierde al repintarse; nada si el cofre no está listo", """
       var k=['misiones','sessions','acciones','semillasPremio','streakFreezes','cofresAbiertos','sellosMisiones'],o={};k.forEach(x=>o[x]=DATA[x]);
       var t0={running:studyTimer.running,start:studyTimer.start,bibIndex:studyTimer.bibIndex,tick:studyTimer.tick},el=$('misCerca'),mi=$('miniMis'),ms=$('miniStudy');
@@ -1690,6 +1773,122 @@ PRUEBAS = [
         if(!/📸 Ayer compartiste tu bosque de 2h 10m · ¿plantamos otro árbol hoy\?/.test(t))return 'no sale el texto del bosque: '+t;
         return true;
       }finally{navigator.share=sh0;navigator.canShare=cs0;window.dibujarBosque=db0;compartiendoImagen=false;DATA.sessions=s0;DATA.ultimaCompartida=uc0;FOREST_PERIOD=fp0;closeModal();renderForest();goView('map');}"""),
+    ("📸 semana: «Compartir mi semana» guarda DATA.ultimaCompartida tipo 'semana' solo al compartir (no al cancelar) y mañana la bienvenida dice «Ayer compartiste tu semana de…» sin romper la vuelta", """
+      await cargarExtra();
+      var s0=DATA.sessions,uc0=DATA.ultimaCompartida,sh0=navigator.share,cs0=navigator.canShare,ok=null,ko=null,vc0=VUELTA_COMP;
+      try{
+        closeModal();DATA.ultimaCompartida=null;
+        navigator.canShare=()=>true;navigator.share=function(){return new Promise((a,r)=>{ok=a;ko=()=>r(Object.assign(new Error('cancelada'),{name:'AbortError'}));});};
+        DATA.sessions=[{id:'sw1',date:ymd(),min:200,ts:Date.now(),bib:NO_BIB,focus:'ok',esp:'roble'},{id:'sw2',date:ymd(),min:120,ts:Date.now(),bib:NO_BIB,focus:'ok',esp:'roble'}];
+        var espera=async f=>{for(var i=0;i<60&&!f();i++)await new Promise(r=>setTimeout(r,50));};
+        var p=compartirSemana();await espera(()=>ko);ko();ko=null;
+        if(await p!==false)return 'no devuelve false al cancelar';
+        if(DATA.ultimaCompartida)return 'guarda la marca al cancelar: '+JSON.stringify(DATA.ultimaCompartida);
+        ok=null;p=compartirSemana();await espera(()=>ok);ok();
+        if(await p!==true)return 'no devuelve true al compartir';
+        var M=DATA.ultimaCompartida;if(!M||M.tipo!=='semana'||M.min!==320||M.fecha!==ymd())return 'marca mal guardada: '+JSON.stringify(M);
+        var d=new Date();d.setDate(d.getDate()-1);var ayer=ymd(d);DATA.ultimaCompartida={fecha:ayer,min:320,tipo:'semana'};DATA.sessions=[];
+        pintarBienvenidaDiaria();var bv=document.querySelector('#modalRoot .bv-comp'),t=bv?bv.innerText:'';
+        if(!/📸 Ayer compartiste tu semana de 5h 20m · ¿plantamos otro árbol hoy\?/.test(t))return 'no sale el texto de la semana: '+t;
+        if(bv.getAttribute('role')!=='note')return 'sin role=note';
+        if(/bosque/.test(t))return 'dice bosque en vez de semana';
+        if(!/onclick/.test(document.getElementById('bvEstudiar').outerHTML)||!/Empezar a estudiar/.test(document.getElementById('bvEstudiar').innerText))return 'sin invitación a estudiar';
+        closeModal();VUELTA_COMP=ayer;
+        var s={id:'sw3',date:ymd(),min:30,ts:Date.now(),bib:NO_BIB,focus:'ok',esp:'roble'};DATA.sessions=[s];
+        if(!/Dos días seguidos/.test(vueltaCompHTML(s)))return 'la semana compartida rompe la vuelta';
+        return true;
+      }finally{navigator.share=sh0;navigator.canShare=cs0;compartiendoImagen=false;VUELTA_COMP=vc0;DATA.sessions=s0;DATA.ultimaCompartida=uc0;closeModal();goView('map');}"""),
+    ("📸 ✓ Compartida: al compartir (true) el botón dice «✓ Compartida» en --ok-tx y lo anuncia aria-live; a los 2 s vuelve a «📸 Compartir»; si se cancela no cambia", """
+      await cargarExtra();
+      var s0=DATA.sessions,uc0=DATA.ultimaCompartida,fp0=FOREST_PERIOD,sh0=navigator.share,cs0=navigator.canShare,ms0=COMPARTIDA_MS,ok=null,ko=null;
+      try{
+        if(COMPARTIDA_MS!==2000)return 'no dura 2 s: '+COMPARTIDA_MS;
+        closeModal();FOREST_PERIOD='week';COMPARTIDA_MS=900;
+        navigator.canShare=()=>true;navigator.share=function(){return new Promise((a,r)=>{ok=a;ko=()=>r(Object.assign(new Error('cancelada'),{name:'AbortError'}));});};
+        DATA.sessions=[{id:'ck1',date:ymd(),min:50,bib:NO_BIB,focus:'ok',esp:'roble'}];
+        goView('study');renderForest();
+        var b=[...document.querySelectorAll('#forestCard .forest-acts button')].find(x=>/Compartir/.test(x.innerText));if(!b)return 'sin botón 📸 del bosque';
+        var html0=b.innerHTML,espera=async f=>{for(var i=0;i<60&&!f();i++)await new Promise(r=>setTimeout(r,50));};
+        ok=null;b.click();await espera(()=>ko);ko();ko=null;await espera(()=>!b.disabled);await new Promise(r=>setTimeout(r,60));
+        if(b.innerHTML!==html0||b.classList.contains('compartida'))return 'cambia al cancelar: '+b.innerText;
+        ok=null;b.click();await espera(()=>ok);ok();await espera(()=>b.classList.contains('compartida'));
+        if(b.innerText.trim()!=='✓ Compartida')return 'no dice ✓ Compartida: '+b.innerText;
+        if(b.disabled||b.hasAttribute('aria-busy'))return 'el candado no se restaura';
+        await new Promise(r=>setTimeout(r,320)); // tras la transición de color (.2s)
+        var ok_tx=getComputedStyle(document.documentElement).getPropertyValue('--ok-tx').trim(),tmp=document.createElement('i');tmp.style.color=ok_tx;document.body.appendChild(tmp);
+        var esperado=getComputedStyle(tmp).color;tmp.remove();if(getComputedStyle(b).color!==esperado)return 'color '+getComputedStyle(b).color+' ≠ --ok-tx '+esperado;
+        var v=document.getElementById('avisoCompartida');
+        if(!v||v.getAttribute('aria-live')!=='polite'||!/compartida/i.test(v.textContent))return 'sin aviso aria-live polite';
+        await new Promise(r=>setTimeout(r,800));
+        if(b.innerHTML!==html0||b.classList.contains('compartida'))return 'no vuelve al texto original: '+b.innerHTML;
+        return true;
+      }finally{navigator.share=sh0;navigator.canShare=cs0;COMPARTIDA_MS=ms0;compartiendoImagen=false;DATA.sessions=s0;DATA.ultimaCompartida=uc0;FOREST_PERIOD=fp0;closeModal();renderForest();goView('map');}"""),
+    ("📸 ✓ Guardada: sin navigator.share descarga y el botón dice «✓ Guardada»; si la hoja falla con NotAllowedError, descarga igual con «No se pudo abrir compartir · imagen guardada»; cancelar no descarga", """
+      await cargarExtra();
+      var s0=DATA.sessions,uc0=DATA.ultimaCompartida,fp0=FOREST_PERIOD,sh0=navigator.share,cs0=navigator.canShare,st0=window.showToast,ms0=COMPARTIDA_MS,toasts=[],bajadas=[];
+      var pilla=e=>{var a=e.target;if(a&&a.tagName==='A'&&a.hasAttribute('download')){bajadas.push(a.download);e.preventDefault();}};
+      document.addEventListener('click',pilla,true);
+      var espera=async f=>{for(var i=0;i<60&&!f();i++)await new Promise(r=>setTimeout(r,50));};
+      try{
+        closeModal();FOREST_PERIOD='week';COMPARTIDA_MS=900;window.showToast=m=>toasts.push(m);DATA.ultimaCompartida=null;
+        DATA.sessions=[{id:'cg1',date:ymd(),min:40,bib:NO_BIB,focus:'ok',esp:'roble'}];
+        var cv=document.createElement('canvas');cv.width=cv.height=4;
+        navigator.canShare=undefined;navigator.share=undefined;
+        if(await compartirLienzo(cv,'x.png','t')!=='descarga')return 'sin share no devuelve "descarga"';
+        navigator.canShare=()=>true;navigator.share=()=>Promise.resolve();
+        if(await compartirLienzo(cv,'x.png','t')!=='hoja')return 'con share no devuelve "hoja"';
+        navigator.share=()=>Promise.reject(Object.assign(new Error('cancelada'),{name:'AbortError'}));bajadas=[];
+        if(await compartirLienzo(cv,'x.png','t')!==false||bajadas.length)return 'al cancelar descarga o no devuelve false';
+        goView('study');renderForest();
+        var b=[...document.querySelectorAll('#forestCard .forest-acts button')].find(x=>/Compartir/.test(x.innerText));if(!b)return 'sin botón 📸 del bosque';
+        var html0=b.innerHTML;
+        navigator.canShare=undefined;navigator.share=undefined;bajadas=[];toasts=[];
+        b.click();await espera(()=>b.classList.contains('compartida'));
+        if(bajadas[0]!=='mi-bosque.png')return 'sin share no descarga la imagen: '+JSON.stringify(bajadas);
+        if(b.innerText.trim()!=='✓ Guardada')return 'sin share no dice ✓ Guardada: '+b.innerText;
+        if(!toasts.some(t=>/Imagen guardada/.test(t)))return 'sin aviso de imagen guardada: '+JSON.stringify(toasts);
+        await new Promise(r=>setTimeout(r,120));
+        if(!/guardada/i.test((document.getElementById('avisoCompartida')||{}).textContent||''))return 'aria-live no dice guardada';
+        if(!DATA.ultimaCompartida||DATA.ultimaCompartida.tipo!=='bosque')return 'la descarga no cuenta como compartida para la bienvenida';
+        await espera(()=>!b.classList.contains('compartida'));if(b.innerHTML!==html0)return 'no vuelve al texto original';
+        navigator.canShare=()=>true;navigator.share=()=>Promise.reject(Object.assign(new Error('sin gesto'),{name:'NotAllowedError'}));bajadas=[];toasts=[];
+        b.click();await espera(()=>b.classList.contains('compartida'));
+        if(bajadas[0]!=='mi-bosque.png')return 'con NotAllowedError no descarga: '+JSON.stringify(bajadas);
+        if(!toasts.includes('No se pudo abrir compartir · imagen guardada 📸'))return 'sin aviso suave del fallo: '+JSON.stringify(toasts);
+        if(b.innerText.trim()!=='✓ Guardada')return 'con NotAllowedError no dice ✓ Guardada: '+b.innerText;
+        if(b.disabled||b.hasAttribute('aria-busy'))return 'el candado no se restaura';
+        return true;
+      }finally{document.removeEventListener('click',pilla,true);navigator.share=sh0;navigator.canShare=cs0;window.showToast=st0;COMPARTIDA_MS=ms0;compartiendoImagen=false;DATA.sessions=s0;DATA.ultimaCompartida=uc0;FOREST_PERIOD=fp0;closeModal();renderForest();goView('map');}"""),
+    ("📤 «Compartir mi semana» del perfil: si la hoja falla (NotAllowedError) descarga mi-semana.png con «No se pudo abrir compartir · imagen guardada», el botón dice «✓ Guardada» 2 s, aria-live y candado restaurado", """
+      await cargarExtra();
+      var s0=DATA.sessions,sh0=navigator.share,cs0=navigator.canShare,st0=window.showToast,ms0=COMPARTIDA_MS,toasts=[],bajadas=[],shares=0;
+      var pilla=e=>{var a=e.target;if(a&&a.tagName==='A'&&a.hasAttribute('download')){bajadas.push(a.download);e.preventDefault();}};
+      document.addEventListener('click',pilla,true);
+      var espera=async f=>{for(var i=0;i<60&&!f();i++)await new Promise(r=>setTimeout(r,50));};
+      try{
+        closeModal();COMPARTIDA_MS=900;window.showToast=m=>toasts.push(m);
+        DATA.sessions=[{id:'sw1',date:ymd(),min:75,bib:NO_BIB,focus:'ok',esp:'roble',subject:'Mates'}];
+        goView('profile');await new Promise(r=>setTimeout(r,200));
+        var b=document.getElementById('btnShareWeek');if(!b)return 'sin #btnShareWeek';
+        var html0=b.innerHTML;
+        navigator.canShare=()=>true;navigator.share=()=>{shares++;return Promise.reject(Object.assign(new Error('sin gesto'),{name:'NotAllowedError'}));};
+        b.click();b.click();await espera(()=>b.classList.contains('compartida'));
+        if(shares!==1)return 'el doble toque abre la hoja '+shares+' veces';
+        if(bajadas.length!==1||bajadas[0]!=='mi-semana.png')return 'con la hoja fallando no descarga mi-semana.png: '+JSON.stringify(bajadas);
+        if(!toasts.includes('No se pudo abrir compartir · imagen guardada 📸'))return 'sin aviso suave del fallo: '+JSON.stringify(toasts);
+        if(b.innerText.trim()!=='✓ Guardada')return 'no dice ✓ Guardada: '+b.innerText;
+        if(b.disabled||b.hasAttribute('aria-busy'))return 'el candado no se restaura';
+        await new Promise(r=>setTimeout(r,120));
+        if(!/guardada/i.test((document.getElementById('avisoCompartida')||{}).textContent||''))return 'aria-live no dice guardada';
+        await espera(()=>!b.classList.contains('compartida'));if(b.innerHTML!==html0)return 'no vuelve al texto original';
+        navigator.share=()=>Promise.reject(Object.assign(new Error('cancelada'),{name:'AbortError'}));bajadas=[];
+        b.click();await new Promise(r=>setTimeout(r,400));
+        if(bajadas.length||b.classList.contains('compartida'))return 'al cancelar descarga o marca el botón';
+        navigator.share=()=>Promise.resolve();
+        b.click();await espera(()=>b.classList.contains('compartida'));
+        if(b.innerText.trim()!=='✓ Compartida')return 'con la hoja abierta no dice ✓ Compartida: '+b.innerText;
+        return true;
+      }finally{document.removeEventListener('click',pilla,true);navigator.share=sh0;navigator.canShare=cs0;window.showToast=st0;COMPARTIDA_MS=ms0;compartiendoImagen=false;DATA.sessions=s0;goView('map');}"""),
 ]
 
 

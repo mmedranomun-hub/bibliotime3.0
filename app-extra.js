@@ -151,9 +151,15 @@ function minutosSemanaPorDia(){
   var top=null,tm=0;for(var k in subj)if(subj[k]>tm){tm=subj[k];top=k;}
   return {mins:mins,sesiones:n,top:top};
 }
-function compartirSemana(){
+/* «📤 Compartir mi semana» del perfil (#btnShareWeek) o con el botón como `origen`. Desde #btnShareWeek llega el
+   evento del click a través del stub de app.js, ya despachado (currentTarget es null): el botón sale de su target.
+   Mismo camino que sesión y bosque: conCandado (disabled + aria-busy, «✓ Compartida»/«✓ Guardada» 2 s y aria-live)
+   y compartirLienzo (si la hoja falla sin ser AbortError, descarga con «No se pudo abrir compartir · imagen guardada»). */
+function compartirSemana(origen){
   var w=minutosSemanaPorDia(), total=w.mins.reduce(function(a,b){return a+b;},0);
-  if(!total){showToast("Aún no has estudiado esta semana: ¡empieza una sesión!");return;}
+  if(!total){showToast("Aún no has estudiado esta semana: ¡empieza una sesión!");return Promise.resolve(false);}
+  var b=origen&&origen.target&&origen.target.closest?origen.currentTarget||origen.target.closest("button"):origen;
+  return conCandado(b,async function(){
   var W=1080,H=1350,c=document.createElement("canvas");c.width=W;c.height=H;var g=c.getContext("2d");
   var grad=g.createLinearGradient(0,0,W,H);grad.addColorStop(0,"#6c5ce7");grad.addColorStop(1,"#00b4c5");g.fillStyle=grad;g.fillRect(0,0,W,H);
   g.fillStyle="rgba(255,255,255,.85)";g.font="700 40px system-ui,sans-serif";g.fillText("MI SEMANA DE ESTUDIO",80,140);
@@ -166,12 +172,12 @@ function compartirSemana(){
     var x=bx+k*bw+bw*.18,ww=bw*.64;g.beginPath();if(g.roundRect)g.roundRect(x,base-h,ww,h,18);else g.rect(x,base-h,ww,h);g.fill();
     g.fillStyle="rgba(255,255,255,.9)";g.font="700 36px system-ui,sans-serif";g.textAlign="center";g.fillText(dias[k],x+ww/2,base+56);g.textAlign="left";});
   g.fillStyle="#fff";g.font="800 40px system-ui,sans-serif";g.fillText("bibliomapa.es",80,H-80);
-  c.toBlob(function(blob){
-    var file=new File([blob],"mi-semana.png",{type:"image/png"});
-    if(navigator.canShare&&navigator.canShare({files:[file]})){navigator.share({files:[file],title:"Mi semana de estudio"}).catch(function(){});return;}
-    var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="mi-semana.png";document.body.appendChild(a);a.click();a.remove();
-    showToast("Imagen descargada: compártela donde quieras");
-  },"image/png");
+  var motivo=await compartirLienzo(c,"mi-semana.png","Mi semana de estudio 📚 "+hMin(total)+" · bibliomapa.es");
+  // «📸 Ayer compartiste tu semana de…» de la bienvenida de mañana (tipo "semana", min = total semanal): solo si se
+  // compartió o descargó, nunca al cancelar. También vale para la vuelta («Dos días seguidos plantando y compartiendo»)
+  if(motivo){DATA.ultimaCompartida={fecha:ymd(),min:total,tipo:"semana"};saveUserData();}
+  return motivo;
+  });
 }
 /* ----- Reportar o confirmar un horario ----- */
 var HR_DIAS_LARGOS=["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
@@ -320,13 +326,17 @@ function lienzoStory(){
   return {c:c,g:g,W:W,H:H};
 }
 function textoC(g,t,x,y,font,color){g.font=font;g.fillStyle=color||"#fff";g.textAlign="center";g.fillText(t,x,y,980);g.textAlign="left";}
+/* Devuelve el motivo: "hoja" si se compartió con la hoja del sistema (navigator.share), "descarga" si se guardó
+   la imagen, false si se canceló la hoja (AbortError). Si la hoja falla por otra cosa (p. ej. NotAllowedError
+   porque el gesto del usuario caducó mientras se dibujaba), no se pierde la imagen: se descarga con aviso suave. */
 async function compartirLienzo(c,nombre,texto){
   var blob=await new Promise(function(r){c.toBlob(r,"image/png");});
-  var file=new File([blob],nombre,{type:"image/png"});
-  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:"Bibliomapa",text:texto});return true;}}catch(e){if(e&&e.name==="AbortError")return false;}
+  var file=new File([blob],nombre,{type:"image/png"}),fallo=false;
+  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:"Bibliomapa",text:texto});return "hoja";}}
+  catch(e){if(e&&e.name==="AbortError")return false;fallo=true;}
   var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=nombre;document.body.appendChild(a);a.click();a.remove();
-  showToast("Imagen guardada 📸 Súbela a tus stories");
-  return true; // true = compartida o descargada; false = hoja cancelada (compartirSesionStory solo apunta la marca con true)
+  showToast(fallo?"No se pudo abrir compartir · imagen guardada 📸":"Imagen guardada 📸 Súbela a tus stories");
+  return "descarga";
 }
 async function dibujarBosque(g,ses,x0,y0,ancho,alto){
   // suelo
@@ -346,7 +356,8 @@ async function dibujarBosque(g,ses,x0,y0,ancho,alto){
 }
 /* Imagen del bosque de un periodo (por defecto el de la pestaña: FOREST_PERIOD). `origen` es el botón 📸 que
    la lanzó («📸 Compartir» del bosque, «Comparte tu día», «Compartir mi semana»): mismo candado que la sesión.
-   Devuelve true si se compartió o descargó (y guarda DATA.ultimaCompartida tipo "bosque"), false si no. */
+   Devuelve true si se compartió o descargó (y guarda DATA.ultimaCompartida tipo "bosque"), false si no; el motivo
+   ("hoja"/"descarga") lo usa conCandado para que el botón diga «✓ Compartida» o «✓ Guardada». */
 async function compartirBosque(origen,periodo){
   var per=periodo||FOREST_PERIOD,ses=sesionesPeriodo(DATA.sessions,per==="all"?"month":per);
   if(!ses.length){showToast("Planta algún árbol primero 🌱");return false;}
@@ -360,9 +371,9 @@ async function compartirBosque(origen,periodo){
     await dibujarBosque(g,ses,70,560,W-140,1000);
     textoC(g,"Planta tu bosque estudiando",W/2,1700,"600 48px system-ui,sans-serif","rgba(255,255,255,.9)");
     textoC(g,"bibliomapa.es",W/2,1790,"800 64px system-ui,sans-serif");
-    var hecho=await compartirLienzo(L.c,"mi-bosque.png","Mi bosque de estudio 🌳 "+hMin(min)+" · bibliomapa.es");
-    if(hecho){DATA.ultimaCompartida={fecha:ymd(),min:min,tipo:"bosque"};saveUserData();}
-    return hecho;
+    var motivo=await compartirLienzo(L.c,"mi-bosque.png","Mi bosque de estudio 🌳 "+hMin(min)+" · bibliomapa.es");
+    if(motivo){DATA.ultimaCompartida={fecha:ymd(),min:min,tipo:"bosque"};saveUserData();}
+    return motivo;
   });
 }
 /* Tarjeta de una sesión (1080×1920, mismo lienzo y letra que la del bosque). Solo datos de la propia
@@ -399,24 +410,42 @@ async function compartirSesionStory(id,titulo,origen){
   var s=typeof id==="number"?DATA.sessions[id]:DATA.sessions.filter(function(x){return x.id===id;})[0]; if(!s)return false;
   return conCandado(origen,async function(){
     showToast("Preparando tu imagen…");
-    var hecho=await compartirLienzo(await dibujarSesionStory(s,titulo),"mi-sesion.png",(titulo?titulo+": ":"He estudiado ")+hMin(s.min)+" 📚 bibliomapa.es");
-    // «📸 Ayer compartiste…» de la bienvenida de mañana: solo si se compartió o descargó de verdad (no al cancelar)
-    if(hecho){DATA.ultimaCompartida={fecha:ymd(),min:s.min};saveUserData();}
-    return hecho;
+    var motivo=await compartirLienzo(await dibujarSesionStory(s,titulo),"mi-sesion.png",(titulo?titulo+": ":"He estudiado ")+hMin(s.min)+" 📚 bibliomapa.es");
+    // «📸 Ayer compartiste…» de la bienvenida de mañana: si se compartió o se descargó (la descarga es para subirla
+    // a stories, así que también cuenta), nunca al cancelar
+    if(motivo){DATA.ultimaCompartida={fecha:ymd(),min:s.min};saveUserData();}
+    return motivo;
   });
 }
 /* Candado común de las imágenes para stories (sesión y bosque): mientras se dibuja y está abierta la hoja de
    compartir, el botón que lo lanzó queda disabled + aria-busy y cualquier otro toque se ignora, así un doble
    toque no genera dos imágenes ni abre la hoja dos veces. Se restaura siempre en el finally (también si se
-   cancela la hoja o falla el dibujo, con aviso suave). Devuelve lo que devuelva fn (true/false). */
+   cancela la hoja o falla el dibujo, con aviso suave). fn devuelve el motivo ("hoja"/"descarga") o false; conCandado
+   devuelve true/false (así compartirBosque y compartirSesionStory siguen siendo booleanas para quien las llama) y pasa
+   el motivo a marcarCompartida. */
 var compartiendoImagen=false;
 async function conCandado(origen,fn){
   if(compartiendoImagen)return false;
   var b=origen||(window.event&&window.event.currentTarget);if(!(b&&b.tagName==="BUTTON"))b=null;
   compartiendoImagen=true;if(b){b.disabled=true;b.setAttribute("aria-busy","true");}
-  try{return !!(await fn());}
-  catch(e){showToast("No se pudo preparar la imagen. Prueba otra vez");return false;}
-  finally{compartiendoImagen=false;if(b){b.disabled=false;b.removeAttribute("aria-busy");}}
+  var motivo=false;
+  try{motivo=await fn();return !!motivo;}
+  catch(e){motivo=false;showToast("No se pudo preparar la imagen. Prueba otra vez");return false;}
+  finally{compartiendoImagen=false;if(b){b.disabled=false;b.removeAttribute("aria-busy");if(motivo)marcarCompartida(b,motivo);}}
+}
+/* Premio pequeño al compartir: el botón de origen dice «✓ Compartida» (o «✓ Guardada» si el motivo es "descarga":
+   no se abrió ninguna hoja, la imagen quedó en el dispositivo; solo «✓» en el 📸 cuadrado del historial)
+   en verde (--ok-tx) 2 s y vuelve a su contenido exacto. Solo con motivo: si se cancela o falla, no cambia nada.
+   El lector de pantalla lo oye por una región sr-solo aria-live="polite" (el texto del botón no basta: varios
+   llevan aria-label, que tapa su contenido). Un segundo true durante esos 2 s no reescribe el texto guardado. */
+var COMPARTIDA_MS=2000;
+function marcarCompartida(b,motivo){
+  var guardada=motivo==="descarga",v=document.getElementById("avisoCompartida");
+  if(!v){v=document.createElement("span");v.id="avisoCompartida";v.className="sr-solo";v.setAttribute("aria-live","polite");document.body.appendChild(v);}
+  v.textContent="";setTimeout(function(){v.textContent=guardada?"Imagen guardada":"Imagen compartida";},50);
+  if(b.classList.contains("compartida"))return;
+  var antes=b.innerHTML;b.classList.add("compartida");b.textContent=b.classList.contains("feed-share")?"✓":guardada?"✓ Guardada":"✓ Compartida";
+  setTimeout(function(){b.innerHTML=antes;b.classList.remove("compartida");},COMPARTIDA_MS);
 }
 async function compartirStoryDia(origen){
   var hoy=ymd(),ses=DATA.sessions.filter(function(s){return s.date===hoy;});
@@ -737,10 +766,11 @@ var RACHA_FOCO_MS=1000;
 function huecosHielo(){var n=Math.min(3,DATA.streakFreezes||0),h="";for(var i=0;i<3;i++)h+='<i class="'+(i<n?"lleno":"libre")+'">'+(i<n?"🧊":"")+'</i>';
   return '<span class="rs-huecos" role="img" aria-label="'+n+' de 3 congeladores'+(n===3?', completo':'')+'">'+h+'</span>'+(n===3?'<span class="rs-completo" aria-hidden="true">¡Completo!</span>':'');}
 function cuantosHielo(){var n=DATA.streakFreezes||0;return "Ya tienes "+n+" de 3"+(n>=3?", el máximo":"");}
-// nuevo==="cofre" (insignia del 🧊 que acaba de volar desde el cofre): antes, «🧊 +1 del cofre de hoy · » en --ok-tx (700),
-// para decir de dónde ha salido. Solo el cofre: el de cada 7 días seguidos se anuncia con su aviso (checkStreakFreezes) y no vuela.
+// nuevo (insignia del 🧊 que acaba de volar): antes, de dónde ha salido en --ok-tx (700): «🧊 +1 del cofre de hoy · » si
+// viene del cofre y «🧊 +1 por 7 días seguidos · » si lo dio la racha (checkStreakFreezes, que también lo hace volar).
 function comoHielo(nuevo){
-  return (nuevo==="cofre"?'<span class="rs-hielo-de">🧊 +1 del cofre de hoy</span> · ':'')+((DATA.streakFreezes||0)>=3?"Tienes el máximo (3). Cada uno salva un día sin estudiar."
+  var de={cofre:"del cofre de hoy",racha:"por 7 días seguidos"}[nuevo];
+  return (de?'<span class="rs-hielo-de">🧊 +1 '+de+'</span> · ':'')+((DATA.streakFreezes||0)>=3?"Tienes el máximo (3). Cada uno salva un día sin estudiar."
     :"Ganas uno cada 7 días seguidos y, a veces, en el cofre del día (máx. 3).");
 }
 // nuevo: desde la insignia del 🧊 recién ganado en el cofre, su hueco (.rs-nuevo) rebota una vez (svRebote; CSS quieto con «reducir movimiento»).
@@ -1026,7 +1056,7 @@ function volarSemillas(desde,ganadas){
   }
 }
 
-/* ----- El 🧊 del cofre vuela a la pastilla de la racha (#streakPill): sale de la ventana del cofre al cerrarla,
+/* ----- El 🧊 del cofre (o el de cada 7 días seguidos, desde su aviso #toastHielo) vuela a la pastilla de la racha (#streakPill): el del cofre sale de su ventana al cerrarla,
    detrás de las 🌰, y la pastilla enseña «🧊 N» un momento con un rebote suave. Con «reducir movimiento», solo la cifra. ----- */
 function estilosVueloHielo(){
   if($("hieloCss"))return;var st=document.createElement("style");st.id="hieloCss";
@@ -1040,11 +1070,11 @@ function estilosVueloHielo(){
     '@media (prefers-reduced-motion:reduce){.pill-hielo{transition:none}.pill-hielo.ph-rebote{animation:none}}';
   document.head.appendChild(st);
 }
-function marcarHieloRacha(p,t){
+function marcarHieloRacha(p,t,ho){
   var c=document.querySelector(".pill-hielo"),f=DATA.streakFreezes||0,quieto=sinMovimiento();
   if(!c){c=document.createElement("button");c.type="button";c.className="pill-hielo";p.parentNode.insertBefore(c,p.nextSibling);
     c.addEventListener("click",function(){abrirRacha("hielo",c._nuevo);});}
-  c._nuevo=t?"":"cofre"; // sin texto = el 🧊 que vuela del cofre (volarHielo solo sale de VUELO.h, que solo llena abrirCofre)
+  c._nuevo=t?"":ho||"cofre"; // sin texto = el 🧊 que acaba de volar; ho = de dónde (VUELO.ho: «cofre» o «racha»)
   c.classList.remove("fuera","ph-rebote");c.textContent=t||"🧊 "+f;p.setAttribute("aria-label",t?"Tu racha sigue a salvo":"Tu racha · "+f+(f===1?" congelador":" congeladores"));
   c.setAttribute("aria-label",t?"Tu racha sigue a salvo: ver racha":"Tienes "+f+(f===1?" congelador":" congeladores")+": ver racha");
   // misma esquina que antes (arriba a la derecha de la pastilla): 9 px por encima y 8 px por fuera
@@ -1056,10 +1086,10 @@ function marcarHieloRacha(p,t){
 function hieloSalva(){
   if(!DATA)return;estilosVueloHielo();var p=$("streakPill");if(p&&p.offsetWidth)marcarHieloRacha(p,"🧊 ✓");
 }
-function volarHielo(desde,espera){
+function volarHielo(desde,espera,ho){
   if(!DATA)return;estilosVueloSemillas();estilosVueloHielo();
   var p=$("streakPill"),pr=p&&p.getBoundingClientRect();if(!pr||!pr.width)return;
-  if(sinMovimiento()||!document.body.animate){marcarHieloRacha(p);return;}
+  if(sinMovimiento()||!document.body.animate){marcarHieloRacha(p,"",ho);return;}
   var tx=pr.left+pr.width/2,ty=pr.top+pr.height/2,ox=desde&&desde.width?desde.left+desde.width/2:innerWidth/2,oy=desde&&desde.width?desde.top+desde.height/2:innerHeight*.5;
   var mx=(ox+tx)/2-30,my=Math.max(24,Math.min(oy,ty)-50);espera=espera|0;
   VUELO_FIN=Math.max(VUELO_FIN,Date.now()+espera+950); // nada más sale de la cola hasta que el 🧊 aterrice
@@ -1070,7 +1100,7 @@ function volarHielo(desde,espera){
     {transform:"translate("+mx+"px,"+my+"px) translate(-50%,-50%) scale(1)",opacity:1,offset:.55},
     {transform:"translate("+tx+"px,"+ty+"px) translate(-50%,-50%) scale(.5)",opacity:.9}
   ],{duration:850,delay:espera,easing:"cubic-bezier(.45,0,.55,1)",fill:"both"});
-  var fin=function(){if(!s.parentNode)return;s.remove();marcarHieloRacha(p);};a.onfinish=fin;a.oncancel=fin;
+  var fin=function(){if(!s.parentNode)return;s.remove();marcarHieloRacha(p,"",ho);};a.onfinish=fin;a.oncancel=fin;
 }
 
 /* ----- «🎁 Tu cofre de misiones te espera» en «Sesión terminada»: si al parar quedan las 3 misiones de hoy
@@ -1102,13 +1132,28 @@ function cofreEsperaHTML(deSesion){
   return '<div class="ses-cofre"><span>'+(deSesion?'🎁 ¡Misiones completadas! Tu cofre te espera':'🎁 Tu cofre de misiones te espera')+'</span><button type="button" class="ses-cofre-b" id="sessCofre" aria-label="Abrirlo: ir a tu cofre de misiones">Abrirlo</button></div>';
 }
 
+/* ----- «🌳 Dos días seguidos plantando y compartiendo» en «Sesión terminada»: solo si esta sesión se empezó
+   con «▶ Empezar a estudiar» de la bienvenida que decía «📸 Ayer compartiste…» (el botón guarda en VUELTA_COMP la
+   fecha de esa marca). Sale una vez: marca DATA.ultimaCompartida.vuelta=hoy. Solo premio: nada de racha en peligro.
+   Con árbol marchito no sale ni gasta la vuelta (la siguiente sesión sana de esta visita la recoge). Sin animación. ----- */
+var VUELTA_COMP=null;
+function vueltaCompHTML(sesion){
+  var C=DATA&&DATA.ultimaCompartida;
+  if(!VUELTA_COMP||!C||C.fecha!==VUELTA_COMP||C.vuelta||!sesion||sesion.focus==="withered"||sesion.date!==ymd())return "";
+  C.vuelta=ymd();VUELTA_COMP=null;saveUserData();
+  if(!$("vueltaCompCss")){var st=document.createElement("style");st.id="vueltaCompCss";
+    st.textContent='.ses-vuelta{margin:0 0 12px;text-align:center;padding:10px 12px;border-radius:var(--r-m);border:1px solid var(--ok);background:var(--glass);color:var(--ok-tx);font-size:var(--fs-m);font-weight:800;line-height:1.35}';
+    document.head.appendChild(st);}
+  return '<div class="ses-vuelta" role="status">🌳 Dos días seguidos plantando y compartiendo</div>';
+}
+
 /* ----- Sesión terminada (valorar, afluencia, nota) y editar una sesión ----- */
 function pedirValoracion(sesion,horasAntes){
   var sel={v:0};
   var plantado=sesion.focus?'<div class="planted'+(sesion.focus==="withered"?' seco':'')+'"><div class="planted-tree">'+arbolSVG(sesion.min,sesion.focus==="withered",sesion.subject||sesion.id,110,sesion.esp)+'</div>'+
     '<div class="planted-txt">'+(sesion.focus==="withered"?'🥀 Tu árbol se marchitó porque saliste de la app. ¡El próximo crecerá!':'🎉 ¡Has plantado un '+ETAPAS_ARBOL[etapaArbol(sesion.min)][1].toLowerCase()+' en tu bosque!'+(Math.floor(sesion.min/5)?'<span class="planted-seeds">🌰 +'+Math.floor(sesion.min/5)+' semillas</span>':''))+'</div></div>':'';
   var barraNivel=horasAntes!=null?nivelProgresoHTML(horasAntes):'', misSes=misionesDeSesion(sesion);
-  openModal(plantado+recordSesionHTML(sesion)+cuentaSesionHTML(sesion)+barraNivel+'<h3>Sesión terminada</h3><div class="sub">'+fmtHoras(sesion.min)+' h en '+escapeHTML(cortoNombre(sesion.bib))+(sesion.verif?' · <span class="badge-ok">✓ verificada</span>':'')+'</div>'+misionesSesionHTML(misSes)+cofreEsperaHTML(misSes.length>0)+
+  openModal(plantado+vueltaCompHTML(sesion)+recordSesionHTML(sesion)+cuentaSesionHTML(sesion)+barraNivel+'<h3>Sesión terminada</h3><div class="sub">'+fmtHoras(sesion.min)+' h en '+escapeHTML(cortoNombre(sesion.bib))+(sesion.verif?' · <span class="badge-ok">✓ verificada</span>':'')+'</div>'+misionesSesionHTML(misSes)+cofreEsperaHTML(misSes.length>0)+
     '<label style="font-size:var(--fs-s);font-weight:700;color:var(--suave);text-transform:uppercase;letter-spacing:.05em">¿Qué tal ha ido?</label>'+
     '<div class="prodstars" id="prodStars">'+[1,2,3,4,5].map(function(n){return '<button data-v="'+n+'">★</button>';}).join("")+'</div>'+
     (bibIdxDe(sesion)>=0?'<label style="display:block;margin-top:12px;font-size:var(--fs-s);font-weight:700;color:var(--suave);text-transform:uppercase;letter-spacing:.05em">¿Cómo estaba de llena?</label>'+
@@ -1265,7 +1310,7 @@ function vueltaBienvenidaHTML(nombre){
 }
 
 /* ----- «📸 Ayer compartiste 0h 52m · ¿plantamos otro árbol hoy?»: si ayer (fecha local) compartiste una sesión
-   (DATA.ultimaCompartida, la guardan compartirSesionStory y compartirBosque) y hoy aún no has estudiado, la bienvenida diaria lo
+   (DATA.ultimaCompartida, la guardan compartirSesionStory, compartirBosque y compartirSemana) y hoy aún no has estudiado, la bienvenida diaria lo
    recuerda UNA vez (marca .vista) para que compartir lleve de vuelta a estudiar. Solo invita: sin racha en peligro.
    Orden en la ventana: cabecera (racha o «¡Qué alegría verte!») → esta tarjeta → examen → misiones → consejo. ----- */
 function compartidaAyer(){
@@ -1286,11 +1331,231 @@ function pintarBienvenidaDiaria(){
   var cab=vueltaBienvenidaHTML(nombre)||'<div class="bv-fuego'+(n?'':' apagado')+'">🔥</div><h3>'+saludo+nombre+'</h3>'+
     '<div class="sub">'+(n?'Llevas <b>'+n+(n===1?' día':' días')+'</b> de racha.'+(C?'':' ¡Que no se apague hoy!'):'Hoy es un buen día para empezar una racha.')+'</div>';
   openModal('<div class="bienvenida">'+cab+
-    (C?'<div class="bv-comp" role="note">📸 Ayer compartiste '+(C.tipo==="bosque"?'tu bosque de ':'')+'<b>'+hMin(C.min)+'</b> · ¿plantamos otro árbol hoy? 🌱</div>':'')+
+    (C?'<div class="bv-comp" role="note">📸 Ayer compartiste '+(C.tipo==="bosque"?'tu bosque de ':C.tipo==="semana"?'tu semana de ':'')+'<b>'+hMin(C.min)+'</b> · ¿plantamos otro árbol hoy? 🌱</div>':'')+
     (ex&&dEx<=14?'<div class="bv-ex">📅 <b>'+escapeHTML(ex.ev.title)+'</b> · '+(dEx===0?'¡es hoy!':dEx===1?'mañana':'en '+dEx+' días')+'</div>':'')+
     '<div class="bv-mis">🎯 Misiones de hoy: '+M.ids.map(function(id){var d=misionDef(id);return d?d.icon:'';}).join(" ")+' · cofre al completarlas</div>'+
     '<div class="bv-tip">'+tip.e+' <b>'+escapeHTML(tip.t)+'</b>: '+escapeHTML(tip.x)+'</div>'+
-    '<button class="btn bv-go" id="bvEstudiar" onclick="closeModal();goView(\'study\');setTimeout(function(){var b=$(\'btnStart\');if(b)b.click();},250)">▶ '+(C?'Empezar a estudiar':'Estudiar ahora')+'</button>'+
+    '<button class="btn bv-go" id="bvEstudiar" onclick="'+(C?'VUELTA_COMP=\''+C.fecha+'\';':'')+'closeModal();goView(\'study\');setTimeout(function(){var b=$(\'btnStart\');if(b)b.click();},250)">▶ '+(C?'Empezar a estudiar':'Estudiar ahora')+'</button>'+
     '<button class="linkbtn" onclick="closeModal()" style="display:block;margin:12px auto 0">Más tarde</button></div>',
     C?function(){var b=$("bvEstudiar");if(b)b.focus();}:null);
+}
+/* ----- Ficha de una biblioteca (horario, verificación, confirmaciones, acceso y recursos) (movido desde app.js el 2026-11-13) ----- */
+function recursosHTML(b){
+  var RES_LABELS={wifi:"📶 Wifi",enchufes:"🔌 Enchufes",salas_grupo:"👥 Salas de grupo",impresora:"🖨️ Impresora/fotocopias",cafeteria:"☕ Cafetería",silencio:"🤫 Zona de silencio",ordenadores:"💻 Ordenadores"};
+  var s='<div class="hours"><h4>Aforo y recursos</h4>';
+  s+='<div style="font-size:var(--fs-s);color:var(--suave)">🪑 Aforo: '+(b.capacidad?(b.capacidad+" puestos"):"sin confirmar")+'</div>';
+  s+='<div style="font-size:var(--fs-s);color:var(--suave);margin-top:4px">💶 '+(b.gratuito===true?"Gratuito":(b.gratuito===false?"De pago":"Coste sin confirmar"))+'</div>';
+  if(b.recursos&&b.recursos.length){
+    var txt=b.recursos.map(function(r){return RES_LABELS[r]||r;}).join(" · ");
+    s+='<div style="font-size:var(--fs-s);color:var(--suave);margin-top:4px">'+txt+'</div>';
+  }else{
+    s+='<div style="font-size:var(--fs-xs);color:var(--suave);margin-top:4px;font-style:italic">Recursos disponibles sin confirmar todavía.</div>';
+  }
+  s+='</div>';
+  return s;
+}
+function openBibDetailModal(i){
+  var b=BIBLIOTECAS[i], verano=esVeranoDe(b,new Date()), abierto=estadoBib(b);
+  var s='<div class="pop" style="padding:0"><h2>'+escapeHTML(b.nombre)+'</h2>';
+  s+='<div class="estado '+(b.sinHorario?"unk":(abierto?"open":"closed"))+'">'+(b.sinHorario?"● Horario sin confirmar":(abierto?"● Abierto ahora":"● Cerrado ahora"))+'</div>'+favBtnHTML(i,true);
+  if(b.rating!=null)s+='<div class="rate-line"><b>★ '+b.rating.toFixed(1)+'</b> · '+b.reviews+' reseñas</div>';
+  s+='<div class="dir"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6c5ce7" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span>'+escapeHTML(b.dir)+'</span></div>';
+  s+='<div class="bib-actions"><a class="btn sm" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination='+b.lat+','+b.lon+'">🧭 Cómo llegar</a>'+
+    (b.tel?'<a class="btn sm ghost" href="tel:'+escapeHTML(b.tel.replace(/\s/g,""))+'">📞 Llamar</a>':'')+
+    (b.web&&/^https?:\/\//.test(b.web)?'<a class="btn sm ghost" target="_blank" rel="noopener" href="'+escapeHTML(b.web)+'">🌐 Web</a>':'')+'</div>'+shareBibBtnHTML(i);
+  s+=notaExamenHTML(b,false);
+  var cal=horarioVigente(b),hoy=new Date().getDay(),exHoy=b._examenSem&&b._examen.some(function(e){return tramosExamen(e,new Date())!==null;});
+  if(b.sinHorario){
+    s+='<div class="hours"><h4>Horario</h4><div style="font-size:var(--fs-s);color:var(--suave)">Sin confirmar todavía'+(b.web?': consúltalo en su web.':'.')+
+      ' <button class="linkbtn" onclick="closeModal();enviarSugerencia('+jsArg("Horario de "+b.nombre)+')">¿Lo sabes? Cuéntanoslo</button></div></div>';
+  }else{
+  s+='<div class="hours"><h4>'+(exHoy?"Horario de estos días (exámenes)":(verano?"Horario de verano":"Horario de invierno"))+'</h4><table>';
+  for(var d=1;d<=7;d++){var di=d%7,tr=cal[di]||[];
+    var txt=tr.length?tr.map(function(t){return fmtHoras(t[0])+"–"+fmtHoras(t[1]);}).join(", "):'<span class="closed-day">Cerrado</span>';
+    s+='<tr class="'+(di===hoy?"today":"")+'"><td>'+DIAS[di]+'</td><td>'+txt+'</td></tr>';}
+  s+='</table>'+(b.notaHorario?'<div style="font-size:var(--fs-xs);color:var(--suave);margin-top:6px">'+escapeHTML(b.notaHorario)+'</div>':'')+
+    verificacionHorarioHTML(b)+
+    '<div class="hr-acciones"><button class="btn sm ghost" onclick="confirmarHorario('+i+')">✓ Sigue siendo correcto</button>'+
+    '<button class="btn sm ghost" onclick="reportarHorario('+i+')">⚠ Reportar horario incorrecto</button></div>'+
+    '<div class="hr-conf" id="hrConf"></div></div>';
+  }
+  s+=accesoAccesibilidadHTML(b);
+  s+=recursosHTML(b);
+  s+=occControlsHTML(i);
+  s+='<button class="btnstudy" onclick="closeModal();startStudyAt('+i+')">▶ Estudiar aquí</button>';
+  s+='<button class="linkbtn" style="display:block;margin:10px auto 0;font-size:var(--fs-s)" onclick="closeModal();enviarSugerencia('+jsArg(b.nombre)+')">Avisar de un error en esta ficha</button>';
+  s+='</div>';
+  openModal(s,function(){if(!b.sinHorario)pintarConfirmaciones(b.nombre);});
+}
+/* ===== Verificación del horario y reportes (idea de MassTimes.org) =====
+   La fecha oficial sale solo de los datos (h.fv en bibliotecas-espana.js); nunca se inventa.
+   Las confirmaciones de usuarios se muestran aparte y no sustituyen a esa verificación. */
+const HR_DIAS_VIEJO=180;
+function fmtFechaLarga(iso){var p=String(iso).split("-");return (+p[2])+" de "+MESES[+p[1]-1]+" de "+p[0];}
+function verificacionHorarioHTML(b){
+  var fuente=b.fuenteHorario&&/^https?:\/\//.test(b.fuenteHorario)?'<a target="_blank" rel="noopener" href="'+escapeHTML(b.fuenteHorario)+'">fuente</a>':'';
+  var s='<div class="hr-verif">', aviso='';
+  if(b.verificadoHorario&&/^\d{4}-\d{2}-\d{2}$/.test(b.verificadoHorario)){
+    var dias=Math.floor((Date.now()-new Date(b.verificadoHorario+"T00:00:00").getTime())/86400000);
+    s+='Horario verificado el '+fmtFechaLarga(b.verificadoHorario)+(fuente?' · '+fuente:'');
+    if(dias>HR_DIAS_VIEJO)aviso='<span class="hr-viejo">⚠ Hace más de '+HR_DIAS_VIEJO+' días: puede estar desactualizado</span>';
+  }else{
+    s+='Horario sin fecha de verificación'+(fuente?' · '+fuente:'');
+  }
+  return s+' · puede cambiar en festivos'+aviso+'</div>';
+}
+// Recuento agregado (función horario_confirmaciones del SQL: no expone user_id). Sin la librería de
+// Supabase cargada se usa fetch directo para no descargarla solo por abrir una ficha. Si la función
+// aún no existe en Supabase, no se muestra nada y no se vuelve a pedir en esta visita.
+var HR_RPC_OFF=false;
+function pedirConfirmaciones(nombre){
+  if(HR_RPC_OFF||!socialKeysOk())return Promise.resolve(null);
+  var sb=socialClient();
+  var p=sb?sb.rpc("horario_confirmaciones",{p_bib:nombre}).then(function(r){if(r.error)throw r.error;return r.data;})
+    :fetch(SUPABASE_URL+"/rest/v1/rpc/horario_confirmaciones",{method:"POST",
+      headers:{apikey:SUPABASE_ANON_KEY,"Content-Type":"application/json"},body:JSON.stringify({p_bib:nombre})})
+      .then(function(r){if(!r.ok)throw new Error(r.status);return r.json();});
+  return p.then(function(d){return (d&&d[0])||null;}).catch(function(){HR_RPC_OFF=true;return null;});
+}
+function pintarConfirmaciones(nombre){
+  pedirConfirmaciones(nombre).then(function(d){
+    var el=$("hrConf"); if(!el||!d)return;
+    var n=+d.confirmaciones||0; if(!n){el.textContent="";return;}
+    el.textContent="👍 "+(n===1?"1 persona lo confirmó":n+" personas lo confirmaron")+" en los últimos 90 días (no sustituye a la verificación oficial)";
+  });
+}
+function accesoAccesibilidadHTML(b){
+  var ac=b.acceso||{tipo:"desconocido"}, ax=b.accesibilidad||{};
+  var tipoTxt = ac.tipo==="libre" ? "🔓 Entrada libre y gratuita"
+    : ac.tipo==="restringido" ? "🔒 Acceso restringido / requiere carnet"
+    : "❔ Tipo de acceso: sin confirmar";
+  var s='<div class="hours"><h4>Acceso</h4><div style="font-size:var(--fs-s);color:var(--suave)">'+escapeHTML(tipoTxt)+(ac.detalle?' · '+escapeHTML(ac.detalle):'')+
+    (ac.web&&/^https?:\/\//.test(b.web||"")?(/ en$/.test(ac.detalle)?' ':' · ')+'<a class="linkbtn" target="_blank" rel="noopener" href="'+escapeHTML(b.web)+'">su web ↗</a>':'')+'</div>';
+  var badges=[];
+  if(ax.sillaRuedas===true)badges.push("♿ Accesible en silla de ruedas");
+  if(ax.sillaRuedas===false)badges.push("♿ No adaptada");
+  if(ax.turistas===true)badges.push("🧳 Admite visitantes ocasionales");
+  if(ax.gratisDias)badges.push("🎟️ "+escapeHTML(ax.gratisDias));
+  if(badges.length)s+='<div style="font-size:var(--fs-s);color:var(--suave);margin-top:5px">'+badges.join(" · ")+'</div>';
+  if(ax.notas&&ax.notas!=="Sin confirmar")s+='<div style="font-size:var(--fs-xs);color:var(--suave);margin-top:5px">'+escapeHTML(ax.notas)+'</div>';
+  s+='</div>';
+  return s;
+}
+/* ----- Rezar por el examen de un amigo (movido desde app.js el 2026-11-13) ----- */
+async function prayForExam(localId,ownerId,title,btn){
+  var sb=socialClient(); if(!sb||!SOCIAL.user){showToast("Necesitas amigos y Supabase configurado");return;}
+  if(btn){btn.disabled=true;btn.classList.add("on","pop");var nEl=btn.querySelector(".pray-n");if(nEl)nEl.textContent=(SOCIAL.prayerCounts[localId]||0)+1;var l=btn.querySelector(".pray-lbl");if(l)l.textContent="Rezaste";
+    if(typeof celebrar==="function")celebrar(btn,["🙏","✨","🕯️","💜"]);}
+  var name=(SOCIAL.profile&&SOCIAL.profile.name)||"Alguien";
+  var ins=await sb.from("prayers").insert({event_owner_id:ownerId,event_local_id:localId,event_title:title,prayed_by_id:SOCIAL.user.id,prayed_by_name:name});
+  if(ins.error){
+    if(ins.error.code==="23505"){showToast("Ya habías rezado por este examen 🙏");}
+    else{showToast("No se pudo registrar: "+ins.error.message);}
+    return;
+  }
+  showToast("🙏 Has rezado por el examen de "+title);registrarAccion("social");
+  if(DATA&&!DATA.badges.first_prayer){DATA.badges.first_prayer=new Date().toISOString();saveUserData();}
+  await socialLoadPrayerCounts();
+  renderCalFriendExams();socialRenderFriendEvents();
+  var dm=document.querySelector("#dayEvs");if(dm&&dm.dataset.k)refrescarDiaAmigos(dm.dataset.k);
+}
+/* ----- Añadir amigo por código (movido desde app.js el 2026-11-13) ----- */
+async function socialAddFriendFromInput(){
+  var code=$("friendCodeInput").value.trim().toUpperCase();
+  if(!code){showToast("Pega el código de tu amigo");return;}
+  var sb=socialClient(); if(!sb||!SOCIAL.user){showToast("Configura Supabase e inicia sesión");return;}
+  if(SOCIAL.profile&&code===String(SOCIAL.profile.friend_code).toUpperCase()){showToast("Ese es tu propio código");return;}
+  var pr=await sb.from("profiles").select("id,name,friend_code").eq("friend_code",code).maybeSingle();
+  if(pr.error||!pr.data){showToast("No encuentro ese código");return;}
+  var other=pr.data.id, me=SOCIAL.user.id;
+  var a=await sb.from("friendships").select("id,status").eq("requester_id",me).eq("addressee_id",other).maybeSingle();
+  var b=await sb.from("friendships").select("id,status").eq("requester_id",other).eq("addressee_id",me).maybeSingle();
+  if(a.data||b.data){showToast("Ya existe una solicitud o amistad con esa persona");return;}
+  var ins=await sb.from("friendships").insert({requester_id:me,addressee_id:other,status:"pending"});
+  if(ins.error){showToast("No se pudo enviar: "+ins.error.message);return;}
+  $("friendCodeInput").value="";showToast("Solicitud enviada a "+(pr.data.name||"tu amigo"));socialRefreshAll();
+}
+/* ----- Reaccionar a una sesión (movido desde app.js el 2026-11-13) ----- */
+async function reaccionar(localId,ownerId,emoji){
+  if(!socialClient()||!SOCIAL.user||!REACCIONES.some(function(r){return r[0]===emoji;}))return;
+  var k=reacKey(localId,ownerId), poner=!(SOCIAL.reactsMine[k]&&SOCIAL.reactsMine[k][emoji]);
+  reacAplicar(k,emoji,poner);
+  reacPintar(localId,ownerId,emoji);
+  if(poner){if(navigator.vibrate)try{navigator.vibrate(12);}catch(e){}registrarAccion("social");}
+  if(!SOCIAL.reactsOk){
+    var mias=loadJSON(reacLocalKey(),{})||{};
+    if(poner){mias[k]=mias[k]||{};mias[k][emoji]=true;}else if(mias[k]){delete mias[k][emoji];if(!Object.keys(mias[k]).length)delete mias[k];}
+    saveJSON(reacLocalKey(),mias);return;
+  }
+  var sb=socialClient(), q=sb.from("session_reactions"), res;
+  if(poner)res=await q.insert({session_local_id:localId,session_owner_id:ownerId,user_id:SOCIAL.user.id,emoji:emoji});
+  else res=await q.delete().eq("session_local_id",localId).eq("session_owner_id",ownerId).eq("user_id",SOCIAL.user.id).eq("emoji",emoji);
+  if(!res.error||res.error.code==="23505")return;
+  if(tableMissing(res,"session_reactions")){
+    // la tabla aún no existe: se queda la reacción en este dispositivo
+    SOCIAL.reactsOk=false;saveJSON("bpna_reac_sin_tabla",Date.now());
+    var mias2=loadJSON(reacLocalKey(),{})||{};
+    Object.keys(SOCIAL.reactsMine).forEach(function(kk){var o=SOCIAL.reactsMine[kk];if(Object.keys(o).length)mias2[kk]=Object.assign({},o);});
+    saveJSON(reacLocalKey(),mias2);reacCargarLocal();reacPintar(localId,ownerId,"");return;
+  }
+  reacAplicar(k,emoji,!poner);reacPintar(localId,ownerId,"");
+  showToast("No se pudo guardar la reacción");
+}
+/* ----- Cerrar sesión (movido desde app.js el 2026-11-13) ----- */
+async function logout(){
+  PRESENCIA_VISTA=null;
+  // stopStudy(true): sin el diálogo de valoración, que se quedaba encima del login sin usuario.
+  if(studyTimer.running){stopStudy(true);showToast("Sesión de estudio guardada");}
+  pomoReset();closeModal();releaseWakeLock();
+  if(socialClient()){try{await socialClearPresence();}catch(e){}try{await socialClient().auth.signOut();}catch(e){}}
+  if(SOCIAL.timer)clearInterval(SOCIAL.timer);
+  SOCIAL.comments={};SOCIAL.commentsOpen={};SOCIAL.commentDrafts={};SOCIAL.myCommentsAt=0;
+  // limpia lo social de la cuenta anterior antes de seguir como invitado
+  if(window.__map)SOCIAL.friendMarkers.forEach(function(m){try{window.__map.removeLayer(m);}catch(e){}});
+  SOCIAL.user=null;SOCIAL.profile=null;SOCIAL.friends=[];SOCIAL.requests=[];SOCIAL.sent=[];SOCIAL.events=[];SOCIAL.presence=[];SOCIAL.friendMarkers=[];SOCIAL.timer=null;
+  SOCIAL.friendSessions=[];SOCIAL.leaderboard=[];SOCIAL.room=null;SOCIAL.roomMembers=[];
+  SOCIAL.blocked={};SOCIAL.eventsAll=[];SOCIAL.presenceAll=[];
+  Brain.clearSession();
+  CURRENT=null;DATA=null;
+  entrarComoInvitado();
+}
+/* ----- Bosques de los amigos (movido desde app.js el 2026-11-13) ----- */
+function abrirBosquesAmigos(){
+  var am=(SOCIAL.friends||[]).filter(function(f){return !isBlocked(f.profile.id);});
+  openModal('<h3>🌳 Bosques de tus amigos</h3><div class="sub">Solo cuenta lo que cada uno comparte (últimos 30 días).</div>'+
+    '<div class="pick-list">'+am.map(function(f){return '<button onclick="verBosqueAmigo('+jsArg(f.profile.id)+')"><b>'+escapeHTML(f.profile.name||"Amigo")+'</b></button>';}).join("")+'</div>');
+}
+async function verBosqueAmigo(id){
+  var sb=socialClient(); if(!sb||!SOCIAL.user)return;
+  var nombre=socialNameById(id), desde=new Date();desde.setDate(desde.getDate()-30);
+  openModal('<h3>🌳 El bosque de '+escapeHTML(nombre)+'</h3><div class="sub">Cargando…</div>');
+  var res=await sb.from("shared_sessions").select("local_id,minutes,date,focus,subject,created_at").eq("owner_id",id).gte("date",ymd(desde)).order("created_at",{ascending:true}).limit(300);
+  var ses=(res.data||[]).map(function(s){return {id:s.local_id,min:s.minutes||0,date:s.date,focus:s.focus,subject:s.subject,ts:Date.parse(s.created_at)||0};});
+  openModal('<h3>🌳 El bosque de '+escapeHTML(nombre)+'</h3><div class="sub">'+resumenBosque(ses)+' · últimos 30 días</div>'+
+    bosqueHTML(ses,escapeHTML(nombre)+" aún no ha compartido sesiones.")+
+    '<button class="btn ghost" style="margin-top:14px" onclick="abrirBosquesAmigos()">← Otros amigos</button>');
+}
+/* ----- Compartir dónde estudias (movido desde app.js el 2026-11-13) ----- */
+/* ===================== COMPARTIR ESTADO ===================== */
+function compartirEstado(){
+  if(!studyTimer.running||studyTimer.bibIndex<0){showToast("Empieza una sesión en una biblioteca para compartir dónde estudias");return;}
+  var b=BIBLIOTECAS[studyTimer.bibIndex];
+  var users=Brain.getUsers(); var nombre=(users[CURRENT]&&users[CURRENT].name)||"Alguien";
+  var cierre=minutosHastaCierre(b);
+  var hasta=""; if(cierre>0){var fin=new Date(Date.now()+cierre*60000);hasta=String(fin.getHours()).padStart(2,"0")+":"+String(fin.getMinutes()).padStart(2,"0");}
+  var payload={n:nombre,b:studyTimer.bibIndex,t:Date.now(),h:hasta};
+  var code=btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+  var base=location.href.split("#")[0];
+  var link=base+"#study="+code;
+  var msg=nombre+" está estudiando en "+b.nombre+(hasta?" (hasta ~"+hasta+")":"")+". Ábrelo aquí: "+link;
+  openModal('<h3>Compartir dónde estudias</h3><div class="sub">Manda este enlace a tu grupo. Quien lo abra verá tu sitio en el mapa. Es un dato real que envías tú, no rastreo automático.</div>'+
+    '<div class="sharelink"><input type="text" id="shareInput" readonly value="'+escapeHTML(link)+'"><button class="btn sm" id="shareCopy">Copiar</button></div>'+
+    '<button class="btn" id="shareWa" style="margin-top:12px;background:linear-gradient(135deg,#25d366,#1da851)">Compartir por WhatsApp</button>',
+    function(){
+      $("shareCopy").addEventListener("click",function(){
+        var inp=$("shareInput");inp.select();
+        try{navigator.clipboard.writeText(inp.value);showToast("Enlace copiado");}catch(e){document.execCommand("copy");showToast("Enlace copiado");}
+      });
+      $("shareWa").addEventListener("click",function(){window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank");});
+    });
 }

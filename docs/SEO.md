@@ -12,7 +12,7 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
 - **126 páginas estáticas** (`bibliotecas/…`): índice, 51 provincias y las localidades con 3 o más bibliotecas.
   Cada una con título propio («Bibliotecas en X: horarios y salas de estudio abiertas»), lista de bibliotecas con
   dirección, teléfono, web, horario **solo si está verificado** (con fecha y fuente), preguntas frecuentes
-  calculadas con datos reales (fin de semana, cierre tardío), migas de pan y datos estructurados
+  calculadas con datos reales (fin de semana, cierre tardío), migas de pan (lista `<ol>` con el separador « › » por CSS desde el 14-11-2026) y datos estructurados
   (`Library`, `ItemList`, `FAQPage`, `BreadcrumbList`). Cada biblioteca enlaza a su ficha en el mapa (`/#bib=<índice>`).
 - `sitemap.xml` y `robots.txt`.
 - Se regeneran con `node scripts/generar_paginas_seo.js` (hacerlo siempre que cambien datos u horarios).
@@ -429,6 +429,53 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
 - `comprobar_paginas_seo.js` falla también si una temática enlaza sus partes (nav «Por localidad» o cabecera de sección
   hacia `/bibliotecas/<prov>/<tema>/`) sin declararlas en su `hasPart`. Hoy: 849 `hasPart` en 130 páginas, 0 mal.
 
+## Hecho (2026-11-13) · Migas visibles = migas del JSON-LD (solo cambia el comprobador)
+- `comprobar_paginas_seo.js` (línea «Migas visibles = JSON-LD…») compara en todas las páginas generadas sin `noindex` los
+  `<a href>`/`<span>` de su único `<nav class="migas">` con el `BreadcrumbList` `<ruta>#migas`: mismo número, `position`
+  1, 2, …, mismo texto (entidades HTML decodificadas, también `&#NN;`) y mismo destino (`href` = `item`; el `<span>`
+  final, sin enlace, = la propia página). Además cada `item` debe ser `/` o una página generada con `index.html`, sin
+  `noindex` y en `sitemap.xml`. Por familia; cualquier discordancia es fallo. Hoy: 1187 de 1187 bien, 4899 `item`, 0 mal
+  (salen de la misma lista `migas` en `pagina()`); probado a romper texto, destino, número, `position`, `noindex` y
+  sitemap del destino → salida 1 en los 6.
+
+## Hecho (2026-11-14) · `seo.css?v=<huella>` en todas las páginas generadas
+- `sw.js` sirve lo propio cache-first por URL exacta con refresco en segundo plano: quien tenía el `seo.css` anterior en
+  caché y recibía HTML nuevo veía una vez el marcado nuevo con estilos viejos. Ahora `pagina()` enlaza
+  `/seo.css?v=<SEO_CSS_V>` (8 hex del sha1 del archivo): HTML nuevo → URL nueva → fallo de caché → CSS nuevo de la red.
+  `sw.js` no cambia (sin `ignoreSearch`, que devolvería justo el CSS viejo); offline, cada página cacheada sigue
+  encontrando su propia versión. Las versiones viejas se quedan en `CACHE_NAME` hasta la siguiente subida de versión.
+- Páginas con CSS versionado: 0 → 1303 (1293 de `bibliotecas/`, 9 de `/estudiar/` y la 404).
+- La huella del `lastmod` quita el `?v=` antes del sha1 (como `analitica.js`, `og:image*` y `aria-current`): cambiar
+  `seo.css` y regenerar no mueve ninguna fecha (probado: URL con `lastmod` de hoy 275 → 275, con y sin cambiar el CSS).
+- `comprobar_paginas_seo.js` (línea «seo.css versionado…») falla si una página generada enlaza `seo.css` más de una vez,
+  sin `?v=` o con un `?v=` distinto del sha1 del `seo.css` actual (p. ej. tras editar el CSS sin regenerar). Probado a
+  romper: ficha sin `?v=`, 404 con huella falsa y CSS editado sin regenerar → salida 1.
+
+## Hecho (2026-11-13) · `aria-current="page"` en la última miga y `@id` `#pagina` en todo `CollectionPage`
+- `pagina()` escribe el `<span>` final de `<nav class="migas">` como `<span aria-current="page">`: los lectores de
+  pantalla anuncian «página actual» (antes 0 de 1212 indexables; ahora 1212, y también la 404). No cambia el aspecto
+  (ningún estilo de `seo.css` mira el atributo; comprobado a 390×844 en claro y oscuro). La huella del `lastmod` lo
+  ignora (como `analitica.js` y las etiquetas `og:image*`/`twitter:*`): no mueve el `lastmod` de ninguna página.
+- `ldLugar()` da siempre `@id` `<ruta>#pagina` al `CollectionPage` (en las páginas con FAQ es el mismo que daba
+  `faqEnGrafo()`, así que su JSON-LD sale idéntico). Lo estrenan las 3 que no tienen FAQ: el índice `/bibliotecas/`,
+  `/bibliotecas/salas-de-estudio/` y `/bibliotecas/universidades/` (468 → 471 `CollectionPage` con `@id`; son las
+  únicas 3 páginas cuyo `lastmod` cambia).
+- `comprobar_paginas_seo.js` falla si la última miga de una página indexable no es `<span aria-current="page">` o si
+  `aria-current` sale más de una vez en las migas (línea «Última miga con aria-current…», por familia), y si algún
+  `CollectionPage` cuya `url` es la propia página (también dentro de un `@graph`) no lleva `@id` `<url>#pagina` (línea
+  «CollectionPage de la propia página con @id…»). La comparación de migas visibles acepta `<span>` con atributos.
+  Probado a romper: páginas anteriores → 1212 y 3 fallos; `aria-current` quitado del final o duplicado → salida 1.
+
+## Hecho (2026-11-13) · `isPartOf`/`hasPart` entre páginas por `@id`
+- Toda referencia `isPartOf`/`hasPart` a otra página lleva, además de `name` y `url`, el `@id` `<url>#pagina` del
+  nodo destino (`refPagina()` en `generar_paginas_seo.js`): Google une las páginas en un grafo en vez de ver un
+  `CollectionPage` anónimo con la misma URL. 0 → 2.217 de 2.217 referencias.
+- `comprobar_paginas_seo.js` (`compruebaRefsId()`, línea «isPartOf/hasPart a otra página con el @id de su nodo…»)
+  falla si una referencia a otra página generada no lleva `@id`, si la página destino no declara un nodo con ese
+  `@id` o si la `url` de ese nodo no coincide. Las referencias dentro de la misma página (`FAQPage` → `#pagina`)
+  las mira la comprobación del FAQ; la portada («/», el `WebSite`) no cuenta.
+- El `@id` cuenta en la huella del `lastmod` (es JSON-LD que Google lee, no como `aria-current` u `og:image`).
+
 ## Lo que tienes que hacer tú (sin esto no sirve de nada)
 1. **Conectar el dominio** en Vercel: proyecto `bibliotime` → Settings → Domains → añadir `bibliomapa.es` y
    `www.bibliomapa.es` (redirigir www → sin www) y poner en tu registrador los DNS que te indique Vercel.
@@ -520,7 +567,7 @@ no escribe ningún archivo y el script de avisos solo simula.
   contra un servidor local (p. ej. `python3 -m http.server 8000` en una carpeta con el .txt) y, con una base distinta
   de `https://bibliomapa.es`, **nunca** envía nada a IndexNow (solo dice cuántas URL estaban listas). Con `--simular`
   no se comprueba nada (ni red).
-  `node scripts/comprobar_paginas_seo.js` lo prueba solo en cada pasada (línea «IndexNow «despliega primero»…»): copia temporal con clave ficticia y servidores en 127.0.0.1, exige 0 con el .txt bien servido y 1 con 404 u otro texto; nunca toca la red real.
+  `node scripts/comprobar_paginas_seo.js` lo prueba solo en cada pasada (línea «IndexNow «despliega primero»…»): copia temporal con clave ficticia y servidores en 127.0.0.1, exige 0 con el .txt bien servido, 1 con 404, otro texto o el servidor caído («No se pudo abrir…»), y con `--simular` o `INDEXNOW_CLAVE = null` salida 0, «Simulación» y cero peticiones al servidor local (7 casos); nunca toca la red real.
 - Respuesta 200 o 202 = recibido. 403 = el .txt aún no está publicado (espera al despliegue). 422 = clave o URL que no
   coinciden. 429 = demasiados avisos: espera. Con `INDEXNOW_CLAVE = null` el script siempre simula.
 - Solo tiene sentido **después** de desplegar: si avisas antes, Bing rastrea la versión vieja.
@@ -547,6 +594,34 @@ despliegue sin tener que mirar el `sitemap.xml`.
 - Solo HTML y CSS en `index.html` (la app no los usa). Píldoras con `--acento-tx` sobre `--glass-fuerte` (AA en claro y oscuro), sin animación.
 - Las páginas generadas ya enlazaban la portada (marca y «Abrir el mapa» de la cabecera, CTA y «Empezar gratis»): sin cambios en el generador.
 - Pendiente: medir en Search Console cuando el dominio esté conectado.
+
+## Hecho (2026-11-13) · Vista previa con imagen al compartir (1196 páginas indexables, sin cambio de número)
+- La plantilla `pagina()` de `scripts/generar_paginas_seo.js` añade a todas las páginas (`/bibliotecas/…`, las guías de
+  `/estudiar/` y la 404) `og:image` absoluta `https://bibliomapa.es/icons/icon-512.png` (`OG_IMAGEN`, PNG 512×512 ya
+  publicado), `og:image:width`/`og:image:height` 512, `og:image:alt` y `twitter:card` `summary` (miniatura cuadrada;
+  `summary_large_image` pediría una imagen 2:1 que no existe). `og:site_name` ya estaba. Así WhatsApp, Telegram o X
+  enseñan logo + título + descripción en vez de solo texto.
+- Esas etiquetas no cuentan para la huella del `lastmod` (como `analitica.js`): añadirlas no movió ninguna fecha del sitemap.
+- `scripts/comprobar_paginas_seo.js` falla si a una página indexable (bibliotecas/ y estudiar/) le falta o tiene repetida
+  cualquiera de ellas, si `og:image` no es `https://bibliomapa.es/…` de un archivo que existe en el repo, o si
+  width/height no son las dimensiones reales del PNG/JPEG (las lee de la cabecera).
+- La portada `index.html` tiene `twitter:card` pero aún no `og:image` (pendiente en el backlog).
+
+## Hecho (2026-11-13) · Imagen de vista previa por provincia (523 páginas, 208 KB)
+- `python3 scripts/generar_imagen_og.py --provincia <slug>` genera `icons/og/<slug>.png` (1200×630, misma plantilla que la
+  general: logo, «Bibliomapa», «Bibliotecas abiertas / ahora en <Provincia>», raya `--acento2` y dominio). Sin cifras: no
+  caduca. `--top N` genera las N provincias con más fichas; nombre y ranking salen de
+  `node scripts/generar_paginas_seo.js --listar-provincias` (mismos datos que las páginas).
+- Publicadas las 10 con más fichas (Barcelona, Madrid, Valencia, Navarra, Sevilla, Toledo, Baleares, Alicante, Murcia,
+  A Coruña): ~20 KB cada una (PNG de 128 colores), 208 KB en total. Las 51 serían ~1 MB (tarea en el backlog si hay datos
+  de que se comparten).
+- `pagina()` (`ogImagenDe(ruta)`): toda página bajo `/bibliotecas/<prov>/` (provincia, localidades, temáticas, salas y
+  fichas) usa `icons/og/<prov>.png` si existe, con `og:image:alt` «Bibliomapa: bibliotecas abiertas ahora en <Provincia> ·
+  bibliomapa.es»; el resto (hubs de España, universidades, exámenes, guías, 404 y provincias sin imagen), la general.
+  Para añadir una provincia basta con generar su PNG y regenerar las páginas.
+- El comprobador falla si la imagen no existe, no mide 1200×630, una página de provincia con imagen no la usa (o usa la de
+  otra), un PNG de `icons/og/` no lo usa nadie o pasan de 2 MB entre todas. Imprime imágenes, KB y páginas que la usan.
+- `sw.js` no las precachea (WhatsApp y compañía las piden al servidor, no a la app).
 
 ## Siguientes mejoras (en el backlog)
 - Más horarios verificados (las páginas con horario rinden mucho mejor: es lo que la gente busca).
