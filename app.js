@@ -3505,6 +3505,9 @@ function renderMisiones(){
   if(M.cofre&&el.querySelector(".cofre.listo")&&!sinMovimiento())COFRE_BRILLA=M.fecha;
   var cofBrilla=M.cofre&&COFRE_BRILLA===M.fecha&&!sinMovimiento();
   if(!el._cofFin){el._cofFin=1;el.addEventListener("animationend",function(e){if(e.animationName==="cofreBrilla"){COFRE_BRILLA=0;e.target.classList.remove("cofre-brilla");}});}
+  // misión de minutos a ≤ 15 min mientras estudias (misionCerca): bajo su barra, «⏱️ 7 min · +10 🌰» fija (.mis-pista-mini),
+  // con este mismo repintado (cada 30 s con el cronómetro); se va al pausar/terminar o al cumplirse. Con la pista completa no sale.
+  var mc=misionCerca(), cerca=mc&&mc.falta?mc.id:"";
   var finDia=new Date();finDia.setHours(24,0,0,0);var qm=Math.max(0,Math.round((finDia-Date.now())/60000)), quedan=qm>=60?Math.floor(qm/60)+" h":qm+" min";
   el.innerHTML='<div class="mis-head"><div class="section-title" style="margin:0">🎯 Misiones de hoy</div><span class="mis-time">⏳ '+quedan+'</span></div>'+
     M.ids.map(function(id){
@@ -3519,7 +3522,7 @@ function renderMisiones(){
         if(desde!==""&&desde<100)vd=Math.min(v,Math.round(desde*d.meta/100)); // la cifra que se veía, para que suba con la barra
       }
       return '<div class="mis'+(ok?' ok':'')+(desde!==""?' mis-llena':'')+(brilla?' mis-brilla':'')+(foco?' mis-foco':'')+'" data-m="'+id+'"><div class="mis-ic">'+(ok?'✅':d.icon)+'</div><div class="mis-main"><div class="mis-txt">'+escapeHTML(d.txt)+'</div>'+
-        '<div class="mis-bar"><i style="width:'+(desde!==""?desde:pct)+'%"></i></div>'+(foco&&!ok&&d.min&&falta>0?'<div class="mis-pista">⏱️ <b>'+falta+' min</b> más y es tuya · <b>+'+MIS_PREMIO+' 🌰</b></div>':'')+'</div><div class="mis-val"'+(vd<v?' data-de="'+vd+'" data-a="'+v+'"':'')+'>'+(d.min?misMin(vd):v)+'/'+(d.min?misMin(d.meta):d.meta)+'</div></div>';
+        '<div class="mis-bar"><i style="width:'+(desde!==""?desde:pct)+'%"></i></div>'+(foco&&!ok&&d.min&&falta>0?'<div class="mis-pista">⏱️ <b>'+falta+' min</b> más y es tuya · <b>+'+MIS_PREMIO+' 🌰</b></div>':cerca===id&&!ok&&falta>0?'<div class="mis-pista-mini" aria-hidden="true">⏱️ <b>'+falta+' min</b> · <b>+'+MIS_PREMIO+' 🌰</b></div>':'')+'</div><div class="mis-val"'+(vd<v?' data-de="'+vd+'" data-a="'+v+'"':'')+'>'+(d.min?misMin(vd):v)+'/'+(d.min?misMin(d.meta):d.meta)+'</div></div>';
     }).join("")+
     '<button class="cofre'+(hechas===3&&!M.cofre?' listo':'')+(M.cofre?' abierto':'')+(cofBrilla?' cofre-brilla':'')+'" onclick="abrirCofre(this)" '+(hechas===3&&!M.cofre?'':'disabled')+'>'+
       '<span class="cofre-ic">🎁</span><span>'+(M.cofre?'Sello del día conseguido · vuelve mañana':hechas===3?'¡Abre tu cofre!':'Cofre: completa las 3 misiones ('+hechas+'/3)')+'</span>'+
@@ -3561,7 +3564,7 @@ function irAMision(id){
   card.scrollIntoView({behavior:sinMovimiento()?"auto":"smooth",block:"start"});
   if(!fila)return;
   clearTimeout(irAMision.t);
-  irAMision.t=setTimeout(function(){var f=card.querySelector(".mis-foco"),p=card.querySelector(".mis-pista");if(f)f.classList.remove("mis-foco");if(p)p.remove();},MIS_FOCO_MS);
+  irAMision.t=setTimeout(function(){MIS_FOCO.hasta=0;renderMisiones();},MIS_FOCO_MS); // se va el resaltado y vuelve la pista mínima
 }
 function renderMisCerca(){
   var el=$("misCerca"); if(!el)return;

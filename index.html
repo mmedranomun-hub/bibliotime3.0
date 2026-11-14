@@ -1089,6 +1089,9 @@
   /* pista bajo la barra de la fila resaltada: recuerda el premio, sin cuenta atrás ni rojo; se va con .mis-foco */
   .mis-pista{margin-top:5px;font-size:var(--fs-s);font-weight:600;color:var(--suave);animation:fadeIn .3s ease}
   .mis-pista b{color:var(--ok-tx);font-weight:800;font-variant-numeric:tabular-nums}
+  /* versión mínima, fija bajo la barra de la misión cerca mientras estudias (sin tocar): mismo tono, sin animación ni cuenta atrás */
+  .mis-pista-mini{margin-top:4px;font-size:var(--fs-xs);font-weight:600;color:var(--suave)}
+  .mis-pista-mini b{color:var(--ok-tx);font-weight:800;font-variant-numeric:tabular-nums}
   @media(prefers-reduced-motion:reduce){.mis-cerca,.mis-pista{animation:none}}
   .sr-solo{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
   .cofre{width:100%;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:10px;padding:12px;border-radius:var(--r-m);

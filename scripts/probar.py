@@ -1322,6 +1322,45 @@ PRUEBAS = [
         return true;
       }finally{clearTimeout(irAMision.t);studyTimer.running=t0.running;studyTimer.start=t0.start;studyTimer.bibIndex=t0.bibIndex;studyTimer.tick=t0.tick;MIS_FOCO={id:'',hasta:0};
         k.forEach(x=>DATA[x]=o[x]);el&&(el._clave=null);ms.classList.toggle('hidden',oculto0);goView('map');await espera(300);renderMisCerca();renderStudy();}"""),
+    ("mientras estudias, la misión a ≤ 15 min lleva fija «⏱️ N min · +10 🌰» bajo su barra, sin duplicar la pista ni quedarse al parar", """
+      var k=['misiones','sessions','acciones'],o={};k.forEach(x=>o[x]=DATA[x]);
+      var t0={running:studyTimer.running,start:studyTimer.start,bibIndex:studyTimer.bibIndex,tick:studyTimer.tick},el=$('misCerca'),mi=$('miniMis'),ms=$('miniStudy');
+      var viejo=new Date(Date.now()-5*3600000).toISOString(),oculto0=ms.classList.contains('hidden'),espera=n=>new Promise(r=>setTimeout(r,n));
+      var prepara=(min,ids,hechas)=>{studyTimer.running=true;studyTimer.tick=t0.tick||1;studyTimer.bibIndex=-1;studyTimer.start=Date.now()-min*60000-500;
+        DATA.misiones={fecha:ymd(),ids:ids,hechas:hechas,cofre:false};el._clave=null;renderMisCerca();renderMisiones();};
+      var rgb=v=>{var d=document.createElement('i');d.style.color='var('+v+')';document.body.appendChild(d);var c=getComputedStyle(d).color;d.remove();return c;};
+      var minis=()=>document.querySelectorAll('#missionsCard .mis-pista-mini');
+      try{
+        closeModal();goView('study');DATA.sessions=[];DATA.acciones={fecha:ymd()};ms.classList.remove('hidden');
+        prepara(18,['m25','agenda','social'],{agenda:viejo,social:viejo});
+        var c=misionCerca();if(!c||c.id!=='m25')return 'no hay misión cerca';
+        var p=document.querySelector('#missionsCard [data-m="m25"] .mis-pista-mini');
+        if(!p||minis().length!==1)return 'no sale sola bajo la barra de la misión cerca';
+        if(p.previousElementSibling!==p.parentNode.querySelector('.mis-bar'))return 'no va justo bajo la barra';
+        var t=p.textContent.replace(/\\s+/g,' ').trim(),esp='⏱️ '+c.falta+' min · +'+MIS_PREMIO+' 🌰';
+        if(t!==esp)return 'texto: «'+t+'» en vez de «'+esp+'»';
+        if(getComputedStyle(p).color!==rgb('--suave'))return 'no va en --suave';
+        var b=p.querySelectorAll('b');if(b.length!==2||[].some.call(b,x=>getComputedStyle(x).color!==rgb('--ok-tx')))return 'las cifras no van en --ok-tx';
+        if(p.getAttribute('aria-hidden')!=='true'||p.closest('[aria-live]'))return 'el lector la oiría cada minuto';
+        if(getComputedStyle(p).animationName!=='none')return 'se anima en cada repintado';
+        if(document.documentElement.scrollWidth>innerWidth)return 'rompe el ancho a '+innerWidth+' px';
+        // el tick siguiente, un minuto después: se actualiza sola
+        studyTimer.start-=60000;comprobarMisiones();p=document.querySelector('#missionsCard [data-m="m25"] .mis-pista-mini');
+        if(!p||p.textContent.indexOf((c.falta-1)+' min')<0)return 'no se actualiza con el tick';
+        // con la pista completa (al tocar) no se duplica; al irse el resaltado vuelve la mínima
+        mi.click();if(minis().length||document.querySelectorAll('#missionsCard .mis-pista').length!==1)return 'duplica con la pista completa';
+        await espera(MIS_FOCO_MS+200);
+        if(document.querySelector('#missionsCard .mis-pista')||minis().length!==1)return 'no vuelve la mínima tras el resaltado';
+        // al pausar o terminar, fuera
+        studyTimer.running=false;renderMisiones();if(minis().length)return 'se queda al pausar o terminar';
+        // al cumplirse, fuera
+        prepara(26,['m25','agenda','pomo'],{m25:new Date(Date.now()-60000).toISOString(),agenda:viejo});
+        if(minis().length)return 'se queda con la misión cumplida';
+        // misión lejos (> 15 min): nada
+        prepara(2,['m25','agenda','social'],{agenda:viejo,social:viejo});if(minis().length)return 'sale con la misión lejos';
+        return true;
+      }finally{clearTimeout(irAMision.t);studyTimer.running=t0.running;studyTimer.start=t0.start;studyTimer.bibIndex=t0.bibIndex;studyTimer.tick=t0.tick;MIS_FOCO={id:'',hasta:0};
+        k.forEach(x=>DATA[x]=o[x]);el&&(el._clave=null);ms.classList.toggle('hidden',oculto0);goView('map');await espera(300);renderMisCerca();renderStudy();}"""),
     ("con las 3 misiones hechas y el cofre sin abrir, la píldora dice «🎁 3/3», lleva al cofre y vuelve a «✅ 3/3» al abrirlo", """
       var k=['misiones','sessions','acciones','semillasPremio','streakFreezes','cofresAbiertos','sellosMisiones'],o={};k.forEach(x=>o[x]=DATA[x]);
       var t0={running:studyTimer.running,start:studyTimer.start,bibIndex:studyTimer.bibIndex,tick:studyTimer.tick},el=$('misCerca'),mi=$('miniMis'),ms=$('miniStudy');
