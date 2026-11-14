@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-11-14 09:39",
+  "fecha": "2026-11-14 10:44",
   "pruebas": {
     "arranca: datos y vistas": true,
     "marca España (sin «Navarra» en la cabecera)": true,
@@ -77,6 +77,7 @@
     "📸 bosque: varios toques en «Compartir» del bosque → 1 dibujo y 1 hoja, botón con aria-busy; al compartir devuelve true y la bienvenida dice «Ayer compartiste tu bosque de…»": true,
     "📸 semana: «Compartir mi semana» guarda DATA.ultimaCompartida tipo 'semana' solo al compartir (no al cancelar) y mañana la bienvenida dice «Ayer compartiste tu semana de…» sin romper la vuelta": true,
     "📸 ✓ Compartida: al compartir (true) el botón dice «✓ Compartida» en --ok-tx y lo anuncia aria-live; a los 2 s vuelve a «📸 Compartir»; si se cancela no cambia": true,
+    "📸 +1 🌰 al día: el primer compartir con éxito del día suma 1 🌰 (DATA.premioCompartir = hoy) y el botón dice «✓ Compartida · +1 🌰»; cancelar no cuenta y el segundo del día no suma ni lo dice": true,
     "📸 ✓ Guardada: sin navigator.share descarga y el botón dice «✓ Guardada»; si la hoja falla con NotAllowedError, descarga igual con «No se pudo abrir compartir · imagen guardada»; cancelar no descarga": true,
     "📤 «Compartir mi semana» del perfil: si la hoja falla (NotAllowedError) descarga mi-semana.png con «No se pudo abrir compartir · imagen guardada», el botón dice «✓ Guardada» 2 s, aria-live y candado restaurado": true,
     "atajos de la app instalada (#accion=estudiar|ahora|pronto)": true,
@@ -85,13 +86,13 @@
     "fichas.json pesa como mucho 15 KB gzip (si no, pasar al formato {prov:{índice:slug}})": true
   },
   "errores_js": [],
-  "carga_ms_cpu4x": 739,
+  "carga_ms_cpu4x": 582,
   "carga_ms_cpu4x_min_max": [
-    632,
-    820
+    570,
+    723
   ],
-  "primera_pintura_ms_cpu4x": 316,
-  "todas_las_chinchetas_ms_cpu4x": 767,
+  "primera_pintura_ms_cpu4x": 276,
+  "todas_las_chinchetas_ms_cpu4x": 597,
   "markercluster": {
     "cargado": false,
     "agrupa": false,
@@ -101,12 +102,12 @@
   },
   "datos": {
     "bibliotecas": 2616,
-    "con_horario_verificado": 881,
+    "con_horario_verificado": 891,
     "provincias_con_horario": 51,
     "provincias_total": 51
   },
   "seo": {
-    "paginas": 1351,
+    "paginas": 1361,
     "sitemap": true
   },
   "peso": {
@@ -119,13 +120,13 @@
       "kb_gzip": 90.4
     },
     "bibliotecas-espana.js": {
-      "kb": 996.1,
-      "kb_gzip": 232.5
+      "kb": 1005.9,
+      "kb_gzip": 234.6
     },
     "fichas.json": {
-      "kb": 56.4,
+      "kb": 56.8,
       "kb_gzip": 11.6,
-      "bytes": 57761,
+      "bytes": 58180,
       "tope_kb_gzip": 15
     }
   },
