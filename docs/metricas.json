@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-11-14 08:46",
+  "fecha": "2026-11-14 09:39",
   "pruebas": {
     "arranca: datos y vistas": true,
     "marca España (sin «Navarra» en la cabecera)": true,
@@ -45,6 +45,7 @@
     "minicronómetro: «✅ 2/3» rebota una sola vez al cumplir una misión fuera de Estudio; no al repintar, recargar, en Estudio ni con «reducir movimiento»": true,
     "tocar «🎯 7 min» o la barrita abre Estudio con la fila de la misión cerca resaltada un momento y a la vista": true,
     "junto a la fila resaltada, «⏱️ N min más y es tuya · +10 🌰» con cifras reales, que se va con el resaltado": true,
+    "mientras estudias, la misión a ≤ 15 min lleva fija «⏱️ N min · +10 🌰» bajo su barra, sin duplicar la pista ni quedarse al parar": true,
     "con las 3 misiones hechas y el cofre sin abrir, la píldora dice «🎁 3/3», lleva al cofre y vuelve a «✅ 3/3» al abrirlo": true,
     "la barrita «· tu cofre te espera 🎁» lleva al cofre y, ya abierto, vuelve a llevar a las misiones": true,
     "«Sesión terminada» con las 3 misiones y el cofre sin abrir: «🎁 Tu cofre de misiones te espera» en --suave y «Abrirlo» guarda y lleva al cofre (nada con 2/3 ni con el cofre abierto)": true,
@@ -84,13 +85,13 @@
     "fichas.json pesa como mucho 15 KB gzip (si no, pasar al formato {prov:{índice:slug}})": true
   },
   "errores_js": [],
-  "carga_ms_cpu4x": 597,
+  "carga_ms_cpu4x": 739,
   "carga_ms_cpu4x_min_max": [
-    533,
-    910
+    632,
+    820
   ],
-  "primera_pintura_ms_cpu4x": 240,
-  "todas_las_chinchetas_ms_cpu4x": 614,
+  "primera_pintura_ms_cpu4x": 316,
+  "todas_las_chinchetas_ms_cpu4x": 767,
   "markercluster": {
     "cargado": false,
     "agrupa": false,
@@ -100,31 +101,31 @@
   },
   "datos": {
     "bibliotecas": 2616,
-    "con_horario_verificado": 874,
+    "con_horario_verificado": 881,
     "provincias_con_horario": 51,
     "provincias_total": 51
   },
   "seo": {
-    "paginas": 1344,
+    "paginas": 1351,
     "sitemap": true
   },
   "peso": {
     "index.html": {
-      "kb": 141.2,
-      "kb_gzip": 31.9
+      "kb": 141.5,
+      "kb_gzip": 32.0
     },
     "app.js": {
-      "kb": 301.6,
-      "kb_gzip": 90.3
+      "kb": 302.0,
+      "kb_gzip": 90.4
     },
     "bibliotecas-espana.js": {
-      "kb": 991.8,
-      "kb_gzip": 231.7
+      "kb": 996.1,
+      "kb_gzip": 232.5
     },
     "fichas.json": {
-      "kb": 56.0,
-      "kb_gzip": 11.5,
-      "bytes": 57312,
+      "kb": 56.4,
+      "kb_gzip": 11.6,
+      "bytes": 57761,
       "tope_kb_gzip": 15
     }
   },
