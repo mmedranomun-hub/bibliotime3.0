@@ -950,6 +950,50 @@ for (const [r, h] of conCss) {
 console.log(`seo.css versionado (/seo.css?v=${cssV}, sha1 del archivo): ${conCss.length - new Set(cssMal.map((x) => x.split(":")[0])).size} de ${conCss.length} páginas (${html.size} de bibliotecas/, ${guias.length} de /estudiar/ y la 404) · mal: ${cssMal.length}${cssMal.length ? "\n" + muestra(cssMal, (r) => "  " + r) : ""}`);
 console.log(`Search Console (meta google-site-verification):${gscEn.length ? gscEn.map(([r]) => r).join(", ") : "ninguna (verificación por DNS o pendiente)"} · mal: ${gscMal.length}${gscMal.length ? "\n" + muestra(gscMal, (r) => "  " + r) : ""}`);
 console.log(`IndexNow: ${indexNowClave ? `clave puesta, /${indexNowClave}.txt` : "sin clave (INDEXNOW_CLAVE = null)"} · mal: ${indexNowMal.length}${indexNowMal.length ? "\n" + muestra(indexNowMal, (r) => "  " + r) : ""}`);
+// «Abiertas el sábado y el domingo» de provincias y localidades (<section … id="fin-de-semana">, 2026-11-14): cada
+// elemento debe llevar a una ficha generada con horario verificado (su «Verificado el dd/mm/aaaa en la fuente oficial»)
+// y su franja de sábado y de domingo debe ser la de la Library de esa ficha (openingHoursSpecification: solo sale de
+// horarios con fuente y fecha); «cerrada»/«sin confirmar» solo si la ficha no tiene franjas ese día, y al menos uno de
+// los dos días abierto. Así el bloque no puede listar una biblioteca sin horario verificado o que no abre ese día.
+const findeMal = [];
+let nFindePag = 0, nFindeItems = 0;
+const hhmm = (t) => t.replace(/^0(\d)/, "$1");
+const libDeFicha = (h) => {
+  for (const m of h.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)) {
+    let j; try { j = JSON.parse(m[1]); } catch (e) { continue; }
+    const l = [].concat(j).flatMap((x) => (x && x["@graph"]) || [x]).find((x) => x && x["@type"] === "Library" && /#biblioteca$/.test(x["@id"] || ""));
+    if (l) return l;
+  }
+  return null;
+};
+for (const [r, h] of html) {
+  const secs = [...h.matchAll(/<section class="ficha finde" id="fin-de-semana"[^>]*>([\s\S]*?)<\/section>/g)];
+  if (!secs.length) continue;
+  nFindePag++;
+  if (secs.length > 1 || (h.match(/id="fin-de-semana"/g) || []).length > 1) findeMal.push(`${r}: más de un bloque fin-de-semana`);
+  const s = secs[0][1], lis = (s.match(/<li>/g) || []).length;
+  const items = [...s.matchAll(/<li><a href="([^"]+)">([^<]*)<\/a>(?: <small>[^<]*<\/small>)? <span class="finde-h">Sábado: ([^<·]+?) · Domingo: ([^<]+)<\/span><\/li>/g)];
+  if (!lis) findeMal.push(`${r}: bloque fin-de-semana sin bibliotecas`);
+  if (items.length !== lis) findeMal.push(`${r}: ${lis - items.length} elemento(s) del bloque fin-de-semana sin el formato «<a> Sábado: … · Domingo: …»`);
+  for (const [, href, nombre, sab, dom] of items) {
+    nFindeItems++;
+    const fh = html.get(href), quien = `${r} → ${href}`;
+    if (!fh) { findeMal.push(`${quien}: no es una ficha generada (sin horario verificado)`); continue; }
+    if (!/<p class="fuente">Verificado el \d\d\/\d\d\/\d{4} en la <a href="https?:\/\//.test(fh)) { findeMal.push(`${quien}: la ficha no tiene horario verificado con fuente y fecha`); continue; }
+    const lib = libDeFicha(fh);
+    if (!lib || !Array.isArray(lib.openingHoursSpecification)) { findeMal.push(`${quien}: la ficha no tiene Library con openingHoursSpecification`); continue; }
+    if (decodifica(nombre) !== lib.name) findeMal.push(`${quien}: «${decodifica(nombre)}» ≠ name de la ficha «${lib.name}»`);
+    const franja = (dia) => lib.openingHoursSpecification.filter((x) => x.dayOfWeek === dia).map((x) => `${hhmm(x.opens)}–${hhmm(x.closes)}`).join(", ");
+    const abiertos = [["sábado", "Saturday", decodifica(sab).trim()], ["domingo", "Sunday", decodifica(dom).trim()]].map(([d, en, t]) => {
+      const f = franja(en);
+      if (t === "cerrada" || t === "sin confirmar") { if (f) findeMal.push(`${quien}: «${t}» el ${d}, pero la ficha abre ${f}`); return false; }
+      if (t !== f) findeMal.push(`${quien}: el ${d} «${t}», la ficha dice ${f ? `«${f}»` : "que no abre"}`);
+      return !!f;
+    });
+    if (!abiertos.some(Boolean)) findeMal.push(`${quien}: según su ficha no abre ni el sábado ni el domingo`);
+  }
+}
+console.log(`«Abiertas el sábado y el domingo» (provincias y localidades; cada una, ficha con horario verificado y la franja de su ficha): ${nFindePag} páginas, ${nFindeItems} elementos · mal: ${findeMal.length}${findeMal.length ? "\n" + muestra(findeMal, (r) => "  " + r) : ""}`);
 // ---------- Prueba de avisar_indexnow.js contra un servidor local ----------
 // Copia avisar_indexnow.js a dos carpetas temporales («con-clave» y «sin-clave»), cada una con un generar_paginas_seo.js
 // mínimo (INDEXNOW_CLAVE ficticia o null), el .txt y un sitemap.xml de una URL. Por cada caso levanta un servidor http
@@ -1026,5 +1070,5 @@ async function probarAvisoIndexNow() {
   const t0 = Date.now();
   const [avisoMal, nCasos] = await probarAvisoIndexNow();
   console.log(`IndexNow «despliega primero» y simulación (avisar_indexnow.js --base contra servidor local, sin red real): ${nCasos - new Set(avisoMal.map((x) => x.split(" ")[0])).size} de ${nCasos} casos bien (200 con la clave → 0; 404, otro texto o servidor caído → 1; --simular y clave null → 0 sin peticiones) en ${Date.now() - t0} ms · mal: ${avisoMal.length}${avisoMal.length ? "\n" + muestra(avisoMal, (r) => "  " + r) : ""}`);
-  if (cssMal.length || listaMigasMal.length || ariaActualMal.length || cpIdMal.length || refsIdMal.length || migasVisMal.length || itemMigasMal.length || avisoMal.length || vistaMal.length || analiticaMal.length || gscMal.length || indexNowMal.length || migasMal.length || mainEntityMal.length || faqMal.length || indiceMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || idAppMal.length || idNombreMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
+  if (findeMal.length || cssMal.length || listaMigasMal.length || ariaActualMal.length || cpIdMal.length || refsIdMal.length || migasVisMal.length || itemMigasMal.length || avisoMal.length || vistaMal.length || analiticaMal.length || gscMal.length || indexNowMal.length || migasMal.length || mainEntityMal.length || faqMal.length || indiceMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || idAppMal.length || idNombreMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
 })();

@@ -456,6 +456,26 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
   (salen de la misma lista `migas` en `pagina()`); probado a romper texto, destino, número, `position`, `noindex` y
   sitemap del destino → salida 1 en los 6.
 
+## Hecho (2026-11-14) · «Abiertas el sábado y el domingo en <lugar>» en provincias y localidades (sin cambio de número)
+- Contenido visible para «bibliotecas abiertas en <ciudad>» en exámenes, cuando se estudia el fin de semana. Debajo de
+  la tabla «Horarios verificados» (`#horarios`), `bloqueFinde()` añade `<section class="ficha finde" id="fin-de-semana">`
+  con las bibliotecas del lugar con horario verificado (`h.f` + `h.fv`, el mismo criterio que la temática
+  `abiertas-fin-de-semana`) que abren el sábado o el domingo en su horario de invierno: nombre enlazado a su ficha, la
+  localidad (en la provincia) y, si dos se llaman igual, la dirección, y «Sábado: 10:00–14:00 · Domingo: cerrada»
+  («sin confirmar» si la nota de la fuente lo dice). Las que abren los dos días primero, luego más horas de fin de
+  semana. Con más de 12 (`MAX_FINDE`) y temática de fin de semana del lugar, el resto en «Ver las N abiertas el fin de
+  semana en <lugar> →». Sin ninguna, no hay bloque (no se rellena con horarios sin fuente). Estilo en `seo.css`
+  (`.finde-lista`, `.finde-h` en `--ok-tx`), con los tokens de siempre (claro y oscuro).
+- Páginas con el bloque: 0 → 100 (50 de 51 provincias, todas menos Salamanca; 50 de 73 localidades), 319 elementos.
+- `lastmod`: solo se mueve en las páginas que ganan el bloque (39 pasan a hoy; las otras 61 ya tenían la fecha de hoy);
+  las que no lo llevan no cambian (URL con `lastmod` de hoy 528 → 567, todas con el bloque).
+- `comprobar_paginas_seo.js` (línea «Abiertas el sábado y el domingo…») falla si un elemento no lleva a una ficha
+  generada con «Verificado el dd/mm/aaaa en la fuente oficial», si su nombre no es el `name` de la Library de la ficha,
+  si la franja de sábado o domingo no es la de su `openingHoursSpecification` («cerrada»/«sin confirmar» con franjas en
+  la ficha también), si no abre ninguno de los dos días o si hay más de un bloque. Probado a romper: listar bibliotecas
+  sin horario verificado (702 fallos), poner en el domingo la franja del sábado (284) y listar verificadas que solo
+  abren entre semana (356) → salida 1 en los tres.
+
 ## Hecho (2026-11-14) · `seo.css?v=<huella>` en todas las páginas generadas
 - `sw.js` sirve lo propio cache-first por URL exacta con refresco en segundo plano: quien tenía el `seo.css` anterior en
   caché y recibía HTML nuevo veía una vez el marcado nuevo con estilos viejos. Ahora `pagina()` enlaza

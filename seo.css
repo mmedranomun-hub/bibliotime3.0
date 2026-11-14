@@ -79,6 +79,13 @@ footer{max-width:760px;margin:0 auto;padding:0 16px 32px;font-size:var(--fs-s);c
 .horario th{font-weight:600;width:40%}
 .horario td{font-weight:700;font-variant-numeric:tabular-nums}
 .fuente{font-size:var(--fs-s);color:var(--suave);margin:10px 0 0}
+/* «Abiertas el sábado y el domingo» de provincias y localidades */
+.finde>p:not(.fuente){font-size:var(--fs-base);margin:0 0 6px}
+.finde-lista{list-style:none;padding:0;margin:0}
+.finde-lista li{padding:7px 0;border-top:1px solid var(--linea);font-size:var(--fs-base);overflow-wrap:anywhere}
+.finde-lista a{font-weight:600}
+.finde-lista small{color:var(--suave);font-size:var(--fs-s)}
+.finde-h{display:block;font-size:var(--fs-s);font-weight:700;color:var(--ok-tx);font-variant-numeric:tabular-nums}
 .cerca ul{list-style:none;padding:0;margin:0}
 .cerca li{background:var(--card);border:1px solid var(--linea);border-radius:var(--r-m);padding:10px 14px;margin:8px 0;font-weight:700}
 .cerca li small{display:block;font-weight:500;color:var(--suave);font-size:var(--fs-s)}
