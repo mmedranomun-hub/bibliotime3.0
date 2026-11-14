@@ -229,6 +229,11 @@ function ogImagenDe(ruta) {
   }
   return ogProvCache.get(ps);
 }
+// Versión de seo.css: 8 hex del sha1 de su contenido, en la URL (/seo.css?v=…). sw.js sirve lo propio cache-first por URL
+// exacta, así que sin ella quien tuviera el seo.css anterior en caché vería una vez el HTML nuevo con estilos viejos; con
+// ella, HTML nuevo → URL nueva → CSS nuevo de la red. La huella del lastmod ignora el ?v= (ver `huella`): cambiar el CSS
+// no mueve ninguna fecha del sitemap. scripts/comprobar_paginas_seo.js exige que el ?v= coincida con el seo.css actual.
+const SEO_CSS_V = require("crypto").createHash("sha1").update(fs.readFileSync(path.join(RAIZ, "seo.css"))).digest("hex").slice(0, 8);
 const h1De = new Map(); // ruta → h1 (texto plano): de aquí salen los textos de «¿Buscabas…?» en la 404
 // FAQPage en el mismo grafo que su página (provincias, localidades, temáticas, hubs, salas, universidades, exámenes):
 // si la página lleva un FAQPage sin @id y un CollectionPage de su misma URL, el CollectionPage recibe @id <ruta>#pagina
@@ -276,7 +281,7 @@ ${noindex ? "" : `<meta property="og:url" content="${url}">
 <meta name="theme-color" content="#6c5ce7">
 <link rel="icon" href="/icons/favicon-32.png" type="image/png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
-<link rel="stylesheet" href="/seo.css">
+<link rel="stylesheet" href="/seo.css?v=${SEO_CSS_V}">
 <script src="/analitica.js" defer></script>
 ${noindex ? "" : `<script type="application/ld+json">${JSON.stringify(migasLD)}</script>`}
 ${ld ? `<script type="application/ld+json">${JSON.stringify(ld)}</script>` : ""}
@@ -396,9 +401,11 @@ const crypto = require("crypto");
 // aria-current="page" de la última miga: solo lo anuncia el lector de pantalla (el texto y el aspecto no cambian). Ni las
 // migas como lista (<ol><li>, con el «›» puesto por CSS): se reducen al marcado anterior (<a>…</a> › <a>…</a> › <span>)
 // antes de la huella, así que el cambio de marcado no mueve ninguna fecha y un cambio de texto o destino sí.
+// Ni el ?v= de seo.css (SEO_CSS_V): es la huella del CSS, no contenido de la página; se quita antes de la huella.
 const migasPlanas = (t) => t.replace(/<nav class="migas"([^>]*)><ol>([\s\S]*?)<\/ol><\/nav>/g,
   (_, a, l) => `<nav class="migas"${a}>${l.replace(/<\/li><li>/g, " › ").replace(/<\/?li>/g, "")}</nav>`);
 const huella = (txt) => crypto.createHash("sha1").update(migasPlanas(String(txt).replace('<script src="/analitica.js" defer></script>\n', "")
+  .replace(/<link rel="stylesheet" href="\/seo\.css\?v=[0-9a-f]+">/, '<link rel="stylesheet" href="/seo.css">')
   .replace(/<meta (property="og:image[^"]*"|name="twitter:(card|image)") content="[^"]*">\n/g, ""))
   .replace(/<span aria-current="page">/g, "<span>")).digest("hex");
 const lastmodAntes = new Map(), huellaAntes = new Map(), huellaNueva = new Map();

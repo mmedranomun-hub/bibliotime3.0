@@ -881,6 +881,22 @@ ogEnDisco.filter((f) => !ogProvUsadas.has(f.slice(0, -4))).forEach((f) => vistaM
 if (kbOg > 2048) vistaMal.push(`icons/og/: ${kbOg} KB entre todas (máximo 2048 KB)`);
 console.log(`Imagen de vista previa por provincia (icons/og/<prov>.png, 1200×630): ${ogEnDisco.length} imágenes, ${kbOg} KB, ${nOgProv} páginas con la de su provincia`);
 console.log(`Vista previa al compartir (og:site_name, og:image absoluta con width/height reales y alt, twitter:card): ${conVista.length - new Set(vistaMal.map((x) => x.split(":")[0])).size} de ${conVista.length} páginas (portada, ${html.size} de bibliotecas/ y ${guias.length} guías de /estudiar/; imagen grande: ${conVista.filter(([, h]) => metaCab(h.split("</head>")[0], "name", "twitter:card")[0] === "summary_large_image").length}) · mal: ${vistaMal.length}${vistaMal.length ? "\n" + muestra(vistaMal, (r) => "  " + r) : ""}`);
+// Versión de seo.css: toda página generada (bibliotecas/…, guías de /estudiar/ y la 404) enlaza el CSS una sola vez como
+// /seo.css?v=<8 hex del sha1 de seo.css>, igual que SEO_CSS_V del generador. Sin ?v= o con una huella vieja, sw.js
+// (cache-first por URL exacta) puede servir el CSS anterior con el HTML nuevo. Si falla: node scripts/generar_paginas_seo.js.
+const cssV = require("crypto").createHash("sha1").update(fs.readFileSync(path.join(RAIZ, "seo.css"))).digest("hex").slice(0, 8);
+const cssMal = [];
+const conCss = [...html, ...guias, ...(fs.existsSync(f404) ? [["/404.html", fs.readFileSync(f404, "utf8")]] : [])];
+for (const [r, h] of conCss) {
+  const refs = [...h.matchAll(/(?:href|src)="\/?seo\.css([^"]*)"/g)].map((m) => m[1]);
+  if (refs.length !== 1) cssMal.push(`${r}: enlaza seo.css ${refs.length} veces (se espera 1)`);
+  for (const q of refs) {
+    const m = /^\?v=([0-9a-f]+)$/.exec(q);
+    if (!m) cssMal.push(`${r}: seo.css sin ?v=<huella> («seo.css${q}»)`);
+    else if (m[1] !== cssV) cssMal.push(`${r}: seo.css?v=${m[1]} ≠ huella del seo.css actual (${cssV}): regenera las páginas`);
+  }
+}
+console.log(`seo.css versionado (/seo.css?v=${cssV}, sha1 del archivo): ${conCss.length - new Set(cssMal.map((x) => x.split(":")[0])).size} de ${conCss.length} páginas (${html.size} de bibliotecas/, ${guias.length} de /estudiar/ y la 404) · mal: ${cssMal.length}${cssMal.length ? "\n" + muestra(cssMal, (r) => "  " + r) : ""}`);
 console.log(`Search Console (meta google-site-verification):${gscEn.length ? gscEn.map(([r]) => r).join(", ") : "ninguna (verificación por DNS o pendiente)"} · mal: ${gscMal.length}${gscMal.length ? "\n" + muestra(gscMal, (r) => "  " + r) : ""}`);
 console.log(`IndexNow: ${indexNowClave ? `clave puesta, /${indexNowClave}.txt` : "sin clave (INDEXNOW_CLAVE = null)"} · mal: ${indexNowMal.length}${indexNowMal.length ? "\n" + muestra(indexNowMal, (r) => "  " + r) : ""}`);
 // ---------- Prueba de avisar_indexnow.js contra un servidor local ----------
@@ -959,5 +975,5 @@ async function probarAvisoIndexNow() {
   const t0 = Date.now();
   const [avisoMal, nCasos] = await probarAvisoIndexNow();
   console.log(`IndexNow «despliega primero» y simulación (avisar_indexnow.js --base contra servidor local, sin red real): ${nCasos - new Set(avisoMal.map((x) => x.split(" ")[0])).size} de ${nCasos} casos bien (200 con la clave → 0; 404, otro texto o servidor caído → 1; --simular y clave null → 0 sin peticiones) en ${Date.now() - t0} ms · mal: ${avisoMal.length}${avisoMal.length ? "\n" + muestra(avisoMal, (r) => "  " + r) : ""}`);
-  if (listaMigasMal.length || ariaActualMal.length || cpIdMal.length || refsIdMal.length || migasVisMal.length || itemMigasMal.length || avisoMal.length || vistaMal.length || analiticaMal.length || gscMal.length || indexNowMal.length || migasMal.length || mainEntityMal.length || faqMal.length || indiceMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
+  if (cssMal.length || listaMigasMal.length || ariaActualMal.length || cpIdMal.length || refsIdMal.length || migasVisMal.length || itemMigasMal.length || avisoMal.length || vistaMal.length || analiticaMal.length || gscMal.length || indexNowMal.length || migasMal.length || mainEntityMal.length || faqMal.length || indiceMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
 })();

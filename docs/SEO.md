@@ -438,6 +438,19 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
   (salen de la misma lista `migas` en `pagina()`); probado a romper texto, destino, número, `position`, `noindex` y
   sitemap del destino → salida 1 en los 6.
 
+## Hecho (2026-11-14) · `seo.css?v=<huella>` en todas las páginas generadas
+- `sw.js` sirve lo propio cache-first por URL exacta con refresco en segundo plano: quien tenía el `seo.css` anterior en
+  caché y recibía HTML nuevo veía una vez el marcado nuevo con estilos viejos. Ahora `pagina()` enlaza
+  `/seo.css?v=<SEO_CSS_V>` (8 hex del sha1 del archivo): HTML nuevo → URL nueva → fallo de caché → CSS nuevo de la red.
+  `sw.js` no cambia (sin `ignoreSearch`, que devolvería justo el CSS viejo); offline, cada página cacheada sigue
+  encontrando su propia versión. Las versiones viejas se quedan en `CACHE_NAME` hasta la siguiente subida de versión.
+- Páginas con CSS versionado: 0 → 1303 (1293 de `bibliotecas/`, 9 de `/estudiar/` y la 404).
+- La huella del `lastmod` quita el `?v=` antes del sha1 (como `analitica.js`, `og:image*` y `aria-current`): cambiar
+  `seo.css` y regenerar no mueve ninguna fecha (probado: URL con `lastmod` de hoy 275 → 275, con y sin cambiar el CSS).
+- `comprobar_paginas_seo.js` (línea «seo.css versionado…») falla si una página generada enlaza `seo.css` más de una vez,
+  sin `?v=` o con un `?v=` distinto del sha1 del `seo.css` actual (p. ej. tras editar el CSS sin regenerar). Probado a
+  romper: ficha sin `?v=`, 404 con huella falsa y CSS editado sin regenerar → salida 1.
+
 ## Hecho (2026-11-13) · `aria-current="page"` en la última miga y `@id` `#pagina` en todo `CollectionPage`
 - `pagina()` escribe el `<span>` final de `<nav class="migas">` como `<span aria-current="page">`: los lectores de
   pantalla anuncian «página actual» (antes 0 de 1212 indexables; ahora 1212, y también la 404). No cambia el aspecto
