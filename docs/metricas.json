@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-11-14 10:44",
+  "fecha": "2026-11-14 11:54",
   "pruebas": {
     "arranca: datos y vistas": true,
     "marca España (sin «Navarra» en la cabecera)": true,
@@ -48,6 +48,7 @@
     "mientras estudias, la misión a ≤ 15 min lleva fija «⏱️ N min · +10 🌰» bajo su barra, sin duplicar la pista ni quedarse al parar": true,
     "con las 3 misiones hechas y el cofre sin abrir, la píldora dice «🎁 3/3», lleva al cofre y vuelve a «✅ 3/3» al abrirlo": true,
     "la barrita «· tu cofre te espera 🎁» lleva al cofre y, ya abierto, vuelve a llevar a las misiones": true,
+    "historial de Estudio: la sesión que cumple la 3.ª misión del día guarda s.cofre:1 y su línea .feed-mis añade « · 🎁 cofre» en --ok-tx; las demás (y las antiguas sin la marca), nada": true,
     "«Sesión terminada» con las 3 misiones y el cofre sin abrir: «🎁 Tu cofre de misiones te espera» en --suave y «Abrirlo» guarda y lleva al cofre (nada con 2/3 ni con el cofre abierto)": true,
     "Cerrar «Sesión terminada» con Guardar/Omitir sin «Abrirlo» y el cofre listo: el toast dice «Sesión guardada · 🎁 tu cofre te espera en Estudio» una sola vez al día (DATA.misiones.avisoCofre); nada con 2/3, con el cofre abierto ni tras «Abrirlo»": true,
     "«Sesión terminada» une la sesión con sus misiones: una línea .ses-mis «✅ <misión> · +10 🌰» por cada misión cumplida desde sesion.ts (--suave, premio en --ok-tx); nada si no cumplió ninguna; si cerró la 3.ª, «¡Misiones completadas!» en .ses-cofre": true,
@@ -86,13 +87,13 @@
     "fichas.json pesa como mucho 15 KB gzip (si no, pasar al formato {prov:{índice:slug}})": true
   },
   "errores_js": [],
-  "carga_ms_cpu4x": 582,
+  "carga_ms_cpu4x": 593,
   "carga_ms_cpu4x_min_max": [
-    570,
-    723
+    506,
+    710
   ],
-  "primera_pintura_ms_cpu4x": 276,
-  "todas_las_chinchetas_ms_cpu4x": 597,
+  "primera_pintura_ms_cpu4x": 280,
+  "todas_las_chinchetas_ms_cpu4x": 615,
   "markercluster": {
     "cargado": false,
     "agrupa": false,
@@ -102,12 +103,12 @@
   },
   "datos": {
     "bibliotecas": 2616,
-    "con_horario_verificado": 891,
+    "con_horario_verificado": 900,
     "provincias_con_horario": 51,
     "provincias_total": 51
   },
   "seo": {
-    "paginas": 1361,
+    "paginas": 1370,
     "sitemap": true
   },
   "peso": {
@@ -116,17 +117,17 @@
       "kb_gzip": 32.0
     },
     "app.js": {
-      "kb": 302.0,
-      "kb_gzip": 90.4
+      "kb": 302.3,
+      "kb_gzip": 90.5
     },
     "bibliotecas-espana.js": {
-      "kb": 1005.9,
-      "kb_gzip": 234.6
+      "kb": 1012.3,
+      "kb_gzip": 235.8
     },
     "fichas.json": {
-      "kb": 56.8,
-      "kb_gzip": 11.6,
-      "bytes": 58180,
+      "kb": 57.4,
+      "kb_gzip": 11.7,
+      "bytes": 58823,
       "tope_kb_gzip": 15
     }
   },
