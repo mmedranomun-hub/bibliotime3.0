@@ -8,6 +8,9 @@
        página (la página diría que cambió después de lo que dice el sitemap),
      - elementos de los ItemList del JSON-LD (temáticas, localidades…) que apuntan a /#bib=… aunque la biblioteca tiene
        ficha, o cuyo @id no es el de su ficha (<ficha>#biblioteca): lista y ficha deben ser la misma entidad,
+     - Library sin ficha de los ItemList (url /#bib=<índice>-<nombre> de la app) sin @id o con un @id distinto de esa url,
+       y dos Library con el mismo @id (en la misma o en otra página, ficha incluida) con distinto name: el @id une la
+       misma biblioteca listada en varias páginas, así que nunca puede nombrar dos bibliotecas distintas,
      - páginas de provincia o de localidad que enlazan a fichas pero cuyo CollectionPage no lleva mainEntity ItemList,
      - el índice /bibliotecas/ sin CollectionPage (con dateModified y mainEntity ItemList de las provincias, cada una una
        página que existe y que el índice enlaza),
@@ -121,6 +124,9 @@ function compruebaEspeciales(ruta, nodo) {
 }
 // Library de cada ficha (con @id) por nombre + coordenadas, para reconocerla en los ItemList de otras páginas.
 const claveLib = (x) => `${x.name}|${x.geo && x.geo.latitude}|${x.geo && x.geo.longitude}`;
+// @id de cada Library (de nivel superior o de un ItemList) → sus name distintos (con la primera página donde sale cada uno).
+const nombresId = new Map();
+const nombresDeId = (id, name, ruta) => { if (!id) return; const m = nombresId.get(id) || nombresId.set(id, new Map()).get(id); if (!m.has(name)) m.set(name, ruta); };
 const fichaDe = new Map(), itemsLista = [];
 // Páginas de lugar (provincia: /bibliotecas/<prov>/ con secciones por localidad; localidad: la que «vuelve» a su
 // provincia sin ser temática) → ¿lleva su CollectionPage mainEntity ItemList? y los href que contiene.
@@ -178,7 +184,8 @@ for (const [ruta, h] of html) {
       if (x && x["@type"] === "BreadcrumbList") (migasDe.get(ruta) || migasDe.set(ruta, []).get(ruta)).push(x);
       if (x && x["@type"] === "CollectionPage" && x.mainEntity && x.mainEntity["@type"] === "ItemList")
         idsListaDe.set(ruta, new Set((x.mainEntity.itemListElement || []).map((el) => el && el.item && el.item["@id"]).filter(Boolean)));
-      if (x && x["@type"] === "Library" && x["@id"]) fichaDe.set(claveLib(x), x["@id"]);
+      if (x && x["@type"] === "Library" && /\/bibliotecas\/.+#biblioteca$/.test(x["@id"] || "")) fichaDe.set(claveLib(x), x["@id"]);
+      if (x && x["@type"] === "Library" && x["@id"]) nombresDeId(x["@id"], x.name, ruta);
       if (x && x["@type"] === "Library" && x["@id"] === DOMINIO + ruta + "#biblioteca" && !libDe.has(ruta)) libDe.set(ruta, x);
       const lista = x && (x["@type"] === "ItemList" ? x : x.mainEntity && x.mainEntity["@type"] === "ItemList" ? x.mainEntity : null);
       if (x && x["@type"] === "CollectionPage" && lugares.has(ruta) && x.mainEntity && x.mainEntity["@type"] === "ItemList" && (x.mainEntity.itemListElement || []).length) lugares.get(ruta).lista = true;
@@ -227,6 +234,18 @@ for (const [ruta, h] of html) {
 }
 const bibConFicha = [], idMal = [];
 let nItemsBib = 0, nItemsFicha = 0;
+// Library sin ficha (url /#bib=… de la app): @id = esa misma url, para unir la misma biblioteca entre páginas.
+const idAppMal = [], paginasDeIdApp = new Map();
+let nItemsSinUrl = 0;
+for (const [ruta, it] of itemsLista) {
+  nombresDeId(it["@id"], it.name, ruta);
+  if (!it.url) { nItemsSinUrl++; if (it["@id"]) idAppMal.push(`${ruta} → ${it.name}: @id ${it["@id"]} sin url (sin datos de la biblioteca no se pone @id)`); continue; }
+  if (!/#bib=/.test(it.url)) continue;
+  if (!/^https:\/\/bibliomapa\.es\/#bib=\d+-[a-z0-9-]*$/.test(it.url) || it["@id"] !== it.url) { idAppMal.push(`${ruta} → ${it.name}: @id ${it["@id"] || "falta"} (se espera su url ${it.url})`); continue; }
+  (paginasDeIdApp.get(it["@id"]) || paginasDeIdApp.set(it["@id"], new Set()).get(it["@id"])).add(ruta);
+}
+const idNombreMal = [...nombresId].filter(([, m]) => m.size > 1).map(([id, m]) => `${id}: ${[...m].map(([n, r]) => `«${n}» (${r})`).join(" ≠ ")}`);
+const nIdAppVarias = [...paginasDeIdApp.values()].filter((s) => s.size > 1);
 for (const [ruta, it] of itemsLista) {
   const ficha = fichaDe.get(claveLib(it));
   if (/#bib=/.test(it.url || "")) { nItemsBib++; if (ficha) bibConFicha.push(`${ruta} → ${it.name} (ficha ${ficha.slice(DOMINIO.length)})`); }
@@ -814,6 +833,8 @@ console.log(`JSON-LD ilegible: ${ldMal.length}${ldMal.length ? " (" + ldMal.slic
 console.log(`Horarios especiales (verano y exámenes): ${nHorEsp} tramos en ${nPagHorEsp} fichas · mal formados o solapados: ${horEspMal.length}${horEspMal.length ? "\n" + muestra(horEspMal, (r) => "  " + r) : ""}`);
 console.log(`ItemList: ${itemsLista.length} bibliotecas · a su ficha: ${nItemsFicha} · a /#bib=: ${nItemsBib} · /#bib= con ficha: ${bibConFicha.length} · @id distinto del de la ficha: ${idMal.length}` +
   (bibConFicha.length + idMal.length ? "\n" + muestra(bibConFicha.concat(idMal), (r) => "  " + r) : ""));
+console.log(`Library sin ficha en los ItemList (url /#bib=…): ${[...paginasDeIdApp.values()].reduce((n, x) => n + x.size, 0)} con @id = su url, ${paginasDeIdApp.size} bibliotecas, ${nIdAppVarias.length} en más de una página (${nIdAppVarias.reduce((n, x) => n + x.size, 0)} apariciones unidas) · sin url ni @id (sin datos de la biblioteca): ${nItemsSinUrl} · @id mal: ${idAppMal.length} · mismo @id con distinto name: ${idNombreMal.length}` +
+  (idAppMal.length + idNombreMal.length ? "\n" + muestra(idAppMal.concat(idNombreMal), (r) => "  " + r) : ""));
 console.log(`Lugares con fichas y mainEntity ItemList: provincias ${nLugarLista.provincia.join(" de ")} · localidades ${nLugarLista.localidad.join(" de ")} · sin ItemList: ${sinLista.length}` +
   (sinLista.length ? "\n" + muestra(sinLista, (r) => "  " + r) : ""));
 console.log(`Índice /bibliotecas/: CollectionPage ${indiceCP ? "sí" : "NO"} · provincias en su ItemList: ${nIndiceProvs} · mal: ${indiceMal.length}${indiceMal.length ? "\n" + muestra(indiceMal, (r) => "  " + r) : ""}`);
@@ -1005,5 +1026,5 @@ async function probarAvisoIndexNow() {
   const t0 = Date.now();
   const [avisoMal, nCasos] = await probarAvisoIndexNow();
   console.log(`IndexNow «despliega primero» y simulación (avisar_indexnow.js --base contra servidor local, sin red real): ${nCasos - new Set(avisoMal.map((x) => x.split(" ")[0])).size} de ${nCasos} casos bien (200 con la clave → 0; 404, otro texto o servidor caído → 1; --simular y clave null → 0 sin peticiones) en ${Date.now() - t0} ms · mal: ${avisoMal.length}${avisoMal.length ? "\n" + muestra(avisoMal, (r) => "  " + r) : ""}`);
-  if (cssMal.length || listaMigasMal.length || ariaActualMal.length || cpIdMal.length || refsIdMal.length || migasVisMal.length || itemMigasMal.length || avisoMal.length || vistaMal.length || analiticaMal.length || gscMal.length || indexNowMal.length || migasMal.length || mainEntityMal.length || faqMal.length || indiceMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
+  if (cssMal.length || listaMigasMal.length || ariaActualMal.length || cpIdMal.length || refsIdMal.length || migasVisMal.length || itemMigasMal.length || avisoMal.length || vistaMal.length || analiticaMal.length || gscMal.length || indexNowMal.length || migasMal.length || mainEntityMal.length || faqMal.length || indiceMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || idAppMal.length || idNombreMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
 })();

@@ -646,6 +646,35 @@ despliegue sin tener que mirar el `sitemap.xml`.
   otra), un PNG de `icons/og/` no lo usa nadie o pasan de 2 MB entre todas. Imprime imágenes, KB y páginas que la usan.
 - `sw.js` no las precachea (WhatsApp y compañía las piden al servidor, no a la app).
 
+## Hecho (2026-11-14) · `@id` de las bibliotecas sin ficha en los `ItemList` (cifras medidas sobre main; ver el registro del bucle para las de la rama)
+- **Medido antes** (páginas del 2026-11-13): 5.320 `Library` en los `ItemList`; 4.969 con ficha ya llevaban `@id`
+  `<ficha>#biblioteca`. Sin `@id`: 343 con `url` `https://bibliomapa.es/#bib=<índice>-<nombre>` (la app; 322 en localidades
+  y temáticas de provincia o de España, 21 en temáticas de localidad y salas de estudio) y 8 sin `url` (espacios de
+  `temporada-examenes.js` que no están en el mapa: UAH, Esade ×2, UAM, UPM ×3, UIB). Las 343 son **320 bibliotecas
+  distintas**: **23 salen en dos páginas** (46 apariciones), ninguna en más de dos ni dos veces en la misma; 0 con dos
+  `name` para la misma `url`. Poco, pero eran 23 bibliotecas que Google veía como 46 nodos sueltos.
+- **Decisión: `@id` = su misma `url` de la app** (`https://bibliomapa.es/#bib=<índice>-<nombre>`), en `itemBib()`. Por qué:
+  - El índice solo (`#bib=<índice>`) **no es estable**: es la posición en `BIBLIOTECAS` (Navarra + España) y se corre si se
+    añade una biblioteca antes; un `@id` con solo el índice podría pasar a nombrar otra biblioteca tras una regeneración.
+    Con el nombre detrás (los mismos 40 caracteres de slug que ya lleva el enlace), un índice reutilizado no une dos
+    bibliotecas distintas, y en una misma generación todas las páginas lo calculan igual.
+  - No choca con `<ficha>#biblioteca` (otra ruta: `/` frente a `/bibliotecas/…`); si un día la biblioteca gana ficha, pasa a
+    ese `@id` y a la `url` de la ficha, como las demás.
+  - No se inventan fichas ni URL: el `@id` es la URL que la página ya publicaba.
+  - Las 8 de exámenes sin `url` **siguen sin `@id`**: no son bibliotecas del mapa (no hay índice ni datos); un `@id`
+    sacado del nombre sería inventarse una entidad. Hoy no se repiten entre páginas.
+- **`lastmod` sin mover**: la huella del generador (la del `<lastmod>` exacto) ignora `"@id":"https://bibliomapa.es/#bib=…",`,
+  como ya ignoraba la etiqueta de `analitica.js`: ese `@id` siempre es igual a la `url` que va detrás, así que no añade nada
+  que la huella no vea. Regenerado: las 93 páginas de `/bibliotecas/` que cambian (solo en ese `@id`) conservan su
+  `lastmod`, como las demás (0 URL de `/bibliotecas/` movidas en el sitemap). Aparte y ajeno a esto: las 9 guías
+  `/estudiar/` pasan a hoy en cada regeneración de un día nuevo, porque su `dateModified` es el día en que se generan.
+- **Comprobador**: falla si una `Library` de un `ItemList` con `url` `/#bib=…` no lleva `@id` o lleva otro distinto de su
+  `url`, si una sin `url` lleva `@id`, y si dos `Library` con el mismo `@id` (en cualquier página, la de la ficha incluida)
+  tienen distinto `name`. Cuenta las unidas: 343 con `@id`, 320 bibliotecas, 23 en más de una página (46 apariciones).
+  Probado: con las páginas anteriores, 343 fallos y salida 1; rompiendo a mano un `name` de una sin ficha (Palma), uno de
+  una con ficha en la lista de su provincia (Biblioteca de Galicia) y quitando un `@id` (Cambre): 3 fallos y salida 1.
+  Además, `fichaDe` (reconocer la ficha de un elemento por nombre + coordenadas) solo toma `@id` `…/bibliotecas/…#biblioteca`.
+
 ## Siguientes mejoras (en el backlog)
 - Más horarios verificados (las páginas con horario rinden mucho mejor: es lo que la gente busca).
 - Ampliar las páginas por biblioteca a grandes ciudades que no son capital (Gijón, Vigo, Cartagena, Jerez…).

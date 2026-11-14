@@ -187,10 +187,20 @@ function libraryLD(b, url) {
 }
 // Biblioteca dentro de un ItemList (temáticas, localidades, salas de estudio, universidades, exámenes): si tiene ficha,
 // `url` a la ficha (no a /#bib=…, un fragmento que Google lee como la portada) y el mismo `@id` que la ficha
-// (<ficha>#biblioteca), para que lista y ficha describan la misma entidad. Sin ficha, sigue el enlace a la app.
+// (<ficha>#biblioteca), para que lista y ficha describan la misma entidad. Sin ficha, sigue el enlace a la app y lleva
+// como @id esa misma URL (https://bibliomapa.es/#bib=<índice>-<nombre>): así la misma biblioteca listada en varias
+// páginas (localidad, provincia, temáticas, salas…) es un solo nodo. No basta el índice solo: es la posición en
+// BIBLIOTECAS (Navarra + España) y se corre si se añade una biblioteca antes; con el nombre detrás, un índice reutilizado
+// no une dos bibliotecas distintas. No choca con <ficha>#biblioteca (otra ruta) y, si un día tiene ficha, pasa a ese.
+// Sin datos de la biblioteca (espacios de exámenes que no están en el mapa) no hay @id: no se inventa ninguno.
+let nItemsIdApp = 0;
+const idsApp = new Set();
 function itemBib(b) {
   const f = paginaDe.get(b.i);
-  return f ? { "@id": DOMINIO + f + "#biblioteca", ...libraryLD(b, DOMINIO + f) } : libraryLD(b, DOMINIO + enlaceApp(b));
+  if (f) return { "@id": DOMINIO + f + "#biblioteca", ...libraryLD(b, DOMINIO + f) };
+  const u = DOMINIO + enlaceApp(b);
+  nItemsIdApp++; idsApp.add(u);
+  return { "@id": u, ...libraryLD(b, u) };
 }
 
 // Referencia (isPartOf/hasPart, y el item de las provincias en el ItemList del índice) a otra página del sitio: además de name y url, el @id de su nodo (<url>#pagina, el
@@ -401,10 +411,13 @@ const crypto = require("crypto");
 // aria-current="page" de la última miga: solo lo anuncia el lector de pantalla (el texto y el aspecto no cambian). Ni las
 // migas como lista (<ol><li>, con el «›» puesto por CSS): se reducen al marcado anterior (<a>…</a> › <a>…</a> › <span>)
 // antes de la huella, así que el cambio de marcado no mueve ninguna fecha y un cambio de texto o destino sí.
+// Ni el @id de las Library sin ficha de los ItemList ("@id":"https://bibliomapa.es/#bib=…", que itemBib pone justo
+// delante y siempre igual a su `url`): no añade nada que la huella no vea ya en la `url`.
 // Ni el ?v= de seo.css (SEO_CSS_V): es la huella del CSS, no contenido de la página; se quita antes de la huella.
+const ID_APP = new RegExp(`"@id":"${DOMINIO.replace(/[.]/g, "\\.")}/#bib=[^"]*",`, "g");
 const migasPlanas = (t) => t.replace(/<nav class="migas"([^>]*)><ol>([\s\S]*?)<\/ol><\/nav>/g,
   (_, a, l) => `<nav class="migas"${a}>${l.replace(/<\/li><li>/g, " › ").replace(/<\/?li>/g, "")}</nav>`);
-const huella = (txt) => crypto.createHash("sha1").update(migasPlanas(String(txt).replace('<script src="/analitica.js" defer></script>\n', "")
+const huella = (txt) => crypto.createHash("sha1").update(migasPlanas(String(txt).replace('<script src="/analitica.js" defer></script>\n', "").replace(ID_APP, "")
   .replace(/<link rel="stylesheet" href="\/seo\.css\?v=[0-9a-f]+">/, '<link rel="stylesheet" href="/seo.css">')
   .replace(/<meta (property="og:image[^"]*"|name="twitter:(card|image)") content="[^"]*">\n/g, ""))
   .replace(/<span aria-current="page">/g, "<span>")).digest("hex");
@@ -2308,6 +2321,7 @@ console.log(`isPartOf en fichas (su localidad o provincia): ${nFichasIsPartOf} d
 console.log(`breadcrumb {"@id": "<ruta>#migas"} en el índice, provincias, localidades, temáticas de España, de provincia y de localidad, hubs, salas de estudio, universidades y ciudades de exámenes: ${nMigasId} páginas`);
 console.log(`FAQPage en el grafo de su CollectionPage (@id <ruta>#faq, isPartOf → <ruta>#pagina) en páginas que no son ficha: ${nFaqEnGrafo}`);
 console.log(`Provincias con ItemList de sus fichas en el JSON-LD: ${nProvItemList} de ${provincias.length} · elementos: ${nItemsProv}`);
+console.log(`Library sin ficha en los ItemList con @id = su url de la app (/#bib=…): ${nItemsIdApp} elementos, ${idsApp.size} bibliotecas`);
 console.log(`Localidades sin ninguna verificada con «Cerca, con horario verificado» (≤ ${RADIO_VERIF_KM} km del centroide): ${nLocsVerifCerca} · enlaces: ${nEnlacesLocVerifCerca}`);
 console.log(`Fichas con «Cerca, con horario verificado» (≤ ${RADIO_VERIF_KM} km, otra ficha): ${nFichasVerifCerca} de ${paginaDe.size} · enlaces: ${nEnlacesVerifCerca}`);
 console.log(`Navarra: ${nNavarraConHorario} de ${navarra.length} con horario publicable (fuenteHorario + verificadoHorario en app.js)`);
