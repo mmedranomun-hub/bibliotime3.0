@@ -151,9 +151,15 @@ function minutosSemanaPorDia(){
   var top=null,tm=0;for(var k in subj)if(subj[k]>tm){tm=subj[k];top=k;}
   return {mins:mins,sesiones:n,top:top};
 }
-function compartirSemana(){
+/* «📤 Compartir mi semana» del perfil (#btnShareWeek) o con el botón como `origen`. Desde #btnShareWeek llega el
+   evento del click a través del stub de app.js, ya despachado (currentTarget es null): el botón sale de su target.
+   Mismo camino que sesión y bosque: conCandado (disabled + aria-busy, «✓ Compartida»/«✓ Guardada» 2 s y aria-live)
+   y compartirLienzo (si la hoja falla sin ser AbortError, descarga con «No se pudo abrir compartir · imagen guardada»). */
+function compartirSemana(origen){
   var w=minutosSemanaPorDia(), total=w.mins.reduce(function(a,b){return a+b;},0);
-  if(!total){showToast("Aún no has estudiado esta semana: ¡empieza una sesión!");return;}
+  if(!total){showToast("Aún no has estudiado esta semana: ¡empieza una sesión!");return Promise.resolve(false);}
+  var b=origen&&origen.target&&origen.target.closest?origen.currentTarget||origen.target.closest("button"):origen;
+  return conCandado(b,async function(){
   var W=1080,H=1350,c=document.createElement("canvas");c.width=W;c.height=H;var g=c.getContext("2d");
   var grad=g.createLinearGradient(0,0,W,H);grad.addColorStop(0,"#6c5ce7");grad.addColorStop(1,"#00b4c5");g.fillStyle=grad;g.fillRect(0,0,W,H);
   g.fillStyle="rgba(255,255,255,.85)";g.font="700 40px system-ui,sans-serif";g.fillText("MI SEMANA DE ESTUDIO",80,140);
@@ -166,12 +172,8 @@ function compartirSemana(){
     var x=bx+k*bw+bw*.18,ww=bw*.64;g.beginPath();if(g.roundRect)g.roundRect(x,base-h,ww,h,18);else g.rect(x,base-h,ww,h);g.fill();
     g.fillStyle="rgba(255,255,255,.9)";g.font="700 36px system-ui,sans-serif";g.textAlign="center";g.fillText(dias[k],x+ww/2,base+56);g.textAlign="left";});
   g.fillStyle="#fff";g.font="800 40px system-ui,sans-serif";g.fillText("bibliomapa.es",80,H-80);
-  c.toBlob(function(blob){
-    var file=new File([blob],"mi-semana.png",{type:"image/png"});
-    if(navigator.canShare&&navigator.canShare({files:[file]})){navigator.share({files:[file],title:"Mi semana de estudio"}).catch(function(){});return;}
-    var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="mi-semana.png";document.body.appendChild(a);a.click();a.remove();
-    showToast("Imagen descargada: compártela donde quieras");
-  },"image/png");
+  return compartirLienzo(c,"mi-semana.png","Mi semana de estudio 📚 "+hMin(total)+" · bibliomapa.es");
+  });
 }
 /* ----- Reportar o confirmar un horario ----- */
 var HR_DIAS_LARGOS=["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];

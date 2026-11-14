@@ -1834,6 +1834,36 @@ PRUEBAS = [
         if(b.disabled||b.hasAttribute('aria-busy'))return 'el candado no se restaura';
         return true;
       }finally{document.removeEventListener('click',pilla,true);navigator.share=sh0;navigator.canShare=cs0;window.showToast=st0;COMPARTIDA_MS=ms0;compartiendoImagen=false;DATA.sessions=s0;DATA.ultimaCompartida=uc0;FOREST_PERIOD=fp0;closeModal();renderForest();goView('map');}"""),
+    ("📤 «Compartir mi semana» del perfil: si la hoja falla (NotAllowedError) descarga mi-semana.png con «No se pudo abrir compartir · imagen guardada», el botón dice «✓ Guardada» 2 s, aria-live y candado restaurado", """
+      await cargarExtra();
+      var s0=DATA.sessions,sh0=navigator.share,cs0=navigator.canShare,st0=window.showToast,ms0=COMPARTIDA_MS,toasts=[],bajadas=[],shares=0;
+      var pilla=e=>{var a=e.target;if(a&&a.tagName==='A'&&a.hasAttribute('download')){bajadas.push(a.download);e.preventDefault();}};
+      document.addEventListener('click',pilla,true);
+      var espera=async f=>{for(var i=0;i<60&&!f();i++)await new Promise(r=>setTimeout(r,50));};
+      try{
+        closeModal();COMPARTIDA_MS=900;window.showToast=m=>toasts.push(m);
+        DATA.sessions=[{id:'sw1',date:ymd(),min:75,bib:NO_BIB,focus:'ok',esp:'roble',subject:'Mates'}];
+        goView('profile');await new Promise(r=>setTimeout(r,200));
+        var b=document.getElementById('btnShareWeek');if(!b)return 'sin #btnShareWeek';
+        var html0=b.innerHTML;
+        navigator.canShare=()=>true;navigator.share=()=>{shares++;return Promise.reject(Object.assign(new Error('sin gesto'),{name:'NotAllowedError'}));};
+        b.click();b.click();await espera(()=>b.classList.contains('compartida'));
+        if(shares!==1)return 'el doble toque abre la hoja '+shares+' veces';
+        if(bajadas.length!==1||bajadas[0]!=='mi-semana.png')return 'con la hoja fallando no descarga mi-semana.png: '+JSON.stringify(bajadas);
+        if(!toasts.includes('No se pudo abrir compartir · imagen guardada 📸'))return 'sin aviso suave del fallo: '+JSON.stringify(toasts);
+        if(b.innerText.trim()!=='✓ Guardada')return 'no dice ✓ Guardada: '+b.innerText;
+        if(b.disabled||b.hasAttribute('aria-busy'))return 'el candado no se restaura';
+        await new Promise(r=>setTimeout(r,120));
+        if(!/guardada/i.test((document.getElementById('avisoCompartida')||{}).textContent||''))return 'aria-live no dice guardada';
+        await espera(()=>!b.classList.contains('compartida'));if(b.innerHTML!==html0)return 'no vuelve al texto original';
+        navigator.share=()=>Promise.reject(Object.assign(new Error('cancelada'),{name:'AbortError'}));bajadas=[];
+        b.click();await new Promise(r=>setTimeout(r,400));
+        if(bajadas.length||b.classList.contains('compartida'))return 'al cancelar descarga o marca el botón';
+        navigator.share=()=>Promise.resolve();
+        b.click();await espera(()=>b.classList.contains('compartida'));
+        if(b.innerText.trim()!=='✓ Compartida')return 'con la hoja abierta no dice ✓ Compartida: '+b.innerText;
+        return true;
+      }finally{document.removeEventListener('click',pilla,true);navigator.share=sh0;navigator.canShare=cs0;window.showToast=st0;COMPARTIDA_MS=ms0;compartiendoImagen=false;DATA.sessions=s0;goView('map');}"""),
 ]
 
 
