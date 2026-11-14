@@ -284,7 +284,7 @@ ${head || ""}</head>
 <body>
 <header class="top"><a class="marca" href="/"><span>📚</span> Bibliomapa</a><nav class="nav-top"><a href="/estudiar/">Guías</a><a class="cta-top" href="/">Abrir el mapa</a></nav></header>
 <main>
-<nav class="migas" aria-label="Estás en">${migas.map((x, k) => (k < migas.length - 1 ? `<a href="${x[1]}">${esc(x[0])}</a> › ` : `<span aria-current="page">${esc(x[0])}</span>`)).join("")}</nav>
+<nav class="migas" aria-label="Estás en"><ol>${migas.map((x, k) => `<li>${k < migas.length - 1 ? `<a href="${x[1]}">${esc(x[0])}</a>` : `<span aria-current="page">${esc(x[0])}</span>`}</li>`).join("")}</ol></nav>
 <h1>${h1}</h1>
 ${trasH1 || ""}<p class="intro">${intro}</p>
 ${cta || `<a class="cta" href="/">📍 ¿Cuál está abierta ahora cerca de ti? Abrir el mapa</a>`}
@@ -393,9 +393,13 @@ const SALIDA = path.join(RAIZ, "bibliotecas");
 const crypto = require("crypto");
 // La etiqueta de analitica.js y las de vista previa al compartir (og:image*, twitter:card, twitter:image) no cuentan: no cambian lo que
 // ve quien lee la página ni lo que indexa Google (añadirlas no debe mover el lastmod de 1000 URL). Tampoco el
-// aria-current="page" de la última miga: solo lo anuncia el lector de pantalla (el texto y el aspecto no cambian).
-const huella = (txt) => crypto.createHash("sha1").update(String(txt).replace('<script src="/analitica.js" defer></script>\n', "")
-  .replace(/<meta (property="og:image[^"]*"|name="twitter:(card|image)") content="[^"]*">\n/g, "")
+// aria-current="page" de la última miga: solo lo anuncia el lector de pantalla (el texto y el aspecto no cambian). Ni las
+// migas como lista (<ol><li>, con el «›» puesto por CSS): se reducen al marcado anterior (<a>…</a> › <a>…</a> › <span>)
+// antes de la huella, así que el cambio de marcado no mueve ninguna fecha y un cambio de texto o destino sí.
+const migasPlanas = (t) => t.replace(/<nav class="migas"([^>]*)><ol>([\s\S]*?)<\/ol><\/nav>/g,
+  (_, a, l) => `<nav class="migas"${a}>${l.replace(/<\/li><li>/g, " › ").replace(/<\/?li>/g, "")}</nav>`);
+const huella = (txt) => crypto.createHash("sha1").update(migasPlanas(String(txt).replace('<script src="/analitica.js" defer></script>\n', "")
+  .replace(/<meta (property="og:image[^"]*"|name="twitter:(card|image)") content="[^"]*">\n/g, ""))
   .replace(/<span aria-current="page">/g, "<span>")).digest("hex");
 const lastmodAntes = new Map(), huellaAntes = new Map(), huellaNueva = new Map();
 try {

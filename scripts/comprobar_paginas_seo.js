@@ -46,10 +46,13 @@
        y en los hubs (horarios, universidades, exámenes y salas de estudio), las universidades y las ciudades de
        exámenes y las salas de estudio de provincia y localidad, con el penúltimo igual a la url de su isPartOf (el
        índice; su hub). Falla con cualquier BreadcrumbList suelto (sin @id <ruta>#migas o sin breadcrumb que lo enlace).
-     - migas visibles distintas de las del JSON-LD en cualquier página indexable: los <a href>/<span> de <nav class="migas">
-       frente a los name/item del BreadcrumbList <ruta>#migas (mismo orden y position, mismo texto decodificado, mismo
-       destino; el <span> final es la propia página), y cada item que no sea / ni una página generada con index.html, sin
-       noindex y en el sitemap. Y la última miga sin <span aria-current="page"> (o aria-current más de una vez).
+     - migas que no son una lista (en las indexables y en la 404): <nav class="migas"> con un solo <ol> y dentro solo
+       <li>, cada uno con un único <a> o <span>, sin «›» en el HTML (el separador lo pone seo.css).
+     - migas visibles distintas de las del JSON-LD en cualquier página indexable: los <a …href…>/<span> de los <li> de
+       <nav class="migas"> (atributos en cualquier orden) frente a los name/item del BreadcrumbList <ruta>#migas (mismo
+       orden y position, mismo texto decodificado, mismo destino; el <span> final es la propia página), y cada item que no
+       sea / ni una página generada con index.html, sin noindex y en el sitemap. Y la última miga sin
+       <span aria-current="page">, aria-current más de una vez o en algún <a> de las migas (también en la 404).
      - cualquier CollectionPage cuya url sea la propia página (también en @graph) sin @id <url>#pagina.
      - fichas cuyo WebPage no lleva @id <ficha>#pagina y about {"@id": "<ficha>#biblioteca"}, sin Library con ese @id
        en la misma página, o cuya Library no lo devuelve con mainEntityOfPage {"@id": "<ficha>#pagina"} (recíprocos).
@@ -510,6 +513,28 @@ for (const m of sitemap.matchAll(/<url>([\s\S]*?)<\/url>/g)) {
 // Y cada item es / o una página generada con index.html, sin noindex y en el sitemap. Por familia; fallo si hay alguna.
 const decodificaTexto = (s) => decodifica(s.replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(+n)).replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCodePoint(parseInt(n, 16))).replace(/&nbsp;/g, " "));
 const noindex = (h) => /<meta name="robots" content="[^"]*noindex/i.test(h);
+// Las migas son una lista: <nav class="migas"> lleva un solo <ol> y dentro solo <li>, cada uno con un único <a> o <span>
+// (el separador «›» lo pone seo.css con .migas li+li::before, así que no puede quedar en el HTML). De cada <li>: <a> y
+// <span> con atributos en cualquier orden (el href se lee de entre ellos; el <span> final lleva aria-current="page").
+// Devuelve { vis: [{href, txt, aActual} | {href: null, txt, actual}], error }.
+function leeMigas(nav) {
+  const ol = /^\s*<ol>([\s\S]*)<\/ol>\s*$/.exec(nav);
+  if (!ol) return { vis: [], error: "sin <ol> como único hijo de <nav class=\"migas\">" };
+  if (/›|&rsaquo;|&#8250;|&#x203a;/i.test(nav)) return { vis: [], error: "separador «›» en el HTML (lo pone el CSS)" };
+  const lis = [...ol[1].matchAll(/<li>([\s\S]*?)<\/li>/g)];
+  if (!lis.length || ol[1].replace(/<li>[\s\S]*?<\/li>/g, "").trim()) return { vis: [], error: "el <ol> de las migas tiene algo fuera de sus <li>" };
+  const vis = [];
+  for (const [, li] of lis) {
+    const m = /^\s*(?:<a(\s[^>]*)?>([^<]*)<\/a>|<span(\s[^>]*)?>([^<]*)<\/span>)\s*$/.exec(li);
+    if (!m) return { vis: [], error: `<li> de las migas sin un único <a> o <span> (texto sin etiquetas): ${li.slice(0, 60)}` };
+    if (m[4] === undefined) {
+      const href = (/\shref="([^"]*)"/.exec(m[1] || "") || [])[1];
+      vis.push({ href: href === undefined ? "(<a> sin href)" : decodifica(href), txt: decodificaTexto(m[2]), aActual: /\saria-current=/.test(m[1] || "") });
+    } else vis.push({ href: null, txt: decodificaTexto(m[4]), actual: /\saria-current="page"/.test(m[3] || "") });
+  }
+  return { vis, error: "" };
+}
+const listaMigasMal = [], nListaMigas = {};
 const migasVisMal = [], nMigasVis = {}, migasVisMalFam = {}, itemMigasMal = [], itemMigasMalFam = {}, ariaActualMal = [], nAriaActual = {};
 let nMigasVisPag = 0, nItemsMigas = 0;
 for (const [ruta, h] of html) {
@@ -519,13 +544,13 @@ for (const [ruta, h] of html) {
   const bc = (migasDe.get(ruta) || []).find((x) => x["@id"] === DOMINIO + ruta + "#migas");
   if (navs.length !== 1) { mal(`${navs.length} <nav class="migas"> (se espera 1)`); continue; }
   if (!bc) { mal(`sin BreadcrumbList ${DOMINIO + ruta}#migas`); continue; }
-  // <span> con o sin atributos (el final lleva aria-current="page"); m[3] = atributos del <span>, m[4] = su texto.
-  const vis = [...navs[0][1].matchAll(/<a href="([^"]*)">([\s\S]*?)<\/a>|<span(\s[^>]*)?>([\s\S]*?)<\/span>/g)]
-    .map((m) => m[4] === undefined ? { href: decodifica(m[1]), txt: decodificaTexto(m[2]) } : { href: null, txt: decodificaTexto(m[4]), actual: /\saria-current="page"/.test(m[3] || "") });
+  const { vis, error: errLista } = leeMigas(navs[0][1]);
+  if (errLista) { listaMigasMal.push(`${ruta} (${f}) ${errLista}`); mal(errLista); continue; }
+  nListaMigas[f] = (nListaMigas[f] || 0) + 1;
   // aria-current="page" solo en la última miga (el <span> de la propia página): los lectores de pantalla anuncian
-  // «página actual». Falla si falta o si aparece en otra miga.
-  const nActual = (navs[0][1].match(/aria-current=/g) || []).length;
-  if (!vis.length || !vis[vis.length - 1].actual || nActual !== 1) ariaActualMal.push(`${ruta} (${f}) ${!vis.length || !vis[vis.length - 1].actual ? "última miga sin <span aria-current=\"page\">" : `aria-current ×${nActual} en <nav class="migas">`}`);
+  // «página actual». Falla si falta, si aparece en otra miga o si lo lleva un <a> (enlace a otra página).
+  const nActual = (navs[0][1].match(/aria-current=/g) || []).length, aConActual = vis.filter((v) => v.aActual).length;
+  if (!vis.length || !vis[vis.length - 1].actual || nActual !== 1 || aConActual) ariaActualMal.push(`${ruta} (${f}) ${aConActual ? `aria-current en ${aConActual} <a> de las migas (solo el <span> final)` : !vis.length || !vis[vis.length - 1].actual ? "última miga sin <span aria-current=\"page\">" : `aria-current ×${nActual} en <nav class="migas">`}`);
   else nAriaActual[f] = (nAriaActual[f] || 0) + 1;
   const ld = bc.itemListElement || [];
   let dif = vis.length !== ld.length ? `${vis.length} migas visibles y ${ld.length} en el JSON-LD` : "";
@@ -594,12 +619,21 @@ const refsIdMal = refsId.mal;
 
 // 404: no cuenta como enlace entrante (no quita huérfanas) ni entra en el resto de comprobaciones (no se indexa).
 const f404 = path.join(RAIZ, "404.html"), mal404 = [];
-let n404 = 0, n404Prov = 0, n404Busca = 0, n404Slugs = 0;
+let n404Migas = 0, n404 = 0, n404Prov = 0, n404Busca = 0, n404Slugs = 0;
 if (!fs.existsSync(f404)) mal404.push("falta 404.html");
 else {
   const h = fs.readFileSync(f404, "utf8");
   if (!/<meta name="robots" content="noindex">/.test(h)) mal404.push("sin <meta name=\"robots\" content=\"noindex\">");
   if (/rel="canonical"/.test(h)) mal404.push("lleva canonical");
+  // Sus migas, como las de las indexables: una lista <ol>/<li> sin «›» en el HTML y aria-current solo en el <span> final.
+  const nav404 = [...h.matchAll(/<nav class="migas"[^>]*>([\s\S]*?)<\/nav>/g)];
+  if (nav404.length !== 1) mal404.push(`${nav404.length} <nav class="migas"> (se espera 1)`);
+  else {
+    const { vis, error } = leeMigas(nav404[0][1]);
+    if (error) mal404.push("migas: " + error);
+    else if (!vis[vis.length - 1].actual || vis.some((v) => v.aActual) || (nav404[0][1].match(/aria-current=/g) || []).length !== 1) mal404.push("migas: aria-current=\"page\" no está solo en el <span> final");
+    else n404Migas = vis.length;
+  }
   if (enSitemap.has("/404.html") || enSitemap.has("/404")) mal404.push("está en el sitemap");
   const t = (h.match(/<title>([^<]*)<\/title>/) || [])[1];
   if (t && titulos.has(t)) mal404.push(`título repetido con ${titulos.get(t).join(", ")}`);
@@ -759,6 +793,7 @@ console.log(`Migas de las fichas (breadcrumb del WebPage → BreadcrumbList #mig
 const porFam = (o) => Object.entries(o).map(([t, n]) => `${t} ${n}`).join(" · ") || "0";
 console.log(`Migas visibles = JSON-LD (<nav class="migas"> ↔ BreadcrumbList #migas: orden, texto y destino) en las indexables: ${nMigasVisPag} de ${[...html.values()].filter((h) => !noindex(h)).length} bien (${porFam(nMigasVis)}) · discordancias: ${migasVisMal.length}${migasVisMal.length ? ` (${porFam(migasVisMalFam)})` : ""} · items de las migas (${nItemsMigas}) que no son / ni página indexable del sitemap: ${itemMigasMal.length}${itemMigasMal.length ? ` (${porFam(itemMigasMalFam)})` : ""}` +
   (migasVisMal.length + itemMigasMal.length ? "\n" + muestra(migasVisMal.concat(itemMigasMal), (r) => "  " + r) : ""));
+console.log(`Migas como lista (<nav class="migas"><ol><li>, «›» solo por CSS) en las indexables: ${Object.values(nListaMigas).reduce((a, b) => a + b, 0)} (${porFam(nListaMigas)}) · 404: ${n404Migas ? n404Migas + " migas" : "mal"} · mal: ${listaMigasMal.length}${listaMigasMal.length ? "\n" + muestra(listaMigasMal, (r) => "  " + r) : ""}`);
 console.log(`Última miga con aria-current="page" (<span> de la propia página, una sola vez por <nav class="migas">) en las indexables: ${Object.values(nAriaActual).reduce((a, b) => a + b, 0)} (${porFam(nAriaActual)}) · mal: ${ariaActualMal.length}${ariaActualMal.length ? "\n" + muestra(ariaActualMal, (r) => "  " + r) : ""}`);
 console.log(`CollectionPage de la propia página con @id <ruta>#pagina: ${Object.values(nCpId).reduce((a, b) => a + b, 0)} (${porFam(nCpId)}) · sin él: ${cpIdMal.length}${cpIdMal.length ? "\n" + muestra(cpIdMal, (r) => "  " + r) : ""}`);
 console.log(`isPartOf/hasPart a otra página con el @id de su nodo (que existe en la página destino): ${refsId.nConId} de ${refsId.nRefs} · mal: ${refsIdMal.length}${refsIdMal.length ? "\n" + muestra(refsIdMal, (r) => "  " + r) : ""}`);
@@ -924,5 +959,5 @@ async function probarAvisoIndexNow() {
   const t0 = Date.now();
   const [avisoMal, nCasos] = await probarAvisoIndexNow();
   console.log(`IndexNow «despliega primero» y simulación (avisar_indexnow.js --base contra servidor local, sin red real): ${nCasos - new Set(avisoMal.map((x) => x.split(" ")[0])).size} de ${nCasos} casos bien (200 con la clave → 0; 404, otro texto o servidor caído → 1; --simular y clave null → 0 sin peticiones) en ${Date.now() - t0} ms · mal: ${avisoMal.length}${avisoMal.length ? "\n" + muestra(avisoMal, (r) => "  " + r) : ""}`);
-  if (ariaActualMal.length || cpIdMal.length || refsIdMal.length || migasVisMal.length || itemMigasMal.length || avisoMal.length || vistaMal.length || analiticaMal.length || gscMal.length || indexNowMal.length || migasMal.length || mainEntityMal.length || faqMal.length || indiceMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
+  if (listaMigasMal.length || ariaActualMal.length || cpIdMal.length || refsIdMal.length || migasVisMal.length || itemMigasMal.length || avisoMal.length || vistaMal.length || analiticaMal.length || gscMal.length || indexNowMal.length || migasMal.length || mainEntityMal.length || faqMal.length || indiceMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
 })();
