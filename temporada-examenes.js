@@ -213,5 +213,38 @@ window.TEMPORADA_EXAMENES = [
     horario: "abre también los fines de semana 9-10, 16-17, 23-24 y 30-31 ene, de 8:30 a 20:30",
     nota: "Esos fines de semana hay préstamo de portátiles, pero no de libros ni devoluciones. En Navidad (23 y 28-30 dic, 4-5 ene) abre solo de 8:30 a 14:30.",
     f: "https://biblioteca.uib.cat/ca/espais-i-horaris/horaris", fv: "2026-11-08"
+  },
+  // UNAV: entrada del blog de la Biblioteca del 09-11-2026, «La Biblioteca en exámenes»: «Del 14 de noviembre al 20 de
+  // diciembre» (sin año en la frase; publicada en 2026 y los días citados caen en domingo/festivo en 2026), «Las
+  // bibliotecas de Ciencias y Central y la Sala de estudio Ismael Sánchez Bella permanecerán abiertas: de 8 – 21 h, de
+  // lunes a sábado; de 8 – 20 h, los siguientes festivos y domingos: 15, 23, 29 y 30 de noviembre; 3, 6, 8, 13 y 20 de
+  // diciembre». No dice nada del domingo 22 nov: por eso no lleva `semana`. La Central ya tiene entrada desde el 1 dic
+  // (página de horarios); aquí solo el tramo de noviembre, para no repetirla. La Sala Ismael Sánchez Bella no está en el mapa.
+  {
+    ciudad: "Pamplona", provincia: "Navarra",
+    espacio: "Biblioteca de Ciencias · Universidad de Navarra",
+    bib: "Biblioteca Universidad de Navarra · Ciencias",
+    desde: "2026-11-14", hasta: "2026-12-20",
+    horario: "lunes a sábado de 8:00 a 21:00; domingos y festivos 15, 23, 29 y 30 nov y 3, 6, 8, 13 y 20 dic, de 8:00 a 20:00",
+    nota: "Hay que reservar antes el puesto de estudio. Sin reserva: la Sala azul de la Biblioteca de Ciencias.",
+    f: "https://noticias-biblioteca.unav.edu/2026/11/09/la-biblioteca-en-examenes-3/", fv: "2026-11-14"
+  },
+  {
+    ciudad: "Pamplona", provincia: "Navarra",
+    espacio: "Biblioteca Central · Universidad de Navarra (campaña de exámenes, noviembre)",
+    bib: "Biblioteca Universidad de Navarra · Central",
+    desde: "2026-11-14", hasta: "2026-11-30",
+    horario: "lunes a sábado de 8:00 a 21:00; domingos y festivos 15, 23, 29 y 30 nov, de 8:00 a 20:00",
+    nota: "Hay que reservar antes el puesto de estudio. Sin reserva: la sala polivalente de la planta baja.",
+    f: "https://noticias-biblioteca.unav.edu/2026/11/09/la-biblioteca-en-examenes-3/", fv: "2026-11-14"
+  },
+  {
+    ciudad: "Pamplona", provincia: "Navarra",
+    espacio: "Sala de estudio Ismael Sánchez Bella · Universidad de Navarra",
+    bib: null,
+    desde: "2026-11-14", hasta: "2026-12-20",
+    horario: "lunes a sábado de 8:00 a 21:00; domingos y festivos 15, 23, 29 y 30 nov y 3, 6, 8, 13 y 20 dic, de 8:00 a 20:00",
+    nota: "Uso libre, sin reserva de puesto.",
+    f: "https://noticias-biblioteca.unav.edu/2026/11/09/la-biblioteca-en-examenes-3/", fv: "2026-11-14"
   }
 ];
