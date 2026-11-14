@@ -3449,10 +3449,11 @@ var MIS_PREMIO=10; // 🌰 por misión cumplida (comprobarMisiones y la pista «
 // Misiones de estudio que cumplió una sesión: las de hoy marcadas en M.hechas desde que empezó (el tic de 30 s
 // las marca mientras corre; comprobarMisiones, al guardarla). Las de amigos/agenda no son del rato de estudio.
 // (Distinta de misionesDeSesion de app-extra.js, que da las definiciones para «Sesión terminada».)
-// trasGuardarSesion las guarda en s.mis (solo si hay alguna) y el historial pinta «✅ N misiones · +N×MIS_PREMIO 🌰».
+// trasGuardarSesion las guarda en s.mis (solo si hay alguna) y el historial pinta «✅ N misiones · +N×MIS_PREMIO 🌰»;
+// si la 3.ª misión del día (la última de M.hechas) es suya, s.cofre=1 y « · 🎁 cofre».
 function idsMisionesSesion(s){var M=DATA&&DATA.misiones;if(!s||!s.ts||!M||M.fecha!==ymd())return [];
   return M.ids.filter(function(id){var t=M.hechas[id];return t&&id!=="social"&&id!=="agenda"&&Date.parse(t)>=s.ts;});}
-function misSesionHTML(s){var n=s.mis&&s.mis.length;return n?'<div class="feed-mis">✅ '+n+(n===1?' misión':' misiones')+' · <b>+'+n*MIS_PREMIO+' 🌰</b></div>':'';}
+function misSesionHTML(s){var n=s.mis&&s.mis.length;return n?'<div class="feed-mis">✅ '+n+(n===1?' misión':' misiones')+' · <b>+'+n*MIS_PREMIO+' 🌰</b>'+(s.cofre?' · <b>🎁 cofre</b>':'')+'</div>':'';}
 function misionDef(id){return MISIONES_POOL.filter(function(m){return m.id===id;})[0];}
 function comprobarMisiones(){
   if(!DATA)return; var M=misionesDeHoy(), h=statsHoy(), nuevas=[];
@@ -3643,7 +3644,9 @@ function trasGuardarSesion(sesion){
   if(arbol||racha){CELEB_DIA={arbol:arbol,racha:racha};setTimeout(celebrarDia,350);}
   if(sesion&&sesion.focus!=="withered")comprobarHitoBosque();
   comprobarMisiones();
-  var mis=idsMisionesSesion(sesion);if(mis.length){sesion.mis=mis;saveUserData();renderSessionFeed();}
+  var mis=idsMisionesSesion(sesion),M=DATA.misiones;if(mis.length){sesion.mis=mis;
+    if(M.ids.length===3&&M.ids.every(function(id){return M.hechas[id];})&&mis.indexOf(M.ids.reduce(function(u,id){return M.hechas[id]>(M.hechas[u]||"")?id:u;},""))>=0)sesion.cofre=1;
+    saveUserData();renderSessionFeed();}
   comprobarEspecieLista();comprobarBibNueva(sesion);renderRacha();renderSemillas();
 }
 /* ----- Biblioteca nueva en tu mapa: el primer árbol sano en una biblioteca real (no «Sin biblioteca») donde no

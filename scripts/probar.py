@@ -1410,6 +1410,33 @@ PRUEBAS = [
       }finally{clearTimeout(irAMision.t);studyTimer.running=t0.running;studyTimer.start=t0.start;studyTimer.bibIndex=t0.bibIndex;studyTimer.tick=t0.tick;MIS_FOCO={id:'',hasta:0};
         clearTimeout(VUELO.t);VUELO.t=0;VUELO.n=VUELO.h=VUELO.z=0;VUELO.hr=null;
         k.forEach(x=>DATA[x]=o[x]);saveUserData();closeModal();el&&(el._clave=null);goView('map');await espera(300);renderMisCerca();renderStudy();renderSemillas();}"""),
+    ("historial de Estudio: la sesión que cumple la 3.ª misión del día guarda s.cofre:1 y su línea .feed-mis añade « · 🎁 cofre» en --ok-tx; las demás (y las antiguas sin la marca), nada", """
+      var k=['misiones','sessions','acciones','semillasPremio','primerArbol','hitosBosque','hitoBosquePend','especiesAvisadas','especieAvisoPend','bibNuevaPend'],o={};k.forEach(x=>o[x]=DATA[x]);
+      var st=window.showToast,ce=window.celebrar,ev=window.encolarVuelo,cd=window.celebrarDia,hoy=ymd(),ya=Date.now(),iso=m=>new Date(ya-m*60000).toISOString();
+      var mk=(n,m)=>({id:'cf'+n,date:hoy,min:5,ts:ya-m*60000,bib:NO_BIB,focus:'withered',subject:'cofre'+n,prod:3,note:''});
+      window.showToast=()=>{};window.celebrar=()=>{};window.encolarVuelo=()=>{};window.celebrarDia=()=>{};
+      try{
+        closeModal();DATA.acciones={fecha:hoy};
+        var V={id:'cfV',date:hoy,min:5,ts:ya-300*60000,bib:NO_BIB,focus:'withered',subject:'cofreV',mis:['pomo']};  // antigua: sin cofre
+        var A=mk('A',180),B=mk('B',120),C=mk('C',60),D=mk('D',30);DATA.sessions=[V,A,B,C,D];
+        DATA.misiones={fecha:hoy,ids:['m25','agenda','pomo'],hechas:{pomo:iso(150)},cofre:false};
+        trasGuardarSesion(A);if(!A.mis||A.cofre)return 'A (1.ª misión) mal: '+JSON.stringify(A);
+        DATA.misiones.hechas.agenda=iso(100);DATA.misiones.hechas.m25=iso(90);
+        trasGuardarSesion(B);if(B.cofre!==1)return 'la sesión que cierra la 3.ª misión no guarda s.cofre: '+JSON.stringify(B);
+        trasGuardarSesion(C);if(C.cofre||C.mis)return 'C, sin misiones, mal';
+        DATA.misiones={fecha:hoy,ids:['m25','agenda','pomo'],hechas:{pomo:iso(150),m25:iso(20),agenda:iso(10)},cofre:false};
+        trasGuardarSesion(D);if(!D.mis||D.cofre)return 'D marca el cofre aunque la 3.ª fue la agenda';
+        goView('study');renderSessionFeed();
+        var fila=n=>[...document.querySelectorAll('#sessionFeed .feed-item')].find(f=>f.querySelector('.fplace').innerText.indexOf('cofre'+n)>=0);
+        var lm=n=>{var f=fila(n);return f&&f.querySelector('.feed-mis');};
+        if(!lm('B')||!/✅ 1 misión · \+10 🌰 · 🎁 cofre/.test(lm('B').innerText))return 'B sin « · 🎁 cofre»: '+(lm('B')||{}).innerText;
+        var b=[...lm('B').querySelectorAll('b')].find(x=>/🎁/.test(x.textContent));
+        var t=document.createElement('i');t.style.color='var(--ok-tx)';document.body.appendChild(t);var ok=getComputedStyle(t).color;t.remove();
+        if(!b||getComputedStyle(b).color!==ok)return 'la marca no va en --ok-tx';
+        if(['A','D','V'].some(n=>!lm(n)||/cofre/.test(lm(n).innerText))||lm('C'))return 'otra sesión lleva la marca';
+        if(document.querySelectorAll('#sessionFeed .feed-mis').length!==4||[...document.querySelectorAll('#sessionFeed .feed-item')].filter(f=>/🎁/.test(f.innerText)).length!==1)return 'cofre en más de una sesión';
+        return true;
+      }finally{window.showToast=st;window.celebrar=ce;window.encolarVuelo=ev;window.celebrarDia=cd;k.forEach(x=>DATA[x]=o[x]);saveUserData();closeModal();renderSessionFeed();renderMisiones();goView('map');}"""),
     ("«Sesión terminada» con las 3 misiones y el cofre sin abrir: «🎁 Tu cofre de misiones te espera» en --suave y «Abrirlo» guarda y lleva al cofre (nada con 2/3 ni con el cofre abierto)", """
       var k=['misiones','sessions','acciones','semillasPremio','streakFreezes','cofresAbiertos','sellosMisiones'],o={};k.forEach(x=>o[x]=DATA[x]);
       var viejo=new Date(Date.now()-5*3600000).toISOString(),espera=n=>new Promise(r=>setTimeout(r,n)),hoy=ymd();
