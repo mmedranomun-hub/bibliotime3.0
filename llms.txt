@@ -1,6 +1,6 @@
 # Bibliomapa
 
-> Bibliomapa (bibliomapa.es) es una app web gratuita para estudiantes y opositores de España: mapa de 2616 bibliotecas y salas de estudio de 51 provincias con las abiertas ahora, horarios (774 comprobados en la web oficial de cada biblioteca, con fecha y fuente), afluencia indicada por los usuarios, cronómetro y Pomodoro que plantan un árbol por sesión, agenda de exámenes y estudio con amigos. Se usa sin cuenta.
+> Bibliomapa (bibliomapa.es) es una app web gratuita para estudiantes y opositores de España: mapa de 2616 bibliotecas y salas de estudio de 51 provincias con las abiertas ahora, horarios (784 comprobados en la web oficial de cada biblioteca, con fecha y fuente), afluencia indicada por los usuarios, cronómetro y Pomodoro que plantan un árbol por sesión, agenda de exámenes y estudio con amigos. Se usa sin cuenta.
 
 Datos de bibliotecas: Overture Maps Foundation y colaboradores de OpenStreetMap; horarios solo de fuentes oficiales, nunca estimados. Si una biblioteca no tiene horario verificado, la página lo dice.
 

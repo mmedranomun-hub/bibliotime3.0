@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-11-14 04:37",
+  "fecha": "2026-11-14 05:43",
   "pruebas": {
     "arranca: datos y vistas": true,
     "marca España (sin «Navarra» en la cabecera)": true,
@@ -48,6 +48,7 @@
     "con las 3 misiones hechas y el cofre sin abrir, la píldora dice «🎁 3/3», lleva al cofre y vuelve a «✅ 3/3» al abrirlo": true,
     "la barrita «· tu cofre te espera 🎁» lleva al cofre y, ya abierto, vuelve a llevar a las misiones": true,
     "«Sesión terminada» con las 3 misiones y el cofre sin abrir: «🎁 Tu cofre de misiones te espera» en --suave y «Abrirlo» guarda y lleva al cofre (nada con 2/3 ni con el cofre abierto)": true,
+    "Cerrar «Sesión terminada» con Guardar/Omitir sin «Abrirlo» y el cofre listo: el toast dice «Sesión guardada · 🎁 tu cofre te espera en Estudio» una sola vez al día (DATA.misiones.avisoCofre); nada con 2/3, con el cofre abierto ni tras «Abrirlo»": true,
     "«Sesión terminada» une la sesión con sus misiones: una línea .ses-mis «✅ <misión> · +10 🌰» por cada misión cumplida desde sesion.ts (--suave, premio en --ok-tx); nada si no cumplió ninguna; si cerró la 3.ª, «¡Misiones completadas!» en .ses-cofre": true,
     "acceso: la ley foral solo en Navarra": true,
     "especies de temporada (cruzan el año)": true,
@@ -81,13 +82,13 @@
     "política de privacidad coherente con analitica.js (proveedor null ⇔ «sin analítica»; el diff de docs/ANALITICA.md se aplica y se detecta encender sin él)": true
   },
   "errores_js": [],
-  "carga_ms_cpu4x": 444,
+  "carga_ms_cpu4x": 576,
   "carga_ms_cpu4x_min_max": [
-    421,
-    451
+    564,
+    700
   ],
-  "primera_pintura_ms_cpu4x": 212,
-  "todas_las_chinchetas_ms_cpu4x": 456,
+  "primera_pintura_ms_cpu4x": 268,
+  "todas_las_chinchetas_ms_cpu4x": 590,
   "markercluster": {
     "cargado": false,
     "agrupa": false,
@@ -97,12 +98,12 @@
   },
   "datos": {
     "bibliotecas": 2616,
-    "con_horario_verificado": 854,
+    "con_horario_verificado": 864,
     "provincias_con_horario": 51,
     "provincias_total": 51
   },
   "seo": {
-    "paginas": 1322,
+    "paginas": 1331,
     "sitemap": true
   },
   "peso": {
@@ -115,8 +116,8 @@
       "kb_gzip": 90.3
     },
     "bibliotecas-espana.js": {
-      "kb": 980.2,
-      "kb_gzip": 229.4
+      "kb": 986.3,
+      "kb_gzip": 230.6
     }
   },
   "ok": true
