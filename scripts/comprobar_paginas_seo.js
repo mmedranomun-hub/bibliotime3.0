@@ -994,6 +994,41 @@ for (const [r, h] of html) {
   }
 }
 console.log(`«Abiertas el sábado y el domingo» (provincias y localidades; cada una, ficha con horario verificado y la franja de su ficha): ${nFindePag} páginas, ${nFindeItems} elementos · mal: ${findeMal.length}${findeMal.length ? "\n" + muestra(findeMal, (r) => "  " + r) : ""}`);
+// «Horario ampliado en época de exámenes» de provincias y localidades (<section … id="examenes-epoca">, 2026-11-14): cada
+// elemento debe ser una entrada de temporada-examenes.js (mismo espacio, desde y hasta) con fuente f https y fecha fv, su
+// enlace «fuente oficial» debe ser esa f y su «comprobado el» esa fv, su periodo no puede haber pasado (hasta ≥ hoy en
+// España: si caducó, hay que regenerar y el bloque la quita) y, si el espacio va enlazado, a una ficha generada.
+const exMal = [];
+let nExPag = 0, nExItems = 0;
+const exVentana = {};
+try { new Function("window", fs.readFileSync(path.join(RAIZ, "temporada-examenes.js"), "utf8"))(exVentana); } catch (e) { exMal.push(`temporada-examenes.js no carga: ${e.message}`); }
+const exDatos = exVentana.TEMPORADA_EXAMENES || [];
+const MESES_EX = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+for (const [r, h] of html) {
+  const secs = [...h.matchAll(/<section class="ficha finde" id="examenes-epoca"[^>]*>([\s\S]*?)<\/section>/g)];
+  if (!secs.length) { if (/id="examenes-epoca"/.test(h)) exMal.push(`${r}: id="examenes-epoca" fuera del bloque esperado`); continue; }
+  nExPag++;
+  if (secs.length > 1 || (h.match(/id="examenes-epoca"/g) || []).length > 1) exMal.push(`${r}: más de un bloque examenes-epoca`);
+  const s = secs[0][1], lis = (s.match(/<li>/g) || []).length;
+  if (!/<h2 id="t-examenes-epoca">/.test(s)) exMal.push(`${r}: bloque examenes-epoca sin su h2`);
+  const items = [...s.matchAll(/<li>(?:<a href="([^"]+)">([^<]*)<\/a>|<b>([^<]*)<\/b>)(?: <small>[^<]*<\/small>)? <span class="finde-h">del <time datetime="(\d{4}-\d\d-\d\d)">[^<]*<\/time> al <time datetime="(\d{4}-\d\d-\d\d)">([^<]*)<\/time><\/span>[^<]* <small>\(<a href="([^"]+)" rel="nofollow noopener" target="_blank">fuente oficial<\/a>, comprobado el (\d\d)\/(\d\d)\/(\d{4})\)<\/small><\/li>/g)];
+  if (!lis) exMal.push(`${r}: bloque examenes-epoca sin entradas`);
+  if (items.length !== lis) exMal.push(`${r}: ${lis - items.length} elemento(s) del bloque examenes-epoca sin el formato «espacio · del … al … · horario · (fuente oficial, comprobado el …)»`);
+  for (const [, href, nomA, nomB, desde, hasta, hastaTxt, fuente, dd, mm, aaaa] of items) {
+    nExItems++;
+    const nombre = decodificaTexto(nomA !== undefined ? nomA : nomB), quien = `${r} → «${nombre}» (${desde} a ${hasta})`;
+    const e = exDatos.find((x) => x.espacio === nombre && x.desde === desde && x.hasta === hasta);
+    if (!e) { exMal.push(`${quien}: no es una entrada de temporada-examenes.js`); continue; }
+    if (!/^https:\/\//.test(e.f || "")) exMal.push(`${quien}: la entrada no tiene fuente https (f)`);
+    if (!/^\d{4}-\d\d-\d\d$/.test(e.fv || "")) exMal.push(`${quien}: la entrada no tiene fecha de comprobación (fv)`);
+    if (decodifica(fuente) !== e.f) exMal.push(`${quien}: el enlace de fuente «${decodifica(fuente)}» no es su f`);
+    if (`${aaaa}-${mm}-${dd}` !== e.fv) exMal.push(`${quien}: «comprobado el ${dd}/${mm}/${aaaa}» ≠ fv ${e.fv}`);
+    if (hasta < HOY) exMal.push(`${quien}: caducada (acabó el ${hasta}; hoy es ${HOY}): regenera las páginas`);
+    if (hastaTxt !== `${+hasta.slice(8)} de ${MESES_EX[+hasta.slice(5, 7) - 1]} de ${hasta.slice(0, 4)}`) exMal.push(`${quien}: el texto «${hastaTxt}» no es la fecha ${hasta}`);
+    if (href !== undefined && !html.has(href)) exMal.push(`${quien}: enlaza a ${href}, que no es una ficha generada`);
+  }
+}
+console.log(`«Horario ampliado en época de exámenes» (provincias y localidades; cada una, entrada vigente de temporada-examenes.js con f https y fv): ${nExPag} páginas, ${nExItems} entradas · mal: ${exMal.length}${exMal.length ? "\n" + muestra(exMal, (r) => "  " + r) : ""}`);
 // ---------- Prueba de avisar_indexnow.js contra un servidor local ----------
 // Copia avisar_indexnow.js a dos carpetas temporales («con-clave» y «sin-clave»), cada una con un generar_paginas_seo.js
 // mínimo (INDEXNOW_CLAVE ficticia o null), el .txt y un sitemap.xml de una URL. Por cada caso levanta un servidor http
@@ -1070,5 +1105,5 @@ async function probarAvisoIndexNow() {
   const t0 = Date.now();
   const [avisoMal, nCasos] = await probarAvisoIndexNow();
   console.log(`IndexNow «despliega primero» y simulación (avisar_indexnow.js --base contra servidor local, sin red real): ${nCasos - new Set(avisoMal.map((x) => x.split(" ")[0])).size} de ${nCasos} casos bien (200 con la clave → 0; 404, otro texto o servidor caído → 1; --simular y clave null → 0 sin peticiones) en ${Date.now() - t0} ms · mal: ${avisoMal.length}${avisoMal.length ? "\n" + muestra(avisoMal, (r) => "  " + r) : ""}`);
-  if (findeMal.length || cssMal.length || listaMigasMal.length || ariaActualMal.length || cpIdMal.length || refsIdMal.length || migasVisMal.length || itemMigasMal.length || avisoMal.length || vistaMal.length || analiticaMal.length || gscMal.length || indexNowMal.length || migasMal.length || mainEntityMal.length || faqMal.length || indiceMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || idAppMal.length || idNombreMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
+  if (exMal.length || findeMal.length || cssMal.length || listaMigasMal.length || ariaActualMal.length || cpIdMal.length || refsIdMal.length || migasVisMal.length || itemMigasMal.length || avisoMal.length || vistaMal.length || analiticaMal.length || gscMal.length || indexNowMal.length || migasMal.length || mainEntityMal.length || faqMal.length || indiceMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || idAppMal.length || idNombreMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
 })();

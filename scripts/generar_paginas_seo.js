@@ -1036,6 +1036,40 @@ function navExamenes(l) {
 }
 const exDeProv = (p) => exCiudades.filter((g) => g.p === p);
 const exDeLoc = (p, c) => exCiudades.filter((g) => g.locs.has(p + "|" + c));
+// «Horario ampliado en época de exámenes en <lugar>» (2026-11-14, Objetivo 4): bloque visible en provincias y localidades,
+// junto a «Abiertas el sábado y el domingo», con las entradas VIGENTES de temporada-examenes.js (EXAMENES: fuente f,
+// fecha fv, desde y hasta, y hasta ≥ HOY) de ese lugar: su ciudad/provincia o la de la biblioteca con la que casa `bib`.
+// De cada una: el espacio (enlazado a su ficha si `bib` casa con una biblioteca con ficha; si no, en texto), el periodo
+// en español («del 1 al 31 de diciembre de 2026», con <time datetime> para el comprobador), el horario y la nota tal
+// como los da la fuente, y la fuente y su fecha. Sin entradas vigentes no hay bloque, así que al regenerar después de
+// la última fecha desaparece y las páginas sin entradas no cambian (ni su huella ni su lastmod).
+// scripts/comprobar_paginas_seo.js falla si un elemento no es una entrada de temporada-examenes.js con f https y fv, si
+// su enlace de fuente no es su f o si su `hasta` ya pasó.
+const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+const fechaLarga = (iso, conMes = true, conAno = true) => `${+iso.slice(8)}${conMes ? ` de ${MESES[+iso.slice(5, 7) - 1]}` : ""}${conAno ? ` de ${iso.slice(0, 4)}` : ""}`;
+const periodoEs = (d, h) => {
+  const mismoAno = d.slice(0, 4) === h.slice(0, 4), mismoMes = mismoAno && d.slice(5, 7) === h.slice(5, 7);
+  return `del <time datetime="${d}">${fechaLarga(d, !mismoMes, !mismoAno)}</time> al <time datetime="${h}">${fechaLarga(h)}</time>`;
+};
+let nExEpoca = 0, nExEpocaItems = 0;
+function bloqueExamenes(lugar, p, c) {
+  const l = EXAMENES.map((e) => ({ e, b: bibDeEntrada(e) })).filter(({ e, b }) => /^https:\/\//.test(e.f) &&
+    (c ? (e.provincia === p && slug(e.ciudad) === slug(c)) || (b && b.p === p && b.c === c) : e.provincia === p || (b && b.p === p)))
+    .sort((x, y) => x.e.desde.localeCompare(y.e.desde) || x.e.hasta.localeCompare(y.e.hasta) || x.e.espacio.localeCompare(y.e.espacio, "es"));
+  if (!l.length) return "";
+  nExEpoca++; nExEpocaItems += l.length;
+  const items = l.map(({ e, b }) => {
+    const ficha = b && paginaDe.get(b.i), ciudad = e.ciudad !== lugar ? e.ciudad : "";
+    return `<li>${ficha ? `<a href="${ficha}">${esc(e.espacio)}</a>` : `<b>${esc(e.espacio)}</b>`}${ciudad ? ` <small>${esc(ciudad)}</small>` : ""} ` +
+      `<span class="finde-h">${periodoEs(e.desde, e.hasta)}</span>${esc(conPunto(e.horario))}${e.nota ? ` ${esc(conPunto(e.nota))}` : ""} ` +
+      `<small>(<a href="${esc(e.f)}" rel="nofollow noopener" target="_blank">fuente oficial</a>, comprobado el ${esc(fechaEs(e.fv))})</small></li>`;
+  }).join("");
+  const gs = c ? exDeLoc(p, c) : exDeProv(p);
+  return `<section class="ficha finde" id="examenes-epoca" aria-labelledby="t-examenes-epoca"><h2 id="t-examenes-epoca">Horario ampliado en época de exámenes en ${esc(lugar)}</h2>
+<p>${l.length === 1 ? "Un horario especial" : `${l.length} horarios especiales`} para exámenes, publicados en la web oficial de cada biblioteca o sala de estudio.</p>
+<ul class="finde-lista">${items}</ul>
+<p class="fuente">${gs.map((g) => `<a href="${g.ruta}">Bibliotecas en exámenes en ${esc(g.ciudad)}</a>. `).join("")}Son las fechas y franjas de cada fuente: confírmalas antes de ir.</p></section>`;
+}
 
 // ---------- Ficha: horario de verano y de exámenes (con fuente) y sus horarios especiales en JSON-LD ----------
 // Entradas vigentes de exámenes de cada biblioteca del mapa (solo si `bib` casa con una): índice → [{ e, g }].
@@ -1575,7 +1609,7 @@ provincias.forEach((p) => {
     escribe(ruta, pagina({
       ruta, titulo: tl.titulo, descripcion: dl,
       h1: `Bibliotecas en ${esc(c)}`, intro: `${l.length} bibliotecas y salas de estudio en ${esc(c)} (${esc(p)})${k.v ? `, ${k.v} con horario verificado` : ""}. En el mapa de Bibliomapa ves en tiempo real cuáles están abiertas y cuál te pilla más cerca.`,
-      cuerpo: `${navPorHorario(p, c)}${navSalas(salasDeLoc.has(p + "|" + c) ? [salasDeLoc.get(p + "|" + c)] : [])}${navExamenes(exDeLoc(p, c))}${navUniversidades((b) => b.p === p && b.c === c)}${tablaHorariosLugar(c, l)}${bloqueFinde(c, l, temaLoc["abiertas-fin-de-semana"][p + "|" + c] ? `${ruta}abiertas-fin-de-semana/` : null)}<section class="lista">${l.map((b) => tarjeta(b)).join("")}</section>${secVerif}${f.html}${seccionLocalidadesCercanas(p, c)}<p class="volver"><a href="/bibliotecas/${ps}/">← Todas las bibliotecas de ${esc(p)}</a></p>`,
+      cuerpo: `${navPorHorario(p, c)}${navSalas(salasDeLoc.has(p + "|" + c) ? [salasDeLoc.get(p + "|" + c)] : [])}${navExamenes(exDeLoc(p, c))}${navUniversidades((b) => b.p === p && b.c === c)}${tablaHorariosLugar(c, l)}${bloqueFinde(c, l, temaLoc["abiertas-fin-de-semana"][p + "|" + c] ? `${ruta}abiertas-fin-de-semana/` : null)}${bloqueExamenes(c, p, c)}<section class="lista">${l.map((b) => tarjeta(b)).join("")}</section>${secVerif}${f.html}${seccionLocalidadesCercanas(p, c)}<p class="volver"><a href="/bibliotecas/${ps}/">← Todas las bibliotecas de ${esc(p)}</a></p>`,
       migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], [p, `/bibliotecas/${ps}/`], [c, ruta]], migasId: idMigasDe(ruta), head: k.v ? ESTILO_TABLA_HOR : "",
       ld: [ldLugar(ruta, tl.nombre, dl, { ...modVerif(l), ...superiorLugar(tp.nombre, `/bibliotecas/${ps}/`), ...conMigas(ruta), ...partesLugar(p, c, { salasL: salasDeLoc.has(p + "|" + c) ? [salasDeLoc.get(p + "|" + c)] : [], exL: exDeLoc(p, c), filtroUni: (b) => b.p === p && b.c === c }), mainEntity: { "@type": "ItemList", name: `Bibliotecas en ${c}`, numberOfItems: l.length, itemListElement: l.map((b, k) => ({ "@type": "ListItem", position: k + 1, item: itemBib(b) })) } }), f.ld],
     }));
@@ -1633,7 +1667,7 @@ provincias.forEach((p) => {
   escribe(ruta, pagina({
     ruta, titulo: tp.titulo, descripcion: dp,
     h1: `Bibliotecas en ${esc(p)}`, intro: `${lista.length} bibliotecas en ${locs.length} ${locs.length === 1 ? "localidad" : "localidades"} de ${esc(p)}${k.v ? `, ${k.v} con horario verificado` : ""}. Elige tu localidad o abre el mapa para ver cuáles están abiertas ahora mismo.`,
-    cuerpo: `${enlTemas}${navSalas(salasDeProv[p])}${navExamenes(exDeProv(p))}${navUniversidades((b) => b.p === p)}<nav class="locs">${conPagina.map((c) => `<a href="/bibliotecas/${ps}/${slug(c)}/">${esc(c)} <small>${porLoc[c].length}</small></a>`).join("")}</nav>${tablaHorariosLugar(p, lista)}${bloqueFinde(p, lista, temaProv["abiertas-fin-de-semana"][p] ? `/bibliotecas/${ps}/abiertas-fin-de-semana/` : null)}${secciones}${f.html}${seccionProvinciasCercanas(p)}<p class="volver"><a href="/bibliotecas/">← Todas las provincias</a></p>`,
+    cuerpo: `${enlTemas}${navSalas(salasDeProv[p])}${navExamenes(exDeProv(p))}${navUniversidades((b) => b.p === p)}<nav class="locs">${conPagina.map((c) => `<a href="/bibliotecas/${ps}/${slug(c)}/">${esc(c)} <small>${porLoc[c].length}</small></a>`).join("")}</nav>${tablaHorariosLugar(p, lista)}${bloqueFinde(p, lista, temaProv["abiertas-fin-de-semana"][p] ? `/bibliotecas/${ps}/abiertas-fin-de-semana/` : null)}${bloqueExamenes(p, p)}${secciones}${f.html}${seccionProvinciasCercanas(p)}<p class="volver"><a href="/bibliotecas/">← Todas las provincias</a></p>`,
     migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], [p, ruta]], migasId: idMigasDe(ruta), head: k.v ? ESTILO_TABLA_HOR : "",
     ld: [ldLugar(ruta, tp.nombre, dp, { ...modVerif(lista), ...superiorLugar(NOMBRE_INDICE, "/bibliotecas/"), ...conMigas(ruta), ...partesLugar(p, null, { locs: conPagina, salasL: salasDeProv[p] || [], exL: exDeProv(p), filtroUni: (b) => b.p === p }), ...mainProv }), f.ld],
   }));
@@ -2352,6 +2386,7 @@ console.log(`FAQPage en el grafo de su CollectionPage (@id <ruta>#faq, isPartOf 
 console.log(`Provincias con ItemList de sus fichas en el JSON-LD: ${nProvItemList} de ${provincias.length} · elementos: ${nItemsProv}`);
 console.log(`Library sin ficha en los ItemList con @id = su url de la app (/#bib=…): ${nItemsIdApp} elementos, ${idsApp.size} bibliotecas`);
 console.log(`Provincias y localidades con «Abiertas el sábado y el domingo» (horario verificado): ${nFinde}`);
+console.log(`Provincias y localidades con «Horario ampliado en época de exámenes»: ${nExEpoca} (${nExEpocaItems} entradas listadas)`);
 console.log(`Localidades sin ninguna verificada con «Cerca, con horario verificado» (≤ ${RADIO_VERIF_KM} km del centroide): ${nLocsVerifCerca} · enlaces: ${nEnlacesLocVerifCerca}`);
 console.log(`Fichas con «Cerca, con horario verificado» (≤ ${RADIO_VERIF_KM} km, otra ficha): ${nFichasVerifCerca} de ${paginaDe.size} · enlaces: ${nEnlacesVerifCerca}`);
 console.log(`Navarra: ${nNavarraConHorario} de ${navarra.length} con horario publicable (fuenteHorario + verificadoHorario en app.js)`);
