@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-11-14 02:17",
+  "fecha": "2026-11-14 02:30",
   "pruebas": {
     "arranca: datos y vistas": true,
     "marca España (sin «Navarra» en la cabecera)": true,
@@ -79,13 +79,13 @@
     "política de privacidad coherente con analitica.js (proveedor null ⇔ «sin analítica»; el diff de docs/ANALITICA.md se aplica y se detecta encender sin él)": true
   },
   "errores_js": [],
-  "carga_ms_cpu4x": 512,
+  "carga_ms_cpu4x": 475,
   "carga_ms_cpu4x_min_max": [
-    471,
-    671
+    432,
+    544
   ],
-  "primera_pintura_ms_cpu4x": 240,
-  "todas_las_chinchetas_ms_cpu4x": 526,
+  "primera_pintura_ms_cpu4x": 232,
+  "todas_las_chinchetas_ms_cpu4x": 487,
   "markercluster": {
     "cargado": false,
     "agrupa": false,

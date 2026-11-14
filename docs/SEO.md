@@ -12,7 +12,7 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
 - **126 páginas estáticas** (`bibliotecas/…`): índice, 51 provincias y las localidades con 3 o más bibliotecas.
   Cada una con título propio («Bibliotecas en X: horarios y salas de estudio abiertas»), lista de bibliotecas con
   dirección, teléfono, web, horario **solo si está verificado** (con fecha y fuente), preguntas frecuentes
-  calculadas con datos reales (fin de semana, cierre tardío), migas de pan y datos estructurados
+  calculadas con datos reales (fin de semana, cierre tardío), migas de pan (lista `<ol>` con el separador « › » por CSS desde el 14-11-2026) y datos estructurados
   (`Library`, `ItemList`, `FAQPage`, `BreadcrumbList`). Cada biblioteca enlaza a su ficha en el mapa (`/#bib=<índice>`).
 - `sitemap.xml` y `robots.txt`.
 - Se regeneran con `node scripts/generar_paginas_seo.js` (hacerlo siempre que cambien datos u horarios).
