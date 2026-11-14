@@ -1398,6 +1398,32 @@ PRUEBAS = [
       }finally{clearTimeout(irAMision.t);MIS_FOCO={id:'',hasta:0};
         clearTimeout(VUELO.t);VUELO.t=0;VUELO.n=VUELO.h=VUELO.z=0;VUELO.hr=null;document.querySelectorAll('.saco-semillas,.semilla-vuela').forEach(x=>x.remove());
         k.forEach(x=>DATA[x]=o[x]);saveUserData();closeModal();goView('map');await espera(300);renderStudy();renderSemillas();}"""),
+    ("Cerrar «Sesión terminada» con Guardar/Omitir sin «Abrirlo» y el cofre listo: el toast dice «Sesión guardada · 🎁 tu cofre te espera en Estudio» una sola vez al día (DATA.misiones.avisoCofre); nada con 2/3, con el cofre abierto ni tras «Abrirlo»", """
+      var k=['misiones','sessions','acciones','semillasPremio','streakFreezes','cofresAbiertos','sellosMisiones'],o={};k.forEach(x=>o[x]=DATA[x]);
+      var viejo=new Date(Date.now()-5*3600000).toISOString(),espera=n=>new Promise(r=>setTimeout(r,n)),hoy=ymd();
+      var mk=i=>({id:'ac'+i,date:hoy,min:30,ts:Date.now()-60000,bib:NO_BIB,focus:'ok',esp:'roble',prod:null,note:''});
+      var tres=()=>({m25:viejo,agenda:viejo,pomo:viejo});
+      var abre=(hechas,cofre,aviso)=>{closeModal();document.querySelectorAll('.toast').forEach(x=>x.remove());DATA.misiones={fecha:hoy,ids:['m25','agenda','pomo'],hechas:hechas,cofre:cofre};if(aviso)DATA.misiones.avisoCofre=aviso;var s=mk(Math.random());DATA.sessions=[s];pedirValoracion(s,null);return s;};
+      var toasts=()=>[...document.querySelectorAll('.toast')].map(x=>x.textContent).join(' | ');
+      var aviso='Sesión guardada · 🎁 tu cofre te espera en Estudio';
+      try{
+        await cargarExtra();closeModal();goView('map');DATA.acciones={fecha:hoy};
+        abre({m25:viejo,agenda:viejo},false);$('sessSave').click();if(toasts()!=='Sesión guardada')return 'con 2/3 el toast cambia: '+toasts();
+        abre(tres(),true);$('sessSave').click();if(toasts()!=='Sesión guardada')return 'con el cofre abierto el toast cambia: '+toasts();
+        abre(tres(),false);$('sessSave').click();if(toasts()!==aviso)return 'Guardar no avisa del cofre: '+toasts();
+        if(DATA.misiones.avisoCofre!==hoy)return 'no apunta avisoCofre: '+DATA.misiones.avisoCofre;
+        var t=document.querySelector('.toast');if(t.querySelector('button,a'))return 'el aviso lleva botón';
+        if(/prisa|corre|pierdes|caduca|rápido/i.test(t.textContent))return 'mete presión';
+        abre(tres(),false,hoy);$('sessSave').click();if(toasts()!=='Sesión guardada')return 'insiste una 2.ª vez el mismo día: '+toasts();
+        abre(tres(),false,hoy);$('sessSkip').click();if(toasts())return 'Omitir ya avisado saca toast: '+toasts();
+        abre(tres(),false,'2000-01-01');$('sessSkip').click();if(toasts()!==aviso)return 'Omitir no avisa del cofre: '+toasts();
+        abre(tres(),false);$('sessCofre').click();await espera(50);if(toasts())return 'tras «Abrirlo» sale toast: '+toasts();
+        if(DATA.misiones.avisoCofre)return '«Abrirlo» gasta el aviso del día';
+        abre({m25:viejo,agenda:viejo},false);$('sessSkip').click();if(toasts())return 'Omitir con 2/3 saca toast: '+toasts();
+        return true;
+      }finally{clearTimeout(irAMision.t);MIS_FOCO={id:'',hasta:0};document.querySelectorAll('.toast').forEach(x=>x.remove());
+        clearTimeout(VUELO.t);VUELO.t=0;VUELO.n=VUELO.h=VUELO.z=0;VUELO.hr=null;document.querySelectorAll('.saco-semillas,.semilla-vuela').forEach(x=>x.remove());
+        k.forEach(x=>DATA[x]=o[x]);saveUserData();closeModal();goView('map');await espera(300);renderStudy();renderSemillas();}"""),
     ("«Sesión terminada» une la sesión con sus misiones: una línea .ses-mis «✅ <misión> · +10 🌰» por cada misión cumplida desde sesion.ts (--suave, premio en --ok-tx); nada si no cumplió ninguna; si cerró la 3.ª, «¡Misiones completadas!» en .ses-cofre", """
       var k=['misiones','sessions','acciones'],o={};k.forEach(x=>o[x]=DATA[x]);
       var hoy=ymd(),ts=Date.now()-30*60000,antes=new Date(ts-3600000).toISOString(),ahora=new Date().toISOString();

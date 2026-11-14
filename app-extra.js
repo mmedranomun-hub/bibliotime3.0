@@ -1132,6 +1132,11 @@ function cofreEsperaHTML(deSesion){
   return '<div class="ses-cofre"><span>'+(deSesion?'🎁 ¡Misiones completadas! Tu cofre te espera':'🎁 Tu cofre de misiones te espera')+'</span><button type="button" class="ses-cofre-b" id="sessCofre" aria-label="Abrirlo: ir a tu cofre de misiones">Abrirlo</button></div>';
 }
 
+/* ----- Si se cierra «Sesión terminada» con Guardar/Omitir sin «Abrirlo» y el cofre sigue listo, el toast «Sesión
+   guardada» lo recuerda una sola vez al día (DATA.misiones.avisoCofre=hoy, y misiones se renueva cada día). Sin botón
+   ni insistir; con «Omitir» solo sale el toast si toca este aviso. ----- */
+function avisoCofre(){var M=DATA&&DATA.misiones;if(!cofreEspera()||M.avisoCofre===ymd())return "";M.avisoCofre=ymd();saveUserData();return " · 🎁 tu cofre te espera en Estudio";}
+
 /* ----- «🌳 Dos días seguidos plantando y compartiendo» en «Sesión terminada»: solo si esta sesión se empezó
    con «▶ Empezar a estudiar» de la bienvenida que decía «📸 Ayer compartiste…» (el botón guarda en VUELTA_COMP la
    fecha de esa marca). Sale una vez: marca DATA.ultimaCompartida.vuelta=hoy. Solo premio: nada de racha en peligro.
@@ -1184,10 +1189,10 @@ function pedirValoracion(sesion,horasAntes){
         // la afluencia solo vale si la sesión acaba de terminar (no se reporta para una sesión antigua)
         if(occSel&&bibIdxDe(sesion)>=0)addOccReport(bibIdxDe(sesion),occSel,true);
         sesion.prod=sel.v||null; sesion.note=$("sessNote").value.trim();var v=vuelo();
-        saveUserData();socialShareSession(sesion);closeModal();renderProfile();renderStudy();if(alCofre)irAMision("cofre");else showToast("Sesión guardada");if(v)v();
+        saveUserData();socialShareSession(sesion);closeModal();renderProfile();renderStudy();if(alCofre)irAMision("cofre");else showToast("Sesión guardada"+avisoCofre());if(v)v();
         if(horasAntes!=null)comprobarSubidaNivel(horasAntes);
       };
-      var omitir=function(alCofre){var v=vuelo();closeModal();if(alCofre)irAMision("cofre");if(v)v();if(horasAntes!=null)comprobarSubidaNivel(horasAntes);};
+      var omitir=function(alCofre){var v=vuelo(),av=alCofre?"":avisoCofre();closeModal();if(alCofre)irAMision("cofre");else if(av)showToast("Sesión guardada"+av);if(v)v();if(horasAntes!=null)comprobarSubidaNivel(horasAntes);};
       $("sessSave").addEventListener("click",function(){guardar(false);});
       $("sessSkip").addEventListener("click",function(){omitir(false);});
       // «Abrirlo»: si ya has marcado algo (estrellas, afluencia o nota) se guarda; si no, como «Omitir»
