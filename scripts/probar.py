@@ -97,6 +97,9 @@ def servir():
     return srv
 
 
+TOPE_FICHAS_KB_GZIP = 15  # BACKLOG.md, Objetivo 8: vigilar el peso de fichas.json
+
+
 def peso(ruta):
     with open(os.path.join(RAIZ, ruta), "rb") as f:
         d = f.read()
@@ -2172,7 +2175,16 @@ async def main():
 
     paginas = sum(1 for r, d, f in os.walk(os.path.join(RAIZ, "bibliotecas")) if "index.html" in f)
     res["seo"] = {"paginas": paginas, "sitemap": os.path.exists(os.path.join(RAIZ, "sitemap.xml"))}
-    res["peso"] = {f: peso(f) for f in ("index.html", "app.js", "bibliotecas-espana.js")}
+    res["peso"] = {f: peso(f) for f in ("index.html", "app.js", "bibliotecas-espana.js", "fichas.json")}
+    # fichas.json lo baja la app en segundo plano y lo precachea sw.js: si pasa del tope, toca el formato
+    # compacto {"<prov>":{"<índice>":"<slug>"}} de BACKLOG.md (Objetivo 8), no subir el tope.
+    with open(os.path.join(RAIZ, "fichas.json"), "rb") as f:
+        fd = f.read()
+    res["peso"]["fichas.json"]["bytes"] = len(fd)
+    res["peso"]["fichas.json"]["tope_kb_gzip"] = TOPE_FICHAS_KB_GZIP
+    kg = res["peso"]["fichas.json"]["kb_gzip"]
+    res["pruebas"][f"fichas.json pesa como mucho {TOPE_FICHAS_KB_GZIP} KB gzip (si no, pasar al formato {{prov:{{índice:slug}}}})"] = (
+        True if kg <= TOPE_FICHAS_KB_GZIP else f"fichas.json pesa {kg} KB gzip ({len(fd)} bytes), tope {TOPE_FICHAS_KB_GZIP} KB")
     fallos = [k for k, v in res["pruebas"].items() if v is not True] + (["errores de JavaScript"] if errores else [])
     res["ok"] = not fallos
 
