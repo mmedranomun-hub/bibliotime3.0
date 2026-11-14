@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-11-14 05:43",
+  "fecha": "2026-11-14 08:46",
   "pruebas": {
     "arranca: datos y vistas": true,
     "marca España (sin «Navarra» en la cabecera)": true,
@@ -71,6 +71,7 @@
     "perfil: récord con el nombre bien recortado": true,
     "perfil: «📸 Compartir mi mejor sesión de la semana» sale con sesiones de los últimos 7 días y comparte la más larga; sin sesiones no sale": true,
     "wrapped: «📸 Mi mejor sesión» comparte la más larga de la semana pasada con «⭐ Mi mejor sesión de la semana»; sin sesiones sanas no sale": true,
+    "wrapped: en la tarjeta «Tu sesión más larga» el botón «📸 Compartir esta sesión» (44 px, aria-label) comparte esa sesión con TIT_MEJOR sin avanzar la historia; los lados siguen avanzando": true,
     "📸 doble toque: el botón queda desactivado con aria-busy mientras se prepara la imagen y solo se genera y comparte UNA; luego vuelve, también si se cancela la hoja": true,
     "📸 bosque: varios toques en «Compartir» del bosque → 1 dibujo y 1 hoja, botón con aria-busy; al compartir devuelve true y la bienvenida dice «Ayer compartiste tu bosque de…»": true,
     "📸 semana: «Compartir mi semana» guarda DATA.ultimaCompartida tipo 'semana' solo al compartir (no al cancelar) y mañana la bienvenida dice «Ayer compartiste tu semana de…» sin romper la vuelta": true,
@@ -79,16 +80,17 @@
     "📤 «Compartir mi semana» del perfil: si la hoja falla (NotAllowedError) descarga mi-semana.png con «No se pudo abrir compartir · imagen guardada», el botón dice «✓ Guardada» 2 s, aria-live y candado restaurado": true,
     "atajos de la app instalada (#accion=estudiar|ahora|pronto)": true,
     "analítica apagada por defecto (index.html y /bibliotecas/ cargan analitica.js con proveedor:null y no piden _vercel/insights ni goatcounter ni ponen cookies; respeta DNT/GPC y local)": true,
-    "política de privacidad coherente con analitica.js (proveedor null ⇔ «sin analítica»; el diff de docs/ANALITICA.md se aplica y se detecta encender sin él)": true
+    "política de privacidad coherente con analitica.js (proveedor null ⇔ «sin analítica»; el diff de docs/ANALITICA.md se aplica y se detecta encender sin él)": true,
+    "fichas.json pesa como mucho 15 KB gzip (si no, pasar al formato {prov:{índice:slug}})": true
   },
   "errores_js": [],
-  "carga_ms_cpu4x": 576,
+  "carga_ms_cpu4x": 597,
   "carga_ms_cpu4x_min_max": [
-    564,
-    700
+    533,
+    910
   ],
-  "primera_pintura_ms_cpu4x": 268,
-  "todas_las_chinchetas_ms_cpu4x": 590,
+  "primera_pintura_ms_cpu4x": 240,
+  "todas_las_chinchetas_ms_cpu4x": 614,
   "markercluster": {
     "cargado": false,
     "agrupa": false,
@@ -98,12 +100,12 @@
   },
   "datos": {
     "bibliotecas": 2616,
-    "con_horario_verificado": 864,
+    "con_horario_verificado": 874,
     "provincias_con_horario": 51,
     "provincias_total": 51
   },
   "seo": {
-    "paginas": 1331,
+    "paginas": 1344,
     "sitemap": true
   },
   "peso": {
@@ -116,8 +118,14 @@
       "kb_gzip": 90.3
     },
     "bibliotecas-espana.js": {
-      "kb": 986.3,
-      "kb_gzip": 230.6
+      "kb": 991.8,
+      "kb_gzip": 231.7
+    },
+    "fichas.json": {
+      "kb": 56.0,
+      "kb_gzip": 11.5,
+      "bytes": 57312,
+      "tope_kb_gzip": 15
     }
   },
   "ok": true
