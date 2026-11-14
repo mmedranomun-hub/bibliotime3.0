@@ -2073,8 +2073,15 @@ function comprobarSubidaNivel(antes){
   setTimeout(function(){
     openModal('<div class="levelup"><div class="lv-big">'+nv[2]+'</div><h3>¡Subes al nivel '+(n1+1)+'!</h3><div class="sub">Ahora eres <b>'+nv[1]+'</b>. Sigue así: tu bosque lo nota 🌳</div><button class="btn" onclick="closeModal()">¡Vamos!</button></div>',
       function(){confeti(140);});
+    nivelBrilla();
   },250);
 }
+// …y la barra de nivel de Estudio hace una vez el barrido --destello de .mis-brilla (.lv-brilla, .6 s). La clase es la
+// bandera en memoria (al recargar no está): en pausa bajo la ventana y sin correr con Estudio oculto, así espera a que se
+// vea; el animationend de lvBrilla la quita. Con «reducir movimiento», nunca.
+function nivelBrilla(){var c=$("levelCardStudy");if(!c||sinMovimiento())return;
+  if(!c._lvFin){c._lvFin=1;c.addEventListener("animationend",function(e){if(e.animationName==="lvBrilla")c.classList.remove("lv-brilla");});}
+  c.classList.add("lv-brilla");}
 function stopStudy(silent,endTs){
   if(!studyTimer.running)return;
   var sec=endTs?Math.max(0,Math.floor((endTs-studyTimer.start)/1000)):elapsedSec();

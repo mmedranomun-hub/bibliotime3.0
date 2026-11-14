@@ -847,6 +847,51 @@ PRUEBAS = [
         return true;
       }finally{window.sinMovimiento=sm;window.encolarVuelo=ev;window.celebrar=ce;window.confeti=cf;window.showToast=st;closeModal();COFRE_BRILLA=0;
         k.forEach(x=>DATA[x]=o[x]);renderMisiones();renderSemillas();}"""),
+    ("al subir de nivel, la barra de nivel de Estudio hace una vez el barrido --destello (.lv-brilla, .6 s, en pausa bajo la ventana, pendiente con Estudio oculto); nunca al recargar ni con reducir movimiento", """
+      var o=DATA.sessions,sm=window.sinMovimiento,cf=window.confeti,espera=ms=>new Promise(r=>setTimeout(r,ms));
+      var card=()=>$('levelCardStudy'),af=()=>getComputedStyle(card().querySelector('.lv-bar'),'::after'),fin=0,cuenta=e=>{if(e.animationName==='lvBrilla')fin++;};
+      // Semilla con 50 min; la sesión de 20 min la lleva a Brote (1 h)
+      var subir=async()=>{DATA.sessions=[{id:'lv0',date:ymd(),min:50,ts:Date.now()-9e6,bib:NO_BIB}];renderNivel();var h=horasTotales();
+        DATA.sessions=DATA.sessions.concat([{id:'lv1',date:ymd(),min:20,ts:Date.now()-2e6,bib:NO_BIB}]);renderNivel();comprobarSubidaNivel(h);await espera(450);};
+      window.confeti=()=>{};
+      try{
+        closeModal();goView('study');window.sinMovimiento=()=>false;card().classList.remove('lv-brilla');
+        if(card().classList.contains('lv-brilla'))return 'brilla antes de subir';
+        card().addEventListener('animationend',cuenta);
+        await subir();
+        if(!document.querySelector('#modalRoot .levelup'))return 'no sale la ventana de subida';
+        if(!card().classList.contains('lv-brilla'))return 'no brilla al subir';
+        var a=af();
+        if(a.animationName!=='lvBrilla'||Math.abs(parseFloat(a.animationDuration)-.6)>.01||a.animationIterationCount!=='1')return 'brillo mal: '+a.animationName+' '+a.animationDuration;
+        if(!/linear-gradient/.test(a.backgroundImage))return 'el brillo no es un barrido';
+        if(CSS.supports('selector(:has(a))')&&a.animationPlayState!=='paused')return 'barre debajo de la ventana: '+a.animationPlayState;
+        var css=[].map.call(document.styleSheets,sh=>{try{return [].map.call(sh.cssRules,x=>x.cssText).join(' ');}catch(e){return '';}}).join(' ');
+        if(!/\\.lv-brilla \\.lv-bar::after[^}]*var\\(--destello\\)/.test(css))return 'el brillo no usa --destello';
+        renderNivel();await espera(700);
+        if(fin!==0||!card().classList.contains('lv-brilla'))return 'barre o se pierde con la ventana abierta';
+        closeModal();
+        if(af().animationPlayState!=='running')return 'no barre al cerrar la ventana';
+        await espera(900);
+        if(fin!==1)return 'el barrido no se ve una vez al volver a Estudio: '+fin;
+        if(card().classList.contains('lv-brilla'))return 'la clase sigue tras barrer';
+        renderNivel();
+        if(card().classList.contains('lv-brilla')||af().animationName!=='none')return 'se repite al repintar';
+        card().innerHTML='';renderNivel();
+        if(card().classList.contains('lv-brilla'))return 'brilla al recargar';
+        // si Estudio está oculto al subir, el barrido espera a que se vea
+        fin=0;goView('map');await subir();closeModal();await espera(900);
+        if(fin!==0)return 'barre con Estudio oculto';
+        if(!card().classList.contains('lv-brilla'))return 'se pierde el barrido pendiente';
+        goView('study');await espera(900);
+        if(fin!==1||card().classList.contains('lv-brilla'))return 'el barrido pendiente no se ve una vez al volver a Estudio: '+fin;
+        // con reducir movimiento: ni clase, y regla @media que lo apaga
+        window.sinMovimiento=()=>true;await subir();closeModal();
+        if(card().classList.contains('lv-brilla'))return 'con reducir movimiento brilla';
+        var rm=[].some.call(document.styleSheets,sh=>{try{return [].some.call(sh.cssRules,x=>x.media&&/reduced-motion/.test(x.media.mediaText)&&/lv-brilla \\.lv-bar::after[^}]*display:\\s*none/.test(x.cssText));}catch(e){return false;}});
+        if(!rm)return 'sin regla CSS de reducir movimiento para el brillo del nivel';
+        return true;
+      }finally{window.sinMovimiento=sm;window.confeti=cf;closeModal();card().removeEventListener('animationend',cuenta);card().classList.remove('lv-brilla');
+        DATA.sessions=o;goView('study');renderNivel();}"""),
     ("el 🧊 del cofre vuela a la pastilla de la racha al cerrar la ventana (una vez, tras las 🌰; con reducir movimiento, solo la cifra)", """
       await cargarExtra();
       var k=['misiones','acciones','sellosMisiones','cofresAbiertos','semillasPremio','streakFreezes'],o={};k.forEach(x=>o[x]=DATA[x]);

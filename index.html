@@ -966,6 +966,14 @@
   .level-card .lv-bar i{display:block;height:100%;border-radius:var(--r-pill);background:var(--grad-fiesta);background-size:200% 100%;
     animation:fluye 3s linear infinite;transition:width .8s cubic-bezier(.2,.8,.3,1)}
   @keyframes fluye{to{background-position:200% 0}}
+  /* recién subido de nivel (.lv-brilla en #levelCardStudy, nivelBrilla): el barrido --destello de .mis-brilla, .6 s, una vez, por
+     toda la pista (la barra del nivel nuevo está casi vacía); en pausa bajo la ventana de la subida y, con Estudio oculto, no corre */
+  .level-card.lv-brilla .lv-bar{position:relative}
+  .level-card.lv-brilla .lv-bar::after{content:"";position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(90deg,transparent,var(--destello),transparent);transform:translateX(-100%);animation:lvBrilla .6s ease-out forwards}
+  body:has(#modalRoot .modal-bg) .level-card.lv-brilla .lv-bar::after{animation-play-state:paused}
+  @keyframes lvBrilla{to{transform:translateX(100%)}}
+  @media(prefers-reduced-motion:reduce){.level-card.lv-brilla .lv-bar::after{display:none;animation:none}}
   .level-card.mini{padding:10px 14px;margin-bottom:14px}
   .level-card.mini .lv-badge{width:40px;height:40px;font-size:var(--fs-l)}
   .levelup{text-align:center}
