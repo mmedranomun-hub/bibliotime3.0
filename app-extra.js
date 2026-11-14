@@ -431,20 +431,33 @@ async function conCandado(origen,fn){
   var motivo=false;
   try{motivo=await fn();return !!motivo;}
   catch(e){motivo=false;showToast("No se pudo preparar la imagen. Prueba otra vez");return false;}
-  finally{compartiendoImagen=false;if(b){b.disabled=false;b.removeAttribute("aria-busy");if(motivo)marcarCompartida(b,motivo);}}
+  finally{compartiendoImagen=false;var premio=motivo?premioCompartir(b):false;if(b){b.disabled=false;b.removeAttribute("aria-busy");if(motivo)marcarCompartida(b,motivo,premio);}}
+}
+/* +1 🌰 la primera vez al día que una imagen sale bien (hoja o descarga, nunca al cancelar): DATA.premioCompartir
+   guarda el «hoy» local (ymd). Devuelve true si lo da; si ya se cobró hoy, false y nada cambia (sin avisos). La 🌰
+   vuela del botón al marcador con la cola de siempre (encolarVuelo, que espera a que se cierre una ventana y con
+   «reducir movimiento» solo pone la cifra); el botón lo marca un data-premio-vuelo hasta que acaba «✓ Compartida». */
+function premioCompartir(b){
+  var hoy=ymd();if(!DATA||DATA.premioCompartir===hoy)return false;
+  DATA.premioCompartir=hoy;DATA.semillasPremio=(DATA.semillasPremio||0)+1;saveUserData();renderSemillas();
+  document.querySelectorAll("[data-premio-vuelo]").forEach(function(x){x.removeAttribute("data-premio-vuelo");});
+  if(b){b.setAttribute("data-premio-vuelo","");setTimeout(function(){b.removeAttribute("data-premio-vuelo");},COMPARTIDA_MS+4000);}
+  encolarVuelo(1,b?"[data-premio-vuelo]":"");
+  return true;
 }
 /* Premio pequeño al compartir: el botón de origen dice «✓ Compartida» (o «✓ Guardada» si el motivo es "descarga":
    no se abrió ninguna hoja, la imagen quedó en el dispositivo; solo «✓» en el 📸 cuadrado del historial)
    en verde (--ok-tx) 2 s y vuelve a su contenido exacto. Solo con motivo: si se cancela o falla, no cambia nada.
    El lector de pantalla lo oye por una región sr-solo aria-live="polite" (el texto del botón no basta: varios
-   llevan aria-label, que tapa su contenido). Un segundo true durante esos 2 s no reescribe el texto guardado. */
+   llevan aria-label, que tapa su contenido). Un segundo true durante esos 2 s no reescribe el texto guardado.
+   Con `premio` (la 🌰 del día, premioCompartir) añade « · +1 🌰» (y « · +1 semilla» al aviso); el 📸 cuadrado sigue en «✓». */
 var COMPARTIDA_MS=2000;
-function marcarCompartida(b,motivo){
-  var guardada=motivo==="descarga",v=document.getElementById("avisoCompartida");
+function marcarCompartida(b,motivo,premio){
+  var guardada=motivo==="descarga",v=document.getElementById("avisoCompartida"),mas=premio?" · +1 🌰":"";
   if(!v){v=document.createElement("span");v.id="avisoCompartida";v.className="sr-solo";v.setAttribute("aria-live","polite");document.body.appendChild(v);}
-  v.textContent="";setTimeout(function(){v.textContent=guardada?"Imagen guardada":"Imagen compartida";},50);
+  v.textContent="";setTimeout(function(){v.textContent=(guardada?"Imagen guardada":"Imagen compartida")+(premio?" · +1 semilla":"");},50);
   if(b.classList.contains("compartida"))return;
-  var antes=b.innerHTML;b.classList.add("compartida");b.textContent=b.classList.contains("feed-share")?"✓":guardada?"✓ Guardada":"✓ Compartida";
+  var antes=b.innerHTML;b.classList.add("compartida");b.textContent=b.classList.contains("feed-share")?"✓":(guardada?"✓ Guardada":"✓ Compartida")+mas;
   setTimeout(function(){b.innerHTML=antes;b.classList.remove("compartida");},COMPARTIDA_MS);
 }
 async function compartirStoryDia(origen){

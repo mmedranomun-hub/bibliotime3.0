@@ -1945,7 +1945,7 @@ PRUEBAS = [
       var s0=DATA.sessions,uc0=DATA.ultimaCompartida,fp0=FOREST_PERIOD,sh0=navigator.share,cs0=navigator.canShare,ms0=COMPARTIDA_MS,ok=null,ko=null;
       try{
         if(COMPARTIDA_MS!==2000)return 'no dura 2 s: '+COMPARTIDA_MS;
-        closeModal();FOREST_PERIOD='week';COMPARTIDA_MS=900;
+        closeModal();FOREST_PERIOD='week';COMPARTIDA_MS=900;var pc0=DATA.premioCompartir;DATA.premioCompartir=ymd(); // sin la 🌰 del día (su prueba es otra)
         navigator.canShare=()=>true;navigator.share=function(){return new Promise((a,r)=>{ok=a;ko=()=>r(Object.assign(new Error('cancelada'),{name:'AbortError'}));});};
         DATA.sessions=[{id:'ck1',date:ymd(),min:50,bib:NO_BIB,focus:'ok',esp:'roble'}];
         goView('study');renderForest();
@@ -1964,7 +1964,31 @@ PRUEBAS = [
         await new Promise(r=>setTimeout(r,800));
         if(b.innerHTML!==html0||b.classList.contains('compartida'))return 'no vuelve al texto original: '+b.innerHTML;
         return true;
-      }finally{navigator.share=sh0;navigator.canShare=cs0;COMPARTIDA_MS=ms0;compartiendoImagen=false;DATA.sessions=s0;DATA.ultimaCompartida=uc0;FOREST_PERIOD=fp0;closeModal();renderForest();goView('map');}"""),
+      }finally{DATA.premioCompartir=pc0;navigator.share=sh0;navigator.canShare=cs0;COMPARTIDA_MS=ms0;compartiendoImagen=false;DATA.sessions=s0;DATA.ultimaCompartida=uc0;FOREST_PERIOD=fp0;closeModal();renderForest();goView('map');}"""),
+    ("📸 +1 🌰 al día: el primer compartir con éxito del día suma 1 🌰 (DATA.premioCompartir = hoy) y el botón dice «✓ Compartida · +1 🌰»; cancelar no cuenta y el segundo del día no suma ni lo dice", """
+      await cargarExtra();
+      var s0=DATA.sessions,uc0=DATA.ultimaCompartida,fp0=FOREST_PERIOD,sh0=navigator.share,cs0=navigator.canShare,ms0=COMPARTIDA_MS,pc0=DATA.premioCompartir,sp0=DATA.semillasPremio,ev0=window.encolarVuelo,vuelos=[],ok=null,ko=null;
+      try{
+        closeModal();FOREST_PERIOD='week';COMPARTIDA_MS=300;window.encolarVuelo=(n,de)=>vuelos.push([n,de]);
+        var d=new Date();d.setDate(d.getDate()-1);DATA.premioCompartir=ymd(d);DATA.semillasPremio=4;
+        navigator.canShare=()=>true;navigator.share=function(){return new Promise((a,r)=>{ok=a;ko=()=>r(Object.assign(new Error('cancelada'),{name:'AbortError'}));});};
+        DATA.sessions=[{id:'pc1',date:ymd(),min:50,bib:NO_BIB,focus:'ok',esp:'roble'}];
+        goView('study');renderForest();
+        var b=[...document.querySelectorAll('#forestCard .forest-acts button')].find(x=>/Compartir/.test(x.innerText));if(!b)return 'sin botón 📸 del bosque';
+        var html0=b.innerHTML,n0=semillas(),espera=async f=>{for(var i=0;i<60&&!f();i++)await new Promise(r=>setTimeout(r,50));};
+        ko=null;b.click();await espera(()=>ko);ko();await espera(()=>!b.disabled);await new Promise(r=>setTimeout(r,60));
+        if(DATA.semillasPremio!==4||DATA.premioCompartir===ymd()||vuelos.length)return 'cancelar cuenta para el premio';
+        ok=null;b.click();await espera(()=>ok);ok();await espera(()=>b.classList.contains('compartida'));
+        if(b.innerText.trim()!=='✓ Compartida · +1 🌰')return 'no dice ✓ Compartida · +1 🌰: '+b.innerText;
+        if(DATA.semillasPremio!==5||semillas()!==n0+1)return 'no suma 1 🌰: '+DATA.semillasPremio;
+        if(DATA.premioCompartir!==ymd())return 'no guarda la fecha de hoy: '+DATA.premioCompartir;
+        if(vuelos.length!==1||vuelos[0][0]!==1||!document.querySelector(vuelos[0][1])||document.querySelector(vuelos[0][1])!==b)return 'la 🌰 no vuela desde el botón: '+JSON.stringify(vuelos);
+        await espera(()=>!b.classList.contains('compartida'));if(b.innerHTML!==html0)return 'no vuelve al texto original';
+        ok=null;b.click();await espera(()=>ok);ok();await espera(()=>b.classList.contains('compartida'));
+        if(b.innerText.trim()!=='✓ Compartida')return 'el segundo del día dice: '+b.innerText;
+        if(DATA.semillasPremio!==5||vuelos.length!==1)return 'el segundo del día suma otra 🌰';
+        return true;
+      }finally{window.encolarVuelo=ev0;navigator.share=sh0;navigator.canShare=cs0;COMPARTIDA_MS=ms0;compartiendoImagen=false;DATA.sessions=s0;DATA.ultimaCompartida=uc0;DATA.premioCompartir=pc0;DATA.semillasPremio=sp0;FOREST_PERIOD=fp0;closeModal();renderForest();renderSemillas();goView('map');}"""),
     ("📸 ✓ Guardada: sin navigator.share descarga y el botón dice «✓ Guardada»; si la hoja falla con NotAllowedError, descarga igual con «No se pudo abrir compartir · imagen guardada»; cancelar no descarga", """
       await cargarExtra();
       var s0=DATA.sessions,uc0=DATA.ultimaCompartida,fp0=FOREST_PERIOD,sh0=navigator.share,cs0=navigator.canShare,st0=window.showToast,ms0=COMPARTIDA_MS,toasts=[],bajadas=[];
@@ -1972,7 +1996,7 @@ PRUEBAS = [
       document.addEventListener('click',pilla,true);
       var espera=async f=>{for(var i=0;i<60&&!f();i++)await new Promise(r=>setTimeout(r,50));};
       try{
-        closeModal();FOREST_PERIOD='week';COMPARTIDA_MS=900;window.showToast=m=>toasts.push(m);DATA.ultimaCompartida=null;
+        closeModal();FOREST_PERIOD='week';COMPARTIDA_MS=900;window.showToast=m=>toasts.push(m);DATA.ultimaCompartida=null;var pc0=DATA.premioCompartir;DATA.premioCompartir=ymd();
         DATA.sessions=[{id:'cg1',date:ymd(),min:40,bib:NO_BIB,focus:'ok',esp:'roble'}];
         var cv=document.createElement('canvas');cv.width=cv.height=4;
         navigator.canShare=undefined;navigator.share=undefined;
@@ -2000,7 +2024,7 @@ PRUEBAS = [
         if(b.innerText.trim()!=='✓ Guardada')return 'con NotAllowedError no dice ✓ Guardada: '+b.innerText;
         if(b.disabled||b.hasAttribute('aria-busy'))return 'el candado no se restaura';
         return true;
-      }finally{document.removeEventListener('click',pilla,true);navigator.share=sh0;navigator.canShare=cs0;window.showToast=st0;COMPARTIDA_MS=ms0;compartiendoImagen=false;DATA.sessions=s0;DATA.ultimaCompartida=uc0;FOREST_PERIOD=fp0;closeModal();renderForest();goView('map');}"""),
+      }finally{DATA.premioCompartir=pc0;document.removeEventListener('click',pilla,true);navigator.share=sh0;navigator.canShare=cs0;window.showToast=st0;COMPARTIDA_MS=ms0;compartiendoImagen=false;DATA.sessions=s0;DATA.ultimaCompartida=uc0;FOREST_PERIOD=fp0;closeModal();renderForest();goView('map');}"""),
     ("📤 «Compartir mi semana» del perfil: si la hoja falla (NotAllowedError) descarga mi-semana.png con «No se pudo abrir compartir · imagen guardada», el botón dice «✓ Guardada» 2 s, aria-live y candado restaurado", """
       await cargarExtra();
       var s0=DATA.sessions,sh0=navigator.share,cs0=navigator.canShare,st0=window.showToast,ms0=COMPARTIDA_MS,toasts=[],bajadas=[],shares=0;
@@ -2008,7 +2032,7 @@ PRUEBAS = [
       document.addEventListener('click',pilla,true);
       var espera=async f=>{for(var i=0;i<60&&!f();i++)await new Promise(r=>setTimeout(r,50));};
       try{
-        closeModal();COMPARTIDA_MS=900;window.showToast=m=>toasts.push(m);
+        closeModal();COMPARTIDA_MS=900;window.showToast=m=>toasts.push(m);var pc0=DATA.premioCompartir;DATA.premioCompartir=ymd();
         DATA.sessions=[{id:'sw1',date:ymd(),min:75,bib:NO_BIB,focus:'ok',esp:'roble',subject:'Mates'}];
         goView('profile');await new Promise(r=>setTimeout(r,200));
         var b=document.getElementById('btnShareWeek');if(!b)return 'sin #btnShareWeek';
@@ -2030,7 +2054,7 @@ PRUEBAS = [
         b.click();await espera(()=>b.classList.contains('compartida'));
         if(b.innerText.trim()!=='✓ Compartida')return 'con la hoja abierta no dice ✓ Compartida: '+b.innerText;
         return true;
-      }finally{document.removeEventListener('click',pilla,true);navigator.share=sh0;navigator.canShare=cs0;window.showToast=st0;COMPARTIDA_MS=ms0;compartiendoImagen=false;DATA.sessions=s0;goView('map');}"""),
+      }finally{DATA.premioCompartir=pc0;document.removeEventListener('click',pilla,true);navigator.share=sh0;navigator.canShare=cs0;window.showToast=st0;COMPARTIDA_MS=ms0;compartiendoImagen=false;DATA.sessions=s0;goView('map');}"""),
 ]
 
 
