@@ -823,6 +823,21 @@ let indexNowClave = null;
   }
 }
 
+// Copias de la misma Library: cada item de un ItemList de otra página (provincias, localidades, temáticas, salas…) con
+// @id <ficha>#biblioteca debe llevar el mismo name, url, geo y address que la Library de nivel superior de esa ficha
+// (libDe), para que las dos copias de una entidad no se contradigan. Comparación sin orden de claves. Por familia.
+const canon = (v) => v && typeof v === "object" ? (Array.isArray(v) ? `[${v.map(canon).join(",")}]` : `{${Object.keys(v).sort().map((k) => JSON.stringify(k) + ":" + canon(v[k])).join(",")}}`) : JSON.stringify(v);
+const copiaMal = [], copiaMalFam = {}, nCopiasFam = {};
+for (const [ruta, it] of itemsLista) {
+  const id = it["@id"] || "";
+  if (!id.startsWith(DOMINIO + "/bibliotecas/") || !id.endsWith("#biblioteca")) continue;
+  const f = id.slice(DOMINIO.length, -"#biblioteca".length);
+  if (f === ruta) continue;
+  const fam = familiaMigas(ruta), lib = libDe.get(f);
+  nCopiasFam[fam] = (nCopiasFam[fam] || 0) + 1;
+  const dif = lib ? ["name", "url", "geo", "address"].filter((k) => canon(it[k]) !== canon(lib[k])) : ["ficha sin Library #biblioteca"];
+  if (dif.length) { copiaMal.push(`${ruta} (${fam}) → ${f}: distinto ${dif.join(", ")}`); copiaMalFam[fam] = (copiaMalFam[fam] || 0) + 1; }
+}
 const muestra = (l, f) => l.slice(0, 15).map(f).join("\n") + (l.length > 15 ? `\n  … y ${l.length - 15} más` : "");
 console.log(`Páginas: ${html.size} · enlaces internos: ${nEnlaces}`);
 console.log(`Enlaces rotos: ${rotos.length}${rotos.length ? "\n" + muestra(rotos, ([r, u]) => `  ${r} → ${u}`) : ""}`);
@@ -848,6 +863,7 @@ console.log(`Migas como lista (<nav class="migas"><ol><li>, «›» solo por CSS
 console.log(`Última miga con aria-current="page" (<span> de la propia página, una sola vez por <nav class="migas">) en las indexables: ${Object.values(nAriaActual).reduce((a, b) => a + b, 0)} (${porFam(nAriaActual)}) · mal: ${ariaActualMal.length}${ariaActualMal.length ? "\n" + muestra(ariaActualMal, (r) => "  " + r) : ""}`);
 console.log(`CollectionPage de la propia página con @id <ruta>#pagina: ${Object.values(nCpId).reduce((a, b) => a + b, 0)} (${porFam(nCpId)}) · sin él: ${cpIdMal.length}${cpIdMal.length ? "\n" + muestra(cpIdMal, (r) => "  " + r) : ""}`);
 console.log(`isPartOf/hasPart e item de ItemList/BreadcrumbList a otra página con el @id de su nodo (que existe en la página destino, con la misma url): ${refsId.nConId} de ${refsId.nRefs} (items objeto: ${porFam(refsId.nItems)}; items que son solo URL, sin nodo: ${porFam(refsId.nItemsTexto)}) · mal: ${refsIdMal.length}${refsIdMal.length ? "\n" + muestra(refsIdMal, (r) => "  " + r) : ""}`);
+console.log(`Copias en ItemList de la Library de una ficha (@id <ficha>#biblioteca) con el mismo name, url, geo y address que en su ficha: ${Object.values(nCopiasFam).reduce((a, b) => a + b, 0) - copiaMal.length} de ${Object.values(nCopiasFam).reduce((a, b) => a + b, 0)} (${porFam(nCopiasFam)}) · distintas: ${copiaMal.length}${copiaMal.length ? ` (${porFam(copiaMalFam)})\n` + muestra(copiaMal, (r) => "  " + r) : ""}`);
 console.log(`mainEntityOfPage de las fichas (WebPage #pagina about Library #biblioteca y Library mainEntityOfPage → #pagina): ${nFichaMainEntity} de ${fichas.size} bien · mal: ${mainEntityMal.length}${mainEntityMal.length ? "\n" + muestra(mainEntityMal, (r) => "  " + r) : ""}`);
 console.log(`FAQPage en el grafo de su página (@id #faq, isPartOf → #pagina de la misma URL): fichas (WebPage) ${nFichaFaqBien} de ${nFichaFaq} bien, con hasPart #faq recíproco ${nFichaHasPart} · demás páginas (CollectionPage) ${nOtraFaqBien} de ${nOtraFaq} bien · mal: ${faqMal.length}${faqMal.length ? "\n" + muestra(faqMal, (r) => "  " + r) : ""}`);
 console.log(`Huérfanas (sin enlace desde otra página generada): ${huerfanas.length}${huerfanas.length ? "\n" + muestra(huerfanas, (r) => "  " + r) : ""}`);
@@ -1159,5 +1175,5 @@ async function probarAvisoIndexNow() {
   const t0 = Date.now();
   const [avisoMal, nCasos] = await probarAvisoIndexNow();
   console.log(`IndexNow «despliega primero» y simulación (avisar_indexnow.js --base contra servidor local, sin red real): ${nCasos - new Set(avisoMal.map((x) => x.split(" ")[0])).size} de ${nCasos} casos bien (200 con la clave → 0; 404, otro texto o servidor caído → 1; --simular y clave null → 0 sin peticiones) en ${Date.now() - t0} ms · mal: ${avisoMal.length}${avisoMal.length ? "\n" + muestra(avisoMal, (r) => "  " + r) : ""}`);
-  if (exMal.length || findeMal.length || findeCercaMal.length || cssMal.length || listaMigasMal.length || ariaActualMal.length || cpIdMal.length || refsIdMal.length || migasVisMal.length || itemMigasMal.length || avisoMal.length || vistaMal.length || analiticaMal.length || gscMal.length || indexNowMal.length || migasMal.length || mainEntityMal.length || faqMal.length || indiceMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || idAppMal.length || idNombreMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
+  if (exMal.length || findeMal.length || findeCercaMal.length || cssMal.length || listaMigasMal.length || ariaActualMal.length || cpIdMal.length || refsIdMal.length || migasVisMal.length || itemMigasMal.length || avisoMal.length || vistaMal.length || analiticaMal.length || gscMal.length || indexNowMal.length || migasMal.length || mainEntityMal.length || copiaMal.length || faqMal.length || indiceMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || idAppMal.length || idNombreMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
 })();

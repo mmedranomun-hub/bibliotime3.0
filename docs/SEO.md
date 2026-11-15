@@ -456,6 +456,16 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
   (salen de la misma lista `migas` en `pagina()`); probado a romper texto, destino, número, `position`, `noindex` y
   sitemap del destino → salida 1 en los 6.
 
+## Hecho (2026-11-15) · Copias de la `Library` de una ficha en los `ItemList` = su ficha (solo cambia el comprobador)
+- `comprobar_paginas_seo.js` (línea «Copias en ItemList de la Library de una ficha…») toma cada item `Library` de un
+  `ItemList` de otra página con `@id` `<ficha>#biblioteca` y compara `name`, `url`, `geo` y `address` (sin importar el
+  orden de las claves) con la `Library` de nivel superior de esa ficha (`libDe`). Por familia; cualquier diferencia, o
+  una ficha sin su `Library`, es fallo (salida 1). Hoy: 6217 de 6217 iguales (temática 4926 · provincia 846 · sala de
+  estudio 187 · localidad 169 · universidad 76 · exámenes 13), 0 distintas: lista y ficha salen de la misma
+  `libraryLD(b, url)` (vía `itemBib`), así que el generador no cambia. Probado subiendo a mano 0,01 la `latitude` de la
+  Biblioteca Nacional en `/bibliotecas/madrid/` → «distintas: 1 (provincia 1) … distinto geo» y salida 1.
+- Sin páginas regeneradas con cambios: 0 URL del sitemap cambian de `lastmod` (la huella sha1 de cada página no se mueve).
+
 ## Hecho (2026-11-14) · «Abiertas el sábado y el domingo en <lugar>» en provincias y localidades (sin cambio de número)
 - Contenido visible para «bibliotecas abiertas en <ciudad>» en exámenes, cuando se estudia el fin de semana. Debajo de
   la tabla «Horarios verificados» (`#horarios`), `bloqueFinde()` añade `<section class="ficha finde" id="fin-de-semana">`
