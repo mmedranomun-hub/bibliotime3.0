@@ -1056,6 +1056,33 @@ PRUEBAS = [
         c=document.querySelector('.pill-hielo');if(!c||c.textContent.trim()!=='🧊 1'||c.classList.contains('ph-rebote')||c._nuevo!=='racha')return 'con reducir movimiento no da solo la cifra';
         return true;
       }finally{window.sinMovimiento=sm;window.volarHielo=vh;k.forEach(x=>DATA[x]=o[x]);closeModal();limpia();renderRacha();}"""),
+    ("con 3 de 3 🧊, el hito de 7 días seguidos dice «🔥 7 días seguidos · tus 3 🧊 te cubren» y la pastilla de la racha solo rebota (svRebote, sin vuelo), una vez y no al recargar; quieta con reducir movimiento", """
+      await cargarExtra();
+      var k=['sessions','streakFreezes','usedFreezeDates','lastFreezeEarnedAtStreak'],o={};k.forEach(x=>o[x]=DATA[x]);
+      var espera=ms=>new Promise(r=>setTimeout(r,ms)),st=window.showToast,sm=window.sinMovimiento,vh=window.volarHielo,vuelos=[],avisos=[];
+      var limpia=()=>{document.querySelectorAll('.pill-hielo,.hielo-vuela').forEach(x=>x.remove());$('streakPill').classList.remove('sp-rebote');};
+      var hace=n=>{var d=new Date();d.setDate(d.getDate()-n);return ymd(d);};
+      var hito=()=>{var ss=[];for(var i=0;i<7;i++)ss.push({id:'zt'+i,date:hace(i),min:30,ts:Date.now()-i*864e5,bib:NO_BIB});
+        DATA.sessions=ss;DATA.usedFreezeDates=[];DATA.streakFreezes=3;DATA.lastFreezeEarnedAtStreak=0;renderRacha();checkStreakFreezes();};
+      window.volarHielo=function(){vuelos.push(1);return vh.apply(this,arguments);};
+      window.showToast=t=>{avisos.push(t);return {};};
+      try{
+        closeModal();goView('study');while(VUELO.t||VUELO.n||VUELO.h)await espera(250);await espera(1500);limpia();
+        hito();
+        if(avisos.join('|')!=='🔥 7 días seguidos · tus 3 🧊 te cubren')return 'aviso: '+avisos.join('|');
+        if(DATA.streakFreezes!==3||DATA.lastFreezeEarnedAtStreak!==7)return 'cambia los 🧊 o no guarda la marca: '+[DATA.streakFreezes,DATA.lastFreezeEarnedAtStreak];
+        await espera(500);
+        var p=$('streakPill');
+        if(!p.classList.contains('sp-rebote')||getComputedStyle(p).animationName.split(',').indexOf('svRebote')<0)return 'la pastilla no rebota: '+getComputedStyle(p).animationName;
+        if(vuelos.length||document.querySelector('.hielo-vuela,.pill-hielo'))return 'vuela un 🧊 que no existe';
+        await espera(800);if(p.classList.contains('sp-rebote'))return 'el rebote no se acaba';
+        avisos=[];checkStreakFreezes();await espera(500);
+        if(avisos.length||p.classList.contains('sp-rebote'))return 'se repite al recargar: '+avisos.join('|');
+        if(/falta|pierdes|perder/i.test(avisos.join('')))return 'mete presión';
+        window.sinMovimiento=()=>true;avisos=[];hito();await espera(500);
+        if(avisos.length!==1||p.classList.contains('sp-rebote'))return 'con reducir movimiento no queda quieta (o sin aviso)';
+        return true;
+      }finally{window.showToast=st;window.sinMovimiento=sm;window.volarHielo=vh;k.forEach(x=>DATA[x]=o[x]);closeModal();limpia();renderRacha();}"""),
     ("cuando un 🧊 salva la racha, la pastilla enseña «🧊 ✓» un instante en azul calmado (sin hablar del día perdido; con reducir movimiento, quieta)", """
       await cargarExtra();
       var k=['sessions','streakFreezes','usedFreezeDates','lastFreezeEarnedAtStreak'],o={};k.forEach(x=>o[x]=DATA[x]);

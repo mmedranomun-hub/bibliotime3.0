@@ -2557,6 +2557,13 @@ function checkStreakFreezes(){
     saveUserData();
     showToast("🧊 Has ganado un congelador de racha (racha de "+earnedAt+" días)"+(DATA.streakFreezes>=3?" · ya tienes el máximo (3)":"")).id="toastHielo"; // con 3, se entiende por qué el próximo múltiplo de 7 no da otro (comoHielo)
     encolarVuelo(0,"#toastHielo",1,"racha"); // y ese 🧊 vuela del aviso a la pastilla de la racha, como el del cofre
+  }else if(earnedAt>0&&earnedAt>DATA.lastFreezeEarnedAtStreak){
+    // Ya tenía los 3 🧊: no hay otro, pero el hito de 7/14/21… días se celebra igual (sin vuelo, solo un rebote de la pastilla).
+    // La misma marca (lastFreezeEarnedAtStreak) evita que se repita al recargar.
+    DATA.lastFreezeEarnedAtStreak=earnedAt;
+    saveUserData();
+    showToast("🔥 "+earnedAt+" días seguidos · tus 3 🧊 te cubren").id="toastHielo";
+    VUELO.rr=1;if(!VUELO.t)VUELO.t=setTimeout(soltarVuelo,300); // espera, como los vuelos, a que no haya ventana abierta (reboteRacha)
   }
   // Hueco de uno o más días sin estudiar justo antes de hoy: se cubre si hay congeladores para todos.
   var used=DATA.usedFreezeDates=DATA.usedFreezeDates||[];
@@ -3542,14 +3549,14 @@ function comprobarMisiones(){
 // El 🧊 del cofre (h) va en la misma cola: sale justo detrás de las 🌰, hacia la pastilla de la racha (volarHielo).
 // ho = de dónde sale el 🧊 («cofre» o «racha», cada 7 días seguidos) y hd, el selector de su salida si no hay 🌰 (el aviso).
 // Si un congelador salvó la racha (z), la pastilla enseña «🧊 ✓» cuando no haya ventana abierta (hieloSalva).
-var VUELO={n:0,de:"",t:0,h:0,hr:null,z:0,ho:"",hd:""},VUELO_FIN=0;
+var VUELO={n:0,de:"",t:0,h:0,hr:null,z:0,rr:0,ho:"",hd:""},VUELO_FIN=0;
 function encolarVuelo(n,de,h,ho){VUELO.n+=n;if(n||!h)VUELO.de=de;if(h){VUELO.h+=h;VUELO.ho=ho||"cofre";if(!n)VUELO.hd=de;}if(!VUELO.t)VUELO.t=setTimeout(soltarVuelo,300);}
 function soltarVuelo(){
-  VUELO.t=0;if(!VUELO.n&&!VUELO.h&&!VUELO.z)return;
+  VUELO.t=0;if(!VUELO.n&&!VUELO.h&&!VUELO.z&&!VUELO.rr)return;
   if($("modalRoot").innerHTML||Date.now()<VUELO_FIN||document.querySelector(".semilla-vuela,.saco-semillas,.racha-overlay")){VUELO.t=setTimeout(soltarVuelo,700);return;}
-  var z,n=VUELO.n,h=VUELO.h,hr=VUELO.hr,ho=VUELO.ho,o=VUELO.de&&document.querySelector(VUELO.de),r=o&&o.getBoundingClientRect(),hd=VUELO.hd&&document.querySelector(VUELO.hd);
-  if(VUELO.hd)r=n?r:hd&&hd.getBoundingClientRect();z=VUELO.z;VUELO.n=VUELO.h=VUELO.z=0;VUELO.hr=null;VUELO.hd="";
-  cargarExtra().then(function(){if(n)volarSemillas(r,n);if(h)volarHielo(hr||r,n?250:0,ho);if(z)hieloSalva();},function(){});
+  var z,rr,n=VUELO.n,h=VUELO.h,hr=VUELO.hr,ho=VUELO.ho,o=VUELO.de&&document.querySelector(VUELO.de),r=o&&o.getBoundingClientRect(),hd=VUELO.hd&&document.querySelector(VUELO.hd);
+  if(VUELO.hd)r=n?r:hd&&hd.getBoundingClientRect();z=VUELO.z;rr=VUELO.rr;VUELO.n=VUELO.h=VUELO.z=VUELO.rr=0;VUELO.hr=null;VUELO.hd="";
+  cargarExtra().then(function(){if(n)volarSemillas(r,n);if(h)volarHielo(hr||r,n?250:0,ho);if(z)hieloSalva();if(rr)reboteRacha();},function(){});
 }
 // Misión de minutos recién cumplida con «Misiones de hoy» a la vista: su barra termina de llenarse (del ~90 % que se
 // veía al 100 %, con la transición de .8 s de .mis-bar i) y luego pasa a ✅. MIS_LLENA[fecha|id] = hasta cuándo se

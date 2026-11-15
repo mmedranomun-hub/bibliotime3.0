@@ -1123,7 +1123,8 @@ function estilosVueloHielo(){
     '.pill-hielo::before{content:"";position:absolute;left:50%;top:50%;width:max(100%,44px);height:max(100%,44px);transform:translate(-50%,-50%)}'+
     '.pill-hielo:focus-visible{outline:2px solid var(--acento);outline-offset:2px}'+
     '.pill-hielo.fuera{opacity:0;pointer-events:none}.pill-hielo.ph-rebote{animation:svRebote .55s cubic-bezier(.34,1.56,.64,1)}'+
-    '@media (prefers-reduced-motion:reduce){.pill-hielo{transition:none}.pill-hielo.ph-rebote{animation:none}}';
+    '.streak-pill.sp-rebote{animation:svRebote .55s cubic-bezier(.34,1.56,.64,1)}'+
+    '@media (prefers-reduced-motion:reduce){.pill-hielo{transition:none}.pill-hielo.ph-rebote,.streak-pill.sp-rebote{animation:none}}';
   document.head.appendChild(st);
 }
 function marcarHieloRacha(p,t,ho){
@@ -1141,6 +1142,12 @@ function marcarHieloRacha(p,t,ho){
 // Un congelador ha salvado la racha: la pastilla enseña «🧊 ✓» un instante, en calma (sin hablar del día que faltó).
 function hieloSalva(){
   if(!DATA)return;estilosVueloHielo();var p=$("streakPill");if(p&&p.offsetWidth)marcarHieloRacha(p,"🧊 ✓");
+}
+// Hito de 7/14/21… días con los 3 🧊 ya guardados: no vuela nada, la pastilla de la racha rebota una vez (svRebote). Quieta con «reducir movimiento».
+function reboteRacha(){
+  if(!DATA)return;estilosVueloHielo();var p=$("streakPill");if(!p||!p.offsetWidth||sinMovimiento())return;
+  p.classList.remove("sp-rebote");void p.offsetWidth;p.classList.add("sp-rebote");
+  setTimeout(function(){p.classList.remove("sp-rebote");},700);
 }
 function volarHielo(desde,espera,ho){
   if(!DATA)return;estilosVueloSemillas();estilosVueloHielo();
