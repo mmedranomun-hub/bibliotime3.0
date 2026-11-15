@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-11-15 13:44",
+  "fecha": "2026-11-15 15:30",
   "pruebas": {
     "arranca: datos y vistas": true,
     "marca España (sin «Navarra» en la cabecera)": true,
@@ -96,13 +96,13 @@
     "fichas.json pesa como mucho 15 KB gzip (si no, pasar al formato {prov:{índice:slug}})": true
   },
   "errores_js": [],
-  "carga_ms_cpu4x": 539,
+  "carga_ms_cpu4x": 586,
   "carga_ms_cpu4x_min_max": [
-    516,
-    676
+    485,
+    605
   ],
-  "primera_pintura_ms_cpu4x": 268,
-  "todas_las_chinchetas_ms_cpu4x": 552,
+  "primera_pintura_ms_cpu4x": 220,
+  "todas_las_chinchetas_ms_cpu4x": 601,
   "markercluster": {
     "cargado": false,
     "agrupa": false,
