@@ -6,7 +6,7 @@
    Solo cuenta páginas vistas (ruta sin ?consulta ni #ancla) y UN evento agregado sin parámetros (EVENTOS, abajo):
    nada del modo estudio, ningún id de biblioteca, ningún dato personal. No carga nada con «No rastrear» (DNT) o
    Global Privacy Control, ni en local. Apagada, analiticaEvento() no hace nada y devuelve false. */
-var ANALITICA = {proveedor: null};
+var ANALITICA = {proveedor: "vercel"};
 
 /* Decide qué script cargar (o null). Pura y sin efectos: la usan las pruebas. */
 function analiticaDecidir(conf, ent) {

@@ -2581,15 +2581,15 @@ async def main():
                 fallo_cab += await p8.evaluate(COMPROBAR_CAB, tema + " otra chincheta")
             await c8.close()
         res["pruebas"]["/#bib=<i>-x&o=c a 390×844 (claro y oscuro): la ficha y su × (≥ 44 px) quedan enteras bajo la cabecera fija y dentro de la pantalla; otra chincheta después, igual"] = True if not fallo_cab else "; ".join(fallo_cab)
-        # --- analítica sin cookies (docs/ANALITICA.md): preparada pero APAGADA ---
+        # --- analítica sin cookies (docs/ANALITICA.md): ENCENDIDA con Vercel desde el 15-11-2026 (en local no carga nada) ---
         # index.html y las páginas SEO (/bibliotecas/…) cargan analitica.js por su cuenta; se comprueba en las dos que el
         # archivo se descarga, define ANALITICA/analiticaDecidir y no pide ninguna URL de proveedor ni pone cookies.
         fallo_an = []
         fuente_an = open(os.path.join(RAIZ, "analitica.js"), encoding="utf-8").read() if os.path.exists(os.path.join(RAIZ, "analitica.js")) else ""
         if not fuente_an:
             fallo_an.append("no existe analitica.js")
-        elif not __import__("re").search(r"var ANALITICA\s*=\s*\{\s*proveedor\s*:\s*null\s*\}", fuente_an):
-            fallo_an.append("analitica.js no tiene {proveedor:null} por defecto")
+        elif not __import__("re").search(r"var ANALITICA\s*=\s*\{\s*proveedor\s*:\s*\"vercel\"\s*\}", fuente_an):
+            fallo_an.append("analitica.js no tiene {proveedor:\"vercel\"}")
         if fuente_an:
             c4, p4 = await nueva_pagina()
             pedidas = []
@@ -2602,19 +2602,19 @@ async def main():
                 await p4.goto(f"http://127.0.0.1:{PUERTO}{ruta_an}")
                 await p4.wait_for_timeout(1500)
                 est = await p4.evaluate("""()=>({tag:document.querySelectorAll('script[src$="analitica.js"]').length,
-                  fn:typeof analiticaDecidir==='function'&&typeof ANALITICA==='object'&&ANALITICA.proveedor===null,
+                  fn:typeof analiticaDecidir==='function'&&typeof ANALITICA==='object'&&ANALITICA.proveedor==='vercel',
                   cookie:document.cookie,va:!!(window.va||window.goatcounter)})""")
                 if est["tag"] != 1 or cargado != [200]:
                     fallo_an.append(f"{ruta_an} no carga analitica.js (etiquetas {est['tag']}, respuestas {cargado})")
                 elif not est["fn"]:
-                    fallo_an.append(f"{ruta_an}: analitica.js no se ejecuta o no está apagada")
+                    fallo_an.append(f"{ruta_an}: analitica.js no se ejecuta o no está en Vercel")
                 if est["cookie"]:
                     fallo_an.append(f"{ruta_an} pone cookies: {est['cookie'][:60]}")
                 if est["va"]:
                     fallo_an.append(f"{ruta_an} ha tocado window.va/goatcounter")
             casos = await p4.evaluate("""()=>{
               var web={protocolo:'https:',host:'bibliomapa.es'},m=Object.assign,D=analiticaDecidir,f=[];
-              if(D(ANALITICA,web)!==null)f.push('por defecto no es null');
+              var a=D(ANALITICA,web);if(!a||a.src!=='/_vercel/insights/script.js')f.push('en bibliomapa.es no carga Vercel: '+JSON.stringify(a));
               var v=D({proveedor:'vercel'},web);if(!v||v.src!=='/_vercel/insights/script.js')f.push('vercel: '+JSON.stringify(v));
               var g=D({proveedor:'goatcounter',codigo:'bibliomapa'},web);if(!g||g.goatcounter!=='https://bibliomapa.goatcounter.com/count')f.push('goatcounter: '+JSON.stringify(g));
               if(D({proveedor:'goatcounter'},web))f.push('goatcounter sin código carga');
@@ -2629,7 +2629,7 @@ async def main():
             if pedidas:
                 fallo_an.append("pide: " + ", ".join(pedidas))
             await c4.close()
-        res["pruebas"]["analítica apagada por defecto (index.html y /bibliotecas/ cargan analitica.js con proveedor:null y no piden _vercel/insights ni goatcounter ni ponen cookies; respeta DNT/GPC y local)"] = True if not fallo_an else "; ".join(fallo_an)
+        res["pruebas"]["analítica con Vercel (index.html y /bibliotecas/ cargan analitica.js con proveedor vercel; en local no piden _vercel/insights ni goatcounter ni ponen cookies; respeta DNT/GPC y local)"] = True if not fallo_an else "; ".join(fallo_an)
         # Sin navegador: encender la analítica sin cambiar privacidad.html (o al revés) hace fallar esta prueba.
         res["pruebas"]["política de privacidad coherente con analitica.js (proveedor null ⇔ «sin analítica»; el diff de docs/ANALITICA.md se aplica y se detecta encender sin él)"] = comprobar_privacidad_analitica()
         # --- datos y SEO (desde la propia app) ---
