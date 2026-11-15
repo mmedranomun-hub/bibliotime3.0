@@ -1165,12 +1165,16 @@ function avisoCofre(){var M=DATA&&DATA.misiones;if(!cofreEspera()||M.avisoCofre=
 /* ----- «🌳 Dos días seguidos plantando y compartiendo» en «Sesión terminada»: solo si esta sesión se empezó
    con «▶ Empezar a estudiar» de la bienvenida que decía «📸 Ayer compartiste…» (el botón guarda en VUELTA_COMP la
    fecha de esa marca). Sale una vez: marca DATA.ultimaCompartida.vuelta=hoy. Solo premio: nada de racha en peligro.
-   Con árbol marchito no sale ni gasta la vuelta (la siguiente sesión sana de esta visita la recoge). Sin animación. ----- */
+   Con árbol marchito no sale ni gasta la vuelta: se guarda en DATA.vueltaPendiente={fecha:hoy,comp} para que la
+   primera sesión sana de HOY la recoja aunque se recargue la app (otro día ya no vale; datos sin el campo: nada). Sin animación. ----- */
 var VUELTA_COMP=null;
 function vueltaCompHTML(sesion){
-  var C=DATA&&DATA.ultimaCompartida;
-  if(!VUELTA_COMP||!C||C.fecha!==VUELTA_COMP||C.vuelta||!sesion||sesion.focus==="withered"||sesion.date!==ymd())return "";
-  C.vuelta=ymd();VUELTA_COMP=null;saveUserData();
+  var C=DATA&&DATA.ultimaCompartida, hoy=ymd(), P=DATA&&DATA.vueltaPendiente;
+  if(P&&P.fecha!==hoy){delete DATA.vueltaPendiente;P=null;saveUserData();}
+  var comp=VUELTA_COMP||(P&&P.comp);
+  if(!comp||!C||C.fecha!==comp||C.vuelta||!sesion||sesion.date!==hoy)return "";
+  if(sesion.focus==="withered"){if(!P||P.comp!==comp){DATA.vueltaPendiente={fecha:hoy,comp:comp};saveUserData();}return "";}
+  C.vuelta=hoy;VUELTA_COMP=null;delete DATA.vueltaPendiente;saveUserData();
   if(!$("vueltaCompCss")){var st=document.createElement("style");st.id="vueltaCompCss";
     st.textContent='.ses-vuelta{margin:0 0 12px;text-align:center;padding:10px 12px;border-radius:var(--r-m);border:1px solid var(--ok);background:var(--glass);color:var(--ok-tx);font-size:var(--fs-m);font-weight:800;line-height:1.35}';
     document.head.appendChild(st);}

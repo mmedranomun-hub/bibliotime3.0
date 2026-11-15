@@ -351,6 +351,38 @@ PRUEBAS = [
         if(document.querySelector('#modalRoot .ses-vuelta')||DATA.ultimaCompartida.vuelta)return 'sale con árbol marchito';
         return true;
       }finally{bs.disabled=false;VUELTA_COMP=vc;var c=JSON.parse(copia);Object.keys(DATA).forEach(k=>{if(!(k in c))delete DATA[k];});Object.assign(DATA,c);saveUserData();document.querySelectorAll('.racha-overlay,.cuenta').forEach(x=>x.remove());closeModal();renderStudy();renderProfile();}"""),
+    ("🌳 la vuelta perdida por un árbol marchito sobrevive a recargar: DATA.vueltaPendiente la guarda hoy, la primera sesión sana la recoge una vez y otro día ya no vale", """
+      await cargarExtra();
+      var copia=JSON.stringify(DATA),vc=VUELTA_COMP;
+      var dia=n=>{var d=new Date();d.setDate(d.getDate()-n);return ymd(d);};
+      var sesion=async()=>{arrancarSesion(-1,false);studyTimer.start-=31*60000;stopStudy(false);await new Promise(r=>setTimeout(r,150));
+        document.querySelectorAll('.cuenta').forEach(x=>x.remove());if(window.cerrarFoco)cerrarFoco();
+        var m=document.querySelector('#modalRoot');return m?m.innerText:'';};
+      var base=()=>{closeModal();DATA.sessions=[{id:'vp0',date:dia(1),min:52,ts:Date.now()-864e5,bib:NO_BIB,focus:'ok',esp:'roble'}];DATA.ultimaCompartida={fecha:dia(1),min:52};};
+      var marchita=()=>pedirValoracion({id:'vpw',date:ymd(),min:30,ts:Date.now()-60000,bib:NO_BIB,focus:'withered',esp:'roble',prod:null,note:''},null);
+      try{
+        // datos antiguos sin el campo: nada cambia ni se rompe
+        base();delete DATA.vueltaPendiente;VUELTA_COMP=null;saveUserData();loadUserData();
+        if(/Dos días seguidos/.test(await sesion()))return 'sale sin vuelta pendiente';
+        if('vueltaPendiente' in DATA)return 'crea el campo sin motivo';
+        // sesión marchita tras «Empezar a estudiar» → se guarda en DATA con la fecha de hoy
+        base();VUELTA_COMP=dia(1);marchita();
+        if(document.querySelector('#modalRoot .ses-vuelta'))return 'sale con árbol marchito';
+        if(/castig|culpa|perdist|peligro/i.test(document.querySelector('#modalRoot').innerText))return 'el marchito suena a castigo';
+        var P=DATA.vueltaPendiente;if(!P||P.fecha!==ymd()||P.comp!==dia(1))return 'no guarda la vuelta pendiente: '+JSON.stringify(P);
+        // recargar la app: VUELTA_COMP vuelve a null y DATA se lee del almacenamiento
+        closeModal();VUELTA_COMP=null;loadUserData();
+        if(!DATA.vueltaPendiente)return 'la vuelta pendiente no sobrevive a recargar';
+        var t=await sesion();
+        if(!/🌳 Dos días seguidos plantando y compartiendo/.test(t))return 'la sesión sana tras recargar no la recoge: '+t.slice(0,200);
+        if(DATA.ultimaCompartida.vuelta!==ymd()||'vueltaPendiente' in DATA)return 'no se consume: '+JSON.stringify([DATA.ultimaCompartida,DATA.vueltaPendiente]);
+        closeModal();loadUserData();if(/Dos días seguidos/.test(await sesion()))return 'sale una segunda vez';
+        // una pendiente de otro día no vale y se limpia
+        base();VUELTA_COMP=null;DATA.vueltaPendiente={fecha:dia(1),comp:dia(1)};saveUserData();loadUserData();
+        if(/Dos días seguidos/.test(await sesion()))return 'vale una pendiente de ayer';
+        if('vueltaPendiente' in DATA)return 'no limpia la pendiente caducada';
+        return true;
+      }finally{VUELTA_COMP=vc;var c=JSON.parse(copia);Object.keys(DATA).forEach(k=>{if(!(k in c))delete DATA[k];});Object.assign(DATA,c);saveUserData();document.querySelectorAll('.racha-overlay,.cuenta').forEach(x=>x.remove());closeModal();renderStudy();renderProfile();}"""),
     ("récord personal en «Sesión terminada» (solo si supera la más larga, sin negativos)", """
       await cargarExtra();
       var o=DATA.sessions,hoy=ymd(),mk=(i,m,f)=>({id:'rp'+i,date:hoy,min:m,ts:Date.now()-(100-i)*1000,bib:NO_BIB,focus:f||'ok',esp:'roble'});
