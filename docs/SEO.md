@@ -742,6 +742,10 @@ despliegue sin tener que mirar el `sitemap.xml`.
   Probado: con las páginas anteriores, 343 fallos y salida 1; rompiendo a mano un `name` de una sin ficha (Palma), uno de
   una con ficha en la lista de su provincia (Biblioteca de Galicia) y quitando un `@id` (Cambre): 3 fallos y salida 1.
   Además, `fichaDe` (reconocer la ficha de un elemento por nombre + coordenadas) solo toma `@id` `…/bibliotecas/…#biblioteca`.
+- **Revisado 2026-11-15**: 285 `Library` con `url` `/#bib=…` (las demás ya tienen ficha y llevan `<ficha>#biblioteca`),
+  todas con `@id` = su `url`; 257 bibliotecas, 28 en dos páginas (56 apariciones unidas); 3 de exámenes sin `url` ni `@id`;
+  0 `name` distintos para un mismo `@id`. La decisión no cambia: a medida que las bibliotecas ganan ficha, su `@id` pasa
+  al de la ficha y este grupo se encoge solo.
 
 ## Hecho (2026-11-15) · El `name` de cada referencia con `@id` es el del nodo destino
 - **Medido antes** (`comprobar_paginas_seo.js`, nueva línea «name de cada referencia con @id…»): 8.871 referencias con `@id`
