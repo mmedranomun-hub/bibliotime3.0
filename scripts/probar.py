@@ -2236,6 +2236,34 @@ PRUEBAS = [
         if(b.innerText.trim()!=='✓ Compartida')return 'con la hoja abierta no dice ✓ Compartida: '+b.innerText;
         return true;
       }finally{DATA.premioCompartir=pc0;document.removeEventListener('click',pilla,true);navigator.share=sh0;navigator.canShare=cs0;window.showToast=st0;COMPARTIDA_MS=ms0;compartiendoImagen=false;DATA.sessions=s0;goView('map');}"""),
+    ("📸 todos los botones de compartir imagen llevan .btn-story y miden ≥ 44 px (fuente y pantalla: Perfil, bosque, historial, Wrapped, tu día, «Sesión terminada»)", """
+      await cargarExtra();
+      var mal=[];
+      for(var u of ['index.html','app.js','app-extra.js']){
+        var rq=await fetch(u+'?t='+Date.now(),{cache:'no-store'});if(!rq.ok)return 'no se pudo leer '+u+': '+rq.status;
+        var t=await rq.text(),re=/<button\\b([^>]*)>((?:(?!<\/button>)[\s\S]){0,200}?)<\/button>/g,m;
+        if(!/📸/.test(t))return u+' sin ningún 📸 (¿se leyó bien?)';
+        while((m=re.exec(t))){if(/📸/.test(m[2])&&!/class=["'][^"']*\\bbtn-story\\b/.test(m[1]))mal.push(u+': '+m[2].slice(0,40));}}
+      if(mal.length)return 'sin .btn-story en la fuente: '+mal.join(' | ');
+      var s0=DATA.sessions,rv0=DATA.resumenVisto,tab0=feedTab,vistos=0,dia=n=>{var d=new Date();d.setDate(d.getDate()-n);return ymd(d);};
+      var mirar=function(donde){var bs=[...document.querySelectorAll('button')].filter(b=>/📸/.test(b.textContent)&&b.getClientRects().length);
+        if(!bs.length)return donde+': no sale ningún 📸';
+        for(var b of bs){vistos++;var r=b.getBoundingClientRect();
+          if(!b.classList.contains('btn-story'))return donde+': «'+b.textContent.trim()+'» sin .btn-story';
+          if(r.height<44||r.width<44)return donde+': «'+b.textContent.trim()+'» mide '+Math.round(r.width)+'×'+Math.round(r.height);}
+        return '';};
+      try{
+        closeModal();feedTab='mia';
+        DATA.sessions=[{id:'bs1',date:ymd(),min:50,bib:NO_BIB,focus:'ok',esp:'roble'},{id:'bs2',date:dia(7),min:80,bib:NO_BIB,focus:'ok',esp:'roble'}];
+        goView('profile');await new Promise(r=>setTimeout(r,300));var e=mirar('Perfil');if(e)return e;
+        goView('study');renderForest();renderSessionFeed(true);await new Promise(r=>setTimeout(r,300));e=mirar('Estudio');if(e)return e;
+        goView('map');abrirResumenSemanal(false);irSlide(STORIES.slides.length-1);e=mirar('Wrapped');if(e)return e;cerrarStory();
+        abrirStoryMia();irSlide(STORIES.slides.length-1);e=mirar('Tu día');if(e)return e;cerrarStory();
+        pedirValoracion(DATA.sessions[0],null);e=mirar('Sesión terminada');if(e)return e;
+        var b=$('sessShare');b.setAttribute('aria-busy','true');var cs=getComputedStyle(b);
+        if(cs.cursor!=='progress'||Math.abs(parseFloat(cs.opacity)-.7)>.01)return 'aria-busy no pone cursor:progress y opacidad .7: '+cs.cursor+' '+cs.opacity;
+        return vistos>=7||('solo se vieron '+vistos+' botones 📸');
+      }finally{cerrarStory();DATA.sessions=s0;DATA.resumenVisto=rv0;feedTab=tab0;closeModal();renderForest();renderSessionFeed(true);goView('map');}"""),
 ]
 
 

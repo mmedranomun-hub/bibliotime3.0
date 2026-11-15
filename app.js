@@ -2363,7 +2363,7 @@ function renderForest(){
     '<div class="seg mini" id="forestSeg">'+Object.keys(P).map(function(k){return '<button data-p="'+k+'" class="'+(k===FOREST_PERIOD?"on":"")+'">'+P[k]+'</button>';}).join("")+'</div></div>'+
     '<div class="forest-sum">'+resumenBosque(ses)+(racha>1?' · 🔥 '+racha+' días':'')+'</div>'+proxHitoHTML()+proxEspecieHTML()+
     bosqueHTML(ses,vacio)+
-    '<div class="forest-acts"><button class="btn sm" onclick="abrirTienda()">'+especieDe(DATA.especie).icon+' Especies · 🌰 <span class="seeds-n">'+semillas()+'</span></button>'+(ses.length?'<button class="btn sm ghost" onclick="compartirBosque(this)">📸 Compartir</button>':'')+'</div>'+
+    '<div class="forest-acts"><button class="btn sm" onclick="abrirTienda()">'+especieDe(DATA.especie).icon+' Especies · 🌰 <span class="seeds-n">'+semillas()+'</span></button>'+(ses.length?'<button class="btn sm ghost btn-story" onclick="compartirBosque(this)">📸 Compartir</button>':'')+'</div>'+
     '<div class="forest-foot">'+(plantarOn()?'Cada sesión planta un árbol: cuanto más estudias, más crece. Si sales de la app más de '+FOCUS_GRACE_SEC+' s, se marchita.':'Plantar árboles está desactivado (actívalo arriba, en «🌳 Plantar árbol»).')+
     (SOCIAL.user&&SOCIAL.friends&&SOCIAL.friends.length?' <button class="linkbtn" onclick="abrirBosquesAmigos()">Ver el bosque de tus amigos →</button>':'')+'</div>';
   el.querySelectorAll("#forestSeg button").forEach(function(b){b.addEventListener("click",function(){FOREST_PERIOD=b.dataset.p;saveJSON("bpna_forest_period",FOREST_PERIOD);renderForest();});});
@@ -2501,7 +2501,7 @@ function renderSessionFeed(force){
     return '<div class="feed-item"><div class="fhead"><div class="fplace">'+escapeHTML(lugar)+extra+(s.verif?' <span class="fverif" title="Check-in verificado">✓</span>':'')+'</div><div class="fdate">'+fmtFeedDate(s.date)+'</div></div>'+
       '<div class="fstats"><div class="fstat"><small>Duración</small><b>'+hMin(s.min)+'</b></div><div class="fstat"><small>Valoración</small><b class="fstars">'+valoracion+'</b></div></div>'+
       misSesionHTML(s)+prBanner+
-      '<div class="feed-acc"><button type="button" class="feed-share" aria-label="Compartir sesión de '+escapeHTML(new Date(s.date+"T12:00:00").toLocaleDateString("es-ES",{day:"numeric",month:"long",year:"numeric"}))+'" title="Compartir como imagen" onclick="compartirSesionStory('+(s.id?jsArg(s.id):idx)+',null,this)">📸</button><button class="linkbtn feed-edit" onclick="editarSesion('+idx+')">Editar</button></div>'+
+      '<div class="feed-acc"><button type="button" class="feed-share btn-story" aria-label="Compartir sesión de '+escapeHTML(new Date(s.date+"T12:00:00").toLocaleDateString("es-ES",{day:"numeric",month:"long",year:"numeric"}))+'" title="Compartir como imagen" onclick="compartirSesionStory('+(s.id?jsArg(s.id):idx)+',null,this)">📸</button><button class="linkbtn feed-edit" onclick="editarSesion('+idx+')">Editar</button></div>'+
       (s.note?'<div class="fnote">"'+escapeHTML(s.note)+'"</div>':'')+
       (s.offering?'<div class="foffer">🙏 Ofrecido por '+escapeHTML(s.offering)+'</div>':'')+
       ownCmt(s)+

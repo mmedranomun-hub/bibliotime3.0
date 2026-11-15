@@ -487,13 +487,13 @@ function abrirResumenSemanal(auto){
       (dif!==null?'<div class="sv-tag">'+(dif>=0?'📈 +'+dif+'% que la semana anterior':'Semana más tranquila ('+dif+'%) · ¡esta a por más! 💪')+'</div>':'<div class="sv-tag">✨ Tu primera semana con datos</div>'),ses:null},
     {html:'<div class="sv-tree">'+arbolSVG(Math.max(S.larga,1),false,"semana",170,DATA.especie)+'</div><div class="sv-min">'+S.vivos+(S.vivos===1?' árbol':' árboles')+'</div><div class="sv-where">'+(S.secos?'y '+S.secos+' marchito'+(S.secos===1?'':'s')+' 🥀':'¡ni uno marchito! 🏆')+'</div><div class="sv-hace">Tu sesión más larga: '+hMin(S.larga)+'</div>'+
       // 📸 esa misma sesión (solo si la más larga es sana: con árbol seco, mejorSesionSemana sería otra y no cuadraría)
-      (b&&b.min===S.larga?'<button class="btn sm ghost sv-larga" aria-label="Compartir en stories tu sesión más larga de la semana pasada: '+hMin(b.min)+'" onclick="event.stopPropagation();pausarStory();compartirSesionStory('+(b.id?jsArg(b.id):DATA.sessions.indexOf(b))+',TIT_MEJOR,this)">📸 Compartir esta sesión</button>':''),ses:null}
+      (b&&b.min===S.larga?'<button class="btn sm ghost btn-story sv-larga" aria-label="Compartir en stories tu sesión más larga de la semana pasada: '+hMin(b.min)+'" onclick="event.stopPropagation();pausarStory();compartirSesionStory('+(b.id?jsArg(b.id):DATA.sessions.indexOf(b))+',TIT_MEJOR,this)">📸 Compartir esta sesión</button>':''),ses:null}
   ];
   if(S.mejor)slides.push({html:'<div class="sv-kicker">TU MEJOR DÍA</div><div class="sv-min">'+DIAS[new Date(S.mejor+"T00:00:00").getDay()]+'</div><div class="sv-where">'+hMin(S.mejorMin)+' de estudio 🔥</div>',ses:null});
   if(S.top)slides.push({html:'<div class="sv-kicker">LO QUE MÁS ESTUDIASTE</div><div class="sv-min">📚 '+escapeHTML(S.top)+'</div><div class="sv-where">'+hMin(S.topMin)+' ('+Math.round(S.topMin/S.min*100)+'% de tu semana)</div>',ses:null});
   slides.push({html:'<div class="sv-kicker">NIVEL '+(nivelDe(horasTotales())+1)+' · '+escapeHTML(NIVELES[nivelDe(horasTotales())][1].toUpperCase())+'</div><div class="sv-min">🔥 '+streakDays()+'</div><div class="sv-where">'+(streakDays()===1?'día':'días')+' de racha · 🌰 '+semillas()+' semillas</div>'+
-    '<div class="sv-acc"><button class="btn sm" onclick="compartirSemanaPasada(this)">📸 Compartir mi semana</button>'+
-    (b?'<button class="btn sm ghost" id="svBest" aria-label="Compartir en stories tu mejor sesión de la semana pasada: '+hMin(b.min)+'" onclick="compartirSesionStory('+(b.id?jsArg(b.id):DATA.sessions.indexOf(b))+',TIT_MEJOR,this)">📸 Mi mejor sesión</button>':'')+'</div>',ses:null});
+    '<div class="sv-acc"><button class="btn sm btn-story" onclick="compartirSemanaPasada(this)">📸 Compartir mi semana</button>'+
+    (b?'<button class="btn sm ghost btn-story" id="svBest" aria-label="Compartir en stories tu mejor sesión de la semana pasada: '+hMin(b.min)+'" onclick="compartirSesionStory('+(b.id?jsArg(b.id):DATA.sessions.indexOf(b))+',TIT_MEJOR,this)">📸 Mi mejor sesión</button>':'')+'</div>',ses:null});
   mostrarStory("Tu semana",null,slides,"yo");
   if(auto)setTimeout(function(){confeti(60);},400);
 }
@@ -850,7 +850,7 @@ function abrirStoryMia(){
   var slides=mias.map(function(x){return {html:slideHTML(x,"Tú"),ses:null};});
   var h=statsHoy();
   slides.push({html:'<div class="sv-min">'+(h.min?hMin(h.min)+' hoy':'Tu día está por empezar')+'</div><div class="sv-where">🔥 Racha de '+streakDays()+' días · 🌰 '+semillas()+' semillas</div>'+
-    '<button class="btn sm" style="margin-top:18px;min-height:44px" onclick="compartirStoryDia(this)">📸 Compartir en stories</button>'+
+    '<button class="btn sm btn-story" style="margin-top:18px" onclick="compartirStoryDia(this)">📸 Compartir en stories</button>'+
     (h.min?'':'<button class="btn sm ghost" style="margin-top:10px;background:#fff" onclick="cerrarStory();goView(\'study\')">▶ Empezar a estudiar</button>'),ses:null});
   mostrarStory("Tu día",null,slides,"yo");
 }
@@ -1205,7 +1205,7 @@ function pedirValoracion(sesion,horasAntes){
       '<div class="occ-quick" id="sessOcc"><button data-l="libre">🟢 Con sitio</button><button data-l="media">🟡 Media</button><button data-l="llena">🔴 Llena</button></div>':'')+
     '<div class="field" style="margin-top:10px"><input type="text" id="sessNote" placeholder="Nota opcional (ej: terminé el tema 4)"></div>'+
     '<button class="btn" id="sessSave">Guardar</button>'+
-    '<button type="button" class="btn ghost" id="sessShare" style="margin-top:10px;min-height:44px" aria-label="Compartir: crear una imagen de esta sesión para tus stories" onclick="compartirSesionStory(\''+sesion.id+'\',null,this)">📸 Compartir</button>'+
+    '<button type="button" class="btn ghost btn-story" id="sessShare" style="margin-top:10px" aria-label="Compartir: crear una imagen de esta sesión para tus stories" onclick="compartirSesionStory(\''+sesion.id+'\',null,this)">📸 Compartir</button>'+
     '<button class="linkbtn" id="sessSkip" style="display:block;margin:12px auto 0">Omitir</button>',
     function(){
       var bn=document.querySelector(".np-bar i");if(bn)setTimeout(function(){bn.style.width=bn.dataset.to+"%";},350);
