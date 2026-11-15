@@ -2248,7 +2248,7 @@ PRUEBAS = [
       var s0=DATA.sessions,rv0=DATA.resumenVisto,tab0=feedTab,vistos=0,dia=n=>{var d=new Date();d.setDate(d.getDate()-n);return ymd(d);};
       var mirar=function(donde){var bs=[...document.querySelectorAll('button')].filter(b=>/📸/.test(b.textContent)&&b.getClientRects().length);
         if(!bs.length)return donde+': no sale ningún 📸';
-        for(var b of bs){vistos++;var r=b.getBoundingClientRect();
+        for(var b of bs){vistos++;var r={width:b.offsetWidth,height:b.offsetHeight}; /* tamaño de maquetación: getBoundingClientRect incluye transformaciones (vista que entra con escala) y daba 43,x px a ratos */
           if(!b.classList.contains('btn-story'))return donde+': «'+b.textContent.trim()+'» sin .btn-story';
           if(r.height<44||r.width<44)return donde+': «'+b.textContent.trim()+'» mide '+Math.round(r.width)+'×'+Math.round(r.height);}
         return '';};
