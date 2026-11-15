@@ -522,7 +522,7 @@ if (GSC_VERIFICACION !== null) {
 // toca nada. Con una clave, se escribe /<clave>.txt en la raíz con la clave exacta (sin salto de línea): así IndexNow
 // comprueba que el aviso es del dueño del dominio. Los avisos los manda scripts/avisar_indexnow.js (aparte, a mano o
 // tras cada despliegue). scripts/comprobar_paginas_seo.js falla si la clave está puesta y el .txt falta o no coincide.
-const INDEXNOW_CLAVE = null;
+const INDEXNOW_CLAVE = "3aa34043cf324f79b3f58c31ec5fa77f";
 if (INDEXNOW_CLAVE !== null) {
   if (typeof INDEXNOW_CLAVE !== "string" || !/^[A-Za-z0-9-]{8,128}$/.test(INDEXNOW_CLAVE)) {
     console.error("INDEXNOW_CLAVE debe ser null o una clave de 8 a 128 caracteres (solo letras, cifras y -), entre comillas.");
