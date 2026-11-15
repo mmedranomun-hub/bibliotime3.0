@@ -64,6 +64,12 @@ async function probarMapa(nav, url, bloquear) {
 (async () => {
   // 1. Juntar
   try { sh("git fetch repo3 --prune", { timeout: 120000 }); } catch (e) { termina(1, "git fetch falló: " + e.message.slice(0, 120)); }
+  // Informes de datos que dejan las rutinas locales (visitas y Search Console): se guardan para que el bucle de la nube
+  // los lea en main. Están fuera de la web (.vercelignore excluye docs/).
+  try {
+    sh("git add -- docs/trafico docs/seo");
+    if (sh("git diff --cached --name-only")) { sh('git commit -q -m "Datos: informes de visitas y Search Console"'); apunta("Informes de datos guardados en git"); }
+  } catch (e) {}
   const sucio = sh("git status --porcelain --untracked-files=no");
   if (sucio) termina(1, "hay cambios sin guardar en " + RAIZ + " (no toco nada):\n" + sucio.slice(0, 300));
   const antes = sh("git rev-parse HEAD");
