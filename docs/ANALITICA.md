@@ -1,8 +1,8 @@
 # Analítica sin cookies de Bibliomapa
 
 Objetivo 8 de `docs/OBJETIVOS.md` («Tráfico y rentabilidad»): saber cuánta gente entra sin cookies, sin banner de
-consentimiento y sin datos personales. Estuvo apagada hasta que Marcos pudo
-elija proveedor. Mientras siga apagada, `privacidad.html` dice la verdad («no usamos analítica») y no se toca.
+consentimiento y sin datos personales. **ENCENDIDA el 15-11-2026 con Vercel Web Analytics** (proyecto bibliomapa,
+equipo moscar); `privacidad.html` ya describe la «Estadística de visitas».
 
 ## Qué hace `analitica.js`
 
