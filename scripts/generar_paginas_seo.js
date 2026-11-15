@@ -281,12 +281,21 @@ function faqEnGrafo(ruta, ld) {
     : faqs.includes(x) ? { "@context": x["@context"], "@id": url + "#faq", ...x, isPartOf: { "@id": idPag } } : x));
   return Array.isArray(ld) ? nueva : nueva[0];
 }
+// Páginas cuyo CollectionPage declara isPartOf el índice /bibliotecas/: ruta → { name, @id? } de ese CollectionPage (el
+// nodo destino tal como queda escrito). El índice, que se genera el último, las declara de vuelta en su hasPart si su
+// cuerpo ya las enlaza (sin enlaces nuevos); las provincias van en su mainEntity ItemList y no se repiten en hasPart.
+const parteDelIndice = new Map();
 function pagina({ ruta, titulo, descripcion, h1, intro, cuerpo, migas, migasId, ld: ld0, cta, head, noindex, trasH1 }) {
   const url = DOMINIO + ruta;
   const OG = ogImagenDe(ruta);
   const ld = faqEnGrafo(ruta, ld0);
   registraNodos(ruta, ld);
   h1De.set(ruta, h1);
+  {
+    const cp = [].concat(ld || []).find((x) => x && x["@type"] === "CollectionPage" && x.url === url);
+    if (cp && cp.isPartOf && cp.isPartOf.url === DOMINIO + "/bibliotecas/" && ruta !== "/bibliotecas/")
+      parteDelIndice.set(ruta, { name: cp.name, ...(cp["@id"] ? { "@id": cp["@id"] } : {}) });
+  }
   const migasLD = { "@context": "https://schema.org", ...(migasId ? { "@id": migasId } : {}), "@type": "BreadcrumbList", itemListElement: migas.map((x, k) => ({ "@type": "ListItem", position: k + 1, name: x[0], item: DOMINIO + x[1] })) };
   return `<!DOCTYPE html>
 <html lang="es">
@@ -777,7 +786,7 @@ const modVerif = (lista) => { const v = lista.filter(verificado); return v.lengt
 // partesLugar: sin enlaces nuevos, y scripts/comprobar_paginas_seo.js falla si falta o no está enlazada.
 // superior: [nombre, ruta] de la temática de nivel superior que ya enlaza su <p class="volver"> (la de localidad, la de
 // su provincia si existe y si no la de España; la de provincia, la de España; la de España, el índice /bibliotecas/ con
-// NOMBRE_INDICE, sin reciprocidad porque el índice solo lista provincias), como isPartOf con el mismo name que el
+// NOMBRE_INDICE, recíproco con el hasPart del índice: ver parteDelIndice), como isPartOf con el mismo name que el
 // CollectionPage destino. Es la otra mitad del hasPart: el comprobador falla si no existe, no está enlazada o, cuando la
 // superior es de provincia o la página lo es, la superior no la lleva en su hasPart.
 // migas: true para enlazar su BreadcrumbList (<ruta>#migas) con breadcrumb (temáticas de España, de provincia y de localidad).
@@ -2223,12 +2232,20 @@ const tituloIndice = `${NOMBRE_INDICE} | Bibliomapa`;
 const descIndice = `Más de ${Math.floor(todas.length / 100) * 100} bibliotecas de toda España por provincia y localidad: horarios verificados, salas de estudio y cuáles están abiertas ahora.`;
 const modIndice = verifTodas.length ? { dateModified: fechaMod(verifTodas) } : {};
 urls.find(([u]) => u === "/bibliotecas/")[2] = modIndice.dateModified;
+const cuerpoIndice = `${temasEspana.length ? `<nav class="temas" aria-label="Por horario"><span>Por horario:</span>${temasEspana.map(({ t, l }) => `<a href="/bibliotecas/${t.slug}/">${esc(t.corto)} <small>${l.length}</small></a>`).join("")}<a href="${HUB}">Por provincia</a></nav>` : ""}${salas.length || exCiudades.length ? `<nav class="temas" aria-label="Para estudiar"><span>Para estudiar:</span>${salas.length ? `<a href="/bibliotecas/${SALAS_SLUG}/">Salas de estudio <small>${salas.length} ciudades</small></a>` : ""}${exCiudades.length ? `<a href="${EX_RUTA}">Exámenes: 24 h y horario ampliado <small>${plural(exCiudades.length, "ciudad", "ciudades")}</small></a>` : ""}</nav>` : ""}${universidades.length ? `<nav class="temas" aria-label="Por universidad"><span>Por universidad:</span><a href="/bibliotecas/${UNIS_SLUG}/">Todas <small>${universidades.length}</small></a>${universidades.map((u) => `<a href="${u.ruta}" title="Bibliotecas de la ${esc(u.nombre)}">${esc(u.sigla)} <small>${u.lista.length}</small></a>`).join("")}</nav>` : ""}<nav class="locs grande">${provincias.map((p) => `<a href="/bibliotecas/${slug(p)}/">${esc(p)} <small>${porProv[p].length}</small></a>`).join("")}</nav>`;
+// hasPart del índice: la otra mitad del isPartOf de los hubs y las temáticas de España (parteDelIndice), solo las que el
+// cuerpo ya enlaza, en el orden de sus enlaces, con el name (y el @id <ruta>#pagina, si su nodo lo lleva) del CollectionPage
+// destino. Las provincias no: ya están en el mainEntity ItemList. comprobar_paginas_seo.js exige la reciprocidad.
+const enlacesIndice = [...new Set([...cuerpoIndice.matchAll(/href="([^"]+)"/g)].map((m) => m[1]))];
+const hasPartIndice = enlacesIndice.filter((r) => parteDelIndice.has(r) && !provincias.some((p) => r === `/bibliotecas/${slug(p)}/`))
+  .map((r) => { const d = parteDelIndice.get(r); return { "@type": "CollectionPage", ...(d["@id"] ? { "@id": d["@id"] } : {}), name: d.name, url: DOMINIO + r }; });
 escribe("/bibliotecas/", pagina({
   ruta: "/bibliotecas/", titulo: tituloIndice, descripcion: descIndice,
   h1: "Bibliotecas de España por provincia", intro: `${todas.length} bibliotecas en ${provincias.length} provincias. Encuentra la tuya y mira en el mapa cuál está abierta ahora.`,
-  cuerpo: `${temasEspana.length ? `<nav class="temas" aria-label="Por horario"><span>Por horario:</span>${temasEspana.map(({ t, l }) => `<a href="/bibliotecas/${t.slug}/">${esc(t.corto)} <small>${l.length}</small></a>`).join("")}<a href="${HUB}">Por provincia</a></nav>` : ""}${salas.length || exCiudades.length ? `<nav class="temas" aria-label="Para estudiar"><span>Para estudiar:</span>${salas.length ? `<a href="/bibliotecas/${SALAS_SLUG}/">Salas de estudio <small>${salas.length} ciudades</small></a>` : ""}${exCiudades.length ? `<a href="${EX_RUTA}">Exámenes: 24 h y horario ampliado <small>${plural(exCiudades.length, "ciudad", "ciudades")}</small></a>` : ""}</nav>` : ""}${universidades.length ? `<nav class="temas" aria-label="Por universidad"><span>Por universidad:</span><a href="/bibliotecas/${UNIS_SLUG}/">Todas <small>${universidades.length}</small></a>${universidades.map((u) => `<a href="${u.ruta}" title="Bibliotecas de la ${esc(u.nombre)}">${esc(u.sigla)} <small>${u.lista.length}</small></a>`).join("")}</nav>` : ""}<nav class="locs grande">${provincias.map((p) => `<a href="/bibliotecas/${slug(p)}/">${esc(p)} <small>${porProv[p].length}</small></a>`).join("")}</nav>`,
+  cuerpo: cuerpoIndice,
   migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"]], migasId: idMigasDe("/bibliotecas/"),
   ld: ldLugar("/bibliotecas/", tituloIndice.replace(MARCA, ""), descIndice, { ...modIndice, ...conMigas("/bibliotecas/"),
+    ...(hasPartIndice.length ? { hasPart: hasPartIndice } : {}),
     mainEntity: { "@type": "ItemList", name: "Bibliotecas de España por provincia", numberOfItems: provincias.length,
       itemListElement: provincias.map((p, k) => ({ "@type": "ListItem", position: k + 1, item: refPagina(`Bibliotecas en ${p}`, `${DOMINIO}/bibliotecas/${slug(p)}/`) })) } }),
 }));

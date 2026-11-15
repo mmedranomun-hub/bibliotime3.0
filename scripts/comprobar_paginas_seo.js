@@ -22,7 +22,10 @@
        la de España), no existe, no tiene el mismo name que el CollectionPage destino, no está enlazado en su
        <p class="volver"> o, si la página o la superior son de provincia, no es recíproco con el hasPart de la superior;
        y temáticas de España (/bibliotecas/<tema>/) sin isPartOf CollectionPage al índice /bibliotecas/ enlazado en su
-       «volver» y con su mismo name (sin reciprocidad: el índice solo lista provincias),
+       «volver» y con su mismo name (recíproco: el índice las lleva en su hasPart, ver «Reciprocidad del índice»),
+     - reciprocidad del índice: una página que declara isPartOf /bibliotecas/ y no está en el hasPart del índice (ni, si
+       es provincia, en su mainEntity ItemList), o un hasPart del índice que no lo declara de vuelta o cuyo name/@id no
+       es el del CollectionPage destino,
      - provincias (/bibliotecas/<prov>/) y localidades (/bibliotecas/<prov>/<loc>/) sin isPartOf CollectionPage a la página
        que enlaza su <p class="volver"> (la localidad, su provincia; la provincia, el índice), con el mismo name que el
        CollectionPage destino y recíproco con el hasPart de la provincia (localidades) o el ItemList del índice (provincias);
@@ -274,7 +277,7 @@ for (const [ruta, l] of temasConPartes) {
 const nivelTema = (r) => { const m = r.match(/^\/bibliotecas\/(?:([^/]+)\/(?:([^/]+)\/)?)?([^/]+)\/$/); return m && TEMAS_SLUG.has(m[3]) && (!m[1] || html.has(`/bibliotecas/${m[1]}/`)) ? { prov: m[1], loc: m[2], tema: m[3], nivel: m[2] ? "localidad" : m[1] ? "provincia" : "España" } : null; };
 const nIsPartOf = { localidad: 0, provincia: 0, España: 0 }, nTemas = { localidad: 0, provincia: 0, España: 0 };
 // isPartOf al índice /bibliotecas/ (temáticas de España y hubs): CollectionPage con el mismo name que el del índice y
-// enlazado en su «volver» (en los hubs, como primer enlace). Sin reciprocidad: el ItemList del índice solo lista provincias.
+// enlazado en su «volver» (en los hubs, como primer enlace). La reciprocidad con el hasPart del índice, más abajo.
 const parteDelIndiceMal = (ruta, que, primero) => {
   const ip = (cpDe.get(ruta) || {}).isPartOf, u = ((ip && ip.url) || "").replace(DOMINIO, ""), mal = [];
   if (!ip || ip["@type"] !== "CollectionPage") return [`${ruta} (${que}) sin isPartOf CollectionPage al índice${ip ? ` (lleva ${ip["@type"]})` : ""}`];
@@ -515,6 +518,25 @@ for (const hub of HUBS.map(([h]) => h).concat("/bibliotecas/horarios/")) {
   if (!mal.length) nHubsIndice++;
 }
 if (!indiceCP) indiceMal.push("/bibliotecas/ sin CollectionPage en su JSON-LD");
+// Reciprocidad del índice: cada página cuyo CollectionPage declara isPartOf /bibliotecas/ está en el hasPart del
+// CollectionPage del índice (las provincias, en su mainEntity ItemList: se cuentan aparte), y cada hasPart del índice
+// declara de vuelta ese isPartOf, con el name del CollectionPage destino y su @id (#pagina) si el destino lo lleva.
+const reciprocidadMal = [], nRecip = { hasPart: 0, itemList: 0 };
+{
+  const cpI = cpDe.get("/bibliotecas/") || {}, hpI = new Map([].concat(cpI.hasPart || []).map((hp) => [((hp && hp.url) || "").replace(DOMINIO, ""), hp]));
+  for (const [ruta, cp] of cpDe) {
+    if (ruta === "/bibliotecas/" || cp.url !== DOMINIO + ruta || !cp.isPartOf || cp.isPartOf.url !== DOMINIO + "/bibliotecas/") continue;
+    if (hpI.has(ruta)) nRecip.hasPart++;
+    else if (provsIndice.has(ruta)) nRecip.itemList++;
+    else reciprocidadMal.push(`${ruta} declara isPartOf /bibliotecas/ y el índice no la lleva en su hasPart`);
+  }
+  for (const [u, hp] of hpI) {
+    const cp = cpDe.get(u);
+    if (!cp || !cp.isPartOf || cp.isPartOf.url !== DOMINIO + "/bibliotecas/") { reciprocidadMal.push(`/bibliotecas/ hasPart ${u}, que no declara isPartOf /bibliotecas/`); continue; }
+    if (hp.name !== cp.name) reciprocidadMal.push(`/bibliotecas/ hasPart ${u} con name «${hp.name}» distinto del de su CollectionPage («${cp.name}»)`);
+    if ((hp["@id"] || null) !== (cp["@id"] || null)) reciprocidadMal.push(`/bibliotecas/ hasPart ${u} con @id ${hp["@id"] || "(sin)"} y su CollectionPage ${cp["@id"] || "(sin)"}`);
+  }
+}
 const huerfanas = [...html.keys()].filter((r) => r !== "/bibliotecas/" && !entrantes.has(r));
 const dupT = [...titulos].filter(([, l]) => l.length > 1), dupD = [...descs].filter(([, l]) => l.length > 1);
 const sitemap = fs.existsSync(path.join(RAIZ, "sitemap.xml")) ? fs.readFileSync(path.join(RAIZ, "sitemap.xml"), "utf8") : "";
@@ -891,6 +913,7 @@ console.log(`Library sin ficha en los ItemList (url /#bib=…): ${[...paginasDeI
 console.log(`Lugares con fichas y mainEntity ItemList: provincias ${nLugarLista.provincia.join(" de ")} · localidades ${nLugarLista.localidad.join(" de ")} · sin ItemList: ${sinLista.length}` +
   (sinLista.length ? "\n" + muestra(sinLista, (r) => "  " + r) : ""));
 console.log(`Índice /bibliotecas/: CollectionPage ${indiceCP ? "sí" : "NO"} · provincias en su ItemList: ${nIndiceProvs} · mal: ${indiceMal.length}${indiceMal.length ? "\n" + muestra(indiceMal, (r) => "  " + r) : ""}`);
+console.log(`Reciprocidad del índice (isPartOf → /bibliotecas/ ⇔ su hasPart): en hasPart ${nRecip.hasPart} · provincias en su ItemList ${nRecip.itemList} · mal: ${reciprocidadMal.length}${reciprocidadMal.length ? "\n" + muestra(reciprocidadMal, (r) => "  " + r) : ""}`);
 console.log(`hasPart: ${nHasPart} en ${nPagHasPart} páginas (temáticas que enlazan sus partes: ${nTemasPartes}) · rotos o sin enlace en el HTML: ${hasPartMal.length}${hasPartMal.length ? "\n" + muestra(hasPartMal, (r) => "  " + r) : ""}`);
 console.log(`Temáticas: España ${nTemas.España} · provincia ${nTemas.provincia} · localidad ${nTemas.localidad} · con isPartOf bien: España ${nIsPartOf.España} · provincia ${nIsPartOf.provincia} · localidad ${nIsPartOf.localidad} · lugares con isPartOf bien: provincias ${nLugarIsPartOf.provincia} · localidades ${nLugarIsPartOf.localidad} · fichas con isPartOf bien: a su localidad ${nFichaIsPartOf.localidad} · a su provincia ${nFichaIsPartOf.provincia} (fuera del ItemList de esa página: ${nFichasFueraLista}) · con isPartOf a su hub bien: ${Object.entries(nHubIsPartOf).map(([t, n]) => `${t} ${n}`).join(" · ")} · hubs con isPartOf al índice bien: ${nHubsIndice} · mal: ${isPartOfMal.length}${isPartOfMal.length ? "\n" + muestra(isPartOfMal, (r) => "  " + r) : ""}`);
 console.log(`Migas de las fichas (breadcrumb del WebPage → BreadcrumbList #migas, penúltimo = isPartOf): ${nFichaMigas} de ${fichas.size} bien · índice, provincias, localidades y temáticas (breadcrumb del CollectionPage → #migas): ${Object.entries(nLugarMigas).map(([t, n]) => `${t} ${n}`).join(" · ")} (temáticas con penúltimo ≠ isPartOf, solo contadas: ${nTemaMigasDistintoIsPartOf}) · hubs, salas de estudio, universidades y exámenes (penúltimo = isPartOf): ${Object.entries(nHubMigas).map(([t, n]) => `${t} ${n}`).join(" · ")} · BreadcrumbList sueltas (sin @id <ruta>#migas enlazado: fallo): ${nMigasSueltas}${nMigasSueltas ? ` (${Object.entries(migasSueltas).map(([t, n]) => `${t} ${n}`).join(" · ")})` : ""} · mal: ${migasMal.length}${migasMal.length ? "\n" + muestra(migasMal, (r) => "  " + r) : ""}`);
@@ -1214,5 +1237,5 @@ async function probarAvisoIndexNow() {
   const t0 = Date.now();
   const [avisoMal, nCasos] = await probarAvisoIndexNow();
   console.log(`IndexNow «despliega primero» y simulación (avisar_indexnow.js --base contra servidor local, sin red real): ${nCasos - new Set(avisoMal.map((x) => x.split(" ")[0])).size} de ${nCasos} casos bien (200 con la clave → 0; 404, otro texto o servidor caído → 1; --simular y clave null → 0 sin peticiones) en ${Date.now() - t0} ms · mal: ${avisoMal.length}${avisoMal.length ? "\n" + muestra(avisoMal, (r) => "  " + r) : ""}`);
-  if (exMal.length || findeMal.length || findeCercaMal.length || cssMal.length || listaMigasMal.length || ariaActualMal.length || cpIdMal.length || refsIdMal.length || refsNombreMal.length || migasVisMal.length || itemMigasMal.length || avisoMal.length || vistaMal.length || analiticaMal.length || gscMal.length || indexNowMal.length || migasMal.length || mainEntityMal.length || copiaMal.length || faqMal.length || indiceMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || idAppMal.length || idNombreMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
+  if (exMal.length || findeMal.length || findeCercaMal.length || cssMal.length || listaMigasMal.length || ariaActualMal.length || cpIdMal.length || refsIdMal.length || refsNombreMal.length || migasVisMal.length || itemMigasMal.length || avisoMal.length || vistaMal.length || analiticaMal.length || gscMal.length || indexNowMal.length || migasMal.length || mainEntityMal.length || copiaMal.length || faqMal.length || indiceMal.length || reciprocidadMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || idAppMal.length || idNombreMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
 })();

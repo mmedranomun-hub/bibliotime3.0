@@ -447,6 +447,20 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
 - `comprobar_paginas_seo.js` falla también si una temática enlaza sus partes (nav «Por localidad» o cabecera de sección
   hacia `/bibliotecas/<prov>/<tema>/`) sin declararlas en su `hasPart`. Hoy: 849 `hasPart` en 130 páginas, 0 mal.
 
+## Hecho (2026-11-15) · Reciprocidad del índice: `hasPart` de `/bibliotecas/`
+- Medido antes: 64 páginas declaran `isPartOf` → `/bibliotecas/` (51 provincias, 9 temáticas de España y 4 hubs:
+  horarios, salas de estudio, exámenes, universidades); el cuerpo del índice enlaza las 64; su `CollectionPage` no
+  llevaba `hasPart` (0). Las provincias ya estaban en su `mainEntity` `ItemList`.
+- `generar_paginas_seo.js`: `pagina()` anota en `parteDelIndice` (ruta → `name` y `@id` del `CollectionPage`) toda
+  página que declara el índice como `isPartOf`; el índice, que se genera el último, lleva en `hasPart` las que su cuerpo ya
+  enlaza (en el orden de sus enlaces, sin las provincias), como `CollectionPage` con el `name` del destino y su `@id`
+  `<ruta>#pagina` cuando el destino lo lleva (11 de 13; salas de estudio y universidades aún no tienen `@id`). Sin
+  enlaces nuevos; solo cambia el JSON-LD del índice (`lastmod` 2026-11-15).
+- `comprobar_paginas_seo.js` («Reciprocidad del índice»): falla si una página declara `isPartOf` al índice y no está en
+  su `hasPart` (ni, si es provincia, en el `ItemList`), si un `hasPart` del índice no lo declara de vuelta, o si su
+  `name`/`@id` no es el del `CollectionPage` destino. Con el índice anterior: 13 fallos; ahora 0 (13 en `hasPart`, 51 en
+  el `ItemList`); probado rompiendo a mano el `name` y el `@id` de exámenes: 2 fallos y salida 1.
+
 ## Hecho (2026-11-13) · Migas visibles = migas del JSON-LD (solo cambia el comprobador)
 - `comprobar_paginas_seo.js` (línea «Migas visibles = JSON-LD…») compara en todas las páginas generadas sin `noindex` los
   `<a href>`/`<span>` de su único `<nav class="migas">` con el `BreadcrumbList` `<ruta>#migas`: mismo número, `position`
