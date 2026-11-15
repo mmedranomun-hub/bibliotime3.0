@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-11-15 02:40",
+  "fecha": "2026-11-15 03:56",
   "pruebas": {
     "arranca: datos y vistas": true,
     "marca España (sin «Navarra» en la cabecera)": true,
@@ -32,6 +32,7 @@
     "al abrir el cofre, la tarjeta en oro recibe una vez el barrido --destello de .mis-brilla (.cofre-brilla, .6 s, en pausa bajo la ventana); nunca al recargar con el cofre abierto, quieta con reducir movimiento": true,
     "el barrido del cofre sigue pendiente si la tarjeta se repinta con la ventana abierta (p. ej. el tick de 30 s) y se ve una sola vez al cerrarla": true,
     "tras abrir el cofre con teclado, al cerrar la ventana el foco vuelve a la tarjeta en oro (aria-disabled, sin disabled) que dice «Sello del día conseguido: N días…»; con ratón no se mueve; la tarjeta abierta no reabre ni premia": true,
+    "la ventana del cofre es un diálogo accesible: role=dialog + aria-modal + título, el foco entra en «Ver especies», Tab no sale, Escape la cierra sin premiar dos veces y el foco vuelve a la tarjeta; cualquier ventana devuelve el foco a quien la abrió": true,
     "al subir de nivel, la barra de nivel de Estudio hace una vez el barrido --destello (.lv-brilla, .6 s, en pausa bajo la ventana, pendiente con Estudio oculto); nunca al recargar ni con reducir movimiento": true,
     "el 🧊 del cofre vuela a la pastilla de la racha al cerrar la ventana (una vez, tras las 🌰; con reducir movimiento, solo la cifra)": true,
     "el 🧊 ganado por 7 días seguidos vuela del aviso a la pastilla de la racha y la racha dice «🧊 +1 por 7 días seguidos» (no «del cofre»); con reducir movimiento, solo la cifra": true,
@@ -90,13 +91,13 @@
     "fichas.json pesa como mucho 15 KB gzip (si no, pasar al formato {prov:{índice:slug}})": true
   },
   "errores_js": [],
-  "carga_ms_cpu4x": 494,
+  "carga_ms_cpu4x": 584,
   "carga_ms_cpu4x_min_max": [
-    452,
-    594
+    504,
+    706
   ],
-  "primera_pintura_ms_cpu4x": 228,
-  "todas_las_chinchetas_ms_cpu4x": 512,
+  "primera_pintura_ms_cpu4x": 308,
+  "todas_las_chinchetas_ms_cpu4x": 598,
   "markercluster": {
     "cargado": false,
     "agrupa": false,
@@ -105,32 +106,32 @@
     "servido_en_local": false
   },
   "datos": {
-    "bibliotecas": 2623,
-    "con_horario_verificado": 916,
+    "bibliotecas": 2624,
+    "con_horario_verificado": 918,
     "provincias_con_horario": 51,
     "provincias_total": 51
   },
   "seo": {
-    "paginas": 1395,
+    "paginas": 1399,
     "sitemap": true
   },
   "peso": {
     "index.html": {
-      "kb": 142.2,
-      "kb_gzip": 32.1
+      "kb": 142.3,
+      "kb_gzip": 32.2
     },
     "app.js": {
-      "kb": 303.9,
-      "kb_gzip": 91.1
+      "kb": 305.7,
+      "kb_gzip": 91.8
     },
     "bibliotecas-espana.js": {
-      "kb": 1025.5,
-      "kb_gzip": 238.8
+      "kb": 1027.7,
+      "kb_gzip": 239.5
     },
     "fichas.json": {
-      "kb": 58.5,
-      "kb_gzip": 11.9,
-      "bytes": 59913,
+      "kb": 58.6,
+      "kb_gzip": 12.0,
+      "bytes": 60033,
       "tope_kb_gzip": 15
     }
   },
