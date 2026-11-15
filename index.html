@@ -172,6 +172,7 @@
     background:var(--bg-grad)}
   .container{max-width:920px;margin:0 auto}
   .page-title{font-size:var(--fs-4xl);font-weight:800;letter-spacing:-.02em;margin-bottom:4px}
+  .pf-compartidas{margin-top:10px;font-size:var(--fs-xs);color:var(--suave)}
   .page-sub{font-size:var(--fs-m);color:var(--suave);margin-bottom:22px}
   .glasscard{background:var(--glass-fuerte);backdrop-filter:blur(18px) saturate(160%);
     -webkit-backdrop-filter:blur(18px) saturate(160%);border:1px solid var(--borde);
@@ -1624,7 +1625,8 @@
       <div class="section-title">📊 Estudio esta semana</div>
       <div class="glasscard"><div class="week-bars" id="weekBars"></div>
         <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px"><button class="btn sm" id="btnShareWeek" style="min-height:44px">📤 Compartir mi semana</button>
-        <button class="btn sm ghost hidden" id="btnShareBest" style="min-height:44px">📸 Compartir mi mejor sesión de la semana</button></div></div>
+        <button class="btn sm ghost hidden" id="btnShareBest" style="min-height:44px">📸 Compartir mi mejor sesión de la semana</button></div>
+        <div class="pf-compartidas hidden" id="pCompartidas" role="note"></div></div>
 
       <div class="section-title">🏅 Tus récords</div>
       <div class="stat-grid" id="recordsGrid"></div>

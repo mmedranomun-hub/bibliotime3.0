@@ -2638,6 +2638,7 @@ function renderProfile(){
   $("pFav").style.fontSize=fav==="—"?"var(--fs-4xl)":"var(--fs-l)";
   // semana
   renderWeekBars();
+  renderCompartidas();
   renderRecords();
   renderSellos();
   renderChallenges();
@@ -2670,6 +2671,16 @@ function renderWeekBars(){
   // 📸 la sesión más larga de los últimos 7 días (no las de árbol seco); sin sesiones, no sale
   var b=mejorSesionSemana(),bt=$("btnShareBest");
   if(bt){bt.classList.toggle("hidden",!b);bt.dataset.id=b?b.id:"";if(b)bt.setAttribute("aria-label","Compartir en stories tu mejor sesión de la semana: "+hMin(b.min));}
+}
+// «📸 N imágenes compartidas» bajo los botones de la semana: solo informativo, solo si N≥1 (DATA.compartidas lo
+// cuenta contarCompartida, app-extra.js). El title/aria-label da el desglose por botón.
+function renderCompartidas(){
+  var el=$("pCompartidas");if(!el)return;
+  var c=DATA.compartidas&&typeof DATA.compartidas==="object"?DATA.compartidas:{},n=0,k;for(k in c)n+=Math.max(0,+c[k]||0);
+  el.classList.toggle("hidden",!n);if(!n){el.textContent="";el.removeAttribute("title");el.removeAttribute("aria-label");return;}
+  el.textContent="📸 "+n+(n===1?" imagen compartida":" imágenes compartidas");
+  var d=[["sesion","sesión"],["hist","historial"],["bosque","bosque"],["semana","semana"]].filter(function(x){return +c[x[0]]>0;}).map(function(x){return x[1]+": "+c[x[0]];}).join(" · ");
+  el.title=d;el.setAttribute("aria-label",el.textContent.slice(3)+" ("+d+")");
 }
 // Sin lista: últimos 7 días (Perfil). Con lista (p. ej. la semana pasada del Wrapped): la más larga de esa lista.
 function mejorSesionSemana(ses){

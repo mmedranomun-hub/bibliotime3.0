@@ -175,7 +175,7 @@ function compartirSemana(origen){
   var motivo=await compartirLienzo(c,"mi-semana.png","Mi semana de estudio 📚 "+hMin(total)+" · bibliomapa.es");
   // «📸 Ayer compartiste tu semana de…» de la bienvenida de mañana (tipo "semana", min = total semanal): solo si se
   // compartió o descargó, nunca al cancelar. También vale para la vuelta («Dos días seguidos plantando y compartiendo»)
-  if(motivo){DATA.ultimaCompartida={fecha:ymd(),min:total,tipo:"semana"};saveUserData();}
+  if(motivo){DATA.ultimaCompartida={fecha:ymd(),min:total,tipo:"semana"};contarCompartida("semana");saveUserData();}
   return motivo;
   });
 }
@@ -372,7 +372,7 @@ async function compartirBosque(origen,periodo){
     textoC(g,"Planta tu bosque estudiando",W/2,1700,"600 48px system-ui,sans-serif","rgba(255,255,255,.9)");
     textoC(g,"bibliomapa.es",W/2,1790,"800 64px system-ui,sans-serif");
     var motivo=await compartirLienzo(L.c,"mi-bosque.png","Mi bosque de estudio 🌳 "+hMin(min)+" · bibliomapa.es");
-    if(motivo){DATA.ultimaCompartida={fecha:ymd(),min:min,tipo:"bosque"};saveUserData();}
+    if(motivo){DATA.ultimaCompartida={fecha:ymd(),min:min,tipo:"bosque"};contarCompartida("bosque");saveUserData();}
     return motivo;
   });
 }
@@ -408,14 +408,24 @@ function rachaHasta(fecha){
    `origen` es el botón 📸 que lo lanzó (si no llega, el del evento en curso); ver conCandado. */
 async function compartirSesionStory(id,titulo,origen){
   var s=typeof id==="number"?DATA.sessions[id]:DATA.sessions.filter(function(x){return x.id===id;})[0]; if(!s)return false;
+  var ob=origen||(window.event&&window.event.currentTarget),tipo=ob&&ob.classList&&ob.classList.contains("feed-share")?"hist":"sesion";
   return conCandado(origen,async function(){
     showToast("Preparando tu imagen…");
     var motivo=await compartirLienzo(await dibujarSesionStory(s,titulo),"mi-sesion.png",(titulo?titulo+": ":"He estudiado ")+hMin(s.min)+" 📚 bibliomapa.es");
     // «📸 Ayer compartiste…» de la bienvenida de mañana: si se compartió o se descargó (la descarga es para subirla
     // a stories, así que también cuenta), nunca al cancelar
-    if(motivo){DATA.ultimaCompartida={fecha:ymd(),min:s.min};saveUserData();}
+    if(motivo){DATA.ultimaCompartida={fecha:ymd(),min:s.min};contarCompartida(tipo);saveUserData();}
     return motivo;
   });
+}
+/* Contador local de imágenes 📸 creadas con éxito (hoja o descarga; nunca al cancelar ni si falla el dibujo):
+   DATA.compartidas={sesion,hist,bosque,semana}. sesion = «Sesión terminada» (#sessShare) y los «mejor sesión»
+   (#btnShareBest, Wrapped); hist = el 📸 de cada fila del historial (.feed-share); bosque = compartirBosque (bosque,
+   historia del día, semana pasada del Wrapped); semana = «Compartir mi semana» del perfil. Solo cifras, sin red: se
+   guarda con el resto de DATA (saveUserData lo llama quien cuenta). Datos antiguos sin el campo empiezan en 0. */
+function contarCompartida(tipo){
+  var c=DATA.compartidas;if(!c||typeof c!=="object"||Array.isArray(c))c=DATA.compartidas={};
+  c[tipo]=(+c[tipo]||0)+1;if(typeof renderCompartidas==="function")renderCompartidas();
 }
 /* Candado común de las imágenes para stories (sesión y bosque): mientras se dibuja y está abierta la hoja de
    compartir, el botón que lo lanzó queda disabled + aria-busy y cualquier otro toque se ignora, así un doble

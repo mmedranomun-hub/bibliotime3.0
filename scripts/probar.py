@@ -2142,6 +2142,34 @@ PRUEBAS = [
         if(DATA.semillasPremio!==5||vuelos.length!==1)return 'el segundo del día suma otra 🌰';
         return true;
       }finally{window.encolarVuelo=ev0;navigator.share=sh0;navigator.canShare=cs0;COMPARTIDA_MS=ms0;compartiendoImagen=false;DATA.sessions=s0;DATA.ultimaCompartida=uc0;DATA.premioCompartir=pc0;DATA.semillasPremio=sp0;FOREST_PERIOD=fp0;closeModal();renderForest();renderSemillas();goView('map');}"""),
+    ("📸 Contador local: DATA.compartidas sube al compartir con éxito (sesión, historial, bosque), no al cancelar, y el Perfil dice «📸 N imágenes compartidas» (1 → singular) solo si N≥1, con el desglose en title", """
+      await cargarExtra();
+      var s0=DATA.sessions,uc0=DATA.ultimaCompartida,fp0=FOREST_PERIOD,sh0=navigator.share,cs0=navigator.canShare,ms0=COMPARTIDA_MS,pc0=DATA.premioCompartir,c0=DATA.compartidas,ok=null,ko=null;
+      try{
+        closeModal();FOREST_PERIOD='week';COMPARTIDA_MS=200;DATA.premioCompartir=ymd();delete DATA.compartidas;
+        navigator.canShare=()=>true;navigator.share=function(){return new Promise((a,r)=>{ok=a;ko=()=>r(Object.assign(new Error('cancelada'),{name:'AbortError'}));});};
+        DATA.sessions=[{id:'cc1',date:ymd(),min:40,bib:NO_BIB,focus:'ok',esp:'roble'}];
+        var espera=async f=>{for(var i=0;i<60&&!f();i++)await new Promise(r=>setTimeout(r,50));};
+        goView('profile');var el=document.getElementById('pCompartidas');if(!el)return 'sin #pCompartidas';
+        if(!el.classList.contains('hidden')||el.offsetParent)return 'con 0 (datos antiguos sin el campo) sale la línea: '+el.innerText;
+        var b=document.createElement('button');b.className='feed-share';document.body.appendChild(b);
+        ko=null;var p=compartirSesionStory('cc1',null,b);await espera(()=>ko);ko();await p;
+        if(DATA.compartidas&&(DATA.compartidas.hist||DATA.compartidas.sesion))return 'cancelar cuenta: '+JSON.stringify(DATA.compartidas);
+        renderProfile();if(!el.classList.contains('hidden'))return 'tras cancelar sale la línea';
+        ok=null;p=compartirSesionStory('cc1',null,b);await espera(()=>ok);ok();await p;b.remove();
+        if(!DATA.compartidas||DATA.compartidas.hist!==1)return 'el 📸 del historial no cuenta: '+JSON.stringify(DATA.compartidas);
+        renderProfile();if(el.classList.contains('hidden')||!el.offsetParent)return 'con 1 no sale la línea';
+        if(el.innerText.trim()!=='📸 1 imagen compartida')return 'singular mal: '+el.innerText;
+        var s=document.createElement('button');s.id='sessShareP';document.body.appendChild(s);
+        ok=null;p=compartirSesionStory('cc1',null,s);await espera(()=>ok);ok();await p;s.remove();
+        ok=null;p=compartirBosque(null,'week');await espera(()=>ok);ok();await p;
+        var c=DATA.compartidas;if(c.sesion!==1||c.hist!==1||c.bosque!==1)return 'desglose mal: '+JSON.stringify(c);
+        var guardado=Brain.getUserData(CURRENT);if(!guardado.compartidas||guardado.compartidas.bosque!==1)return 'no se guarda con DATA';
+        renderProfile();if(el.innerText.trim()!=='📸 3 imágenes compartidas')return 'plural mal: '+el.innerText;
+        if(!/sesión: 1/.test(el.title)||!/historial: 1/.test(el.title)||!/bosque: 1/.test(el.title))return 'title sin desglose: '+el.title;
+        if(!/3 imágenes compartidas \\(/.test(el.getAttribute('aria-label')||''))return 'aria-label sin desglose: '+el.getAttribute('aria-label');
+        return true;
+      }finally{navigator.share=sh0;navigator.canShare=cs0;COMPARTIDA_MS=ms0;compartiendoImagen=false;DATA.sessions=s0;DATA.ultimaCompartida=uc0;DATA.premioCompartir=pc0;if(c0===undefined)delete DATA.compartidas;else DATA.compartidas=c0;saveUserData();FOREST_PERIOD=fp0;closeModal();renderProfile();goView('map');}"""),
     ("📸 ✓ Guardada: sin navigator.share descarga y el botón dice «✓ Guardada»; si la hoja falla con NotAllowedError, descarga igual con «No se pudo abrir compartir · imagen guardada»; cancelar no descarga", """
       await cargarExtra();
       var s0=DATA.sessions,uc0=DATA.ultimaCompartida,fp0=FOREST_PERIOD,sh0=navigator.share,cs0=navigator.canShare,st0=window.showToast,ms0=COMPARTIDA_MS,toasts=[],bajadas=[];
