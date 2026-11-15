@@ -265,5 +265,18 @@ window.TEMPORADA_EXAMENES = [
     horario: "lunes a sábado de 8:00 a 21:00; domingos y festivos 15, 23, 29 y 30 nov y 3, 6, 8, 13 y 20 dic, de 8:00 a 20:00",
     nota: "Uso libre, sin reserva de puesto.",
     f: "https://noticias-biblioteca.unav.edu/2026/11/09/la-biblioteca-en-examenes-3/", fv: "2026-11-14"
+  },
+  // UAM: la agenda de horarios de las bibliotecas (biblioagenda.uam.es, semanas hasta el 28-3-2027) ya da el tramo hasta la
+  // 1:00 que la noticia del 19-10 dejaba sin fin: Sala Búho de 9:00 a 1:00 del sábado 9 al martes 19 de enero de 2027, todos
+  // los días; desde el 20 ene vuelve a 9:00-20:30 (cerrada el 29 ene). Sin `semana`: el formato no admite cierres después de
+  // medianoche. La entrada anterior de la Sala Búho (otoño, hasta el 8 ene) se deja como está.
+  {
+    ciudad: "Madrid", provincia: "Madrid",
+    espacio: "Sala Búho · Biblioteca de Ciencias, Universidad Autónoma de Madrid (Cantoblanco), ampliación de enero",
+    bib: "Sala Búho · Biblioteca de Ciencias UAM",
+    desde: "2027-01-09", hasta: "2027-01-19",
+    horario: "todos los días, también sábados y domingos, de 9:00 a 1:00 de la madrugada",
+    nota: "Fines de semana se entra desde el exterior por la rampa. Del 20 de enero vuelve a 9:00-20:30; cerrada el 29 ene (festividad de la UAM).",
+    f: "https://biblioagenda.uam.es/hours", fv: "2026-11-15"
   }
 ];
