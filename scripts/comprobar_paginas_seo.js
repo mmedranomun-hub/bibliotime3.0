@@ -966,6 +966,26 @@ const libDeFicha = (h) => {
   }
   return null;
 };
+// Un elemento «<a> Sábado: … · Domingo: …» de un bloque de fin de semana: ficha generada con horario verificado (fuente y
+// fecha), mismo name y la franja de cada día la de su openingHoursSpecification; al menos un día abierto. Devuelve la
+// Library de la ficha (o null si no lo es), para las comprobaciones propias de cada bloque.
+function itemFinde(quien, href, nombre, sab, dom, mal) {
+  const fh = html.get(href);
+  if (!fh) { mal.push(`${quien}: no es una ficha generada (sin horario verificado)`); return null; }
+  if (!/<p class="fuente">Verificado el \d\d\/\d\d\/\d{4} en la <a href="https?:\/\//.test(fh)) { mal.push(`${quien}: la ficha no tiene horario verificado con fuente y fecha`); return null; }
+  const lib = libDeFicha(fh);
+  if (!lib || !Array.isArray(lib.openingHoursSpecification)) { mal.push(`${quien}: la ficha no tiene Library con openingHoursSpecification`); return null; }
+  if (decodifica(nombre) !== lib.name) mal.push(`${quien}: «${decodifica(nombre)}» ≠ name de la ficha «${lib.name}»`);
+  const franja = (dia) => lib.openingHoursSpecification.filter((x) => x.dayOfWeek === dia).map((x) => `${hhmm(x.opens)}–${hhmm(x.closes)}`).join(", ");
+  const abiertos = [["sábado", "Saturday", decodifica(sab).trim()], ["domingo", "Sunday", decodifica(dom).trim()]].map(([d, en, t]) => {
+    const f = franja(en);
+    if (t === "cerrada" || t === "sin confirmar") { if (f) mal.push(`${quien}: «${t}» el ${d}, pero la ficha abre ${f}`); return false; }
+    if (t !== f) mal.push(`${quien}: el ${d} «${t}», la ficha dice ${f ? `«${f}»` : "que no abre"}`);
+    return !!f;
+  });
+  if (!abiertos.some(Boolean)) mal.push(`${quien}: según su ficha no abre ni el sábado ni el domingo`);
+  return lib;
+}
 for (const [r, h] of html) {
   const secs = [...h.matchAll(/<section class="ficha finde" id="fin-de-semana"[^>]*>([\s\S]*?)<\/section>/g)];
   if (!secs.length) continue;
@@ -977,23 +997,57 @@ for (const [r, h] of html) {
   if (items.length !== lis) findeMal.push(`${r}: ${lis - items.length} elemento(s) del bloque fin-de-semana sin el formato «<a> Sábado: … · Domingo: …»`);
   for (const [, href, nombre, sab, dom] of items) {
     nFindeItems++;
-    const fh = html.get(href), quien = `${r} → ${href}`;
-    if (!fh) { findeMal.push(`${quien}: no es una ficha generada (sin horario verificado)`); continue; }
-    if (!/<p class="fuente">Verificado el \d\d\/\d\d\/\d{4} en la <a href="https?:\/\//.test(fh)) { findeMal.push(`${quien}: la ficha no tiene horario verificado con fuente y fecha`); continue; }
-    const lib = libDeFicha(fh);
-    if (!lib || !Array.isArray(lib.openingHoursSpecification)) { findeMal.push(`${quien}: la ficha no tiene Library con openingHoursSpecification`); continue; }
-    if (decodifica(nombre) !== lib.name) findeMal.push(`${quien}: «${decodifica(nombre)}» ≠ name de la ficha «${lib.name}»`);
-    const franja = (dia) => lib.openingHoursSpecification.filter((x) => x.dayOfWeek === dia).map((x) => `${hhmm(x.opens)}–${hhmm(x.closes)}`).join(", ");
-    const abiertos = [["sábado", "Saturday", decodifica(sab).trim()], ["domingo", "Sunday", decodifica(dom).trim()]].map(([d, en, t]) => {
-      const f = franja(en);
-      if (t === "cerrada" || t === "sin confirmar") { if (f) findeMal.push(`${quien}: «${t}» el ${d}, pero la ficha abre ${f}`); return false; }
-      if (t !== f) findeMal.push(`${quien}: el ${d} «${t}», la ficha dice ${f ? `«${f}»` : "que no abre"}`);
-      return !!f;
-    });
-    if (!abiertos.some(Boolean)) findeMal.push(`${quien}: según su ficha no abre ni el sábado ni el domingo`);
+    itemFinde(`${r} → ${href}`, href, nombre, sab, dom, findeMal);
   }
 }
 console.log(`«Abiertas el sábado y el domingo» (provincias y localidades; cada una, ficha con horario verificado y la franja de su ficha): ${nFindePag} páginas, ${nFindeItems} elementos · mal: ${findeMal.length}${findeMal.length ? "\n" + muestra(findeMal, (r) => "  " + r) : ""}`);
+// «Abiertas el fin de semana cerca de <localidad>» (<section … id="finde-cerca">, 2026-11-15): solo en páginas de
+// localidad sin bloque #fin-de-semana; de 1 a 3 elementos, cada uno con la regla de arriba (ficha verificada, franja de su
+// ficha, abre sábado o domingo) y además a ≤ 15 km del centroide de la ItemList de la página (geo de sus Library), con la
+// distancia del texto («a 3,7 km») igual a la calculada, de menor a mayor, y de otra localidad (no de la lista de la página).
+const findeCercaMal = [];
+let nFindeCercaPag = 0, nFindeCercaItems = 0;
+const distKm = (a, b) => { const R = 6371, k = Math.PI / 180, dLa = (b.lat - a.lat) * k, dLo = (b.lon - a.lon) * k;
+  const x = Math.sin(dLa / 2) ** 2 + Math.cos(a.lat * k) * Math.cos(b.lat * k) * Math.sin(dLo / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(x)); };
+const distTexto = (km) => (km < 1 ? `${Math.max(50, Math.round(km * 20) * 50)} m` : `${km.toFixed(1).replace(".", ",")} km`);
+const itemListDe = (h) => {
+  for (const m of h.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)) {
+    let j; try { j = JSON.parse(m[1]); } catch (e) { continue; }
+    const n = [].concat(j).flatMap((x) => (x && x["@graph"]) || [x]).find((x) => x && x.mainEntity && x.mainEntity["@type"] === "ItemList");
+    if (n) return n.mainEntity.itemListElement.map((e) => e.item);
+  }
+  return null;
+};
+for (const [r, h] of html) {
+  const secs = [...h.matchAll(/<section class="ficha finde" id="finde-cerca"[^>]*>([\s\S]*?)<\/section>/g)];
+  if (!secs.length) continue;
+  nFindeCercaPag++;
+  if (secs.length > 1) findeCercaMal.push(`${r}: más de un bloque finde-cerca`);
+  if (/id="fin-de-semana"/.test(h)) findeCercaMal.push(`${r}: ya tiene bloque #fin-de-semana (el de cerca es solo para localidades sin ninguna abierta el fin de semana)`);
+  const lista = itemListDe(h);
+  const geos = (lista || []).map((x) => x && x.geo).filter((g) => g && typeof g.latitude === "number" && typeof g.longitude === "number");
+  if (!lista || !lista.length || geos.length !== lista.length) { findeCercaMal.push(`${r}: sin ItemList con geo en todas sus bibliotecas para el centroide`); continue; }
+  const c = { lat: geos.reduce((a, g) => a + g.latitude, 0) / geos.length, lon: geos.reduce((a, g) => a + g.longitude, 0) / geos.length };
+  const propias = new Set(lista.map((x) => x["@id"]));
+  const s = secs[0][1], lis = (s.match(/<li>/g) || []).length;
+  const items = [...s.matchAll(/<li><a href="([^"]+)">([^<]*)<\/a> <small>a ([^<·]+?) · [^<]+<\/small> <span class="finde-h">Sábado: ([^<·]+?) · Domingo: ([^<]+)<\/span><\/li>/g)];
+  if (lis < 1 || lis > 3) findeCercaMal.push(`${r}: ${lis} elementos en el bloque finde-cerca (de 1 a 3)`);
+  if (items.length !== lis) findeCercaMal.push(`${r}: ${lis - items.length} elemento(s) del bloque finde-cerca sin el formato «<a> <small>a N km · localidad</small> Sábado: … · Domingo: …»`);
+  let antes = -1;
+  for (const [, href, nombre, dist, sab, dom] of items) {
+    nFindeCercaItems++;
+    const quien = `${r} → ${href}`, lib = itemFinde(quien, href, nombre, sab, dom, findeCercaMal);
+    if (!lib) continue;
+    if (propias.has(lib["@id"])) findeCercaMal.push(`${quien}: es de la propia localidad (debería estar en #fin-de-semana)`);
+    if (!lib.geo) { findeCercaMal.push(`${quien}: la ficha no tiene geo`); continue; }
+    const d = distKm(c, { lat: lib.geo.latitude, lon: lib.geo.longitude });
+    if (d > 15) findeCercaMal.push(`${quien}: a ${d.toFixed(1)} km del centroide (máximo 15 km)`);
+    if (decodifica(dist).trim() !== distTexto(d)) findeCercaMal.push(`${quien}: dice «a ${decodifica(dist).trim()}», calculado ${distTexto(d)}`);
+    if (d < antes) findeCercaMal.push(`${quien}: no está ordenada de más cerca a más lejos`);
+    antes = d;
+  }
+}
+console.log(`«Abiertas el fin de semana cerca de…» (localidades sin ninguna abierta el fin de semana; ficha verificada, franja de su ficha, ≤ 15 km del centroide): ${nFindeCercaPag} páginas, ${nFindeCercaItems} elementos · mal: ${findeCercaMal.length}${findeCercaMal.length ? "\n" + muestra(findeCercaMal, (r) => "  " + r) : ""}`);
 // «Horario ampliado en época de exámenes» de provincias y localidades (<section … id="examenes-epoca">, 2026-11-14): cada
 // elemento debe ser una entrada de temporada-examenes.js (mismo espacio, desde y hasta) con fuente f https y fecha fv, su
 // enlace «fuente oficial» debe ser esa f y su «comprobado el» esa fv, su periodo no puede haber pasado (hasta ≥ hoy en
@@ -1105,5 +1159,5 @@ async function probarAvisoIndexNow() {
   const t0 = Date.now();
   const [avisoMal, nCasos] = await probarAvisoIndexNow();
   console.log(`IndexNow «despliega primero» y simulación (avisar_indexnow.js --base contra servidor local, sin red real): ${nCasos - new Set(avisoMal.map((x) => x.split(" ")[0])).size} de ${nCasos} casos bien (200 con la clave → 0; 404, otro texto o servidor caído → 1; --simular y clave null → 0 sin peticiones) en ${Date.now() - t0} ms · mal: ${avisoMal.length}${avisoMal.length ? "\n" + muestra(avisoMal, (r) => "  " + r) : ""}`);
-  if (exMal.length || findeMal.length || cssMal.length || listaMigasMal.length || ariaActualMal.length || cpIdMal.length || refsIdMal.length || migasVisMal.length || itemMigasMal.length || avisoMal.length || vistaMal.length || analiticaMal.length || gscMal.length || indexNowMal.length || migasMal.length || mainEntityMal.length || faqMal.length || indiceMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || idAppMal.length || idNombreMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
+  if (exMal.length || findeMal.length || findeCercaMal.length || cssMal.length || listaMigasMal.length || ariaActualMal.length || cpIdMal.length || refsIdMal.length || migasVisMal.length || itemMigasMal.length || avisoMal.length || vistaMal.length || analiticaMal.length || gscMal.length || indexNowMal.length || migasMal.length || mainEntityMal.length || faqMal.length || indiceMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || idAppMal.length || idNombreMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
 })();

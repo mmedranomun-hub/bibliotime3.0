@@ -1173,10 +1173,30 @@ function tablaHorario(b) {
 const RADIO_VERIF_KM = 15, MAX_VERIF_CERCA = 4;
 let conHorarioYFicha = null, nFichasVerifCerca = 0, nEnlacesVerifCerca = 0, nLocsVerifCerca = 0, nEnlacesLocVerifCerca = 0;
 // `b`: una biblioteca o cualquier punto { lat, lon } (el centroide de una localidad, que no tiene `i`).
-function cercanasVerificadas(b, ya) {
+// `filtro` (opcional): además, solo las que cumplen (p. ej. abreFinde); `max`: cuántas como mucho.
+function cercanasVerificadas(b, ya, filtro, max = MAX_VERIF_CERCA) {
   conHorarioYFicha = conHorarioYFicha || todas.filter((o) => verificado(o) && paginaDe.has(o.i));
-  return conHorarioYFicha.filter((o) => o.i !== b.i && !ya.has(o.i)).map((o) => ({ o, d: distKm(b, o) }))
-    .filter((x) => x.d <= RADIO_VERIF_KM).sort((x, y) => x.d - y.d || x.o.i - y.o.i).slice(0, MAX_VERIF_CERCA);
+  return conHorarioYFicha.filter((o) => o.i !== b.i && !ya.has(o.i) && (!filtro || filtro(o))).map((o) => ({ o, d: distKm(b, o) }))
+    .filter((x) => x.d <= RADIO_VERIF_KM).sort((x, y) => x.d - y.d || x.o.i - y.o.i).slice(0, max);
+}
+// «Abiertas el fin de semana cerca de <localidad>» (2026-11-15, Objetivo 4): en las páginas de localidad sin bloque
+// #fin-de-semana (ninguna de las suyas con horario verificado abre sábado ni domingo), debajo de la tabla, las 1-3 fichas
+// verificadas más cercanas al centroide (≤ RADIO_VERIF_KM, como cercanasVerificadas) que abren el sábado o el domingo,
+// con distancia y la franja de cada día de su ficha. Ninguna a ≤ 15 km, nada. scripts/comprobar_paginas_seo.js aplica
+// la misma regla que al bloque de fin de semana (ficha verificada y franja de su ficha) y además la distancia al
+// centroide de la ItemList de la página (≤ 15 km, la del texto, de menor a mayor).
+const MAX_FINDE_CERCA = 3;
+let nLocsFindeCerca = 0, nItemsFindeCerca = 0;
+function bloqueFindeCerca(c, l) {
+  const cerca = cercanasVerificadas(centro(l), new Set(l.map((b) => b.i)), (o) => !!abreFinde(o), MAX_FINDE_CERCA);
+  if (!cerca.length) return "";
+  nLocsFindeCerca++; nItemsFindeCerca += cerca.length;
+  const dia = (b, d) => franjas(b.h.inv[d]) || (sinConfirmar(b, d) ? "sin confirmar" : "cerrada");
+  const items = cerca.map(({ o, d }) => `<li><a href="${paginaDe.get(o.i)}">${esc(o.n)}</a> <small>a ${distTexto(d)} · ${esc(o.c)}</small> <span class="finde-h">Sábado: ${esc(dia(o, "S"))} · Domingo: ${esc(dia(o, "D"))}</span></li>`).join("");
+  return `<section class="ficha finde" id="finde-cerca" aria-labelledby="t-finde-cerca"><h2 id="t-finde-cerca">Abiertas el fin de semana cerca de ${esc(c)}</h2>
+<p>Ninguna biblioteca de ${esc(c)} con horario verificado abre el sábado ni el domingo. ${cerca.length === 1 ? "Esta, a" : "Estas, a"} menos de ${RADIO_VERIF_KM} km del centro de sus bibliotecas, sí (horario de invierno, en su web oficial):</p>
+<ul class="finde-lista">${items}</ul>
+<p class="fuente">Distancia en línea recta. Festivos y época de exámenes pueden cambiarlo: confírmalo en su ficha antes de ir.</p></section>`;
 }
 // Marcado de la sección, común a fichas y páginas de localidad. `c`: localidad de referencia (solo se nombra la
 // localidad de las que son de otra); `intro`: HTML ya escapado o "".
@@ -1609,7 +1629,7 @@ provincias.forEach((p) => {
     escribe(ruta, pagina({
       ruta, titulo: tl.titulo, descripcion: dl,
       h1: `Bibliotecas en ${esc(c)}`, intro: `${l.length} bibliotecas y salas de estudio en ${esc(c)} (${esc(p)})${k.v ? `, ${k.v} con horario verificado` : ""}. En el mapa de Bibliomapa ves en tiempo real cuáles están abiertas y cuál te pilla más cerca.`,
-      cuerpo: `${navPorHorario(p, c)}${navSalas(salasDeLoc.has(p + "|" + c) ? [salasDeLoc.get(p + "|" + c)] : [])}${navExamenes(exDeLoc(p, c))}${navUniversidades((b) => b.p === p && b.c === c)}${tablaHorariosLugar(c, l)}${bloqueFinde(c, l, temaLoc["abiertas-fin-de-semana"][p + "|" + c] ? `${ruta}abiertas-fin-de-semana/` : null)}${bloqueExamenes(c, p, c)}<section class="lista">${l.map((b) => tarjeta(b)).join("")}</section>${secVerif}${f.html}${seccionLocalidadesCercanas(p, c)}<p class="volver"><a href="/bibliotecas/${ps}/">← Todas las bibliotecas de ${esc(p)}</a></p>`,
+      cuerpo: `${navPorHorario(p, c)}${navSalas(salasDeLoc.has(p + "|" + c) ? [salasDeLoc.get(p + "|" + c)] : [])}${navExamenes(exDeLoc(p, c))}${navUniversidades((b) => b.p === p && b.c === c)}${tablaHorariosLugar(c, l)}${bloqueFinde(c, l, temaLoc["abiertas-fin-de-semana"][p + "|" + c] ? `${ruta}abiertas-fin-de-semana/` : null) || bloqueFindeCerca(c, l)}${bloqueExamenes(c, p, c)}<section class="lista">${l.map((b) => tarjeta(b)).join("")}</section>${secVerif}${f.html}${seccionLocalidadesCercanas(p, c)}<p class="volver"><a href="/bibliotecas/${ps}/">← Todas las bibliotecas de ${esc(p)}</a></p>`,
       migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], [p, `/bibliotecas/${ps}/`], [c, ruta]], migasId: idMigasDe(ruta), head: k.v ? ESTILO_TABLA_HOR : "",
       ld: [ldLugar(ruta, tl.nombre, dl, { ...modVerif(l), ...superiorLugar(tp.nombre, `/bibliotecas/${ps}/`), ...conMigas(ruta), ...partesLugar(p, c, { salasL: salasDeLoc.has(p + "|" + c) ? [salasDeLoc.get(p + "|" + c)] : [], exL: exDeLoc(p, c), filtroUni: (b) => b.p === p && b.c === c }), mainEntity: { "@type": "ItemList", name: `Bibliotecas en ${c}`, numberOfItems: l.length, itemListElement: l.map((b, k) => ({ "@type": "ListItem", position: k + 1, item: itemBib(b) })) } }), f.ld],
     }));
@@ -2386,6 +2406,7 @@ console.log(`FAQPage en el grafo de su CollectionPage (@id <ruta>#faq, isPartOf 
 console.log(`Provincias con ItemList de sus fichas en el JSON-LD: ${nProvItemList} de ${provincias.length} · elementos: ${nItemsProv}`);
 console.log(`Library sin ficha en los ItemList con @id = su url de la app (/#bib=…): ${nItemsIdApp} elementos, ${idsApp.size} bibliotecas`);
 console.log(`Provincias y localidades con «Abiertas el sábado y el domingo» (horario verificado): ${nFinde}`);
+console.log(`Localidades sin ninguna abierta el fin de semana con «Abiertas el fin de semana cerca de…» (fichas verificadas a ≤ ${RADIO_VERIF_KM} km): ${nLocsFindeCerca} páginas, ${nItemsFindeCerca} elementos`);
 console.log(`Provincias y localidades con «Horario ampliado en época de exámenes»: ${nExEpoca} (${nExEpocaItems} entradas listadas)`);
 console.log(`Localidades sin ninguna verificada con «Cerca, con horario verificado» (≤ ${RADIO_VERIF_KM} km del centroide): ${nLocsVerifCerca} · enlaces: ${nEnlacesLocVerifCerca}`);
 console.log(`Fichas con «Cerca, con horario verificado» (≤ ${RADIO_VERIF_KM} km, otra ficha): ${nFichasVerifCerca} de ${paginaDe.size} · enlaces: ${nEnlacesVerifCerca}`);
