@@ -460,6 +460,12 @@
   .feed-item .foffer{margin-top:6px;font-size:var(--fs-s);color:var(--acento-tx);font-weight:700}
   .fverif{color:var(--abierto)}
   .feed-item .feed-mis{margin-top:8px;font-size:var(--fs-xs);color:var(--suave);font-weight:700}.feed-item .feed-mis b{color:var(--ok-tx)}
+  /* la línea con misiones conocidas es un botón-enlace discreto (44 px de alto) que despliega cuáles fueron */
+  .feed-item button.feed-mis{display:block;min-height:44px;margin:0;padding:10px 8px 10px 0;border:0;background:none;font-family:inherit;line-height:24px;text-align:left;cursor:pointer}
+  .feed-item button.feed-mis::after{content:"▾";display:inline-block;margin-left:6px}
+  .feed-item button.feed-mis[aria-expanded="true"]::after{transform:rotate(180deg)}
+  .feed-item button.feed-mis:hover{text-decoration:underline dotted}
+  .feed-mis-lista{list-style:none;margin:6px 0 4px;padding:0;font-size:var(--fs-xs);color:var(--suave);line-height:1.6}
   .pr-banner{margin-top:12px;padding:10px 12px;border-radius:var(--r-m);background:rgba(245,158,11,.12);
     display:flex;align-items:center;gap:9px;font-size:var(--fs-s);font-weight:700;color:var(--texto)}
   .pr-banner .pr-badge{background:var(--grad-aviso);color:#fff;font-size:var(--fs-2xs);font-weight:900;

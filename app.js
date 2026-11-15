@@ -972,6 +972,11 @@ function commentThreadHTML(localId,ownerId){
 function initCommentEvents(){
   var el=$("sessionFeed"); if(!el)return;
   el.addEventListener("click",function(e){
+    var b=e.target.closest("[data-mis-ver]"); if(!b)return;
+    var ab=b.getAttribute("aria-expanded")!=="true",l=document.getElementById(b.getAttribute("aria-controls"));
+    MIS_VER[b.dataset.misVer]=ab; b.setAttribute("aria-expanded",ab); if(l)l.hidden=!ab;
+  });
+  el.addEventListener("click",function(e){
     var r=e.target.closest("[data-reac]"); if(!r)return;
     reaccionar(r.dataset.reacSid,r.dataset.reacOwner,r.dataset.reac);
   });
@@ -3453,7 +3458,16 @@ var MIS_PREMIO=10; // 🌰 por misión cumplida (comprobarMisiones y la pista «
 // si la 3.ª misión del día (la última de M.hechas) es suya, s.cofre=1 y « · 🎁 cofre».
 function idsMisionesSesion(s){var M=DATA&&DATA.misiones;if(!s||!s.ts||!M||M.fecha!==ymd())return [];
   return M.ids.filter(function(id){var t=M.hechas[id];return t&&id!=="social"&&id!=="agenda"&&Date.parse(t)>=s.ts;});}
-function misSesionHTML(s){var n=s.mis&&s.mis.length;return n?'<div class="feed-mis">✅ '+n+(n===1?' misión':' misiones')+' · <b>+'+n*MIS_PREMIO+' 🌰</b>'+(s.cofre?' · <b>🎁 cofre</b>':'')+'</div>':'';}
+// Si guarda qué misiones fueron (ids que misionDef conoce), la línea es un botón que despliega debajo «⏱️ Estudia 25 min hoy»…;
+// cerrada por defecto, MIS_VER recuerda las abiertas entre repintados. Sin ids conocidos o sin clave, la línea de siempre, sin tocar.
+var MIS_VER={};
+function misSesionHTML(s){var n=s.mis&&s.mis.length;if(!n)return '';
+  var t='✅ '+n+(n===1?' misión':' misiones')+' · <b>+'+n*MIS_PREMIO+' 🌰</b>'+(s.cofre?' · <b>🎁 cofre</b>':''),
+    ds=Array.isArray(s.mis)?s.mis.map(misionDef).filter(Boolean):[],kr=String(s.id||s.ts||''),k=escapeHTML(kr);
+  if(!ds.length||!k)return '<div class="feed-mis">'+t+'</div>';
+  var ab=!!MIS_VER[kr];
+  return '<button type="button" class="feed-mis" data-mis-ver="'+k+'" aria-expanded="'+ab+'" aria-controls="fml-'+k+'">'+t+'</button>'+
+    '<ul class="feed-mis-lista" id="fml-'+k+'"'+(ab?'':' hidden')+'>'+ds.map(function(d){return '<li>'+d.icon+' '+escapeHTML(d.txt)+'</li>';}).join('')+'</ul>';}
 function misionDef(id){return MISIONES_POOL.filter(function(m){return m.id===id;})[0];}
 function comprobarMisiones(){
   if(!DATA)return; var M=misionesDeHoy(), h=statsHoy(), nuevas=[];

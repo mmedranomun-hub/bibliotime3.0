@@ -1437,6 +1437,34 @@ PRUEBAS = [
         if(document.querySelectorAll('#sessionFeed .feed-mis').length!==4||[...document.querySelectorAll('#sessionFeed .feed-item')].filter(f=>/🎁/.test(f.innerText)).length!==1)return 'cofre en más de una sesión';
         return true;
       }finally{window.showToast=st;window.celebrar=ce;window.encolarVuelo=ev;window.celebrarDia=cd;k.forEach(x=>DATA[x]=o[x]);saveUserData();closeModal();renderSessionFeed();renderMisiones();goView('map');}"""),
+    ("historial de Estudio: la línea .feed-mis con misiones conocidas es un <button> de ≥ 44 px con aria-expanded que despliega «⏱️ Estudia 25 min hoy»… (--fs-xs, --suave, sin animación, cerrada por defecto y abierta tras repintar); sin ids conocidos, línea de siempre", """
+      var os=DATA.sessions,ot=feedTab,ov=Object.assign({},MIS_VER),hoy=ymd(),ya=Date.now();
+      try{
+        feedTab='mia';for(var x in MIS_VER)delete MIS_VER[x];goView('study');
+        DATA.sessions=[{id:'mvR',date:hoy,min:20,bib:NO_BIB,subject:'mvR',mis:['m25']},{id:'mvQ',date:hoy,min:20,ts:ya,bib:NO_BIB,subject:'mvQ',mis:['zzz']},
+          {id:'mvP',date:hoy,min:40,ts:ya,bib:NO_BIB,subject:'mvP',mis:['m25','pomo'],cofre:1},{date:hoy,min:20,bib:NO_BIB,subject:'mvS',mis:['pomo']}];
+        renderSessionFeed();
+        var fila=n=>[...document.querySelectorAll('#sessionFeed .feed-item')].find(f=>f.querySelector('.fplace').innerText.indexOf(n)>=0);
+        var lm=n=>fila(n).querySelector('.feed-mis'),ls=()=>fila('mvP').querySelector('.feed-mis-lista');
+        if(lm('mvQ').tagName!=='DIV'||lm('mvS').tagName!=='DIV'||fila('mvQ').querySelector('.feed-mis-lista'))return 'sin ids conocidos o sin clave debería ser la línea de siempre';
+        if(lm('mvR').tagName!=='BUTTON')return 'la sesión con id y misión conocida no se toca';
+        var b=lm('mvP');if(b.tagName!=='BUTTON'||b.type!=='button')return 'no es un botón: '+b.tagName;
+        if(!/✅ 2 misiones · \+20 🌰 · 🎁 cofre/.test(b.innerText))return 'perdió el texto: '+b.innerText;
+        if(b.getAttribute('aria-expanded')!=='false'||!ls().hidden||ls().offsetHeight)return 'no empieza cerrada';
+        if(document.getElementById(b.getAttribute('aria-controls'))!==ls())return 'aria-controls no apunta a la lista';
+        var r=b.getBoundingClientRect();if(r.height<44)return 'área táctil '+r.height+' px';
+        b.click();
+        if(b.getAttribute('aria-expanded')!=='true'||ls().hidden||!ls().offsetHeight)return 'no se despliega';
+        var li=[...ls().querySelectorAll('li')].map(x=>x.innerText.trim());
+        if(JSON.stringify(li)!==JSON.stringify(['⏱️ Estudia 25 min hoy','🍅 Completa un Pomodoro']))return 'misiones: '+JSON.stringify(li);
+        var t=document.createElement('i');t.style.cssText='font-size:var(--fs-xs);color:var(--suave)';document.body.appendChild(t);var cs=getComputedStyle(t),fs=cs.fontSize,co=cs.color;t.remove();
+        var cl=getComputedStyle(ls());if(cl.fontSize!==fs||cl.color!==co)return 'lista sin --fs-xs/--suave: '+cl.fontSize+' '+cl.color;
+        if(cl.animationName!=='none'||parseFloat(cl.transitionDuration))return 'lleva animación';
+        renderSessionFeed();if(lm('mvP').getAttribute('aria-expanded')!=='true'||ls().hidden)return 'se cierra al repintar';
+        if(lm('mvR').getAttribute('aria-expanded')!=='false')return 'abrió otra sesión';
+        lm('mvP').click();if(lm('mvP').getAttribute('aria-expanded')!=='false'||!ls().hidden)return 'no se vuelve a cerrar';
+        return true;
+      }finally{for(var y in MIS_VER)delete MIS_VER[y];Object.assign(MIS_VER,ov);DATA.sessions=os;feedTab=ot;renderSessionFeed();goView('map');}"""),
     ("«Sesión terminada» con las 3 misiones y el cofre sin abrir: «🎁 Tu cofre de misiones te espera» en --suave y «Abrirlo» guarda y lleva al cofre (nada con 2/3 ni con el cofre abierto)", """
       var k=['misiones','sessions','acciones','semillasPremio','streakFreezes','cofresAbiertos','sellosMisiones'],o={};k.forEach(x=>o[x]=DATA[x]);
       var viejo=new Date(Date.now()-5*3600000).toISOString(),espera=n=>new Promise(r=>setTimeout(r,n)),hoy=ymd();
