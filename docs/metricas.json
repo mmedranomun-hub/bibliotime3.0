@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-11-15 00:45",
+  "fecha": "2026-11-15 01:34",
   "pruebas": {
     "arranca: datos y vistas": true,
     "marca España (sin «Navarra» en la cabecera)": true,
@@ -30,6 +30,7 @@
     "el barrido de .mis-brilla es luz en claro y en oscuro (--destello blanco, nunca la pizarra de --glass-fuerte)": true,
     "al abrir el cofre, la tarjeta en oro recibe una vez el barrido --destello de .mis-brilla (.cofre-brilla, .6 s, en pausa bajo la ventana); nunca al recargar con el cofre abierto, quieta con reducir movimiento": true,
     "el barrido del cofre sigue pendiente si la tarjeta se repinta con la ventana abierta (p. ej. el tick de 30 s) y se ve una sola vez al cerrarla": true,
+    "tras abrir el cofre con teclado, al cerrar la ventana el foco vuelve a la tarjeta en oro (aria-disabled, sin disabled) que dice «Sello del día conseguido: N días…»; con ratón no se mueve; la tarjeta abierta no reabre ni premia": true,
     "al subir de nivel, la barra de nivel de Estudio hace una vez el barrido --destello (.lv-brilla, .6 s, en pausa bajo la ventana, pendiente con Estudio oculto); nunca al recargar ni con reducir movimiento": true,
     "el 🧊 del cofre vuela a la pastilla de la racha al cerrar la ventana (una vez, tras las 🌰; con reducir movimiento, solo la cifra)": true,
     "el 🧊 ganado por 7 días seguidos vuela del aviso a la pastilla de la racha y la racha dice «🧊 +1 por 7 días seguidos» (no «del cofre»); con reducir movimiento, solo la cifra": true,
@@ -88,13 +89,13 @@
     "fichas.json pesa como mucho 15 KB gzip (si no, pasar al formato {prov:{índice:slug}})": true
   },
   "errores_js": [],
-  "carga_ms_cpu4x": 613,
+  "carga_ms_cpu4x": 556,
   "carga_ms_cpu4x_min_max": [
-    520,
-    805
+    486,
+    574
   ],
-  "primera_pintura_ms_cpu4x": 260,
-  "todas_las_chinchetas_ms_cpu4x": 630,
+  "primera_pintura_ms_cpu4x": 244,
+  "todas_las_chinchetas_ms_cpu4x": 569,
   "markercluster": {
     "cargado": false,
     "agrupa": false,
@@ -118,8 +119,8 @@
       "kb_gzip": 32.1
     },
     "app.js": {
-      "kb": 303.4,
-      "kb_gzip": 90.9
+      "kb": 303.9,
+      "kb_gzip": 91.1
     },
     "bibliotecas-espana.js": {
       "kb": 1017.3,
