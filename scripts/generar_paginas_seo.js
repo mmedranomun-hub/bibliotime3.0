@@ -2227,8 +2227,9 @@ border:1px solid var(--linea);border-radius:var(--r-m);padding:10px 14px;margin:
 // compara <algo> con las localidades y temáticas de esa provincia (mismas reglas: distancia ≤ 2, prefijo único);
 // si nada encaja, sugiere la provincia como antes. Y /bibliotecas/<algo>/ compara también con las páginas de toda
 // España (/bibliotecas/abiertas-domingos/ → abiertas el domingo). Los slugs van en <script type="application/json"
-// id="slugs-404"> (sin enlaces): e = [slug, texto] de España, t = [slug, texto] de temáticas, p = {provincia: [nombres de
-// localidad, índices en t]}. Los textos salen del h1 de cada página (el de provincia sin « en <provincia>»). El slug de una localidad es norm(nombre) (igual que slug() aquí).
+// id="slugs-404"> (sin enlaces): e = [slug, texto] de España, t = [slug, texto] de temáticas, p = {provincia: [localidades
+// (nombre, o [nombre, índices en t] si tiene temáticas), índices en t]}. Tercer tramo (2026-11-15): /bibliotecas/<prov>/
+// <localidad exacta>/<algo>/ compara <algo> con las temáticas de esa localidad; si nada encaja, sugiere la localidad. Los textos salen del h1 de cada página (el de provincia sin « en <provincia>»). El slug de una localidad es norm(nombre) (igual que slug() aquí).
 const SCRIPT_BUSCABAS = `<script id="buscabas-js">(function(){
 var r=location.pathname.split("/"),fuera=r[1]!=="bibliotecas",i=fuera?1:2,caja=document.getElementById("buscabas"),D={},P=[],m;if(!r[i]||!caja)return;
 try{D=JSON.parse(document.getElementById("slugs-404").textContent)}catch(e){}
@@ -2244,7 +2245,9 @@ if(ex)return mejor;if(!mejor&&pre&&pre!==-1)return pre;return emp?null:mejor}
 var al=${JSON.stringify(ALIAS_404)}[norm(r[i].replace(/\\.html?$/i,"")).replace(/-/g,"")];
 if(al)P.forEach(function(c){if(c[0]===al)m=c});else m=busca(r[i],P.concat((D.e||[]).map(function(e){return[e[0],"/bibliotecas/"+e[0]+"/",e[1]]})),fuera);
 if(!m)return;
-if(m[3]&&!fuera&&r[3]&&(al||busca(r[2],[m],1))){var L=(D.p||{})[m[0]]||[[],[]],h="/bibliotecas/"+m[0]+"/",n=busca(r[3],L[0].map(function(l){return[norm(l),h+norm(l)+"/",l]}).concat(L[1].map(function(k){var t=D.t[k];return[t[0],h+t[0]+"/",t[1]+" en "+m[2]]})));if(n)m=n}
+function te(K,h,en){return K.map(function(k){var t=D.t[k];return[t[0],h+t[0]+"/",t[1]+" en "+en]})}
+if(m[3]&&!fuera&&r[3]&&(al||busca(r[2],[m],1))){var L=(D.p||{})[m[0]]||[[],[]],h="/bibliotecas/"+m[0]+"/",n=busca(r[3],L[0].map(function(l){var x=typeof l==="string"?[l]:l,s=norm(x[0]);return[s,h+s+"/",x[0],x.slice(1)]}).concat(te(L[1],h,m[2])));
+if(n){m=n;if(n[3]&&n[3].length&&r[4]&&busca(r[3],[n],1)){n=busca(r[4],te(n[3],n[1],n[2]));if(n)m=n}}}
 var l=document.createElement("a");l.href=m[1];l.textContent=m[2];
 caja.textContent="¿Buscabas ";caja.appendChild(l);caja.appendChild(document.createTextNode("?"));caja.hidden=false;
 })();</script>`;
@@ -2261,6 +2264,11 @@ caja.textContent="¿Buscabas ";caja.appendChild(l);caja.appendChild(document.cre
   // Datos de «¿Buscabas…?» para el segundo tramo, sacados de las páginas generadas (urls + h1De): nada inventado.
   const fichas = new Set(paginaDe.values()), minus = (t) => t.charAt(0).toLowerCase() + t.slice(1);
   const S404 = { e: [], t: [], p: {} }, temaN = {};
+  const indiceTema = (x, et) => {
+    if (!(x in temaN)) { temaN[x] = S404.t.length; S404.t.push([x, et]); }
+    else if (S404.t[temaN[x]][1] !== et) throw new Error(`404: ${x} tiene dos textos («${S404.t[temaN[x]][1]}» y «${et}»)`);
+    return temaN[x];
+  };
   for (const [u] of urls) {
     const x = (u.match(/^\/bibliotecas\/([^/]+)\/$/) || [])[1];
     if (x && !slugsProv.has(x)) S404.e.push([x, minus(h1De.get(u) || "")]);
@@ -2271,13 +2279,21 @@ caja.textContent="¿Buscabas ";caja.appendChild(l);caja.appendChild(document.cre
       const x = (u.match(new RegExp(`^/bibliotecas/${ps}/([^/]+)/$`)) || [])[1];
       if (!x || fichas.has(u)) continue;
       const c = porProv[p].find((b) => slug(b.c) === x && tieneLocPagina(p, b.c, porProv[p].filter((o) => o.c === b.c).length));
-      if (c) { locs.push(c.c); continue; }
+      if (c) {
+        // Temáticas de la localidad (tercer tramo, 2026-11-15): [nombre, índices en t] si tiene alguna; si no, solo el nombre.
+        const kl = [], sufL = ` en ${esc(c.c)}`; // el h1 de la página va escapado (l&#39;Hospitalet)
+        for (const [v] of urls) {
+          const y = (v.match(new RegExp(`^/bibliotecas/${ps}/${x}/([^/]+)/$`)) || [])[1];
+          if (!y || fichas.has(v)) continue;
+          const hl = h1De.get(v);
+          if (!hl || !hl.endsWith(sufL)) throw new Error(`404: el h1 de ${v} («${hl}») no acaba en «${sufL}»`);
+          kl.push(indiceTema(y, minus(hl.slice(0, -sufL.length))));
+        }
+        locs.push(kl.length ? [c.c, ...kl] : c.c); continue;
+      }
       const h = h1De.get(u), suf = ` en ${p}`;
       if (!h || !h.endsWith(suf)) throw new Error(`404: el h1 de ${u} («${h}») no acaba en «${suf}»`);
-      const et = minus(h.slice(0, -suf.length));
-      if (!(x in temaN)) { temaN[x] = S404.t.length; S404.t.push([x, et]); }
-      else if (S404.t[temaN[x]][1] !== et) throw new Error(`404: ${x} tiene dos textos («${S404.t[temaN[x]][1]}» y «${et}»)`);
-      temas.push(temaN[x]);
+      temas.push(indiceTema(x, minus(h.slice(0, -suf.length))));
     }
     if (locs.length || temas.length) S404.p[ps] = [locs, temas];
   }

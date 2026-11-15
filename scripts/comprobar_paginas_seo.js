@@ -703,7 +703,12 @@ else {
     const rutas = [...(S.e || []).map(([x]) => `/bibliotecas/${x}/`)];
     for (const [ps, [locs, temas]] of Object.entries(S.p || {})) {
       if (!existe(`/bibliotecas/${ps}/`)) mal404.push(`slugs-404: provincia ${ps} sin página`);
-      for (const l of locs) rutas.push(`/bibliotecas/${ps}/${slug(l)}/`);
+      // Localidad: nombre, o [nombre, índices en t] con sus temáticas (tercer tramo de «¿Buscabas…?»).
+      for (const l of locs) {
+        const [nom, ...kl] = typeof l === "string" ? [l] : l;
+        rutas.push(`/bibliotecas/${ps}/${slug(nom)}/`);
+        for (const k of kl) if (!(S.t || [])[k]) mal404.push(`slugs-404: índice de temática ${k} sin entrada (${ps}/${slug(nom)})`); else rutas.push(`/bibliotecas/${ps}/${slug(nom)}/${S.t[k][0]}/`);
+      }
       for (const k of temas) if (!(S.t || [])[k]) mal404.push(`slugs-404: índice de temática ${k} sin entrada (${ps})`); else rutas.push(`/bibliotecas/${ps}/${S.t[k][0]}/`);
       // Fichas (tercer elemento, hoy ninguno: ver «¿Buscabas…?» con fichas en docs/SEO.md): nombre o [slug, nombre].
       for (const f of (S.p[ps][2] || [])) rutas.push(`/bibliotecas/${ps}/${typeof f === "string" ? slug(f) : f[0]}/`);
@@ -746,6 +751,12 @@ else {
       ["/bibliotecas/burgos/salas-estudio/", "¿Buscabas bibliotecas para estudiar y salas de estudio en Burgos[/bibliotecas/burgos/salas-de-estudio/]?"],
       ["/bibliotecas/navarra/xqzw/", "¿Buscabas Navarra[/bibliotecas/navarra/]?"], ["/bibliotecas/navarra/abiertas/", "¿Buscabas Navarra[/bibliotecas/navarra/]?"],
       ["/bibliotecas/navara/pamplna/", "¿Buscabas Navarra[/bibliotecas/navarra/]?"],
+      // Tercer tramo: provincia y localidad exactas + temática de esa localidad mal escrita; si no tiene esa temática
+      // (Getafe no tiene «abiertas el domingo») o la localidad está mal escrita, la localidad.
+      ["/bibliotecas/madrid/alcorcon/abiertas-domingos/", "¿Buscabas bibliotecas abiertas el domingo en Alcorcón[/bibliotecas/madrid/alcorcon/abiertas-domingo/]?"],
+      ["/bibliotecas/navarra/pamplona/salas-estudio/", "¿Buscabas bibliotecas para estudiar y salas de estudio en Pamplona[/bibliotecas/navarra/pamplona/salas-de-estudio/]?"],
+      ["/bibliotecas/madrid/getafe/abiertas-domingos/", "¿Buscabas Getafe[/bibliotecas/madrid/getafe/]?"],
+      ["/bibliotecas/madrid/alcorcn/abiertas-domingos/", "¿Buscabas Alcorcón[/bibliotecas/madrid/alcorcon/]?"],
       // Páginas de toda España en /bibliotecas/<algo>/ (y, fuera de /bibliotecas/, solo iguales).
       ["/bibliotecas/abiertas-domingos/", "¿Buscabas bibliotecas abiertas el domingo en España[/bibliotecas/abiertas-domingo/]?"],
       ["/bibliotecas/horario/", "¿Buscabas bibliotecas por horario en España[/bibliotecas/horarios/]?"],
