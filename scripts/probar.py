@@ -2489,6 +2489,39 @@ async def main():
         fallo_bv += e7
         await c7.close()
         res["pruebas"]["usuario nuevo que llega por /#bib=<i>-x&o=c o #study=: ve la ficha sin la bienvenida encima, y la bienvenida sale en la siguiente visita sin enlace"] = True if not fallo_bv else "; ".join(fallo_bv)
+        # --- la ficha abierta por enlace no queda bajo la cabecera fija (Objetivo 8, visto en captura) ---
+        # A 390×844, claro y oscuro: con /#bib=104-x&o=c la ficha entera y su × (≥ 44×44) quedan por debajo del borde
+        # inferior de .topbar y dentro de la pantalla; y abrir otra chincheta después (toque normal) también.
+        fallo_cab = []
+        COMPROBAR_CAB = """(q)=>{var f=[],t=document.querySelector('.topbar').getBoundingClientRect().bottom,
+          w=document.querySelector('.leaflet-popup'),x=document.querySelector('.leaflet-popup-close-button');
+          if(!w||!x)return [q+': no hay ficha o ×'];
+          var r=w.getBoundingClientRect(),c=x.getBoundingClientRect(),H=innerHeight,W=innerWidth;
+          if(c.top<t)f.push(q+': la × empieza en '+Math.round(c.top)+' px, bajo la cabecera (acaba en '+Math.round(t)+')');
+          if(r.top<t)f.push(q+': la ficha empieza en '+Math.round(r.top)+' px, bajo la cabecera ('+Math.round(t)+')');
+          if(c.bottom>H||c.right>W||c.left<0)f.push(q+': la × se sale de la pantalla');
+          if(c.width<44||c.height<44)f.push(q+': la × mide '+Math.round(c.width)+'×'+Math.round(c.height)+' (< 44)');
+          var e=document.elementFromPoint(c.left+c.width/2,c.top+c.height/2);
+          if(e!==x&&!x.contains(e))f.push(q+': algo tapa la ×');
+          return f;}"""
+        for tema in ("light", "dark"):
+            c8, p8 = await nueva_pagina(tema)
+            p8.on("pageerror", lambda e: fallo_cab.append("error JS: " + str(e)[:200]))
+            await p8.goto(f"http://127.0.0.1:{PUERTO}/#bib=104-x&o=c")
+            try:
+                await p8.wait_for_function("!!document.querySelector('.leaflet-popup-close-button')", timeout=15000)
+            except Exception:
+                fallo_cab.append(tema + ": no se abre la ficha")
+            await p8.wait_for_timeout(1500)
+            fallo_cab += await p8.evaluate(COMPROBAR_CAB, tema + " #bib=")
+            await p8.evaluate("()=>{window.__map.closePopup();window.__selBib(500);}")
+            await p8.wait_for_timeout(1500)
+            if not await p8.evaluate("()=>{var h=document.querySelector('.leaflet-popup-content h2');return !!h&&h.textContent===BIBLIOTECAS[500].nombre;}"):
+                fallo_cab.append(tema + ": tras cerrar, abrir otra chincheta no abre su ficha")
+            else:
+                fallo_cab += await p8.evaluate(COMPROBAR_CAB, tema + " otra chincheta")
+            await c8.close()
+        res["pruebas"]["/#bib=<i>-x&o=c a 390×844 (claro y oscuro): la ficha y su × (≥ 44 px) quedan enteras bajo la cabecera fija y dentro de la pantalla; otra chincheta después, igual"] = True if not fallo_cab else "; ".join(fallo_cab)
         # --- analítica sin cookies (docs/ANALITICA.md): preparada pero APAGADA ---
         # index.html y las páginas SEO (/bibliotecas/…) cargan analitica.js por su cuenta; se comprueba en las dos que el
         # archivo se descarga, define ANALITICA/analiticaDecidir y no pide ninguna URL de proveedor ni pone cookies.

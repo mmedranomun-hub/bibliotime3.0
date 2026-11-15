@@ -281,8 +281,11 @@
     border:1px solid var(--borde);box-shadow:var(--sombra)}
   .leaflet-popup-tip{background:var(--glass-fuerte)}
   .leaflet-popup-content{margin:0;width:260px!important}
+  /* × de la ficha: 44×44 tocables (Leaflet la trae de 24 px y gris fijo), con los colores del tema */
+  #map a.leaflet-popup-close-button{width:44px;height:44px;font-family:inherit;font-size:var(--fs-2xl);line-height:44px;color:var(--suave);border-radius:0 var(--r-l) 0 var(--r-m)}
+  #map a.leaflet-popup-close-button:hover,#map a.leaflet-popup-close-button:focus-visible{color:var(--texto);background:var(--acento-tenue)}
   .pop{padding:15px 16px}
-  .pop h2{font-size:var(--fs-l);font-weight:800;line-height:1.15;padding-right:6px}
+  .pop h2{font-size:var(--fs-l);font-weight:800;line-height:1.15;padding:0 26px}
   .pop .estado{display:inline-flex;align-items:center;gap:6px;margin-top:8px;font-size:var(--fs-s);font-weight:700;padding:4px 10px;border-radius:var(--r-pill)}
   /* Ficha: "Abierta" en verde legible en ambos temas; "Cerrada" en azul calmado (como su chincheta), no en rojo */
   .pop .estado.open{background:rgba(34,197,94,.16);color:var(--ok-tx)}

@@ -1557,7 +1557,9 @@ window.__selBib=function(i){
     var mk=markers[i], cap=window.__capaBibs;
     if(cap&&cap.zoomToShowLayer){window.__map.setView([b.lat,b.lon],16,{animate:false});cap.zoomToShowLayer(mk,function(){
       var el=mk.getElement&&mk.getElement();if(el){var ch=el.querySelector(".chincheta");if(ch)ch.classList.add("sel");}mk.openPopup();});}
-    else{window.__map.flyTo([b.lat,b.lon],16,{duration:.6});mk.openPopup();}
+    // El autoPan del popup a mitad del vuelo choca con flyTo (la ficha acababa bajo la cabecera): se abre al aterrizar.
+    else{window.__vuelo=i;window.__map.once("moveend",function(){if(window.__vuelo===i)mk.openPopup();});
+      window.__map.flyTo([b.lat,b.lon],16,{duration:.6});}
   }
 };
 // La lista lateral se construye SIEMPRE (no depende de Leaflet)
@@ -1714,6 +1716,10 @@ function initMap(){
   if(hab0>=0)map.setView([BIBLIOTECAS[hab0].lat,BIBLIOTECAS[hab0].lon],12,{animate:false});
   else map.fitBounds(L.latLngBounds([[36.0,-9.3],[43.8,4.3]]),{animate:false});
   window.__map=map;
+  // La cabecera es fija y va ENCIMA del mapa: el autoPan de los popups cuenta su altura real (+12 px) para que
+  // la ficha (y su ×) no quede debajo, p. ej. al llegar por /#bib=…, con la chincheta centrada. Se hereda por prototipo.
+  var margenCab=function(){var t=document.querySelector(".topbar");L.Popup.prototype.options.autoPanPaddingTopLeft=L.point(12,(t?Math.ceil(t.getBoundingClientRect().bottom):0)+12);};
+  margenCab();window.addEventListener("resize",margenCab);
   L.control.zoom({position:"bottomright"}).addTo(map);
   document.getElementById("map").style.background="#eef2f7";
 
