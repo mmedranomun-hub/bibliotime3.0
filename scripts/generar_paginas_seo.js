@@ -479,6 +479,9 @@ const huella = (txt) => crypto.createHash("sha1").update(migasPlanas(String(txt)
   .replace(/<link rel="stylesheet" href="\/seo\.css\?v=[0-9a-f]+">/, '<link rel="stylesheet" href="/seo.css">')
   .replace(/<meta (property="og:image[^"]*"|name="twitter:(card|image)") content="[^"]*">\n/g, ""))
   .replace(/<span aria-current="page">/g, "<span>")).digest("hex");
+// Cargado con require() (lo hace scripts/comprobar_paginas_seo.js) solo expone la plantilla y la huella del lastmod y
+// vuelve aquí, antes de leer el sitemap o escribir nada: la prueba de migasPlanas usa así el marcado real de pagina().
+if (require.main !== module) { module.exports = { pagina, migasPlanas, huella }; return; }
 const lastmodAntes = new Map(), huellaAntes = new Map(), huellaNueva = new Map();
 try {
   const sm = fs.readFileSync(path.join(RAIZ, "sitemap.xml"), "utf8");

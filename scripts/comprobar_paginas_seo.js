@@ -54,6 +54,9 @@
        índice; su hub). Falla con cualquier BreadcrumbList suelto (sin @id <ruta>#migas o sin breadcrumb que lo enlace).
      - migas que no son una lista (en las indexables y en la 404): <nav class="migas"> con un solo <ol> y dentro solo
        <li>, cada uno con un único <a> o <span>, sin «›» en el HTML (el separador lo pone seo.css).
+     - migas planas: una página generada con pagina() del generador, pasada por su migasPlanas, debe quedar exactamente
+       con el marcado anterior a la lista (<a> › <a> › <span>), con la misma huella del lastmod y leída igual por leeMigas
+       (si un cambio del <ol>/<li> dejara de reducirse, movería en silencio todas las fechas del sitemap).
      - migas visibles distintas de las del JSON-LD en cualquier página indexable: los <a …href…>/<span> de los <li> de
        <nav class="migas"> (atributos en cualquier orden) frente a los name/item del BreadcrumbList <ruta>#migas (mismo
        orden y position, mismo texto decodificado, mismo destino; el <span> final es la propia página), y cada item que no
@@ -620,6 +623,49 @@ for (const [ruta, h] of html) {
   }
 }
 
+// Migas planas = marcado anterior: la huella del lastmod (huella/migasPlanas de generar_paginas_seo.js) reduce el
+// <nav class="migas"><ol><li>… a como era antes de la lista (<a>…</a> › <a>…</a> › <span>…</span>) para que ese cambio
+// no moviera ninguna fecha; leeMigas lee el mismo <ol> aquí. Se genera una página de verdad con pagina() del generador
+// (cargado con require: vuelve antes de escribir nada) y se exige: migasPlanas deja el <nav> EXACTAMENTE como la
+// plantilla anterior (copiada abajo) y el resto de la página igual; la huella de la página nueva = la de la página con
+// el <nav> anterior; y leeMigas lee los mismos textos y destinos. Si un cambio del <ol>/<li> (un atributo, un
+// espacio) deja de reducirse, falla aquí en vez de mover en silencio los lastmod de todo el sitemap.
+const planasMal = [];
+let nPlanas = 0;
+{
+  let gen = null;
+  try { gen = require("./generar_paginas_seo.js"); } catch (e) { planasMal.push(`no se pudo cargar generar_paginas_seo.js con require (${e.message})`); }
+  if (gen && !(typeof gen.pagina === "function" && typeof gen.migasPlanas === "function" && typeof gen.huella === "function"))
+    { planasMal.push("generar_paginas_seo.js no exporta { pagina, migasPlanas, huella } al cargarlo con require"); gen = null; }
+  // esc y plantilla de las migas tal como estaban antes de la lista <ol>/<li> (generar_paginas_seo.js antes de a20a5fb1).
+  const esc0 = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const navAnterior = (migas) => `<nav class="migas" aria-label="Estás en">${migas.map((x, k) => (k < migas.length - 1 ? `<a href="${x[1]}">${esc0(x[0])}</a> › ` : `<span aria-current="page">${esc0(x[0])}</span>`)).join("")}</nav>`;
+  const casos = [
+    [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"]],
+    [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], ["A Coruña", "/bibliotecas/a-coruna/"], ["Biblioteca «Ánxel Casal» & Cía", "/prueba/migas/"]],
+    [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], ["Salas de estudio", "/bibliotecas/salas-de-estudio/"], ["L'Hospitalet <de> \"Llobregat\"", "/bibliotecas/barcelona/l-hospitalet/"], ["Domingo", "/prueba/migas/"]],
+  ];
+  for (const migas of gen ? casos : []) {
+    const nom = migas.length + " migas";
+    let h;
+    try { h = gen.pagina({ ruta: "/prueba/migas/", titulo: "Prueba de migas", descripcion: "Prueba", h1: "Prueba", intro: "Prueba", cuerpo: "<p>Prueba</p>", migas, migasId: DOMINIO + "/prueba/migas/#migas" }); }
+    catch (e) { planasMal.push(`${nom}: pagina() falló (${e.message})`); continue; }
+    const navs = [...h.matchAll(/<nav class="migas"[^>]*>[\s\S]*?<\/nav>/g)].map((m) => m[0]);
+    if (navs.length !== 1) { planasMal.push(`${nom}: ${navs.length} <nav class="migas"> en la página generada (se espera 1)`); continue; }
+    const antes = navAnterior(migas), hAntes = h.replace(navs[0], () => antes), plano = gen.migasPlanas(navs[0]);
+    if (plano !== antes) planasMal.push(`${nom}: migasPlanas da «${plano}» y el marcado anterior es «${antes}»`);
+    else if (gen.migasPlanas(h) !== hAntes) planasMal.push(`${nom}: migasPlanas cambia la página fuera del <nav class="migas">`);
+    else if (gen.huella(h) !== gen.huella(hAntes)) planasMal.push(`${nom}: la huella del lastmod de la página con <ol> ≠ la de la misma página con las migas anteriores`);
+    else {
+      const { vis, error } = leeMigas(/<nav class="migas"[^>]*>([\s\S]*?)<\/nav>/.exec(navs[0])[1]);
+      const leidas = vis.map((v) => [v.txt, v.href]), esperadas = migas.map((x, k) => [x[0], k < migas.length - 1 ? x[1] : null]);
+      if (error) planasMal.push(`${nom}: leeMigas no lee el <nav> de pagina(): ${error}`);
+      else if (JSON.stringify(leidas) !== JSON.stringify(esperadas)) planasMal.push(`${nom}: leeMigas lee ${JSON.stringify(leidas)} y pagina() recibió ${JSON.stringify(esperadas)}`);
+      else nPlanas++;
+    }
+  }
+}
+
 // Última miga única: en cada página indexable, el último elemento del BreadcrumbList <ruta>#migas tiene name no vacío y
 // el par (penúltimo item, último name) es de una sola página. Si dos URL distintas comparten el par, sus migas son
 // idénticas (Google muestra la miga en el resultado y no las distingue): pasaba con fichas homónimas bajo la misma
@@ -980,6 +1026,7 @@ console.log(`Migas intermedias (ni «Inicio» ni la última) cuyo name está en 
 console.log(`Última miga (BreadcrumbList #migas de las indexables) con name y par (penúltimo item, último name) de una sola página: ${Object.values(nUltMiga).reduce((a, b) => a + b, 0)} (${porFam(nUltMiga)}) · pares distintos: ${parMigas.size} · mal: ${ultMigaMal.length}` +
   ` · último name que no está en su <h1> (solo contado): ${Object.values(ultNoH1).reduce((a, b) => a + b, 0)} (${porFam(ultNoH1)})${ultMigaMal.length ? "\n" + muestra(ultMigaMal, (r) => "  " + r) : ""}`);
 console.log(`Migas como lista (<nav class="migas"><ol><li>, «›» solo por CSS) en las indexables: ${Object.values(nListaMigas).reduce((a, b) => a + b, 0)} (${porFam(nListaMigas)}) · 404: ${n404Migas ? n404Migas + " migas" : "mal"} · mal: ${listaMigasMal.length}${listaMigasMal.length ? "\n" + muestra(listaMigasMal, (r) => "  " + r) : ""}`);
+console.log(`Migas planas (pagina() del generador → migasPlanas = marcado anterior <a> › <a> › <span>, misma huella del lastmod y leeMigas lee lo mismo): ${nPlanas} de 3 casos bien · mal: ${planasMal.length}${planasMal.length ? "\n" + muestra(planasMal, (r) => "  " + r) : ""}`);
 console.log(`Última miga con aria-current="page" (<span> de la propia página, una sola vez por <nav class="migas">) en las indexables: ${Object.values(nAriaActual).reduce((a, b) => a + b, 0)} (${porFam(nAriaActual)}) · mal: ${ariaActualMal.length}${ariaActualMal.length ? "\n" + muestra(ariaActualMal, (r) => "  " + r) : ""}`);
 console.log(`CollectionPage de la propia página con @id <ruta>#pagina: ${Object.values(nCpId).reduce((a, b) => a + b, 0)} (${porFam(nCpId)}) · sin él: ${cpIdMal.length}${cpIdMal.length ? "\n" + muestra(cpIdMal, (r) => "  " + r) : ""}`);
 console.log(`isPartOf/hasPart e item de ItemList/BreadcrumbList a otra página con el @id de su nodo (que existe en la página destino, con la misma url): ${refsId.nConId} de ${refsId.nRefs} (items objeto: ${porFam(refsId.nItems)}; items que son solo URL, sin nodo: ${porFam(refsId.nItemsTexto)}) · mal: ${refsIdMal.length}${refsIdMal.length ? "\n" + muestra(refsIdMal, (r) => "  " + r) : ""}`);
@@ -1296,5 +1343,5 @@ async function probarAvisoIndexNow() {
   const t0 = Date.now();
   const [avisoMal, nCasos] = await probarAvisoIndexNow();
   console.log(`IndexNow «despliega primero» y simulación (avisar_indexnow.js --base contra servidor local, sin red real): ${nCasos - new Set(avisoMal.map((x) => x.split(" ")[0])).size} de ${nCasos} casos bien (200 con la clave → 0; 404, otro texto o servidor caído → 1; --simular y clave null → 0 sin peticiones) en ${Date.now() - t0} ms · mal: ${avisoMal.length}${avisoMal.length ? "\n" + muestra(avisoMal, (r) => "  " + r) : ""}`);
-  if (ultMigaMal.length || migaInterMal.length || exMal.length || findeMal.length || findeCercaMal.length || cssMal.length || listaMigasMal.length || ariaActualMal.length || cpIdMal.length || refsIdMal.length || refsNombreMal.length || migasVisMal.length || itemMigasMal.length || avisoMal.length || vistaMal.length || analiticaMal.length || gscMal.length || indexNowMal.length || migasMal.length || mainEntityMal.length || copiaMal.length || faqMal.length || indiceMal.length || reciprocidadMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || idAppMal.length || idNombreMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
+  if (ultMigaMal.length || migaInterMal.length || exMal.length || findeMal.length || findeCercaMal.length || cssMal.length || listaMigasMal.length || planasMal.length || ariaActualMal.length || cpIdMal.length || refsIdMal.length || refsNombreMal.length || migasVisMal.length || itemMigasMal.length || avisoMal.length || vistaMal.length || analiticaMal.length || gscMal.length || indexNowMal.length || migasMal.length || mainEntityMal.length || copiaMal.length || faqMal.length || indiceMal.length || reciprocidadMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || idAppMal.length || idNombreMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
 })();
