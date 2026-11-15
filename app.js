@@ -3535,13 +3535,20 @@ function misSesionHTML(s){var n=s.mis&&s.mis.length;if(!n)return '';
   return '<button type="button" class="feed-mis" data-mis-ver="'+k+'" aria-expanded="'+ab+'" aria-controls="fml-'+k+'">'+t+'</button>'+
     '<ul class="feed-mis-lista" id="fml-'+k+'"'+(ab?'':' hidden')+'>'+ds.map(function(d){return '<li>'+d.icon+' '+escapeHTML(d.txt)+'</li>';}).join('')+'</ul>';}
 function misionDef(id){return MISIONES_POOL.filter(function(m){return m.id===id;})[0];}
+// De dónde salen las 🌰 de una misión cumplida: su fila; si a la vista enseñaba la pista «⏱️ N min más y es tuya · +10 🌰»,
+// ese «+10 🌰» (la promesa se convierte en el premio). La pista se va con el repintado: se guarda su sitio respecto a la
+// fila (que sí sigue), así vale aunque la tarjeta se mueva antes del vuelo. Sin pista, oculta o con «reducir movimiento»
+// (misAVista), la fila, como siempre.
+function origenPista(id){var sel='#missionsCard [data-m="'+id+'"]',f=document.querySelector(sel),b=f&&f.querySelector(".mis-pista b:last-of-type");
+  if(!b||!misAVista(b))return sel;var rf=f.getBoundingClientRect(),rb=b.getBoundingClientRect();
+  return {sel:sel,x:rb.left-rf.left,y:rb.top-rf.top,w:rb.width,h:rb.height};}
 function comprobarMisiones(){
   if(!DATA)return; var M=misionesDeHoy(), h=statsHoy(), nuevas=[];
   M.ids.forEach(function(id){var d=misionDef(id);if(d&&!M.hechas[id]&&d.val(h)>=d.meta){M.hechas[id]=new Date().toISOString();nuevas.push(d);}});
   if(nuevas.length){
     DATA.semillasPremio=(DATA.semillasPremio||0)+MIS_PREMIO*nuevas.length;saveUserData();
     // si su barra aún se está llenando (MIS_LLENA), toast y confeti esperan al ✅
-    nuevas.forEach(function(d,k){var fin=function(){showToast("✅ Misión cumplida: "+d.txt+" · +"+MIS_PREMIO+" 🌰");celebrar($("missionsCard"),[d.icon,"✨","🌰"],10);encolarVuelo(MIS_PREMIO,'#missionsCard [data-m="'+d.id+'"]');};
+    nuevas.forEach(function(d,k){var de=origenPista(d.id),fin=function(){showToast("✅ Misión cumplida: "+d.txt+" · +"+MIS_PREMIO+" 🌰");celebrar($("missionsCard"),[d.icon,"✨","🌰"],10);encolarVuelo(MIS_PREMIO,de);};
       setTimeout(function(){var r=(MIS_LLENA[M.fecha+"|"+d.id]||0)-Date.now();if(r>0)setTimeout(fin,r+60);else fin();},k*1400);});
     renderSemillas();
   }
@@ -3558,7 +3565,8 @@ function encolarVuelo(n,de,h,ho){VUELO.n+=n;if(n||!h)VUELO.de=de;if(h){VUELO.h+=
 function soltarVuelo(){
   VUELO.t=0;if(!VUELO.n&&!VUELO.h&&!VUELO.z&&!VUELO.rr)return;
   if($("modalRoot").innerHTML||Date.now()<VUELO_FIN||document.querySelector(".semilla-vuela,.saco-semillas,.racha-overlay")){VUELO.t=setTimeout(soltarVuelo,700);return;}
-  var z,rr,n=VUELO.n,h=VUELO.h,hr=VUELO.hr,ho=VUELO.ho,o=VUELO.de&&document.querySelector(VUELO.de),r=o&&o.getBoundingClientRect(),hd=VUELO.hd&&document.querySelector(VUELO.hd);
+  var z,rr,n=VUELO.n,h=VUELO.h,hr=VUELO.hr,ho=VUELO.ho,de=VUELO.de,o=de&&document.querySelector(de.sel||de),r=o&&o.getBoundingClientRect(),hd=VUELO.hd&&document.querySelector(VUELO.hd);
+  if(r&&r.width&&de.sel)r={left:r.left+de.x,top:r.top+de.y,width:de.w,height:de.h}; // origenPista: sitio respecto a la fila
   if(VUELO.hd)r=n?r:hd&&hd.getBoundingClientRect();z=VUELO.z;rr=VUELO.rr;VUELO.n=VUELO.h=VUELO.z=VUELO.rr=0;VUELO.hr=null;VUELO.hd="";
   cargarExtra().then(function(){if(n)volarSemillas(r,n);if(h)volarHielo(hr||r,n?250:0,ho);if(z)hieloSalva();if(rr)reboteRacha();},function(){});
 }

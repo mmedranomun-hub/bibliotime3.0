@@ -1518,6 +1518,43 @@ PRUEBAS = [
         return true;
       }finally{clearTimeout(irAMision.t);studyTimer.running=t0.running;studyTimer.start=t0.start;studyTimer.bibIndex=t0.bibIndex;studyTimer.tick=t0.tick;MIS_FOCO={id:'',hasta:0};
         k.forEach(x=>DATA[x]=o[x]);el&&(el._clave=null);ms.classList.toggle('hidden',oculto0);goView('map');await espera(300);renderMisCerca();renderStudy();}"""),
+    ("al cumplir la misión de la pista «⏱️ N min más y es tuya» a la vista, las 🌰 salen de su «+10 🌰»; sin pista, de la fila; con reducir movimiento, ninguna vuela", """
+      var k=['misiones','sessions','acciones','semillasPremio'],o={};k.forEach(x=>o[x]=DATA[x]);
+      var t0={running:studyTimer.running,start:studyTimer.start,bibIndex:studyTimer.bibIndex,tick:studyTimer.tick},el=$('misCerca'),mi=$('miniMis'),ms=$('miniStudy');
+      var oculto0=ms.classList.contains('hidden'),espera=n=>new Promise(r=>setTimeout(r,n));
+      var st=window.showToast,sm=window.sinMovimiento,ce=window.celebrar,vs=window.volarSemillas,vuelos=[],pasa=false;
+      var fila=()=>document.querySelector('#missionsCard [data-m="m25"]');
+      var prepara=min=>{studyTimer.running=true;studyTimer.tick=t0.tick||1;studyTimer.bibIndex=-1;studyTimer.start=Date.now()-min*60000-500;MIS_LLENA={};
+        DATA.misiones={fecha:ymd(),ids:['m25','agenda','pomo'],hechas:{},cofre:false};el._clave=null;renderMisCerca();renderMisiones();};
+      // anota el origen en coordenadas de la fila (la tarjeta puede moverse entre la misión y el vuelo)
+      window.volarSemillas=function(r,n){var f=fila().getBoundingClientRect();vuelos.push({r:r&&r.width?{x:r.left-f.left+r.width/2,y:r.top-f.top+r.height/2}:null,f:{w:f.width,h:f.height},n:n});if(pasa)return vs.apply(this,arguments);};
+      var vuelo=async()=>{for(var i=0;i<100&&!vuelos.length;i++)await espera(50);return vuelos.shift();};
+      var cumple=()=>{studyTimer.start=Date.now()-25*60000-500;comprobarMisiones();};
+      window.showToast=()=>{};window.celebrar=()=>{};
+      try{
+        closeModal();DATA.sessions=[];DATA.acciones={fecha:ymd()};window.sinMovimiento=()=>false;ms.classList.remove('hidden');
+        // 1) con la pista a la vista: del «+10 🌰»
+        goView('map');prepara(24);mi.click();$('missionsCard').scrollIntoView({block:'center'});await espera(60);
+        var pb=document.querySelector('#missionsCard [data-m="m25"] .mis-pista b:last-of-type');if(!pb)return 'no sale la pista';
+        if(pb.textContent.trim()!=='+'+MIS_PREMIO+' 🌰')return 'el último <b> de la pista no es «+10 🌰»: '+pb.textContent;
+        var f=fila().getBoundingClientRect(),q=pb.getBoundingClientRect(),esp={x:q.left-f.left+q.width/2,y:q.top-f.top+q.height/2};
+        cumple();var v=await vuelo();if(!v)return 'no vuela nada';
+        if(v.n!==MIS_PREMIO)return 'vuelan '+v.n+' en vez de '+MIS_PREMIO;
+        if(!v.r||Math.abs(v.r.x-esp.x)>2||Math.abs(v.r.y-esp.y)>2)return 'no sale del «+10 🌰»: '+JSON.stringify(v.r)+' en vez de '+JSON.stringify(esp);
+        // 2) sin pista (no se tocó «🎯 N min»): del centro de la fila, como siempre
+        vuelos=[];MIS_FOCO={id:'',hasta:0};goView('study');prepara(24);$('missionsCard').scrollIntoView({block:'center'});await espera(60);
+        if(document.querySelector('#missionsCard .mis-pista'))return 'pista sin tocar nada';
+        cumple();v=await vuelo();if(!v||!v.r)return 'sin pista no vuela de la fila';
+        if(Math.abs(v.r.x-v.f.w/2)>2||Math.abs(v.r.y-v.f.h/2)>2)return 'sin pista no sale del centro de la fila: '+JSON.stringify(v);
+        // 3) con reducir movimiento: la cifra sube, pero ninguna 🌰 vuela
+        vuelos=[];pasa=true;window.sinMovimiento=()=>true;goView('map');prepara(24);mi.click();$('missionsCard').scrollIntoView({block:'center'});await espera(60);
+        cumple();v=await vuelo();if(!v)return 'con reducir movimiento no llega el premio';
+        if(document.querySelector('.semilla-vuela'))return 'con reducir movimiento vuelan 🌰';
+        return true;
+      }finally{clearTimeout(irAMision.t);window.showToast=st;window.sinMovimiento=sm;window.celebrar=ce;window.volarSemillas=vs;MIS_FOCO={id:'',hasta:0};MIS_LLENA={};
+        studyTimer.running=t0.running;studyTimer.start=t0.start;studyTimer.bibIndex=t0.bibIndex;studyTimer.tick=t0.tick;
+        k.forEach(x=>DATA[x]=o[x]);el&&(el._clave=null);ms.classList.toggle('hidden',oculto0);document.querySelectorAll('.saco-semillas,.semilla-vuela').forEach(x=>x.remove());
+        goView('map');await espera(300);renderMisCerca();renderStudy();renderMisiones();renderSemillas();}"""),
     ("con las 3 misiones hechas y el cofre sin abrir, la píldora dice «🎁 3/3», lleva al cofre y vuelve a «✅ 3/3» al abrirlo", """
       var k=['misiones','sessions','acciones','semillasPremio','streakFreezes','cofresAbiertos','sellosMisiones'],o={};k.forEach(x=>o[x]=DATA[x]);
       var t0={running:studyTimer.running,start:studyTimer.start,bibIndex:studyTimer.bibIndex,tick:studyTimer.tick},el=$('misCerca'),mi=$('miniMis'),ms=$('miniStudy');
@@ -1885,11 +1922,19 @@ PRUEBAS = [
       var espera=n=>new Promise(r=>setTimeout(r,n)),propio=Object.prototype.hasOwnProperty.call(navigator,'share'),o=propio?navigator.share:null,dato=null;
       try{
         var i=Math.min(500,BIBLIOTECAS.length-1);while(i>0&&rutaFicha(i))i--;var b=BIBLIOTECAS[i];
-        window.__map.closePopup();location.hash='';window.__selBib(i);await espera(900);
-        var bt=document.querySelector('.leaflet-popup-content .bib-share');
+        window.__map.closePopup();location.hash='';window.__selBib(i);
+        // Se espera a ESTE popup (no a un tiempo fijo) y a que acaben sus animaciones finitas: .pop entra con
+        // scale 1 → 1,18 → 1 y un cubic-bezier que rebasa, así que hacia los 300–470 ms el botón mide ~43,2 px
+        // (escala 0,982). Medir a los 900 ms fallaba si el popup se abría tarde (equipo cargado). Se toma el popup ABIERTO
+        // de su chincheta: el anterior de la misma biblioteca sigue en el DOM 200 ms mientras Leaflet lo funde.
+        var bt=null,mk=markers[i];for(var t=0;t<100&&!bt;t++){var pe=mk&&mk.isPopupOpen()&&mk.getPopup().getElement(),c=pe&&pe.querySelector('.bib-share');
+          if(c&&c.getAttribute('aria-label')==='Compartir '+b.nombre)bt=c;else await espera(50);}
+        if(!bt)bt=document.querySelector('.leaflet-popup-content .bib-share');
         if(!bt)return 'sin botón en el popup';
         if(bt.getAttribute('aria-label')!=='Compartir '+b.nombre)return 'aria-label mal: '+bt.getAttribute('aria-label');
-        if(bt.getBoundingClientRect().height<44)return 'botón de menos de 44 px';
+        var pop=bt.closest('.leaflet-popup');
+        await Promise.all(pop.getAnimations({subtree:true}).filter(a=>a.effect&&a.effect.getComputedTiming().endTime!==Infinity).map(a=>a.finished.catch(()=>{})));
+        if(bt.getBoundingClientRect().height<44||bt.offsetHeight<44)return 'botón de menos de 44 px: '+bt.getBoundingClientRect().height;
         Object.defineProperty(navigator,'share',{configurable:true,writable:true,value:d=>{dato=d;return Promise.resolve();}});
         bt.click();await espera(50);
         if(!dato||dato.url.indexOf('https://bibliomapa.es/#bib='+i+'-')!==0)return 'navigator.share sin el enlace: '+JSON.stringify(dato);
