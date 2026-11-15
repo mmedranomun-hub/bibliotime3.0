@@ -207,8 +207,27 @@ function itemBib(b) {
 // CollectionPage de provincias, localidades, temáticas, hubs, salas, universidades y exámenes), para que Google una la
 // referencia con el nodo de la página destino en vez de crear un CollectionPage anónimo nuevo. scripts/comprobar_paginas_seo.js
 // falla si ese @id no existe como nodo en la página destino.
+// name: el MISMO que el nodo destino, siempre. El que pasa quien llama es solo el previsto: la referencia lleva una marca
+// (@@nombre:<@id>@@) que `vuelcaPaginas` sustituye, ya con todas las páginas generadas, por el name del nodo con ese @id
+// (lo registra `pagina`); así no hace falta saber el título de una página antes de generarla (los títulos dependen de
+// los ya usados) y un título nuevo (cifras, siglas, «(<provincia>)») llega solo a sus referencias. Se mantiene el name
+// (en vez de omitirlo) porque las isPartOf ya lo llevaban igual que el destino y quitarlo de todas movería el lastmod de
+// casi todas las páginas; así solo cambian las que tenían una referencia discordante. scripts/comprobar_paginas_seo.js
+// falla si el name de una referencia con @id no es idéntico al del nodo destino.
 let nRefId = 0;
-function refPagina(name, url) { nRefId++; return { "@type": "CollectionPage", "@id": url + "#pagina", name, url }; }
+const MARCA_NOMBRE = (id) => `@@nombre:${id}@@`;
+const nombrePrevisto = new Map(); // @id → name que pasó quien llama (para contar cuántos cambian al sustituir)
+function refPagina(name, url) {
+  nRefId++;
+  const id = url + "#pagina";
+  (nombrePrevisto.get(id) || nombrePrevisto.set(id, new Set()).get(id)).add(name);
+  return { "@type": "CollectionPage", "@id": id, name: MARCA_NOMBRE(id), url };
+}
+const nombreNodo = new Map(); // @id <url>#pagina → name del nodo de esa página (lo rellena `pagina`)
+const registraNodos = (ruta, ld) => {
+  for (const x of [].concat(ld || []).flatMap((y) => (y && Array.isArray(y["@graph"]) ? y["@graph"] : [y])))
+    if (x && x["@id"] === DOMINIO + ruta + "#pagina" && typeof x.name === "string") nombreNodo.set(x["@id"], x.name);
+};
 
 // ---------- Plantilla ----------
 // noindex (la 404): sin canonical ni og:url (se sirve en cualquier URL inexistente), con <meta name="robots" content="noindex">
@@ -266,6 +285,7 @@ function pagina({ ruta, titulo, descripcion, h1, intro, cuerpo, migas, migasId, 
   const url = DOMINIO + ruta;
   const OG = ogImagenDe(ruta);
   const ld = faqEnGrafo(ruta, ld0);
+  registraNodos(ruta, ld);
   h1De.set(ruta, h1);
   const migasLD = { "@context": "https://schema.org", ...(migasId ? { "@id": migasId } : {}), "@type": "BreadcrumbList", itemListElement: migas.map((x, k) => ({ "@type": "ListItem", position: k + 1, name: x[0], item: DOMINIO + x[1] })) };
   return `<!DOCTYPE html>
@@ -530,7 +550,23 @@ if (process.argv.includes("--listar-provincias")) {
 }
 fs.rmSync(SALIDA, { recursive: true, force: true });
 const urls = [["/", "1.0"], ["/bibliotecas/", "0.9"]];
-const escribe = (ruta, html) => { const f = path.join(RAIZ, ruta, "index.html"); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, html); huellaNueva.set(ruta, huella(html)); };
+// Las páginas se guardan en memoria y se escriben al final (vuelcaPaginas), cuando ya se conoce el name de todos los
+// nodos #pagina: las referencias (refPagina) llevan una marca que entonces se cambia por ese name.
+const pendientes = new Map();
+const escribe = (ruta, html) => { pendientes.set(ruta, html); };
+let nNombreCambiado = 0;
+function vuelcaPaginas() {
+  for (const [id, prev] of nombrePrevisto) {
+    if (!nombreNodo.has(id)) throw new Error(`refPagina a ${id}, que ninguna página generada declara como nodo con name`);
+    for (const n of prev) if (n !== nombreNodo.get(id)) nNombreCambiado++;
+  }
+  for (const [ruta, html0] of pendientes) {
+    const html = html0.replace(/@@nombre:([^@"]+)@@/g, (m, id) => JSON.stringify(nombreNodo.get(id)).slice(1, -1));
+    const f = path.join(RAIZ, ruta, "index.html");
+    fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, html); huellaNueva.set(ruta, huella(html));
+  }
+  pendientes.clear();
+}
 const porProv = {};
 todas.forEach((b) => (porProv[b.p] = porProv[b.p] || []).push(b));
 const provincias = Object.keys(porProv).sort((a, b) => a.localeCompare(b, "es"));
@@ -2389,6 +2425,7 @@ ${GUIAS.map((g) => `- [${cifras(g.h1)}](${DOMINIO}${hub}${g.slug}/): ${cifras(g.
 `);
 }
 
+vuelcaPaginas();
 fs.writeFileSync(path.join(RAIZ, "sitemap.xml"), `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls.map(([u, pr, mod]) => `  <url><loc>${DOMINIO}${u}</loc><lastmod>${lastmodDe(u, mod)}</lastmod><priority>${pr}</priority></url>`).join("\n")}
@@ -2427,4 +2464,4 @@ console.log(`Provincias y localidades con «Horario ampliado en época de exáme
 console.log(`Localidades sin ninguna verificada con «Cerca, con horario verificado» (≤ ${RADIO_VERIF_KM} km del centroide): ${nLocsVerifCerca} · enlaces: ${nEnlacesLocVerifCerca}`);
 console.log(`Fichas con «Cerca, con horario verificado» (≤ ${RADIO_VERIF_KM} km, otra ficha): ${nFichasVerifCerca} de ${paginaDe.size} · enlaces: ${nEnlacesVerifCerca}`);
 console.log(`Navarra: ${nNavarraConHorario} de ${navarra.length} con horario publicable (fuenteHorario + verificadoHorario en app.js)`);
-console.log(`isPartOf/hasPart/item a otra página con el @id de su nodo (<url>#pagina): ${nRefId}`);
+console.log(`isPartOf/hasPart/item a otra página con el @id de su nodo (<url>#pagina): ${nRefId} · con el name del nodo destino: todas (nombres previstos distintos del destino, sustituidos: ${nNombreCambiado})`);

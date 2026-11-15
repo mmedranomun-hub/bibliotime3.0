@@ -705,6 +705,34 @@ despliegue sin tener que mirar el `sitemap.xml`.
   una con ficha en la lista de su provincia (Biblioteca de Galicia) y quitando un `@id` (Cambre): 3 fallos y salida 1.
   Además, `fichaDe` (reconocer la ficha de un elemento por nombre + coordenadas) solo toma `@id` `…/bibliotecas/…#biblioteca`.
 
+## Hecho (2026-11-15) · El `name` de cada referencia con `@id` es el del nodo destino
+- **Medido antes** (`comprobar_paginas_seo.js`, nueva línea «name de cada referencia con @id…»): 8.871 referencias con `@id`
+  a otra página generada (`isPartOf`/`hasPart` e `item` objeto de `ItemList`/`BreadcrumbList`), todas con `name`; **238 con
+  un `name` distinto del nodo destino**: 124 en el `hasPart` de provincias, 19 en el de localidades, 44 en el de los hubs
+  (salas, universidades, exámenes) y las 51 provincias del `ItemList` del índice. Todas eran nombres cortos «previstos»
+  («Bibliotecas en Vitoria», «Salas de estudio en Albacete», «Bibliotecas de la Universidade de Santiago de Compostela»)
+  frente al título real del destino («Bibliotecas abiertas en Vitoria (5): 3 con horario comprobado», «… : 5 bibliotecas
+  para estudiar», «Bibliotecas USC: horarios y salas de estudio»). Los `isPartOf`, temáticas y `Library` ya coincidían.
+- **Decisión: el mismo `name` que el destino, no omitirlo.** Omitir el `name` (dejar `@id`+`url`) habría que hacerlo en
+  todas las referencias para ser coherente y movería la huella y el `lastmod` de casi todas las páginas (cada ficha,
+  temática y lugar lleva un `isPartOf`); copiarlo solo cambia las 53 páginas que tenían alguna discordante, los `isPartOf`
+  ya seguían esa regla y un lector que no une nodos por `@id` sigue viendo un nombre que es el de la página.
+- **Cómo**: `refPagina(name, url)` ya no escribe el `name` que le pasan sino una marca `@@nombre:<@id>@@`; `pagina()`
+  registra el `name` de cada nodo `<url>#pagina` y `escribe()` guarda las páginas en memoria hasta `vuelcaPaginas()`
+  (antes del sitemap), que cambia cada marca por ese `name` y escribe los archivos y su huella. Así no hace falta saber el
+  título de una página antes de generarla (los títulos dependen de los ya usados) y si un título cambia, sus referencias
+  cambian con él. Si una referencia apunta a un `@id` que ninguna página declara, el generador se para.
+- **Comprobador**: falla (salida 1) si el `name` de una referencia con `@id` no es idéntico al del nodo destino; cuenta por
+  familia de la página y tipo de referencia, y las que no llevan `name`. Probado a romper: un `hasPart` de `/bibliotecas/alava/`
+  y un `item` del índice editados a mano → 2 discordantes y salida 1; `refPagina` con el `name` previsto otra vez → 238 y
+  salida 1. Cubre también la tarea de «empieza igual que el `name` del destino» (localidades con «(<provincia>)»): ahora es
+  igualdad exacta.
+- **Después**: 0 de 8.871 discordantes. Cambian 53 páginas (36 provincias, 13 localidades, 3 hubs y el índice), solo en
+  esos `name` del JSON-LD; en el sitemap se mueven 33 `lastmod` a 2026-11-15 (26 provincias y 7 localidades; las demás ya
+  tenían esa fecha). **Coste aceptado**: el `hasPart` de una provincia lleva ahora el título de sus localidades, salas y
+  universidades, que incluye cifras («(5): 3 con horario comprobado»); cuando cambian esas cifras cambia también la
+  provincia (y su `lastmod`), aunque su cuerpo no cambie.
+
 ## Siguientes mejoras (en el backlog)
 - Más horarios verificados (las páginas con horario rinden mucho mejor: es lo que la gente busca).
 - Ampliar las páginas por biblioteca a grandes ciudades que no son capital (Gijón, Vigo, Cartagena, Jerez…).

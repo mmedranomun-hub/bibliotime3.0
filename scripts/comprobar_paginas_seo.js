@@ -66,6 +66,9 @@
        {"@id": "<ficha>#faq"} teniendo FAQPage, o lo declara sin tenerlo (recíproco).
      - isPartOf/hasPart que apuntan a otra página generada sin el @id de su nodo, o con un @id que la página destino no
        declara como nodo (p. ej. <url>#pagina): las dos páginas deben unirse en un grafo, no con un nodo anónimo.
+       Y toda referencia con @id que lleve name (isPartOf/hasPart, e item objeto de un ItemList/BreadcrumbList) debe
+       llevar exactamente el name del nodo destino: se cuentan por familia de la página y tipo de referencia, y una
+       discordante falla (antes: 238, en hasPart de provincias, localidades y hubs y en el ItemList del índice).
 
      - la vista previa al compartir: la portada (index.html) y las páginas indexables (bibliotecas/… y las guías de
        /estudiar/) sin og:site_name, og:image absoluta (https://bibliomapa.es/… de un archivo del repo) con
@@ -84,7 +87,7 @@
        fichas) mal formados o con tramos por fecha que se solapan.
    Uso (desde la raíz del proyecto):  node scripts/comprobar_paginas_seo.js
    Sale con código 1 si hay enlaces rotos, títulos o descripciones repetidos, JSON-LD roto, horarios especiales mal o
-   lastmod mal, la meta de Search Console mal o repetida, una provincia o localidad con fichas sin ItemList, el índice sin su CollectionPage, un hasPart roto, una
+   lastmod mal, la meta de Search Console mal o repetida, una provincia o localidad con fichas sin ItemList, el índice sin su CollectionPage, un hasPart roto o con un name distinto del de su destino, una
    temática, provincia, localidad, ficha, hub, sala de estudio, universidad o ciudad de exámenes sin su isPartOf o la 404 mal, o una página con
    las migas sin enlazar, sueltas, con el penúltimo distinto de su isPartOf, distintas de las visibles o hacia una página no indexable. */
 "use strict";
@@ -624,7 +627,7 @@ function compruebaRefsId() {
   // Además de isPartOf/hasPart, el item (objeto) de cada ListItem de un ItemList/BreadcrumbList que apunta a otra página
   // generada: las provincias del índice (CollectionPage <provincia>#pagina) y las Library <ficha>#biblioteca de las listas.
   // Un item que es solo una URL (texto, como en las migas) no es un nodo y no entra; se cuenta aparte, por familia.
-  const nItems = {}, nItemsTexto = {}, suma = (o, f) => { o[f] = (o[f] || 0) + 1; };
+  const nItems = {}, nItemsTexto = {}, nNombre = {}, nNombreMalFam = {}, nSinNombre = {}, nombreMal = [], suma = (o, f) => { o[f] = (o[f] || 0) + 1; };
   const refsDe = (x) => {
     const out = [];
     for (const k of ["isPartOf", "hasPart"]) for (const ref of [].concat(x[k] || [])) out.push([k, ref]);
@@ -645,12 +648,21 @@ function compruebaRefsId() {
     if (!ref["@id"]) mal.push(`${ruta} ${k} ${destino} sin @id`);
     else if (!idsDe.get(destino).has(ref["@id"])) mal.push(`${ruta} ${k} @id ${ref["@id"]}, que ${destino} no declara como nodo`);
     else if (ref.url && idsDe.get(destino).get(ref["@id"]).url !== ref.url) mal.push(`${ruta} ${k} @id ${ref["@id"]} con url ${ref.url}, pero ese nodo tiene url ${idsDe.get(destino).get(ref["@id"]).url}`);
-    else nConId++;
+    else {
+      nConId++;
+      // name de la referencia frente al del nodo destino (mismo @id): si lo lleva, debe ser idéntico.
+      const nodo = idsDe.get(destino).get(ref["@id"]), fam = `${familiaMigas(ruta)} ${k}`;
+      if ("name" in ref) {
+        suma(nNombre, fam);
+        if (ref.name !== nodo.name) { suma(nNombreMalFam, fam); nombreMal.push(`${ruta} ${k} ${destino}: «${ref.name}» ≠ «${nodo.name}»`); }
+      } else suma(nSinNombre, fam);
+    }
   }
-  return { mal, nRefs, nConId, nItems, nItemsTexto };
+  return { mal, nRefs, nConId, nItems, nItemsTexto, nNombre, nNombreMalFam, nombreMal, nSinNombre };
 }
 const refsId = compruebaRefsId();
 const refsIdMal = refsId.mal;
+const refsNombreMal = refsId.nombreMal;
 
 // 404: no cuenta como enlace entrante (no quita huérfanas) ni entra en el resto de comprobaciones (no se indexa).
 const f404 = path.join(RAIZ, "404.html"), mal404 = [];
@@ -849,7 +861,7 @@ for (const [ruta, it] of itemsLista) {
   const dif = lib ? ["name", "url", "geo", "address"].filter((k) => canon(it[k]) !== canon(lib[k])) : ["ficha sin Library #biblioteca"];
   if (dif.length) { copiaMal.push(`${ruta} (${fam}) → ${f}: distinto ${dif.join(", ")}`); copiaMalFam[fam] = (copiaMalFam[fam] || 0) + 1; }
 }
-const muestra = (l, f) => l.slice(0, 15).map(f).join("\n") + (l.length > 15 ? `\n  … y ${l.length - 15} más` : "");
+const muestra = (l, f) => l.slice(0, +(process.env.MUESTRA || 15)).map(f).join("\n") + (l.length > 15 ? `\n  … y ${l.length - 15} más` : "");
 console.log(`Páginas: ${html.size} · enlaces internos: ${nEnlaces}`);
 console.log(`Enlaces rotos: ${rotos.length}${rotos.length ? "\n" + muestra(rotos, ([r, u]) => `  ${r} → ${u}`) : ""}`);
 console.log(`Títulos repetidos: ${dupT.length}${dupT.length ? "\n" + muestra(dupT, ([t, l]) => `  «${t}»: ${l.join(", ")}`) : ""}`);
@@ -874,6 +886,7 @@ console.log(`Migas como lista (<nav class="migas"><ol><li>, «›» solo por CSS
 console.log(`Última miga con aria-current="page" (<span> de la propia página, una sola vez por <nav class="migas">) en las indexables: ${Object.values(nAriaActual).reduce((a, b) => a + b, 0)} (${porFam(nAriaActual)}) · mal: ${ariaActualMal.length}${ariaActualMal.length ? "\n" + muestra(ariaActualMal, (r) => "  " + r) : ""}`);
 console.log(`CollectionPage de la propia página con @id <ruta>#pagina: ${Object.values(nCpId).reduce((a, b) => a + b, 0)} (${porFam(nCpId)}) · sin él: ${cpIdMal.length}${cpIdMal.length ? "\n" + muestra(cpIdMal, (r) => "  " + r) : ""}`);
 console.log(`isPartOf/hasPart e item de ItemList/BreadcrumbList a otra página con el @id de su nodo (que existe en la página destino, con la misma url): ${refsId.nConId} de ${refsId.nRefs} (items objeto: ${porFam(refsId.nItems)}; items que son solo URL, sin nodo: ${porFam(refsId.nItemsTexto)}) · mal: ${refsIdMal.length}${refsIdMal.length ? "\n" + muestra(refsIdMal, (r) => "  " + r) : ""}`);
+console.log(`name de cada referencia con @id (isPartOf/hasPart e item objeto de ItemList/BreadcrumbList) = name del nodo destino: ${Object.values(refsId.nNombre).reduce((a, b) => a + b, 0) - refsNombreMal.length} de ${Object.values(refsId.nNombre).reduce((a, b) => a + b, 0)} con name (${porFam(refsId.nNombre)}; sin name: ${porFam(refsId.nSinNombre)}) · discordantes: ${refsNombreMal.length}${refsNombreMal.length ? ` (${porFam(refsId.nNombreMalFam)})\n` + muestra(refsNombreMal, (r) => "  " + r) : ""}`);
 console.log(`Copias en ItemList de la Library de una ficha (@id <ficha>#biblioteca) con el mismo name, url, geo y address que en su ficha: ${Object.values(nCopiasFam).reduce((a, b) => a + b, 0) - copiaMal.length} de ${Object.values(nCopiasFam).reduce((a, b) => a + b, 0)} (${porFam(nCopiasFam)}) · distintas: ${copiaMal.length}${copiaMal.length ? ` (${porFam(copiaMalFam)})\n` + muestra(copiaMal, (r) => "  " + r) : ""}`);
 console.log(`mainEntityOfPage de las fichas (WebPage #pagina about Library #biblioteca y Library mainEntityOfPage → #pagina): ${nFichaMainEntity} de ${fichas.size} bien · mal: ${mainEntityMal.length}${mainEntityMal.length ? "\n" + muestra(mainEntityMal, (r) => "  " + r) : ""}`);
 console.log(`FAQPage en el grafo de su página (@id #faq, isPartOf → #pagina de la misma URL): fichas (WebPage) ${nFichaFaqBien} de ${nFichaFaq} bien, con hasPart #faq recíproco ${nFichaHasPart} · demás páginas (CollectionPage) ${nOtraFaqBien} de ${nOtraFaq} bien · mal: ${faqMal.length}${faqMal.length ? "\n" + muestra(faqMal, (r) => "  " + r) : ""}`);
@@ -1186,5 +1199,5 @@ async function probarAvisoIndexNow() {
   const t0 = Date.now();
   const [avisoMal, nCasos] = await probarAvisoIndexNow();
   console.log(`IndexNow «despliega primero» y simulación (avisar_indexnow.js --base contra servidor local, sin red real): ${nCasos - new Set(avisoMal.map((x) => x.split(" ")[0])).size} de ${nCasos} casos bien (200 con la clave → 0; 404, otro texto o servidor caído → 1; --simular y clave null → 0 sin peticiones) en ${Date.now() - t0} ms · mal: ${avisoMal.length}${avisoMal.length ? "\n" + muestra(avisoMal, (r) => "  " + r) : ""}`);
-  if (exMal.length || findeMal.length || findeCercaMal.length || cssMal.length || listaMigasMal.length || ariaActualMal.length || cpIdMal.length || refsIdMal.length || migasVisMal.length || itemMigasMal.length || avisoMal.length || vistaMal.length || analiticaMal.length || gscMal.length || indexNowMal.length || migasMal.length || mainEntityMal.length || copiaMal.length || faqMal.length || indiceMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || idAppMal.length || idNombreMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
+  if (exMal.length || findeMal.length || findeCercaMal.length || cssMal.length || listaMigasMal.length || ariaActualMal.length || cpIdMal.length || refsIdMal.length || refsNombreMal.length || migasVisMal.length || itemMigasMal.length || avisoMal.length || vistaMal.length || analiticaMal.length || gscMal.length || indexNowMal.length || migasMal.length || mainEntityMal.length || copiaMal.length || faqMal.length || indiceMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || idAppMal.length || idNombreMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
 })();
