@@ -39,3 +39,17 @@ semana por usuario activo, con árbol sano. Todo lo demás existe para mover est
 ## Lo que el bucle NO hace nunca
 - Inventar datos (horarios, aforos, cifras de usuarios), fusionar en `main`, tocar Supabase en producción,
   publicar en Google Play o en redes, gastar dinero, ni borrar tareas programadas.
+
+## Prioridades de crecimiento (Marcos, 15-11-2026) — mandan sobre los pesos de arriba en los Objetivos 4 y 8
+- **Al empezar cada vuelta**: `git fetch origin && git merge --no-edit origin/main`. En main están la estrategia
+  (`docs/CRECIMIENTO.md`), los informes semanales con datos reales de Search Console y visitas (`docs/seo/`,
+  `docs/trafico/`) y lo que ya está publicado (la rutina local de Marcos publica cada día lo de esta rama).
+- **Objetivo 4 (SEO + GEO)** pasa de pulir JSON-LD (regla 4b: descansa) a **contenido que gane búsquedas**, en el orden
+  de `docs/CRECIMIENTO.md` §2-§3: primero «época de exámenes enero 2027» y «24 horas» por ciudad (15 ciudades),
+  luego festivos de diciembre, guías «dónde estudiar en <ciudad>» y opositores. Siempre con fuente y fecha.
+- **GEO** (§4): página `/datos/` con metodología y CSV abierto de las verificadas, frases citables con fecha.
+- **Enlaces** (§5): `docs/ENLACES.md` con destinos y textos listos (Marcos los envía) y widget «¿Está abierta?».
+- **Objetivo 8**: analítica ✅, Search Console ✅ e IndexNow ✅ desde el 15-11. Cada lunes llega `docs/seo/<fecha>.md`
+  con «Tareas para el bucle»: pásalas a BACKLOG y priorízalas por encima de las tareas sin datos.
+- **Dinero** (§6): solo preparar lo que Marcos haya decidido en `docs/CRECIMIENTO.md`; nada de anuncios ni afiliados
+  sin su decisión escrita allí.
