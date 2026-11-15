@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-11-15 10:30",
+  "fecha": "2026-11-15 11:49",
   "pruebas": {
     "arranca: datos y vistas": true,
     "marca España (sin «Navarra» en la cabecera)": true,
@@ -73,6 +73,7 @@
     "al llegar al cofre desde la barrita o la píldora, «¡Abre tu cofre!» recibe el foco (Intro basta) y no lo pierde al repintarse; nada si el cofre no está listo": true,
     "nombres recortados con gramática: «Sesión terminada» dice «h en Biblioteca de Navarra», nunca «en de Navarra»": true,
     "«Sesión terminada» lleva «📸 Compartir» (44 px, con etiqueta) y la tarjeta de la sesión se dibuja en 1080×1920 sin red, también sin árbol ni biblioteca": true,
+    "tras «🌳 Dos días seguidos plantando y compartiendo», el 📸 de esa «Sesión terminada» pinta «2 días seguidos 🌳» bajo la racha, sin solaparse ni salirse; sin la vuelta, no": true,
     "historial de Estudio: cada fila lleva 📸 (44×44, «Compartir sesión de <fecha>») y comparte ESA sesión en 1080×1920, con la racha de ese día y sin red": true,
     "perfil: récord con el nombre bien recortado": true,
     "perfil: «📸 Compartir mi mejor sesión de la semana» sale con sesiones de los últimos 7 días y comparte la más larga; sin sesiones no sale": true,
@@ -93,13 +94,13 @@
     "fichas.json pesa como mucho 15 KB gzip (si no, pasar al formato {prov:{índice:slug}})": true
   },
   "errores_js": [],
-  "carga_ms_cpu4x": 549,
+  "carga_ms_cpu4x": 566,
   "carga_ms_cpu4x_min_max": [
-    468,
-    622
+    500,
+    668
   ],
-  "primera_pintura_ms_cpu4x": 264,
-  "todas_las_chinchetas_ms_cpu4x": 563,
+  "primera_pintura_ms_cpu4x": 216,
+  "todas_las_chinchetas_ms_cpu4x": 585,
   "markercluster": {
     "cargado": false,
     "agrupa": false,
@@ -109,12 +110,12 @@
   },
   "datos": {
     "bibliotecas": 2624,
-    "con_horario_verificado": 947,
+    "con_horario_verificado": 951,
     "provincias_con_horario": 51,
     "provincias_total": 51
   },
   "seo": {
-    "paginas": 1433,
+    "paginas": 1437,
     "sitemap": true
   },
   "peso": {
@@ -127,13 +128,13 @@
       "kb_gzip": 92.2
     },
     "bibliotecas-espana.js": {
-      "kb": 1046.9,
-      "kb_gzip": 243.1
+      "kb": 1049.5,
+      "kb_gzip": 243.8
     },
     "fichas.json": {
-      "kb": 60.4,
-      "kb_gzip": 12.3,
-      "bytes": 61828,
+      "kb": 60.7,
+      "kb_gzip": 12.4,
+      "bytes": 62109,
       "tope_kb_gzip": 15
     }
   },
