@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-11-15 16:50",
+  "fecha": "2026-11-15 17:55",
   "pruebas": {
     "arranca: datos y vistas": true,
     "marca España (sin «Navarra» en la cabecera)": true,
@@ -36,6 +36,7 @@
     "al subir de nivel, la barra de nivel de Estudio hace una vez el barrido --destello (.lv-brilla, .6 s, en pausa bajo la ventana, pendiente con Estudio oculto); nunca al recargar ni con reducir movimiento": true,
     "el 🧊 del cofre vuela a la pastilla de la racha al cerrar la ventana (una vez, tras las 🌰; con reducir movimiento, solo la cifra)": true,
     "el 🧊 ganado por 7 días seguidos vuela del aviso a la pastilla de la racha y la racha dice «🧊 +1 por 7 días seguidos» (no «del cofre»); con reducir movimiento, solo la cifra": true,
+    "con 3 de 3 🧊, el hito de 7 días seguidos dice «🔥 7 días seguidos · tus 3 🧊 te cubren» y la pastilla de la racha solo rebota (svRebote, sin vuelo), una vez y no al recargar; quieta con reducir movimiento": true,
     "cuando un 🧊 salva la racha, la pastilla enseña «🧊 ✓» un instante en azul calmado (sin hablar del día perdido; con reducir movimiento, quieta)": true,
     "tocar la insignia «🧊 N» abre la racha con «🧊 Congeladores» resaltada 1 s con borde --acento (botón accesible de 44 px; con reducir movimiento, sin transición)": true,
     "la ventana de la racha dice bajo «🧊 Congeladores» cómo se gana uno (cada 7 días seguidos y a veces en el cofre, máx. 3) en --suave; con 3, «Tienes el máximo (3)»": true,
@@ -97,13 +98,13 @@
     "fichas.json pesa como mucho 15 KB gzip (si no, pasar al formato {prov:{índice:slug}})": true
   },
   "errores_js": [],
-  "carga_ms_cpu4x": 595,
+  "carga_ms_cpu4x": 940,
   "carga_ms_cpu4x_min_max": [
-    455,
-    740
+    808,
+    993
   ],
-  "primera_pintura_ms_cpu4x": 308,
-  "todas_las_chinchetas_ms_cpu4x": 609,
+  "primera_pintura_ms_cpu4x": 416,
+  "todas_las_chinchetas_ms_cpu4x": 962,
   "markercluster": {
     "cargado": false,
     "agrupa": false,
@@ -113,12 +114,12 @@
   },
   "datos": {
     "bibliotecas": 2624,
-    "con_horario_verificado": 970,
+    "con_horario_verificado": 973,
     "provincias_con_horario": 51,
     "provincias_total": 51
   },
   "seo": {
-    "paginas": 1461,
+    "paginas": 1463,
     "sitemap": true
   },
   "peso": {
@@ -127,17 +128,17 @@
       "kb_gzip": 32.4
     },
     "app.js": {
-      "kb": 308.6,
-      "kb_gzip": 93.0
+      "kb": 309.2,
+      "kb_gzip": 93.2
     },
     "bibliotecas-espana.js": {
-      "kb": 1067.8,
-      "kb_gzip": 247.4
+      "kb": 1070.2,
+      "kb_gzip": 247.9
     },
     "fichas.json": {
-      "kb": 61.8,
+      "kb": 61.9,
       "kb_gzip": 12.6,
-      "bytes": 63274,
+      "bytes": 63418,
       "tope_kb_gzip": 15
     }
   },
