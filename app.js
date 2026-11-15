@@ -3518,7 +3518,7 @@ function renderMisiones(){
   // (animationend de cofreBrilla, ya con la ventana cerrada): así el de cada 30 s no se lo come. Solo en memoria: al
   // recargar con el cofre abierto no hay .listo antes y no brilla; con «reducir movimiento», nunca.
   if(M.cofre&&el.querySelector(".cofre.listo")&&!sinMovimiento())COFRE_BRILLA=M.fecha;
-  var cofBrilla=M.cofre&&COFRE_BRILLA===M.fecha&&!sinMovimiento();
+  var cofBrilla=M.cofre&&COFRE_BRILLA===M.fecha&&!sinMovimiento(); var sellosN=(DATA.sellosMisiones||[]).length||1;
   if(!el._cofFin){el._cofFin=1;el.addEventListener("animationend",function(e){if(e.animationName==="cofreBrilla"){COFRE_BRILLA=0;e.target.classList.remove("cofre-brilla");}});}
   // misión de minutos a ≤ 15 min mientras estudias (misionCerca): bajo su barra, «⏱️ 7 min · +10 🌰» fija (.mis-pista-mini),
   // con este mismo repintado (cada 30 s con el cronómetro); se va al pausar/terminar o al cumplirse. Con la pista completa no sale.
@@ -3539,10 +3539,12 @@ function renderMisiones(){
       return '<div class="mis'+(ok?' ok':'')+(desde!==""?' mis-llena':'')+(brilla?' mis-brilla':'')+(foco?' mis-foco':'')+'" data-m="'+id+'"><div class="mis-ic">'+(ok?'✅':d.icon)+'</div><div class="mis-main"><div class="mis-txt">'+escapeHTML(d.txt)+'</div>'+
         '<div class="mis-bar"><i style="width:'+(desde!==""?desde:pct)+'%"></i></div>'+(foco&&!ok&&d.min&&falta>0?'<div class="mis-pista">⏱️ <b>'+falta+' min</b> más y es tuya · <b>+'+MIS_PREMIO+' 🌰</b></div>':cerca===id&&!ok&&falta>0?'<div class="mis-pista-mini" aria-hidden="true">⏱️ <b>'+falta+' min</b> · <b>+'+MIS_PREMIO+' 🌰</b></div>':'')+'</div><div class="mis-val"'+(vd<v?' data-de="'+vd+'" data-a="'+v+'"':'')+'>'+(d.min?misMin(vd):v)+'/'+(d.min?misMin(d.meta):d.meta)+'</div></div>';
     }).join("")+
-    '<button class="cofre'+(hechas===3&&!M.cofre?' listo':'')+(M.cofre?' abierto':'')+(cofBrilla?' cofre-brilla':'')+'" onclick="abrirCofre(this)" '+(hechas===3&&!M.cofre?'':'disabled')+'>'+
+    // abierto: aria-disabled (no disabled) para que se pueda enfocar y el lector diga el logro; abrirCofre no hace nada con M.cofre
+    '<button class="cofre'+(hechas===3&&!M.cofre?' listo':'')+(M.cofre?' abierto':'')+(cofBrilla?' cofre-brilla':'')+'" onclick="abrirCofre(this,event)" '+(M.cofre?'aria-disabled="true" aria-label="Sello del día conseguido: '+sellosN+(sellosN===1?' día':' días')+' con todas las misiones"':hechas===3?'':'disabled')+'>'+
       '<span class="cofre-ic">🎁</span><span>'+(M.cofre?'Sello del día conseguido · vuelve mañana':hechas===3?'¡Abre tu cofre!':'Cofre: completa las 3 misiones ('+hechas+'/3)')+'</span>'+
       (M.cofre?'<span class="sello-dia" aria-hidden="true">🏵️</span>':'')+'</button>';
-  var c=cofFoco&&el.querySelector(".cofre.listo"); if(c)c.focus({preventScroll:true});
+  // el foco sigue en la tarjeta: «¡Abre tu cofre!» o, ya en oro y sin ventana encima, la tarjeta abierta (aria-disabled)
+  var c=cofFoco&&(el.querySelector(".cofre.listo")||!$("modalRoot").innerHTML&&el.querySelector(".cofre.abierto")); if(c)c.focus({preventScroll:true});
   if(llenar){void el.offsetWidth;el.querySelectorAll(".mis-llena .mis-bar i").forEach(function(i){i.style.width="100%";});
     el.querySelectorAll(".mis-llena .mis-val[data-de]").forEach(misSubeCifra);
     setTimeout(function(){for(var k in MIS_LLENA)if(MIS_LLENA[k]<=Date.now())MIS_LLENA[k]=0;renderMisiones();},MIS_LLENA_MS);}

@@ -850,6 +850,41 @@ PRUEBAS = [
         return true;
       }finally{window.sinMovimiento=sm;window.encolarVuelo=ev;window.celebrar=ce;window.confeti=cf;window.showToast=st;closeModal();COFRE_BRILLA=0;
         k.forEach(x=>DATA[x]=o[x]);renderMisiones();renderSemillas();}"""),
+    ("tras abrir el cofre con teclado, al cerrar la ventana el foco vuelve a la tarjeta en oro (aria-disabled, sin disabled) que dice «Sello del día conseguido: N días…»; con ratón no se mueve; la tarjeta abierta no reabre ni premia", """
+      await cargarExtra();
+      var k=['misiones','sellosMisiones','cofresAbiertos','semillasPremio','streakFreezes'],o={};k.forEach(x=>o[x]=DATA[x]);
+      var ev=window.encolarVuelo,ce=window.celebrar,cf=window.confeti,st=window.showToast,espera=ms=>new Promise(r=>setTimeout(r,ms));
+      var cof=()=>document.querySelector('#missionsCard .cofre');
+      var lista=()=>{var M=misionesDeHoy();M.cofre=false;M.ids.forEach(id=>M.hechas[id]=M.hechas[id]||new Date().toISOString());renderMisiones();return M;};
+      window.encolarVuelo=()=>{};window.celebrar=()=>{};window.confeti=()=>{};window.showToast=()=>{};
+      try{
+        closeModal();goView('study');DATA.sellosMisiones=['2026-01-01','2026-01-02'];
+        lista();var b=cof();if(!b.classList.contains('listo')||b.disabled)return 'el cofre no está listo';
+        b.focus();b.click(); // Intro sobre «¡Abre tu cofre!» (click con detail 0)
+        if(!document.querySelector('#modalRoot .cofre-modal'))return 'no se abre la ventana del cofre';
+        if(document.activeElement===cof())return 'la tarjeta tiene el foco bajo la ventana';
+        closeModal();await espera(50);
+        var c=cof();
+        if(!c.classList.contains('abierto'))return 'la tarjeta no pasa a oro';
+        if(c.disabled||c.getAttribute('aria-disabled')!=='true')return 'la tarjeta abierta debe ser aria-disabled sin disabled';
+        if(c.getAttribute('aria-label')!=='Sello del día conseguido: 3 días con todas las misiones')return 'aria-label: '+c.getAttribute('aria-label');
+        if(document.activeElement!==c)return 'el foco no vuelve a la tarjeta del cofre: '+(document.activeElement&&document.activeElement.className);
+        // el repintado (cada 30 s con el cronómetro) no le quita el foco
+        renderMisiones();if(document.activeElement!==cof())return 'el repintado quita el foco a la tarjeta abierta';
+        // Intro / clic sobre la tarjeta abierta: nada
+        var p=DATA.semillasPremio,n=DATA.cofresAbiertos;cof().click();
+        cof().dispatchEvent(new MouseEvent('click',{bubbles:true,detail:1}));
+        if(document.querySelector('#modalRoot .modal-bg')||DATA.semillasPremio!==p||DATA.cofresAbiertos!==n)return 'la tarjeta abierta reabre o premia dos veces';
+        // con ratón: el foco no se mueve al cerrar
+        DATA.sellosMisiones=[];lista();b=cof();document.activeElement.blur();
+        b.dispatchEvent(new MouseEvent('click',{bubbles:true,detail:1}));
+        if(!document.querySelector('#modalRoot .cofre-modal'))return 'con ratón no se abre';
+        closeModal();await espera(50);
+        if(document.activeElement===cof())return 'con ratón roba el foco';
+        if(cof().getAttribute('aria-label')!=='Sello del día conseguido: 1 día con todas las misiones')return 'singular: '+cof().getAttribute('aria-label');
+        return true;
+      }finally{window.encolarVuelo=ev;window.celebrar=ce;window.confeti=cf;window.showToast=st;closeModal();COFRE_BRILLA=0;
+        k.forEach(x=>DATA[x]=o[x]);renderMisiones();renderSemillas();}"""),
     ("al subir de nivel, la barra de nivel de Estudio hace una vez el barrido --destello (.lv-brilla, .6 s, en pausa bajo la ventana, pendiente con Estudio oculto); nunca al recargar ni con reducir movimiento", """
       var o=DATA.sessions,sm=window.sinMovimiento,cf=window.confeti,espera=ms=>new Promise(r=>setTimeout(r,ms));
       var card=()=>$('levelCardStudy'),af=()=>getComputedStyle(card().querySelector('.lv-bar'),'::after'),fin=0,cuenta=e=>{if(e.animationName==='lvBrilla')fin++;};

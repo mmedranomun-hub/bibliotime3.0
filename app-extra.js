@@ -736,9 +736,13 @@ function mostrarPrimerArbol(conRacha){
 }
 
 /* ----- Cofre de las misiones y ventana de la racha ----- */
-function abrirCofre(btn){
+// Con teclado (Intro/Espacio: click con detail 0, o el botón con :focus-visible) el foco vuelve a la tarjeta ya en oro al
+// cerrar la ventana, para que el lector diga «Sello del día conseguido…» sin perder el sitio. Con ratón/dedo no se mueve.
+function abrirCofre(btn,ev){
+  if(btn&&btn.getAttribute&&btn.getAttribute("aria-disabled")==="true")return; // la tarjeta ya en oro: nada (ni reabre ni premia)
   var M=misionesDeHoy(); if(M.cofre)return;
   if(M.ids.some(function(id){return !M.hechas[id];}))return;
+  var teclado=!!btn&&btn===document.activeElement&&(!!ev&&ev.detail===0||function(){try{return btn.matches(":focus-visible");}catch(e){return false;}}());
   M.cofre=true;DATA.cofresAbiertos=(DATA.cofresAbiertos||0)+1;var premio=20+(hashStr(ymd()+"cofre")%4)*10; // 20-50 semillas
   var hielo=(DATA.streakFreezes||0)<3&&hashStr(ymd())%3===0, n=ponerSello();
   DATA.semillasPremio=(DATA.semillasPremio||0)+premio;if(hielo)DATA.streakFreezes=(DATA.streakFreezes||0)+1;saveUserData();
@@ -756,7 +760,10 @@ function abrirCofre(btn){
   // el sello «se estampa» en la tarjeta del cofre al cerrar la ventana (debajo no se vería)
   var root=$("modalRoot");if(!root||typeof MutationObserver!=="function")return;
   var ob=new MutationObserver(function(){if(root.innerHTML)return;ob.disconnect();
-    var s=document.querySelector("#missionsCard .sello-dia");if(s&&!sinMovimiento())s.classList.add("estampa");});
+    var s=document.querySelector("#missionsCard .sello-dia");if(s&&!sinMovimiento())s.classList.add("estampa");
+    // vuelta del foco (solo teclado, si la tarjeta se ve y nadie más tiene el foco; p. ej. «Ver especies» lleva a la tienda)
+    var c=teclado&&document.querySelector("#missionsCard .cofre.abierto"),a=document.activeElement;
+    if(c&&c.offsetParent&&(!a||a===document.body))c.focus({preventScroll:true});});
   ob.observe(root,{childList:true});
 }
 // Sello del día (una fecha por día, sin repetir) en DATA.sellosMisiones; devuelve cuántos días llevas.
