@@ -14,8 +14,39 @@ elija proveedor. Mientras siga apagada, `privacidad.html` dice la verdad («no u
 - **No carga nada** si el navegador pide «No rastrear» (`navigator.doNotTrack === "1"`) o Global Privacy Control
   (`navigator.globalPrivacyControl`), ni en `localhost`/`127.0.0.1`, ni abriendo el archivo (`file:`).
 - Solo cuenta **páginas vistas**: envía la ruta (`/`, `/bibliotecas/madrid/`…) sin `?consulta` ni `#ancla` (así el
-  `#bib=…` de una ficha no sale del móvil). No hay eventos propios: nada del modo estudio (sesiones, minutos,
-  bibliotecas elegidas, amigos) se manda al proveedor. Ni Vercel ni GoatCounter usan cookies ni guardan la IP.
+  `#bib=…` de una ficha no sale del móvil). Nada del modo estudio (sesiones, minutos, bibliotecas elegidas, amigos)
+  se manda al proveedor. Ni Vercel ni GoatCounter usan cookies ni guardan la IP.
+- **Un solo evento propio, preparado (2026-11-15)**: `enlace-compartido-bib` («Llegó por enlace compartido de
+  biblioteca»). Ver el apartado siguiente.
+
+## Evento «llegó por enlace compartido de biblioteca»
+
+- **Cómo se marca**: el botón «🔗 Compartir» de cada biblioteca, cuando comparte el enlace de la app, añade `&o=c`
+  (origen: compartido): `https://bibliomapa.es/#bib=<índice>-<nombre>&o=c`. Los enlaces `#bib=` que ponen las páginas
+  SEO hacia la app no lo llevan, así que no se mezclan.
+- **Ficha SEO, sin marca (decisión)**: si la biblioteca tiene ficha en `fichas.json`, se comparte
+  `https://bibliomapa.es/bibliotecas/<prov>/<slug>/` **limpia, sin `?o=c`**. Es la URL canónica que indexa Google; una
+  consulta crearía una variante duplicada que acabaría pegada en webs y grupos, y además `analitica.js` descarta la
+  consulta de toda página vista, así que tampoco se podría contar. Esas visitas se verán en las páginas vistas de la
+  ficha (con su «Referrer»); el evento solo mide los enlaces de la app.
+- **Qué hace la app** (`comprobarEnlaceCompartido`, app.js): abre la biblioteca igual que sin la marca, quita `&o=c`
+  de la barra con `history.replaceState` (sin recargar ni disparar `hashchange`; el `#bib=` se queda) para que quien
+  vuelva a copiar la URL no la re-comparta marcada, y llama a `analiticaEvento("enlace-compartido-bib")` si existe.
+- **Qué hace `analitica.js`**: `analiticaEvento(nombre)` solo envía nombres de la lista `EVENTOS` y solo si la
+  analítica está encendida (misma decisión que las páginas vistas: proveedor elegido, sin DNT/GPC, no local).
+  **Apagada (hoy) no hace nada y devuelve `false`: nada sale a la red.** Encendida: Vercel → `va("event",
+  {name:"enlace-compartido-bib"})` (los eventos propios de Vercel Web Analytics piden plan Pro; en Hobby no se
+  verán); GoatCounter → `goatcounter.count({path:"enlace-compartido-bib", title:…, event:true})`, en cola hasta
+  que llegue `count.js`.
+- **Sin id de biblioteca (decisión)**: el evento no lleva índice, nombre ni ningún otro dato; solo se cuenta. La
+  pregunta del objetivo 8 es «¿trae gente el botón de compartir?», y para eso basta el total. Saber qué biblioteca
+  se comparte no cambia ninguna decisión hoy y, cruzado con hora y país, se acerca a describir a una persona.
+- La prueba «/#bib=<i>&o=c …» de `scripts/probar.py` abre la app en limpio con ese enlace y exige: ficha correcta, sin
+  errores JS, barra sin `o=c`, ninguna petición de analítica y que `analiticaEnviar` mande solo el evento permitido
+  y sin campos de más.
+- **El día que se encienda**: el texto de `privacidad.html` de abajo ya dice «No medimos nada de lo que haces dentro
+  de la app (sesiones de estudio, bibliotecas, amigos)»; contar que alguien abrió un enlace compartido, sin qué
+  biblioteca, es compatible, pero conviene revisar esa frase entonces.
 - La decisión está en una función pura, `analiticaDecidir(conf, entorno)`, que prueba `scripts/probar.py`
   (prueba «analítica apagada por defecto…»): con la configuración por defecto no se pide ninguna URL de analítica.
 

@@ -1834,6 +1834,7 @@ PRUEBAS = [
         Object.defineProperty(navigator,'share',{configurable:true,writable:true,value:d=>{dato=d;return Promise.resolve();}});
         bt.click();await espera(50);
         if(!dato||dato.url.indexOf('https://bibliomapa.es/#bib='+i+'-')!==0)return 'navigator.share sin el enlace: '+JSON.stringify(dato);
+        if(!/&o=c$/.test(dato.url))return 'el enlace #bib= no acaba en &o=c: '+dato.url;
         if(dato.text.indexOf(b.nombre)<0)return 'texto sin el nombre';
         if(/abierta hoy/.test(dato.text)&&!(b.verificadoHorario&&b.fuenteHorario))return 'dice «abierta hoy» sin horario verificado';
         document.querySelectorAll('.toast').forEach(x=>x.remove());
@@ -2415,6 +2416,38 @@ async def main():
                 fallo_atajo.append(acc)
             await c3.close()
         res["pruebas"]["atajos de la app instalada (#accion=estudiar|ahora|pronto)"] = True if not fallo_atajo else "fallan: " + ", ".join(fallo_atajo)
+        # --- enlace compartido de biblioteca (/#bib=<i>-<nombre>&o=c, el de «🔗 Compartir»), en una página limpia ---
+        # Abre la ficha correcta sin errores JS, quita «o=c» de la barra (deja el #bib=) y, con la analítica apagada,
+        # no pide nada de analítica; analiticaEnviar solo manda el evento permitido, sin id de biblioteca.
+        fallo_oc = []
+        c5, p5 = await nueva_pagina()
+        err5, pedidas5 = [], []
+        p5.on("pageerror", lambda e: err5.append(str(e)[:200]))
+        p5.on("request", lambda r: pedidas5.append(r.url) if ("_vercel/insights" in r.url or "goatcounter" in r.url or "gc.zgo.at" in r.url) else None)
+        await p5.goto(f"http://127.0.0.1:{PUERTO}/#bib=104-biblioteca&o=c")
+        try:
+            await p5.wait_for_function("!!document.querySelector('.leaflet-popup-content h2')", timeout=15000)
+        except Exception:
+            fallo_oc.append("no se abre ninguna ficha")
+        est5 = await p5.evaluate("""()=>{var h=document.querySelector('.leaflet-popup-content h2'),f=[];
+          if(h&&h.textContent!==BIBLIOTECAS[104].nombre)f.push('abre otra: '+h.textContent);
+          if(location.hash!=='#bib=104-biblioteca')f.push('la barra queda con '+location.hash);
+          if(typeof analiticaEvento!=='function')f.push('sin analiticaEvento');
+          else if(analiticaEvento('enlace-compartido-bib')!==false)f.push('apagada, analiticaEvento no devuelve false');
+          if(window.va||window.goatcounter)f.push('ha tocado window.va/goatcounter');
+          var E=analiticaEnviar,va=[],w={va:function(){va.push([].slice.call(arguments));}};
+          if(E({src:'x'},'enlace-compartido-bib',w,null)!==true||JSON.stringify(va)!=='[["event",{"name":"enlace-compartido-bib"}]]')f.push('vercel: '+JSON.stringify(va));
+          if(E({src:'x'},'otro',w,null)!==false||E(null,'enlace-compartido-bib',w,null)!==false||va.length!==1)f.push('manda eventos no permitidos o sin decisión');
+          var gc=[],cola=[],g={goatcounter:{}};
+          E({goatcounter:'u'},'enlace-compartido-bib',g,cola);
+          g.goatcounter.count=function(x){gc.push(x);};E({goatcounter:'u'},'enlace-compartido-bib',g,cola);
+          if(cola.length!==1||gc.length!==1||gc[0].path!=='enlace-compartido-bib'||gc[0].event!==true||Object.keys(gc[0]).length!==3)f.push('goatcounter: '+JSON.stringify({cola:cola,gc:gc}));
+          return f;}""")
+        fallo_oc += est5 + ["error JS: " + x for x in err5]
+        if pedidas5:
+            fallo_oc.append("pide analítica: " + ", ".join(pedidas5))
+        await c5.close()
+        res["pruebas"]["/#bib=<i>&o=c (enlace de «🔗 Compartir») abre la ficha correcta sin errores, quita o=c de la barra y, apagada, no manda nada; el evento no lleva id"] = True if not fallo_oc else "; ".join(fallo_oc)
         # --- analítica sin cookies (docs/ANALITICA.md): preparada pero APAGADA ---
         # index.html y las páginas SEO (/bibliotecas/…) cargan analitica.js por su cuenta; se comprueba en las dos que el
         # archivo se descarga, define ANALITICA/analiticaDecidir y no pide ninguna URL de proveedor ni pone cookies.

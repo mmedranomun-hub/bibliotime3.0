@@ -1486,7 +1486,10 @@ function popupHTML(b,i){
    propios). La ruta no se puede deducir en la app (choques de nombres, provincia deducida, temporada-examenes.js):
    la escribe generar_paginas_seo.js en fichas.json ({índice: ruta}), que se baja en segundo plano tras la carga.
    Si aún no está, falla o la ruta no casa con el nombre, https://bibliomapa.es/#bib=<índice>-<nombre> (el que entiende
-   comprobarEnlaceCompartido). Tocar el botón nunca usa la red. Sin datos personales. */
+   comprobarEnlaceCompartido) con «&o=c» (origen: compartido) para poder contar, solo si algún día se enciende
+   analitica.js, cuántos llegan por un enlace compartido; el manejador lo lee y lo quita de la barra. La URL de la ficha
+   va limpia, sin «?o=c»: es la canónica que indexa Google y una consulta la duplicaría (y analitica.js descarta la
+   consulta de todos modos). Tocar el botón nunca usa la red. Sin datos personales. */
 function slugBib(s){return String(s).normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");}
 var FICHAS=null;
 function cargarFichas(){
@@ -1500,7 +1503,7 @@ function rutaFicha(i){
   if(!m||!b)return null;var n=slugBib(b.nombre),k=Math.min(12,n.length,m[1].length);
   return n.slice(0,k)===m[1].slice(0,k)?r:null;
 }
-function enlaceBib(i){var r=rutaFicha(i);if(r)return "https://bibliomapa.es"+r;var b=BIBLIOTECAS[i];return "https://bibliomapa.es/#bib="+i+"-"+slugBib(b.nombre).slice(0,40);}
+function enlaceBib(i){var r=rutaFicha(i);if(r)return "https://bibliomapa.es"+r;var b=BIBLIOTECAS[i];return "https://bibliomapa.es/#bib="+i+"-"+slugBib(b.nombre).slice(0,40)+"&o=c";}
 // «abierta hoy …» solo con horario verificado (fuente https y fecha); si no, solo el nombre.
 function textoCompartirBib(b){
   var t=b.nombre;
@@ -3258,10 +3261,17 @@ function abrirAtajo(acc){
 }
 function comprobarEnlaceCompartido(){
   var hash=location.hash;
-  // Enlace a una biblioteca (páginas de bibliomapa.es/bibliotecas/… y compartir): #bib=<índice>-<nombre>
+  // Enlace a una biblioteca (páginas de bibliomapa.es/bibliotecas/… y compartir): #bib=<índice>-<nombre>[&o=c]
+  // «&o=c» = llegó por «🔗 Compartir»: se quita de la barra (replaceState, sin hashchange) para que no se re-comparta
+  // y, solo con analitica.js encendida, cuenta un evento agregado sin índice ni nombre de biblioteca.
   if(hash.indexOf("#bib=")===0){
-    var bi=parseInt(hash.slice(5),10);
-    if(BIBLIOTECAS[bi]){(function intenta(n){if(window.__map&&window.__selBib){goView("map");window.__selBib(bi);}else if(n<40)setTimeout(function(){intenta(n+1);},250);})(0);}
+    var bi=parseInt(hash.slice(5),10),partes=hash.split("&"),compartido=partes.indexOf("o=c")>0;
+    if(compartido){
+      try{history.replaceState(history.state,"",location.pathname+location.search+partes.filter(function(x,k){return !k||x!=="o=c";}).join("&"));}catch(e){}
+    }
+    if(BIBLIOTECAS[bi]){
+      if(compartido&&typeof analiticaEvento==="function")try{analiticaEvento("enlace-compartido-bib");}catch(e){}
+      (function intenta(n){if(window.__map&&window.__selBib){goView("map");window.__selBib(bi);}else if(n<40)setTimeout(function(){intenta(n+1);},250);})(0);}
     return;
   }
   // Atajos de la app instalada (manifest.json → shortcuts): #accion=estudiar | ahora | pronto
