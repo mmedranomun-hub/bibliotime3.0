@@ -804,13 +804,13 @@ else {
       // slugs-404, /bibliotecas/<clave>/<localidad>/ → esa localidad de la provincia del alias (como /bibliotecas/vizcaya/bilbo/).
       const r = `/bibliotecas/${s}/`;
       casos.push([`/bibliotecas/${k}/`, esperaProv(r)], [`/${k}/`, esperaProv(r)], [`/${k}.html`, esperaProv(r)]);
-      if (S) for (const l of ((S.p || {})[s] || [[]])[0]) casos.push([`/bibliotecas/${k}/${slugN(l)}/`, `¿Buscabas ${l}[${r}${slugN(l)}/]?`]);
+      if (S) for (const x of ((S.p || {})[s] || [[]])[0]) { const l = Array.isArray(x) ? x[0] : x; casos.push([`/bibliotecas/${k}/${slugN(l)}/`, `¿Buscabas ${l}[${r}${slugN(l)}/]?`]); }
     }
     // Segundo tramo sacado de slugs-404: cada localidad con página por /bibliotecas/<prov>/<slug sin guiones>/ y cada
     // temática de provincia por /bibliotecas/<prov>/<slug del tema sin guiones>/; ninguna puede caer a la provincia ni a otra.
     if (S) for (const [ps, [locs, temas]] of Object.entries(S.p || {})) {
       const r = `/bibliotecas/${ps}/`;
-      for (const l of locs) casos.push([`${r}${slugN(l).replace(/-/g, "")}/`, `¿Buscabas ${l}[${r}${slugN(l)}/]?`]);
+      for (const x of locs) { const l = Array.isArray(x) ? x[0] : x; casos.push([`${r}${slugN(l).replace(/-/g, "")}/`, `¿Buscabas ${l}[${r}${slugN(l)}/]?`]); }
       for (const k of temas) { const t = (S.t || [])[k]; if (t) casos.push([`${r}${t[0].replace(/-/g, "")}/`, `¿Buscabas ${t[1]} en ${nombreProv.get(r) || "?"}[${r}${t[0]}/]?`]); }
     }
     for (const [ruta, esperado] of casos) { const r = sugiere(ruta); if (r !== esperado) mal404.push(`«¿Buscabas…?» en ${ruta}: «${r}» (esperado «${esperado}»)`); else n404Busca++; }
