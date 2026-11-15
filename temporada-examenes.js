@@ -57,6 +57,9 @@ window.TEMPORADA_EXAMENES = [
   },
   // Universidad de Alcalá: tabla «Curso Académico 2026-2027» de su página de horarios (sin año en cada fila;
   // el curso va del 1 oct 2026 al 31 ago 2027, así que dic = 2026 y ene = 2027).
+  // CRAI `bib: null` (revisado 2026-11-15): el CRAI es el Edificio Cisneros, Plaza de San Diego 6 (antiguo Cuartel del
+  // Príncipe), y no está en el mapa. «Biblioteca de Trinitarios» (C. Trinidad 1) es OTRA biblioteca: la UAH la deja fuera
+  // del CRAI y tiene otro horario (L-V 8:30-20:45); tampoco casan las municipales (Cardenal Cisneros, Pl. San Julián).
   {
     ciudad: "Alcalá de Henares", provincia: "Madrid",
     espacio: "CRAI-Biblioteca · Universidad de Alcalá (campus histórico)",
@@ -139,6 +142,9 @@ window.TEMPORADA_EXAMENES = [
   },
   // UAM: noticia del 19-10-2026 «La Sala Búho también abre los fines de semana». No da fecha de inicio (ya está
   // en marcha al publicarse), así que `desde` es el día de la comprobación; tampoco da el fin del horario hasta la 1:00.
+  // `bib: null` (revisado 2026-11-15): la Sala Búho está dentro de la Biblioteca de Ciencias, C. Newton 11 (web de la
+  // UAM). En el mapa solo hay puntos genéricos de la UAM en C. Einstein 3 («UAM Biblioteca · Madrid», «Biblioteca.
+  // Universidad Autónoma de Madrid»), Económicas y la EPS: ninguno es ese edificio.
   {
     ciudad: "Madrid", provincia: "Madrid",
     espacio: "Sala Búho · Biblioteca de Ciencias, Universidad Autónoma de Madrid (Cantoblanco)",
@@ -151,7 +157,8 @@ window.TEMPORADA_EXAMENES = [
   // Esade: página «Horaris» de la biblioteca, apartado «Biblioteques Sant Cugat i Barcelona» (el mismo horario para
   // las dos). Da el «període d'exàmens del primer trimestre del curs 2026-2027: del 16 de novembre al 6 de febrer»,
   // pero el horario ampliado (lunes a viernes hasta las 0:00) solo «del 16 de novembre al 22 de desembre»: ese es el
-  // periodo de la entrada. Ninguna de las dos está en el mapa (`bib: null`); sin `semana` por eso.
+  // periodo de la entrada. Ninguna de las dos está en el mapa (`bib: null`); sin `semana` por eso. Revisado 2026-11-15:
+  // en Barcelona y Sant Cugat solo hay CRAI de la UB, municipales y «Biblioteques de Sant Cugat» (Pla del Vinyet).
   {
     ciudad: "Barcelona", provincia: "Barcelona",
     espacio: "Biblioteca d'Esade · campus de Barcelona (Universitat Ramon Llull)",
@@ -172,7 +179,8 @@ window.TEMPORADA_EXAMENES = [
   },
   // UPM, misma página que Campus Sur y Agronómica («diciembre de 2026» y «enero de 2027», act. 03-09-2026): otras tres
   // bibliotecas con apertura extraordinaria. No están en el mapa (`bib: null`). Solo sala de lectura, con reserva
-  // previa en #AccedeUPM y solo para estudiantes UPM; todas cerradas 24, 25 y 31 dic y 1, 6 y 28 ene.
+  // previa en #AccedeUPM y solo para estudiantes UPM; todas cerradas 24, 25 y 31 dic y 1, 6 y 28 ene. Revisado
+  // 2026-11-15: de la UPM el mapa solo tiene Campus Sur, ETSIAAB, Navales, INEF, Caminos y ETSIDI; ninguna de estas tres.
   {
     ciudad: "Madrid", provincia: "Madrid",
     espacio: "Biblioteca de la ETSI Industriales · UPM (Paseo de la Castellana)",
@@ -204,7 +212,10 @@ window.TEMPORADA_EXAMENES = [
   // 4 i 5 de gener de 2027»; Pasqua 30 mar-2 abr). Los fines de semana de exámenes de enero («9-10, 16-17, 23-24 i
   // 30-31 de gener») no llevan año, pero son sábado-domingo en 2027 (en 2026 caían en viernes-sábado). Edificio
   // Ramon Llull, campus de la carretera de Valldemossa (Palma). En el mapa solo hay «Biblioteca de la UIB» con un punto
-  // en el centro de Palma, no en el campus: `bib: null`.
+  // en el centro de Palma, no en el campus: `bib: null`. Revisado 2026-11-15: ese punto (39.5667, 2.65; «Carretera de
+  // Valldemossa, 3») lleva el horario general de las bibliotecas del campus; si se corrige su posición al campus
+  // (Cra. de Valldemossa km 7,5) en bibliotecas-espana.js, se podrá revisar si casa. «Biblioteca municipal Ramon Llull»
+  // (Institut Balear) es municipal, no la de la UIB.
   {
     ciudad: "Palma", provincia: "Baleares",
     espacio: "Biblioteca de l'edifici Ramon Llull · Universitat de les Illes Balears (campus de Palma)",
@@ -219,7 +230,9 @@ window.TEMPORADA_EXAMENES = [
   // bibliotecas de Ciencias y Central y la Sala de estudio Ismael Sánchez Bella permanecerán abiertas: de 8 – 21 h, de
   // lunes a sábado; de 8 – 20 h, los siguientes festivos y domingos: 15, 23, 29 y 30 de noviembre; 3, 6, 8, 13 y 20 de
   // diciembre». No dice nada del domingo 22 nov: por eso no lleva `semana`. La Central ya tiene entrada desde el 1 dic
-  // (página de horarios); aquí solo el tramo de noviembre, para no repetirla. La Sala Ismael Sánchez Bella no está en el mapa.
+  // (página de horarios); aquí solo el tramo de noviembre, para no repetirla. La Sala Ismael Sánchez Bella no está en el mapa
+  // (revisado 2026-11-15 en BIBLIOTECAS de app.js: de la UNAV solo Central, Ciencias y Eclesiásticas; la fuente la cita
+  // aparte de la Central y con otras normas de uso, así que no se le asigna la Central).
   {
     ciudad: "Pamplona", provincia: "Navarra",
     espacio: "Biblioteca de Ciencias · Universidad de Navarra",
