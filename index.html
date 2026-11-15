@@ -622,6 +622,7 @@
     display:flex;align-items:center;justify-content:center;padding:20px}
   .modal{width:100%;max-width:420px;background:var(--glass-fuerte);backdrop-filter:blur(24px);
     border:1px solid var(--borde);border-radius:var(--r-xl);box-shadow:var(--sombra);padding:24px;max-height:88vh;overflow-y:auto}
+  .modal:focus{outline:none} /* recibe el foco al abrirse (diálogo), no es un control: el anillo va en sus botones */
   .modal h3{font-size:var(--fs-2xl);font-weight:800;margin-bottom:4px}
   .modal .sub{font-size:var(--fs-m);color:var(--suave);margin-bottom:18px}
   .ev-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--r-m);background:rgba(var(--blanco),.55);margin-bottom:8px}

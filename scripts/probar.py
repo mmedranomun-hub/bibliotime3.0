@@ -917,6 +917,37 @@ PRUEBAS = [
         return true;
       }finally{window.encolarVuelo=ev;window.celebrar=ce;window.confeti=cf;window.showToast=st;closeModal();COFRE_BRILLA=0;
         k.forEach(x=>DATA[x]=o[x]);renderMisiones();renderSemillas();}"""),
+    ("la ventana del cofre es un diálogo accesible: role=dialog + aria-modal + título, el foco entra en «Ver especies», Tab no sale, Escape la cierra sin premiar dos veces y el foco vuelve a la tarjeta; cualquier ventana devuelve el foco a quien la abrió", """
+      await cargarExtra();
+      var k=['misiones','sellosMisiones','cofresAbiertos','semillasPremio','streakFreezes'],o={};k.forEach(x=>o[x]=DATA[x]);
+      var ev=window.encolarVuelo,ce=window.celebrar,cf=window.confeti,st=window.showToast,espera=ms=>new Promise(r=>setTimeout(r,ms));
+      var cof=()=>document.querySelector('#missionsCard .cofre'),tecla=(key,sh)=>{var e=new KeyboardEvent('keydown',{key:key,shiftKey:!!sh,bubbles:true,cancelable:true});document.activeElement.dispatchEvent(e);return e.defaultPrevented;};
+      window.encolarVuelo=()=>{};window.celebrar=()=>{};window.confeti=()=>{};window.showToast=()=>{};var tmp=null;
+      try{
+        closeModal();goView('study');
+        var M=misionesDeHoy();M.cofre=false;M.ids.forEach(id=>M.hechas[id]=M.hechas[id]||new Date().toISOString());renderMisiones();
+        var b=cof();b.focus();b.click();
+        var m=document.querySelector('#modalRoot .modal');if(!m||!m.querySelector('.cofre-modal'))return 'no se abre la ventana del cofre';
+        if(m.getAttribute('role')!=='dialog'||m.getAttribute('aria-modal')!=='true')return 'sin role=dialog / aria-modal';
+        var t=document.getElementById(m.getAttribute('aria-labelledby')||'-');if(!t||!m.contains(t)||!/Misiones completadas/.test(t.innerText))return 'aria-labelledby no apunta al título';
+        var a=document.activeElement;if(!m.contains(a)||!a.classList.contains('btn')||!/Ver especies/.test(a.innerText))return 'el foco no entra en «Ver especies»: '+(a&&a.outerHTML.slice(0,60));
+        // Tab atrapado: desde el último vuelve al primero y Mayús+Tab desde el primero va al último
+        var f=enfocablesModal(m);if(f.length<2)return 'pocos botones en la ventana';
+        f[f.length-1].focus();if(!tecla('Tab')||document.activeElement!==f[0])return 'Tab sale de la ventana';
+        if(!tecla('Tab',1)||document.activeElement!==f[f.length-1])return 'Mayús+Tab sale de la ventana';
+        var p=DATA.semillasPremio,n=DATA.cofresAbiertos,se=DATA.sellosMisiones.length;
+        tecla('Escape');await espera(50);
+        if(document.querySelector('#modalRoot .modal-bg'))return 'Escape no cierra la ventana';
+        if(DATA.semillasPremio!==p||DATA.cofresAbiertos!==n||DATA.sellosMisiones.length!==se||!misionesDeHoy().cofre)return 'Escape quita o repite el premio';
+        if(document.activeElement!==cof()||!cof().classList.contains('abierto'))return 'el foco no vuelve a la tarjeta del cofre: '+(document.activeElement&&document.activeElement.className);
+        // cualquier ventana: Escape cierra y el foco vuelve al botón que la abrió
+        tmp=document.createElement('button');tmp.textContent='abre';$('missionsCard').appendChild(tmp);tmp.focus();
+        openModal('<h3>Prueba</h3><button class="btn">Uno</button>');
+        if(!$('modalRoot').querySelector('.modal').contains(document.activeElement))return 'el foco no entra en otra ventana';
+        tecla('Escape');if($('modalRoot').innerHTML||document.activeElement!==tmp)return 'otra ventana no devuelve el foco';
+        return true;
+      }finally{if(tmp)tmp.remove();window.encolarVuelo=ev;window.celebrar=ce;window.confeti=cf;window.showToast=st;closeModal();COFRE_BRILLA=0;
+        k.forEach(x=>DATA[x]=o[x]);renderMisiones();renderSemillas();}"""),
     ("al subir de nivel, la barra de nivel de Estudio hace una vez el barrido --destello (.lv-brilla, .6 s, en pausa bajo la ventana, pendiente con Estudio oculto); nunca al recargar ni con reducir movimiento", """
       var o=DATA.sessions,sm=window.sinMovimiento,cf=window.confeti,espera=ms=>new Promise(r=>setTimeout(r,ms));
       var card=()=>$('levelCardStudy'),af=()=>getComputedStyle(card().querySelector('.lv-bar'),'::after'),fin=0,cuenta=e=>{if(e.animationName==='lvBrilla')fin++;};

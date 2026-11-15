@@ -2835,14 +2835,40 @@ function renderLoans(){
 }
 
 /* ===================== MODAL + TOAST ===================== */
+// Todas las ventanas son diálogos accesibles: role="dialog" + aria-modal, título (el primer h2/h3) como aria-labelledby,
+// el foco entra en la ventana al abrirla (a la propia .modal; `after` puede llevarlo a su botón principal), Tab no sale
+// de ella, Escape la cierra igual que su botón «cerrar» (closeModal) y, al cerrar, el foco vuelve a quien la abrió si
+// sigue en la página y nadie lo ha movido (si se repintó, como la tarjeta del cofre, cada ventana decide; ver abrirCofre).
+var MODAL_ANTES=null;
 function openModal(html,after){
   var root=$("modalRoot");
-  root.innerHTML='<div class="modal-bg" id="modalBg"><div class="modal">'+html+'</div></div>';
+  if(!root.innerHTML)MODAL_ANTES=document.activeElement; // si una ventana sustituye a otra, se guarda el de la primera
+  root.innerHTML='<div class="modal-bg" id="modalBg"><div class="modal" role="dialog" aria-modal="true" tabindex="-1">'+html+'</div></div>';
   $("modalBg").addEventListener("click",function(e){if(e.target.id==="modalBg")closeModal();});
+  var m=root.querySelector(".modal"),t=m.querySelector("h2,h3");
+  if(t){if(!t.id)t.id="modalTit";m.setAttribute("aria-labelledby",t.id);}
+  try{m.focus({preventScroll:true});}catch(e){}
   if(after)after();
 }
+function enfocablesModal(m){
+  return [].filter.call(m.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])'),function(x){
+    return !x.disabled&&x.offsetParent!==null;});
+}
+document.addEventListener("keydown",function(e){
+  var m=document.querySelector("#modalRoot .modal");
+  if(!m||e.defaultPrevented||$("storyViewer")||$("tipsViewer"))return; // historias y tips llevan su propio Escape
+  if(e.key==="Escape"){e.preventDefault();closeModal();return;}
+  if(e.key!=="Tab")return;
+  var f=enfocablesModal(m),a=document.activeElement;
+  if(!f.length){e.preventDefault();m.focus();return;}
+  var i=f.indexOf(a);
+  if(e.shiftKey&&(i<=0)){e.preventDefault();f[f.length-1].focus();}
+  else if(!e.shiftKey&&(i<0||i===f.length-1)){e.preventDefault();f[0].focus();}
+});
 function closeModal(){
   var hito=!!document.querySelector("#modalRoot .hito-bosque");$("modalRoot").innerHTML="";
+  var p=MODAL_ANTES,a=document.activeElement;MODAL_ANTES=null;
+  if(p&&p!==document.body&&p.isConnected&&p.offsetParent!==null&&(!a||a===document.body))try{p.focus({preventScroll:true});}catch(e){}
   // Si hay un hito del bosque sin celebrar (otra ventana lo tapaba), se enseña al cerrar esa ventana.
   if(CELEB_DIA)setTimeout(celebrarDia,600);
   if(DATA&&(DATA.especieAvisoPend||DATA.bibNuevaPend))setTimeout(avisoEspecie,CELEB_DIA?4600:700);

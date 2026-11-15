@@ -752,6 +752,7 @@ function abrirCofre(btn,ev){
     (pista?'<div class="cofre-pista">'+pista+'</div>':'')+
     '<div class="cofre-sello">🏵️ Sello del día · '+(n===1?'¡tu primer día con todas las misiones!':'ya llevas '+n+' días con todas las misiones')+'</div>'+
     '<button class="btn" onclick="closeModal();abrirTienda()">Ver especies</button><button class="linkbtn" onclick="closeModal()" style="display:block;margin:12px auto 0">Seguir</button></div>',function(){
+    var v=document.querySelector("#modalRoot .cofre-modal .btn");if(v)v.focus({preventScroll:true}); // el foco, al botón principal
     var c=document.querySelector(".cofre-big");setTimeout(function(){if(c){c.textContent="✨";c.classList.add("abre");}confeti(140);celebrar(c,["🌰","✨","💎","⭐"],18);},700);
     // de dónde sale el 🧊 al cerrar: su sitio en la ventana (ya colocada); si se cierra antes, la tarjeta del cofre
     if(hielo)setTimeout(function(){var b=document.querySelector("#modalRoot .cofre-hielo");if(b&&VUELO.h)VUELO.hr=b.getBoundingClientRect();},450);
