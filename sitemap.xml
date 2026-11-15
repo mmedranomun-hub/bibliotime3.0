@@ -641,12 +641,24 @@
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-publica-usera-jose-hierro/</loc><lastmod>2026-11-15</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-publica-javier-marias/</loc><lastmod>2026-11-15</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/valencia/biblioteca-municipal-nova-al-russafi/</loc><lastmod>2026-11-15</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/valencia/biblioteca-municipal-casa-de-la-reina/</loc><lastmod>2026-11-15</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/valencia/biblioteca-municipal-vicente-casp-i-verger/</loc><lastmod>2026-11-15</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/valencia/biblioteca-municipal-carmelina-sanchez-cutillas/</loc><lastmod>2026-11-15</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/valencia/biblioteca-municipal-isabel-de-villena/</loc><lastmod>2026-11-15</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/valencia/biblioteca-municipal-joanot-martorell/</loc><lastmod>2026-11-15</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/valencia/biblioteca-municipal-francesc-almela-i-vives/</loc><lastmod>2026-11-15</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/valencia/biblioteca-municipal-joaquim-marti-i-gadea/</loc><lastmod>2026-11-15</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/valencia/biblioteca-municipal-de-nazaret/</loc><lastmod>2026-11-15</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/valencia/biblioteca-municipal-tomas-vicent-tosca/</loc><lastmod>2026-11-15</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/valencia/biblioteca-municipal-constanti-llombart/</loc><lastmod>2026-11-15</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/valencia/biblioteca-municipal-maria-beneyto/</loc><lastmod>2026-11-15</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/murcia/universidad-de-murcia-biblioteca-general/</loc><lastmod>2026-11-15</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-publica-municipal-francisco-ibanez/</loc><lastmod>2026-11-15</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/asturias/biblioteca-de-la-universidad-de-oviedo-buo/</loc><lastmod>2026-11-15</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/valencia/biblioteca-municipal-roic-de-corella/</loc><lastmod>2026-11-15</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/valencia/biblioteca-municipal-lluis-fullana-i-mira/</loc><lastmod>2026-11-15</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/valencia/biblioteca-publica-municipal-maria-moliner/</loc><lastmod>2026-11-15</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/valencia/biblioteca-municipal-azorin/</loc><lastmod>2026-11-15</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/valencia/biblioteca-municipal-joan-de-timoneda/</loc><lastmod>2026-11-15</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/a-coruna/biblioteca-da-facultade-de-filoloxia/</loc><lastmod>2026-11-15</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/a-coruna/biblioteca-de-ciencias-da-comunicacion-usc/</loc><lastmod>2026-11-15</lastmod><priority>0.7</priority></url>
@@ -655,6 +667,7 @@
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-centro-pedro-salinas/</loc><lastmod>2026-11-15</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/valencia/biblioteca-municipal-gregorio-mayans-y-ciscar/</loc><lastmod>2026-11-15</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-publica-municipal-angel-gonzalez/</loc><lastmod>2026-11-15</lastmod><priority>0.7</priority></url>
+  <url><loc>https://bibliomapa.es/bibliotecas/valencia/biblioteca-municipal-carola-reig-salva/</loc><lastmod>2026-11-15</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-publica-municipal-ivan-de-vargas/</loc><lastmod>2026-11-15</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/sevilla/biblioteca-publica-municipal-luis-cernuda/</loc><lastmod>2026-11-15</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/sevilla/biblioteca-publica-municipal-julia-uceda/</loc><lastmod>2026-11-15</lastmod><priority>0.7</priority></url>
@@ -863,8 +876,6 @@
   <url><loc>https://bibliomapa.es/bibliotecas/gipuzkoa/errenteriako-udal-liburutegia-biblioteca-publica-municipal/</loc><lastmod>2026-11-15</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/gipuzkoa/biblioteca-municipal-aretxabaleta/</loc><lastmod>2026-11-15</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/soria/biblioteca-publica-municipal-de-el-burgo-de-osma/</loc><lastmod>2026-11-13</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/valencia/biblioteca-municipal-azorin/</loc><lastmod>2026-11-15</lastmod><priority>0.7</priority></url>
-  <url><loc>https://bibliomapa.es/bibliotecas/valencia/biblioteca-municipal-carola-reig-salva/</loc><lastmod>2026-11-15</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/madrid/biblioteca-de-medicina-uah/</loc><lastmod>2026-11-15</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/murcia/crai-biblioteca-cartagena/</loc><lastmod>2026-11-15</lastmod><priority>0.7</priority></url>
   <url><loc>https://bibliomapa.es/bibliotecas/valencia/biblioteca-campus-gandia/</loc><lastmod>2026-11-15</lastmod><priority>0.7</priority></url>
