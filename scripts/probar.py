@@ -1917,6 +1917,48 @@ PRUEBAS = [
         window.__cartaSesion=(await dibujarSesionStory(s)).toDataURL('image/png');
         return true;
       }finally{window.fetch=fetch0;DATA.sessions=s0;clearTimeout(VUELO.t);VUELO.t=0;VUELO.n=VUELO.h=VUELO.z=0;VUELO.hr=null;closeModal();goView('map');}"""),
+    ("tras «🌳 Dos días seguidos plantando y compartiendo», el 📸 de esa «Sesión terminada» pinta «2 días seguidos 🌳» bajo la racha, sin solaparse ni salirse; sin la vuelta, no", """
+      var copia=JSON.stringify(DATA),vc=VUELTA_COMP,vs=VUELTA_SES,cl0=window.compartirLienzo,st0=window.showToast,ft0=CanvasRenderingContext2D.prototype.fillText,pintado=[];
+      var dia=n=>{var d=new Date();d.setDate(d.getDate()-n);return ymd(d);};
+      var pinta=async s=>{pintado=[];await dibujarSesionStory(s);return pintado;};
+      try{
+        await cargarExtra();closeModal();
+        CanvasRenderingContext2D.prototype.fillText=function(t,x,y){pintado.push({t:String(t),y:y,font:this.font});return ft0.apply(this,arguments);};
+        // pura: orden, separación y límites (con y sin árbol, con y sin racha)
+        var L=lineasCierreStory(true,3,true);
+        if(L.length!==2||!/Racha de 3 días/.test(L[0].t)||L[1].t!=='2 días seguidos 🌳')return 'líneas: '+JSON.stringify(L);
+        if(L[1].y-L[0].y<80||L[1].y>1700||L[0].y<=1480)return 'se solapan o se salen: '+JSON.stringify(L);
+        var L2=lineasCierreStory(false,1,true);if(L2[1].y-L2[0].y<80||L2[0].y!==1480)return 'sin árbol: '+JSON.stringify(L2);
+        if(lineasCierreStory(true,3,false).some(l=>/2 días seguidos/.test(l.t)))return 'sale sin vuelta';
+        if(lineasCierreStory(true,0,true)[0].y!==1570)return 'sin racha no ocupa su sitio';
+        // de punta a punta: sesión que gana la vuelta en «Sesión terminada» y su 📸
+        window.showToast=()=>{};window.compartirLienzo=async()=>'descarga';
+        var s={id:'dv1',date:ymd(),min:40,ts:Date.now()-60000,bib:NO_BIB,focus:'ok',esp:'roble'};
+        DATA.sessions=[{id:'dv0',date:dia(1),min:52,ts:Date.now()-864e5,bib:NO_BIB,focus:'ok',esp:'roble'},s];
+        DATA.ultimaCompartida={fecha:dia(1),min:52};VUELTA_COMP=dia(1);VUELTA_SES=null;delete DATA.vueltaPendiente;
+        pedirValoracion(s,null);
+        if(!/Dos días seguidos plantando/.test($('modalRoot').innerText))return 'no sale la vuelta en «Sesión terminada»';
+        if(DATA.ultimaCompartida.vuelta!==ymd())return 'no marca .vuelta';
+        var P=await pinta(s),v=P.filter(p=>p.t==='2 días seguidos 🌳'),r=P.filter(p=>/Racha de/.test(p.t)),w=P.filter(p=>p.t==='bibliomapa.es');
+        if(v.length!==1)return 'la imagen no pinta «2 días seguidos 🌳»: '+P.map(p=>p.t).join(' | ');
+        if(!r.length||v[0].y-r[0].y<80||w[0].y-v[0].y<80||v[0].y>1920-120)return 'mal colocada: '+JSON.stringify([r[0],v[0],w[0]]);
+        // el 📸 reescribe DATA.ultimaCompartida (sin .vuelta): el segundo 📸 de la misma sesión la conserva…
+        await compartirSesionStory('dv1',null,$('sessShare'));compartiendoImagen=false;
+        if(DATA.ultimaCompartida.vuelta)return 'el 📸 deja .vuelta (la vuelta de mañana no saldría)';
+        if(!(await pinta(s)).some(p=>p.t==='2 días seguidos 🌳'))return 'el segundo 📸 la pierde';
+        // …y otra sesión de hoy o la de ayer no
+        if((await pinta({id:'dv2',date:ymd(),min:30,bib:NO_BIB,focus:'ok',esp:'roble'})).some(p=>/2 días seguidos/.test(p.t)))return 'otra sesión de hoy la toma';
+        if((await pinta(DATA.sessions[0])).some(p=>/2 días seguidos/.test(p.t)))return 'la sesión de ayer la toma';
+        // tras recargar (sin VUELTA_SES) manda DATA.ultimaCompartida.vuelta===hoy
+        VUELTA_SES=null;DATA.ultimaCompartida={fecha:dia(1),min:52,vuelta:ymd()};
+        if(!(await pinta(s)).some(p=>p.t==='2 días seguidos 🌳'))return 'tras recargar no la pinta';
+        DATA.ultimaCompartida={fecha:dia(1),min:52,vuelta:dia(1)};
+        if((await pinta(s)).some(p=>/2 días seguidos/.test(p.t)))return 'pinta con .vuelta de otro día';
+        DATA.ultimaCompartida={fecha:dia(1),min:52};
+        if((await pinta(s)).some(p=>/2 días seguidos/.test(p.t)))return 'pinta sin vuelta';
+        return true;
+      }finally{CanvasRenderingContext2D.prototype.fillText=ft0;window.compartirLienzo=cl0;window.showToast=st0;compartiendoImagen=false;
+        var c=JSON.parse(copia);Object.keys(DATA).forEach(k=>{if(!(k in c))delete DATA[k];});Object.assign(DATA,c);saveUserData();VUELTA_COMP=vc;VUELTA_SES=vs;document.querySelectorAll('.racha-overlay,.cuenta').forEach(x=>x.remove());closeModal();goView('map');}"""),
     ("historial de Estudio: cada fila lleva 📸 (44×44, «Compartir sesión de <fecha>») y comparte ESA sesión en 1080×1920, con la racha de ese día y sin red", """
       var s0=DATA.sessions,f0=DATA.usedFreezeDates,tab0=feedTab,cl0=window.compartirLienzo,pide=0,fetch0=window.fetch,lienzos=[];
       var dia=n=>{var d=new Date();d.setDate(d.getDate()-n);return ymd(d);};

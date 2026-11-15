@@ -389,9 +389,29 @@ async function dibujarSesionStory(s,titulo){
   var lugar=s.bib&&s.bib!==NO_BIB?cortoNombre(s.bib):"";
   textoC(g,(lugar?"📍 "+lugar:"")+(s.subject?(lugar?"  ·  ":"")+"📚 "+s.subject:""),W/2,1390,"700 50px system-ui,sans-serif");
   if(sano){var e=especieDe(s.esp);textoC(g,e.icon+" "+ETAPAS_ARBOL[etapaArbol(s.min)][1]+(e.id!=="roble"?" · "+e.nombre:"")+" en mi bosque",W/2,1480,"700 50px system-ui,sans-serif");}
-  if(rd)textoC(g,"🔥 Racha de "+rd+(rd===1?" día":" días"),W/2,sano?1570:1480,"700 56px system-ui,sans-serif");
+  lineasCierreStory(sano,rd,vueltaEnStory(s)).forEach(function(l){textoC(g,l.t,W/2,l.y,l.font);});
   textoC(g,"bibliomapa.es",W/2,1790,"800 64px system-ui,sans-serif");
   return L.c;
+}
+/* Líneas bajo el árbol/especie de la imagen de una sesión, en orden y sin solaparse: «🔥 Racha de N días» (si hay
+   racha) y debajo «2 días seguidos 🌳» (si esta sesión ganó la vuelta, ver vueltaEnStory). Empiezan en 1570 con
+   árbol sano (la especie va en 1480) y en 1480 sin él; de 90 en 90 px, la última como mucho en 1660, lejos de
+   «bibliomapa.es» (1790). Pura: devuelve [{t,y,font}] y la usa dibujarSesionStory. */
+function lineasCierreStory(sano,rd,vuelta){
+  var y=sano?1570:1480,L=[];
+  if(rd){L.push({t:"🔥 Racha de "+rd+(rd===1?" día":" días"),y:y,font:"700 56px system-ui,sans-serif"});y+=90;}
+  if(vuelta)L.push({t:"2 días seguidos 🌳",y:y,font:"700 50px system-ui,sans-serif"});
+  return L;
+}
+/* ¿Lleva la imagen de esta sesión «2 días seguidos 🌳»? Solo sesiones de hoy y solo si hoy salió la vuelta
+   «🌳 Dos días seguidos plantando y compartiendo» (DATA.ultimaCompartida.vuelta===ymd()). Si en esta visita se
+   sabe qué sesión la ganó (VUELTA_SES, la apunta vueltaCompHTML), solo esa: así un segundo 📸 de la misma «Sesión
+   terminada» la conserva aunque el primero ya reescribiera DATA.ultimaCompartida, y otra sesión de hoy no la toma. */
+function vueltaEnStory(s){
+  var hoy=ymd(),C=DATA&&DATA.ultimaCompartida;
+  if(!s||s.date!==hoy)return false;
+  if(VUELTA_SES&&VUELTA_SES.fecha===hoy)return VUELTA_SES.id===s.id;
+  return !!(C&&C.vuelta===hoy);
 }
 /* Racha que había el día de esa sesión: días seguidos con estudio (o comodín usado) que acaban en esa
    fecha. Es la misma cuenta que streakDays() pero mirando hacia atrás desde ese día, así una sesión
@@ -1178,14 +1198,14 @@ function avisoCofre(){var M=DATA&&DATA.misiones;if(!cofreEspera()||M.avisoCofre=
    fecha de esa marca). Sale una vez: marca DATA.ultimaCompartida.vuelta=hoy. Solo premio: nada de racha en peligro.
    Con árbol marchito no sale ni gasta la vuelta: se guarda en DATA.vueltaPendiente={fecha:hoy,comp} para que la
    primera sesión sana de HOY la recoja aunque se recargue la app (otro día ya no vale; datos sin el campo: nada). Sin animación. ----- */
-var VUELTA_COMP=null;
+var VUELTA_COMP=null,VUELTA_SES=null;   // VUELTA_SES={id,fecha}: la sesión que ganó la vuelta hoy (ver vueltaEnStory)
 function vueltaCompHTML(sesion){
   var C=DATA&&DATA.ultimaCompartida, hoy=ymd(), P=DATA&&DATA.vueltaPendiente;
   if(P&&P.fecha!==hoy){delete DATA.vueltaPendiente;P=null;saveUserData();}
   var comp=VUELTA_COMP||(P&&P.comp);
   if(!comp||!C||C.fecha!==comp||C.vuelta||!sesion||sesion.date!==hoy)return "";
   if(sesion.focus==="withered"){if(!P||P.comp!==comp){DATA.vueltaPendiente={fecha:hoy,comp:comp};saveUserData();}return "";}
-  C.vuelta=hoy;VUELTA_COMP=null;delete DATA.vueltaPendiente;saveUserData();
+  C.vuelta=hoy;VUELTA_COMP=null;VUELTA_SES={id:sesion.id,fecha:hoy};delete DATA.vueltaPendiente;saveUserData();
   if(!$("vueltaCompCss")){var st=document.createElement("style");st.id="vueltaCompCss";
     st.textContent='.ses-vuelta{margin:0 0 12px;text-align:center;padding:10px 12px;border-radius:var(--r-m);border:1px solid var(--ok);background:var(--glass);color:var(--ok-tx);font-size:var(--fs-m);font-weight:800;line-height:1.35}';
     document.head.appendChild(st);}
