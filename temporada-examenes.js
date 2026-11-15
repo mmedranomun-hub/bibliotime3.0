@@ -238,7 +238,10 @@ window.TEMPORADA_EXAMENES = [
   // diciembre». No dice nada del domingo 22 nov: por eso no lleva `semana`. La Central ya tiene entrada desde el 1 dic
   // (página de horarios); aquí solo el tramo de noviembre, para no repetirla. La Sala Ismael Sánchez Bella no está en el mapa
   // (revisado 2026-11-15 en BIBLIOTECAS de app.js: de la UNAV solo Central, Ciencias y Eclesiásticas; la fuente la cita
-  // aparte de la Central y con otras normas de uso, así que no se le asigna la Central).
+  // aparte de la Central y con otras normas de uso, así que no se le asigna la Central). 2026-11-15: sigue con `bib: null`
+  // porque no hay coordenadas fiables: unav.edu/web/biblioteca/salas la sitúa en el edificio Ismael Sánchez Bella («Sala con
+  // 206 puestos en la antigua Biblioteca de Humanidades») y su único punto es un enlace corto de Google Maps que no se pudo
+  // abrir; la página de horario (unav.edu/web/biblioteca/horarios/sala-estudio) y la del edificio no dan dirección propia.
   {
     ciudad: "Pamplona", provincia: "Navarra",
     espacio: "Biblioteca de Ciencias · Universidad de Navarra",
