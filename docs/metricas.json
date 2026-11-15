@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-11-15 09:02",
+  "fecha": "2026-11-15 09:21",
   "pruebas": {
     "arranca: datos y vistas": true,
     "marca España (sin «Navarra» en la cabecera)": true,
@@ -93,13 +93,13 @@
     "fichas.json pesa como mucho 15 KB gzip (si no, pasar al formato {prov:{índice:slug}})": true
   },
   "errores_js": [],
-  "carga_ms_cpu4x": 509,
+  "carga_ms_cpu4x": 591,
   "carga_ms_cpu4x_min_max": [
-    475,
-    511
+    449,
+    641
   ],
-  "primera_pintura_ms_cpu4x": 224,
-  "todas_las_chinchetas_ms_cpu4x": 523,
+  "primera_pintura_ms_cpu4x": 232,
+  "todas_las_chinchetas_ms_cpu4x": 601,
   "markercluster": {
     "cargado": false,
     "agrupa": false,
@@ -109,12 +109,12 @@
   },
   "datos": {
     "bibliotecas": 2624,
-    "con_horario_verificado": 935,
+    "con_horario_verificado": 938,
     "provincias_con_horario": 51,
     "provincias_total": 51
   },
   "seo": {
-    "paginas": 1421,
+    "paginas": 1424,
     "sitemap": true
   },
   "peso": {
@@ -127,13 +127,13 @@
       "kb_gzip": 92.2
     },
     "bibliotecas-espana.js": {
-      "kb": 1040.3,
-      "kb_gzip": 241.8
+      "kb": 1042.1,
+      "kb_gzip": 242.2
     },
     "fichas.json": {
-      "kb": 59.5,
-      "kb_gzip": 12.1,
-      "bytes": 60970,
+      "kb": 59.7,
+      "kb_gzip": 12.2,
+      "bytes": 61169,
       "tope_kb_gzip": 15
     }
   },
