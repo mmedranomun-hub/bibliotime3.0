@@ -486,6 +486,13 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
   últimos `name` que no están en el `<h1>` (sin distinguir mayúsculas): 12 (11 temáticas que abrevian, «Domingo», y 1
   hub). Hoy: 1411 pares distintos de 1411, 0 mal; probado devolviendo a mano el nombre plano a la ficha de Murcia →
   «migas idénticas … en 2 páginas» y salida 1.
+- `comprobar_paginas_seo.js` (línea «Migas intermedias…»): en las indexables, cada miga que no es «Inicio» ni la última
+  debe tener su `name` dentro del `name` del `CollectionPage`/`WebPage` de su destino (url = esa página), comparando en
+  minúsculas y sin acentos («Madrid» → «Bibliotecas abiertas en Madrid: …»); si no, fallo, con la familia del destino.
+  Detecta migas desfasadas al renombrar una página. Hoy (2026-11-15): 3063 comparadas (índice 1423 · provincia 1314 ·
+  localidad 281 · hub 45), 0 discordantes, así que nació como fallo y no como recuento. Probado: miga «Madrid» de
+  /bibliotecas/madrid/abiertas-domingo/ cambiada a mano a «Comunidad de Madriz» (visible y JSON-LD) → 1 discordante
+  (provincia) y salida 1; a «MÁDRID» → 0 y salida 0.
 
 ## Hecho (2026-11-15) · Copias de la `Library` de una ficha en los `ItemList` = su ficha (solo cambia el comprobador)
 - `comprobar_paginas_seo.js` (línea «Copias en ItemList de la Library de una ficha…») toma cada item `Library` de un
