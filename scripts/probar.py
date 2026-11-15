@@ -2448,6 +2448,47 @@ async def main():
             fallo_oc.append("pide analítica: " + ", ".join(pedidas5))
         await c5.close()
         res["pruebas"]["/#bib=<i>&o=c (enlace de «🔗 Compartir») abre la ficha correcta sin errores, quita o=c de la barra y, apagada, no manda nada; el evento no lleva id"] = True if not fallo_oc else "; ".join(fallo_oc)
+        # --- llegada por enlace compartido de alguien nuevo (sin datos): la bienvenida «¿Qué estudias?» no tapa la ficha ---
+        # Con /#bib=<i>-x&o=c (y con #study=) se ve la ficha y no sale la bienvenida ni se marca como vista; en la siguiente
+        # visita sin enlace (mismo navegador) sí sale, como en cualquier primera visita: no se pierde.
+        fallo_bv = []
+        c6, p6 = await nueva_pagina()
+        p6.on("pageerror", lambda e: fallo_bv.append("error JS: " + str(e)[:200]))
+        await p6.goto(f"http://127.0.0.1:{PUERTO}/#bib=104-x&o=c")
+        try:
+            await p6.wait_for_function("!!document.querySelector('.leaflet-popup-content h2')", timeout=15000)
+        except Exception:
+            fallo_bv.append("#bib=: no se abre la ficha")
+        await p6.wait_for_timeout(1500)
+        e6 = await p6.evaluate("""()=>{var f=[],h=document.querySelector('.leaflet-popup-content h2');
+          if(!h||h.textContent!==BIBLIOTECAS[104].nombre)f.push('#bib=: no se ve la ficha de la 104');
+          if(document.querySelector('#modalRoot .modal-bg'))f.push('#bib=: la bienvenida (u otra ventana) tapa la ficha');
+          if(DATA.onboarded)f.push('#bib=: marca la bienvenida como vista sin haberla enseñado');
+          return f;}""")
+        fallo_bv += e6
+        await p6.goto(f"http://127.0.0.1:{PUERTO}/index.html")
+        await p6.wait_for_timeout(2000)
+        if not await p6.evaluate("()=>!!document.querySelector('#modalRoot .modal-bg .pick-list')&&/Qué estudias/.test(document.querySelector('#modalRoot').innerText)"):
+            fallo_bv.append("sin enlace, la siguiente visita no enseña la bienvenida")
+        await c6.close()
+        c7, p7 = await nueva_pagina()
+        p7.on("pageerror", lambda e: fallo_bv.append("error JS: " + str(e)[:200]))
+        await p7.goto(f"http://127.0.0.1:{PUERTO}/index.html")
+        await p7.wait_for_timeout(1500)
+        cod = await p7.evaluate("()=>btoa(unescape(encodeURIComponent(JSON.stringify({b:104,n:'Ana',t:Date.now()}))))")
+        await c7.close()
+        c7, p7 = await nueva_pagina()
+        p7.on("pageerror", lambda e: fallo_bv.append("error JS: " + str(e)[:200]))
+        await p7.goto(f"http://127.0.0.1:{PUERTO}/#study={cod}")
+        await p7.wait_for_timeout(2500)
+        e7 = await p7.evaluate("""()=>{var f=[];
+          if($('friendBanner').classList.contains('hidden'))f.push('#study=: no sale el aviso del amigo');
+          if(document.querySelector('#modalRoot .modal-bg'))f.push('#study=: la bienvenida tapa el aviso');
+          if(DATA.onboarded)f.push('#study=: marca la bienvenida como vista');
+          return f;}""")
+        fallo_bv += e7
+        await c7.close()
+        res["pruebas"]["usuario nuevo que llega por /#bib=<i>-x&o=c o #study=: ve la ficha sin la bienvenida encima, y la bienvenida sale en la siguiente visita sin enlace"] = True if not fallo_bv else "; ".join(fallo_bv)
         # --- analítica sin cookies (docs/ANALITICA.md): preparada pero APAGADA ---
         # index.html y las páginas SEO (/bibliotecas/…) cargan analitica.js por su cuenta; se comprueba en las dos que el
         # archivo se descarga, define ANALITICA/analiticaDecidir y no pide ninguna URL de proveedor ni pone cookies.

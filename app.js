@@ -1267,7 +1267,9 @@ async function enterApp(){
   socialInitAfterLogin();
   if(!DATA.onboarded){
     if(DATA.sessions.length){DATA.onboarded=true;saveUserData();}
-    else setTimeout(onboarding,400); // bienvenida: en app-extra.js, solo se pide en la 1.ª visita
+    // Llega por un enlace compartido (#bib= válido o #study=): primero la ficha que le mandaron. La bienvenida
+    // no se marca como vista y sale en la siguiente visita normal (sin enlace), sin tapar nada.
+    else if(!llegaPorEnlace())setTimeout(onboarding,400); // bienvenida: en app-extra.js, solo se pide en la 1.ª visita
   }
   actualizarBadge();
   setTimeout(comprobarEnlaceCompartido,500);
@@ -3259,6 +3261,7 @@ function abrirAtajo(acc){
     }
   }catch(e){console.warn("Atajo no disponible:",e);try{goView("map");}catch(e2){}}
 }
+function llegaPorEnlace(){var h=location.hash;return h.indexOf("#study=")===0||(h.indexOf("#bib=")===0&&!!BIBLIOTECAS[parseInt(h.slice(5),10)]);}
 function comprobarEnlaceCompartido(){
   var hash=location.hash;
   // Enlace a una biblioteca (páginas de bibliomapa.es/bibliotecas/… y compartir): #bib=<índice>-<nombre>[&o=c]
