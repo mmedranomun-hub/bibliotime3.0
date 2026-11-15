@@ -1344,10 +1344,36 @@ function descripcionBiblioteca(b, resumenes, colaEx) {
   descUsadas.add(d);
   return d;
 }
+// Página superior de una ficha (penúltimo de sus migas e isPartOf): su localidad si tiene página; si no, su provincia.
+const locConPaginaDe = (b) => { const n = porProv[b.p].filter((o) => o.c === b.c).length; return n >= 3 && slug(b.c) && slug(b.c) !== slug(b.p); };
+const rutaSupFicha = (b) => (locConPaginaDe(b) ? `/bibliotecas/${slug(b.p)}/${slug(b.c)}/` : `/bibliotecas/${slug(b.p)}/`);
+// Nombre de la ficha en su <h1> y en la última miga. Dos fichas con el mismo nombre bajo la misma página superior
+// tendrían migas idénticas (mismo penúltimo item, mismo último name) para dos URL distintas: Google no sabría
+// distinguirlas en el resultado. Entonces, de cada grupo de homónimas, una se queda con el nombre tal cual (la primera sin
+// dato que la distinga; si todas lo tienen, la primera en el orden de fichas, para no mover las existentes) y las demás
+// llevan entre paréntesis lo que dicen sus datos: la calle de su dirección o, si la dirección solo trae código postal y
+// localidad, «CP nnnnn». Nunca se inventa: sin calle ni código postal no hay distintivo (y el comprobador falla).
+const nombreFicha = new Map(); // índice → nombre para h1 y miga
+let nFichasHomonimas = 0;
+{
+  const distintivo = (b) => {
+    const calle = b.dir ? b.dir.split(",")[0].trim() : "";
+    if (calle && normaTexto(calle.replace(/\d+/g, "")).trim() !== normaTexto(b.c).trim()) return calle;
+    const cp = /\b(\d{5})\b/.exec(b.dir || "");
+    return cp ? `CP ${cp[1]}` : "";
+  };
+  const grupos = new Map();
+  for (const b of conPaginaPropia) { const k = rutaSupFicha(b) + "|" + b.n; (grupos.get(k) || grupos.set(k, []).get(k)).push(b); }
+  for (const g of grupos.values()) {
+    if (g.length < 2) continue;
+    const llano = g.find((b) => !distintivo(b)) || g[0];
+    for (const b of g) if (b !== llano && distintivo(b)) { nombreFicha.set(b.i, `${b.n} (${distintivo(b)})`); nFichasHomonimas++; }
+  }
+}
 function paginaBiblioteca(b) {
   const ruta = paginaDe.get(b.i), ps = slug(b.p), ok = verificado(b);
   const mismaLoc = porProv[b.p].filter((o) => o.c === b.c);
-  const locConPagina = mismaLoc.length >= 3 && slug(b.c) && slug(b.c) !== ps;
+  const locConPagina = locConPaginaDe(b), nombre = nombreFicha.get(b.i) || b.n;
   const cercanas = mismaLoc.filter((o) => o.i !== b.i).map((o) => ({ o, d: distKm(b, o) })).sort((x, y) => x.d - y.d).slice(0, 6);
   const tipo = TIPO[b.t] || "Biblioteca";
   const fq = faqBiblioteca(b); // null si no hay horario verificado ni entrada de exámenes
@@ -1375,7 +1401,7 @@ function paginaBiblioteca(b) {
   const secVerif = seccionVerifCerca(verifCerca, b.c, ok ? ""
     : `El horario de esta biblioteca aún no está comprobado; el de estas, a menos de ${RADIO_VERIF_KM} km, sí (horario de invierno, en su web oficial).`);
   const migas = [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], [b.p, `/bibliotecas/${ps}/`]]
-    .concat(locConPagina ? [[b.c, `/bibliotecas/${ps}/${slug(b.c)}/`]] : []).concat([[b.n, ruta]]);
+    .concat(locConPagina ? [[b.c, `/bibliotecas/${ps}/${slug(b.c)}/`]] : []).concat([[nombre, ruta]]);
   const resumen = !ok ? "Horario sin confirmar." : DIAS.some((d) => sinConfirmar(b, d)) ? `Horario verificado el ${fechaEs(b.h.fv)}.` : `Horario verificado: ${horarioTexto(b.h.inv)}.`;
   const titulo = tituloBiblioteca(b);
   // Con temporada de exámenes vigente, la descripción la anuncia con su periodo (`descripcionBiblioteca`, que también
@@ -1390,7 +1416,7 @@ function paginaBiblioteca(b) {
   if (parteDe.isPartOf) nFichasIsPartOf++;
   escribe(ruta, pagina({
     ruta, titulo, descripcion,
-    h1: esc(b.n),
+    h1: esc(nombre),
     intro: `<span class="tipo">${esc(tipo)}</span> en ${esc(b.c)} (${esc(b.p)}). ${ok ? `Horario comprobado en su web oficial el ${esc(fechaEs(b.h.fv))}.` : "Aún no tenemos su horario verificado."}`,
     cta: `<a class="cta" href="${enlaceApp(b)}">📍 Ver en el mapa</a>`,
     cuerpo: `<section class="ficha" aria-labelledby="t-datos"><h2 id="t-datos">Datos de contacto</h2><dl>${datos}</dl></section>
@@ -2471,6 +2497,7 @@ console.log(`isPartOf en provincias y localidades: ${nLugarIsPartOf} páginas`);
 console.log(`isPartOf en salas de estudio, universidades y exámenes (su hub): ${nHubIsPartOf} páginas`);
 console.log(`isPartOf al índice en los hubs (salas, universidades, exámenes y horarios): ${nHubIndice} páginas`);
 console.log(`isPartOf en fichas (su localidad o provincia): ${nFichasIsPartOf} de ${paginaDe.size}`);
+console.log(`Fichas homónimas bajo la misma página superior distinguidas en h1 y última miga (calle o CP de sus datos): ${nFichasHomonimas}${[...nombreFicha.values()].length ? " · " + [...nombreFicha.values()].join(" · ") : ""}`);
 console.log(`breadcrumb {"@id": "<ruta>#migas"} en el índice, provincias, localidades, temáticas de España, de provincia y de localidad, hubs, salas de estudio, universidades y ciudades de exámenes: ${nMigasId} páginas`);
 console.log(`FAQPage en el grafo de su CollectionPage (@id <ruta>#faq, isPartOf → <ruta>#pagina) en páginas que no son ficha: ${nFaqEnGrafo}`);
 console.log(`Provincias con ItemList de sus fichas en el JSON-LD: ${nProvItemList} de ${provincias.length} · elementos: ${nItemsProv}`);

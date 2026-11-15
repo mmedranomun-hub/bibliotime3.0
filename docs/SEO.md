@@ -470,6 +470,23 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
   (salen de la misma lista `migas` en `pagina()`); probado a romper texto, destino, número, `position`, `noindex` y
   sitemap del destino → salida 1 en los 6.
 
+## Hecho (2026-11-15) · Migas únicas: dos fichas homónimas ya no comparten la última miga (1420 páginas, sin cambio)
+- Medido: de 1411 `BreadcrumbList` `<ruta>#migas`, ninguno con el último `name` vacío y 2 pares (penúltimo `item`, último
+  `name`) repetidos en 4 fichas: dos «Biblioteca Municipal de Ames» bajo `/bibliotecas/a-coruna/` y dos «Biblioteca
+  Universidad de Murcia» bajo `/bibliotecas/murcia/` (sedes distintas, con coordenadas distintas en los datos). Migas, h1
+  y `name` idénticos para dos URL: Google no las distingue en el resultado.
+- `generar_paginas_seo.js` (`nombreFicha`): en cada grupo de fichas con el mismo nombre bajo la misma página superior,
+  una se queda con el nombre tal cual (la primera sin dato distintivo; si todas lo tienen, la primera del orden de
+  fichas) y las demás llevan en el `<h1>` y en la última miga, entre paréntesis, la calle de su dirección o, si solo hay
+  código postal, «CP nnnnn»: «Biblioteca Municipal de Ames (Praza de Chavián)» (como ya decía su título) y «Biblioteca
+  Universidad de Murcia (CP 30001)». Nada inventado: sin calle ni CP no hay distintivo y el comprobador falla. Solo
+  cambian esas 2 fichas (su lastmod ya era 2026-11-15); el `name` de la `Library` sigue siendo el de los datos.
+- `comprobar_paginas_seo.js` (línea «Última miga…»): en las indexables, el último elemento de las migas con `name` no
+  vacío y cada par (penúltimo `item`, último `name`) de una sola página; si no, fallo. Cuenta por familia (sin fallar) los
+  últimos `name` que no están en el `<h1>` (sin distinguir mayúsculas): 12 (11 temáticas que abrevian, «Domingo», y 1
+  hub). Hoy: 1411 pares distintos de 1411, 0 mal; probado devolviendo a mano el nombre plano a la ficha de Murcia →
+  «migas idénticas … en 2 páginas» y salida 1.
+
 ## Hecho (2026-11-15) · Copias de la `Library` de una ficha en los `ItemList` = su ficha (solo cambia el comprobador)
 - `comprobar_paginas_seo.js` (línea «Copias en ItemList de la Library de una ficha…») toma cada item `Library` de un
   `ItemList` de otra página con `@id` `<ficha>#biblioteca` y compara `name`, `url`, `geo` y `address` (sin importar el
