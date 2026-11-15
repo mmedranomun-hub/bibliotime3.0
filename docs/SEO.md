@@ -494,6 +494,31 @@ Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y 
   /bibliotecas/madrid/abiertas-domingo/ cambiada a mano a «Comunidad de Madriz» (visible y JSON-LD) → 1 discordante
   (provincia) y salida 1; a «MÁDRID» → 0 y salida 0.
 
+## Hecho (2026-11-15) · Migas frente a `isPartOf` en temáticas de provincia y localidad: se acepta como diseño (solo cambia el comprobador)
+- Medido (páginas regeneradas ese día): las temáticas de provincia (237) y de localidad (105) son las únicas cuyo
+  penúltimo del `BreadcrumbList` no es su `isPartOf` (el backlog decía 263; hoy son 342). En las 342 el penúltimo es el
+  primer enlace de su «volver» y es exactamente su lugar (`/bibliotecas/<prov>/` o `/bibliotecas/<prov>/<loc>/`); su
+  `isPartOf` es la temática superior (la de su provincia o la de España), también enlazada en su «volver», y **las 342
+  están en el `hasPart` de esa superior** (colección que de verdad las contiene, recíproca).
+- Decisión: **se acepta como diseño**; no se mueve el `isPartOf` al lugar. Por qué: (1) en schema.org `breadcrumb` es
+  un camino de navegación y `isPartOf` una pertenencia; una página puede estar en varias colecciones y nada pide que
+  coincidan. (2) Google usa las migas (`BreadcrumbList`, iguales a las visibles) para la ruta del resultado; `isPartOf`
+  no alimenta ningún resultado enriquecido, así que lo que manda en la SERP (el lugar) ya es lo que ve el usuario.
+  (3) El `isPartOf` actual cumple el criterio de colección real: la superior la lleva en su `hasPart` (342 de 342).
+  Pasarlo al lugar obligaría a añadir las temáticas al `hasPart` de 124 provincias y localidades (hoy son sus
+  localidades), rompería la cadena temática España › provincia › localidad que ya es recíproca y movería el lastmod de
+  ~470 páginas (342 temáticas + 124 lugares) sin ganancia visible; dejar la temática solo en `about`/`mentions` sería además impreciso (`about` es el
+  tema, no la colección madre). Sin cambios en enlaces del cuerpo ni en páginas generadas.
+- `comprobar_paginas_seo.js` (línea «Migas de las fichas…», bloque de migas de lugares y temáticas): deja de «solo
+  contar» y aplica la regla explícita: en una temática de provincia o localidad, el penúltimo es su lugar (con página y
+  que no sea temática) y el primer enlace de su «volver»; el `isPartOf` es una temática, distinta del penúltimo, y
+  también está en su «volver». Cualquier desvío falla. Cuenta además cuántas están en el `hasPart` de su superior.
+  Hoy: «solo contadas» 342 → 0; «por diseño: 342 bien, 342 de ellas también en el hasPart de su superior», 0 mal.
+  Probado a romper en `/bibliotecas/navarra/abiertas-domingo/`: quitar del «volver» la temática de España → «isPartOf
+  … no enlazado en su «volver»»; migas y «volver» hacia la temática de España → «penúltimo … no es su lugar»;
+  `isPartOf` al lugar (el diseño alternativo) → «isPartOf … no es una temática superior distinta del penúltimo»; salida
+  1 en los 3 y 0 al restaurar.
+
 ## Hecho (2026-11-15) · Copias de la `Library` de una ficha en los `ItemList` = su ficha (solo cambia el comprobador)
 - `comprobar_paginas_seo.js` (línea «Copias en ItemList de la Library de una ficha…») toma cada item `Library` de un
   `ItemList` de otra página con `@id` `<ficha>#biblioteca` y compara `name`, `url`, `geo` y `address` (sin importar el

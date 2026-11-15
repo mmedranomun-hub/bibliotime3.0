@@ -48,7 +48,9 @@
        página, o cuyo penúltimo elemento de las migas no es la url de su isPartOf (o el último no es la ficha); y lo
        mismo en el índice /bibliotecas/, provincias, localidades y temáticas de España, de provincia y de localidad
        (breadcrumb en su CollectionPage), con el penúltimo igual al isPartOf en el índice (el WebSite), provincias,
-       localidades y temáticas de España (el índice) y al primer enlace de su «volver» en las de provincia y localidad;
+       localidades y temáticas de España (el índice) y al primer enlace de su «volver» en las de provincia y localidad
+       (ahí, por diseño, migas por lugar e isPartOf a la temática superior: falla si el penúltimo no es su provincia o
+       localidad, si el isPartOf no es una temática distinta del penúltimo o si no está también en su «volver»);
        y en los hubs (horarios, universidades, exámenes y salas de estudio), las universidades y las ciudades de
        exámenes y las salas de estudio de provincia y localidad, con el penúltimo igual a la url de su isPartOf (el
        índice; su hub). Falla con cualquier BreadcrumbList suelto (sin @id <ruta>#migas o sin breadcrumb que lo enlace).
@@ -424,10 +426,13 @@ for (const ruta of fichas) {
 // (<ruta>#migas) a un BreadcrumbList de la misma página cuyo último elemento es la propia página. Penúltimo: en
 // provincias, localidades, temáticas de España (/bibliotecas/<tema>/: el índice) y el propio índice (/bibliotecas/:
 // el WebSite, «/»), la url de su isPartOf; en las temáticas de provincia y de localidad, el primer enlace de su
-// «volver» (su localidad o provincia: las migas siguen el lugar y el isPartOf la temática superior, así que ahí no
-// coinciden y solo se cuentan).
+// «volver» (su localidad o provincia). Ahí migas e isPartOf difieren POR DISEÑO (decidido el 2026-11-15, ver
+// docs/SEO.md «Migas frente a isPartOf…»): las migas siguen el lugar (provincia › [localidad] › tema) y el isPartOf es
+// la temática superior, dos colecciones que de verdad la contienen. Regla explícita, que falla si se rompe: el
+// penúltimo es exactamente el lugar de la ruta (/bibliotecas/<prov>/[<loc>/], con página y sin ser temática), es el
+// primer enlace del «volver», es distinto del isPartOf, y el isPartOf (la temática superior) está también en el «volver».
 const nLugarMigas = { índice: 0, provincia: 0, localidad: 0, "temática de España": 0, "temática de provincia": 0, "temática de localidad": 0 };
-let nTemaMigasDistintoIsPartOf = 0;
+let nTemaMigasPorLugar = 0, nTemaSupConHasPart = 0;
 for (const ruta of html.keys()) {
   const n0 = nivelTema(ruta), n = n0 && n0.nivel !== "España" ? n0 : null;
   const tipo = ruta === "/bibliotecas/" ? "índice" : n0 ? `temática de ${n0.nivel}` : lugarDe(ruta), cp = cpDe.get(ruta);
@@ -440,8 +445,15 @@ for (const ruta of html.keys()) {
   const el = lista.itemListElement || [], pen = el.length >= 2 && el[el.length - 2].item, ult = el.length && el[el.length - 1].item;
   const sup = (cp.isPartOf || {}).url, volver = [...(volverDe.get(ruta) || [])][0];
   const esperado = n ? volver && DOMINIO + volver : sup;
-  if (n && pen !== sup) nTemaMigasDistintoIsPartOf++;
   if (!esperado || pen !== esperado) { migasMal.push(`${ruta} (${tipo}) penúltimo de las migas ${pen || "falta"} distinto ${n ? "del primer enlace de su «volver»" : "del isPartOf"} ${esperado || "falta"}`); continue; }
+  if (n) {
+    const lugar = `/bibliotecas/${n.prov}/${n.loc ? n.loc + "/" : ""}`, supR = (sup || "").replace(DOMINIO, "");
+    if (pen !== DOMINIO + lugar || !lugarDe(lugar)) { migasMal.push(`${ruta} (${tipo}) penúltimo de las migas ${pen} no es su lugar ${lugar} (las migas de una temática de ${n.nivel} siguen el lugar)`); continue; }
+    if (!sup || pen === sup || !nivelTema(supR)) { migasMal.push(`${ruta} (${tipo}) isPartOf ${sup || "falta"} no es una temática superior distinta del penúltimo de las migas (por diseño: migas = lugar, isPartOf = temática)`); continue; }
+    if (!(volverDe.get(ruta) || new Set()).has(supR)) { migasMal.push(`${ruta} (${tipo}) isPartOf ${supR} no enlazado en su «volver» (las dos colecciones, lugar y temática, deben estar a un clic)`); continue; }
+    nTemaMigasPorLugar++;
+    if ((partesDe.get(supR) || new Set()).has(ruta)) nTemaSupConHasPart++;
+  }
   if (ult !== DOMINIO + ruta) { migasMal.push(`${ruta} (${tipo}) último de las migas ${ult || "falta"} no es la página`); continue; }
   nLugarMigas[tipo]++;
 }
@@ -1017,7 +1029,7 @@ console.log(`Índice /bibliotecas/: CollectionPage ${indiceCP ? "sí" : "NO"} ·
 console.log(`Reciprocidad del índice (isPartOf → /bibliotecas/ ⇔ su hasPart): en hasPart ${nRecip.hasPart} · provincias en su ItemList ${nRecip.itemList} · mal: ${reciprocidadMal.length}${reciprocidadMal.length ? "\n" + muestra(reciprocidadMal, (r) => "  " + r) : ""}`);
 console.log(`hasPart: ${nHasPart} en ${nPagHasPart} páginas (temáticas que enlazan sus partes: ${nTemasPartes}) · rotos o sin enlace en el HTML: ${hasPartMal.length}${hasPartMal.length ? "\n" + muestra(hasPartMal, (r) => "  " + r) : ""}`);
 console.log(`Temáticas: España ${nTemas.España} · provincia ${nTemas.provincia} · localidad ${nTemas.localidad} · con isPartOf bien: España ${nIsPartOf.España} · provincia ${nIsPartOf.provincia} · localidad ${nIsPartOf.localidad} · lugares con isPartOf bien: provincias ${nLugarIsPartOf.provincia} · localidades ${nLugarIsPartOf.localidad} · fichas con isPartOf bien: a su localidad ${nFichaIsPartOf.localidad} · a su provincia ${nFichaIsPartOf.provincia} (fuera del ItemList de esa página: ${nFichasFueraLista}) · con isPartOf a su hub bien: ${Object.entries(nHubIsPartOf).map(([t, n]) => `${t} ${n}`).join(" · ")} · hubs con isPartOf al índice bien: ${nHubsIndice} · mal: ${isPartOfMal.length}${isPartOfMal.length ? "\n" + muestra(isPartOfMal, (r) => "  " + r) : ""}`);
-console.log(`Migas de las fichas (breadcrumb del WebPage → BreadcrumbList #migas, penúltimo = isPartOf): ${nFichaMigas} de ${fichas.size} bien · índice, provincias, localidades y temáticas (breadcrumb del CollectionPage → #migas): ${Object.entries(nLugarMigas).map(([t, n]) => `${t} ${n}`).join(" · ")} (temáticas con penúltimo ≠ isPartOf, solo contadas: ${nTemaMigasDistintoIsPartOf}) · hubs, salas de estudio, universidades y exámenes (penúltimo = isPartOf): ${Object.entries(nHubMigas).map(([t, n]) => `${t} ${n}`).join(" · ")} · BreadcrumbList sueltas (sin @id <ruta>#migas enlazado: fallo): ${nMigasSueltas}${nMigasSueltas ? ` (${Object.entries(migasSueltas).map(([t, n]) => `${t} ${n}`).join(" · ")})` : ""} · mal: ${migasMal.length}${migasMal.length ? "\n" + muestra(migasMal, (r) => "  " + r) : ""}`);
+console.log(`Migas de las fichas (breadcrumb del WebPage → BreadcrumbList #migas, penúltimo = isPartOf): ${nFichaMigas} de ${fichas.size} bien · índice, provincias, localidades y temáticas (breadcrumb del CollectionPage → #migas): ${Object.entries(nLugarMigas).map(([t, n]) => `${t} ${n}`).join(" · ")} (temáticas de provincia y localidad con migas por lugar e isPartOf a la temática superior, por diseño: ${nTemaMigasPorLugar} bien, ${nTemaSupConHasPart} de ellas también en el hasPart de su superior) · hubs, salas de estudio, universidades y exámenes (penúltimo = isPartOf): ${Object.entries(nHubMigas).map(([t, n]) => `${t} ${n}`).join(" · ")} · BreadcrumbList sueltas (sin @id <ruta>#migas enlazado: fallo): ${nMigasSueltas}${nMigasSueltas ? ` (${Object.entries(migasSueltas).map(([t, n]) => `${t} ${n}`).join(" · ")})` : ""} · mal: ${migasMal.length}${migasMal.length ? "\n" + muestra(migasMal, (r) => "  " + r) : ""}`);
 const porFam = (o) => Object.entries(o).map(([t, n]) => `${t} ${n}`).join(" · ") || "0";
 console.log(`Migas visibles = JSON-LD (<nav class="migas"> ↔ BreadcrumbList #migas: orden, texto y destino) en las indexables: ${nMigasVisPag} de ${[...html.values()].filter((h) => !noindex(h)).length} bien (${porFam(nMigasVis)}) · discordancias: ${migasVisMal.length}${migasVisMal.length ? ` (${porFam(migasVisMalFam)})` : ""} · items de las migas (${nItemsMigas}) que no son / ni página indexable del sitemap: ${itemMigasMal.length}${itemMigasMal.length ? ` (${porFam(itemMigasMalFam)})` : ""}` +
   (migasVisMal.length + itemMigasMal.length ? "\n" + muestra(migasVisMal.concat(itemMigasMal), (r) => "  " + r) : ""));

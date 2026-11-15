@@ -796,7 +796,8 @@ const modVerif = (lista) => { const v = lista.filter(verificado); return v.lengt
 // @id de las migas de una página y el breadcrumb que lo enlaza desde su CollectionPage (las fichas lo hacen a mano).
 // En el índice (/bibliotecas/: el WebSite), provincias, localidades, temáticas de España y hubs (el índice) y universidades,
 // ciudades de exámenes y salas de estudio (su hub) el penúltimo de las migas es su isPartOf; en las temáticas de provincia y de localidad no (las migas siguen el lugar, provincia › localidad
-// › tema; el isPartOf, la temática superior): ahí es el primer enlace de su «volver».
+// › tema; el isPartOf, la temática superior): ahí es el primer enlace de su «volver». Es diseño, no descuido (docs/SEO.md,
+// «Migas frente a isPartOf…», 2026-11-15): no mover el isPartOf al lugar; el comprobador falla si migas e isPartOf coinciden.
 let nMigasId = 0;
 const idMigasDe = (ruta) => DOMINIO + ruta + "#migas";
 const conMigas = (ruta) => { nMigasId++; return { breadcrumb: { "@id": idMigasDe(ruta) } }; };
