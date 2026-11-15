@@ -788,6 +788,8 @@ else {
     // de slug, de normalización o de la tabla de alias no deja ninguna provincia sin sugerencia en silencio.
     const nombreProv = new Map(enlaces.map((a) => [a.getAttribute(), a.firstChild.textContent.trim()]));
     const esperaProv = (r) => `¿Buscabas ${nombreProv.get(r) || "?"}[${r}]?`;
+    // Slug de una localidad = norm(nombre) del script de la 404 (y slug() del generador).
+    const slugN = (x) => String(x).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
     for (const r of provs) {
       const s = r.split("/")[2];
       casos.push([`/${s}/`, esperaProv(r)], [`/bibliotecas/${s.replace(/-/g, "")}/`, esperaProv(r)]);
@@ -797,7 +799,20 @@ else {
     let alias = null;
     try { alias = require("vm").runInNewContext(`(${aliasSrc})`, {}, { timeout: 1000 }); } catch (e) { /* abajo */ }
     if (!alias || !Object.keys(alias).length) mal404.push("no se puede leer ALIAS_404 de generar_paginas_seo.js");
-    else for (const [k, s] of Object.entries(alias)) casos.push([`/bibliotecas/${k}/`, esperaProv(`/bibliotecas/${s}/`)]);
+    else for (const [k, s] of Object.entries(alias)) {
+      // Cada alias también fuera de /bibliotecas/ (/<clave>/ y /<clave>.html) y, si su provincia tiene localidades en
+      // slugs-404, /bibliotecas/<clave>/<localidad>/ → esa localidad de la provincia del alias (como /bibliotecas/vizcaya/bilbo/).
+      const r = `/bibliotecas/${s}/`;
+      casos.push([`/bibliotecas/${k}/`, esperaProv(r)], [`/${k}/`, esperaProv(r)], [`/${k}.html`, esperaProv(r)]);
+      if (S) for (const l of ((S.p || {})[s] || [[]])[0]) casos.push([`/bibliotecas/${k}/${slugN(l)}/`, `¿Buscabas ${l}[${r}${slugN(l)}/]?`]);
+    }
+    // Segundo tramo sacado de slugs-404: cada localidad con página por /bibliotecas/<prov>/<slug sin guiones>/ y cada
+    // temática de provincia por /bibliotecas/<prov>/<slug del tema sin guiones>/; ninguna puede caer a la provincia ni a otra.
+    if (S) for (const [ps, [locs, temas]] of Object.entries(S.p || {})) {
+      const r = `/bibliotecas/${ps}/`;
+      for (const l of locs) casos.push([`${r}${slugN(l).replace(/-/g, "")}/`, `¿Buscabas ${l}[${r}${slugN(l)}/]?`]);
+      for (const k of temas) { const t = (S.t || [])[k]; if (t) casos.push([`${r}${t[0].replace(/-/g, "")}/`, `¿Buscabas ${t[1]} en ${nombreProv.get(r) || "?"}[${r}${t[0]}/]?`]); }
+    }
     for (const [ruta, esperado] of casos) { const r = sugiere(ruta); if (r !== esperado) mal404.push(`«¿Buscabas…?» en ${ruta}: «${r}» (esperado «${esperado}»)`); else n404Busca++; }
   }
 }
