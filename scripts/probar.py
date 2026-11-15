@@ -1056,6 +1056,38 @@ PRUEBAS = [
         c=document.querySelector('.pill-hielo');if(!c||c.textContent.trim()!=='🧊 1'||c.classList.contains('ph-rebote')||c._nuevo!=='racha')return 'con reducir movimiento no da solo la cifra';
         return true;
       }finally{window.sinMovimiento=sm;window.volarHielo=vh;k.forEach(x=>DATA[x]=o[x]);closeModal();limpia();renderRacha();}"""),
+    ("el 🧊 de 7 días seguidos ganado con la bienvenida diaria abierta espera a que se cierre y sale de su 🔥 (no del centro); con reducir movimiento, sin vuelo", """
+      await cargarExtra();
+      var k=['sessions','streakFreezes','usedFreezeDates','lastFreezeEarnedAtStreak','ultimaCompartida'],o={};k.forEach(x=>o[x]=DATA[x]);
+      var espera=ms=>new Promise(r=>setTimeout(r,ms)),sm=window.sinMovimiento,vh=window.volarHielo,vuelos=[];
+      var limpia=()=>document.querySelectorAll('.pill-hielo,.hielo-vuela,.toast').forEach(x=>x.remove());
+      var hace=n=>{var d=new Date();d.setDate(d.getDate()-n);return ymd(d);};
+      var gana=async()=>{var ss=[];for(var i=1;i<=7;i++)ss.push({id:'zb'+i,date:hace(i),min:30,ts:Date.now()-i*864e5,bib:NO_BIB});
+        DATA.sessions=ss;DATA.usedFreezeDates=[];DATA.streakFreezes=0;DATA.lastFreezeEarnedAtStreak=7;DATA.ultimaCompartida=null;renderRacha();
+        closeModal();pintarBienvenidaDiaria();await espera(800);
+        DATA.lastFreezeEarnedAtStreak=0;checkStreakFreezes();};
+      window.volarHielo=function(r,e,ho){vuelos.push([r,e,ho]);return vh.apply(this,arguments);};
+      try{
+        closeModal();goView('study');while(VUELO.t||VUELO.n||VUELO.h)await espera(250);await espera(1500);limpia();
+        await gana();
+        var f=document.querySelector('#modalRoot .bienvenida .bv-fuego');if(!f)return 'sin bienvenida con su 🔥';
+        if(DATA.streakFreezes!==1)return 'no se gana el congelador';
+        await espera(3200);
+        if(vuelos.length||document.querySelector('.hielo-vuela'))return 'vuela debajo de la bienvenida';
+        if($('toastHielo'))return 'el aviso sigue (la prueba no cubre el caso)';
+        var fr=f.getBoundingClientRect();closeModal();await espera(700);
+        if(vuelos.length!==1||vuelos[0][2]!=='racha')return 'no vuela al cerrar: '+vuelos.length;
+        var r=vuelos[0][0];if(!r||!r.width)return 'sale del centro de la pantalla';
+        if(Math.abs((r.top+r.height/2)-(fr.top+fr.height/2))>4||Math.abs((r.left+r.width/2)-(fr.left+fr.width/2))>4)return 'no sale del 🔥 de la bienvenida: '+[r.top,fr.top];
+        if(!document.querySelector('.hielo-vuela'))return 'no se ve el 🧊 volando';
+        await espera(1300);
+        var c=document.querySelector('.pill-hielo');if(!c||c.textContent.trim()!=='🧊 1')return 'la pastilla no enseña 🧊 1';
+        while(VUELO.t||VUELO.h)await espera(250);await espera(2600);limpia();
+        window.sinMovimiento=()=>true;vuelos=[];await gana();await espera(3200);closeModal();await espera(700);
+        if(vuelos.length!==1||document.querySelector('.hielo-vuela'))return 'con reducir movimiento vuela (o no llega)';
+        c=document.querySelector('.pill-hielo');if(!c||c.textContent.trim()!=='🧊 1')return 'con reducir movimiento no da la cifra';
+        return true;
+      }finally{window.sinMovimiento=sm;window.volarHielo=vh;k.forEach(x=>DATA[x]=o[x]);closeModal();limpia();renderRacha();}"""),
     ("con 3 de 3 🧊, el hito de 7 días seguidos dice «🔥 7 días seguidos · tus 3 🧊 te cubren» y la pastilla de la racha solo rebota (svRebote, sin vuelo), una vez y no al recargar; quieta con reducir movimiento", """
       await cargarExtra();
       var k=['sessions','streakFreezes','usedFreezeDates','lastFreezeEarnedAtStreak'],o={};k.forEach(x=>o[x]=DATA[x]);

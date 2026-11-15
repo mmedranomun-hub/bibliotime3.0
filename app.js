@@ -2895,7 +2895,10 @@ document.addEventListener("keydown",function(e){
   else if(!e.shiftKey&&(i<0||i===f.length-1)){e.preventDefault();f[0].focus();}
 });
 function closeModal(){
-  var hito=!!document.querySelector("#modalRoot .hito-bosque");$("modalRoot").innerHTML="";
+  var hito=!!document.querySelector("#modalRoot .hito-bosque");
+  // 🧊 de la racha ganado con la bienvenida diaria abierta: sale de su 🔥 al cerrarla (como el del cofre, VUELO.hr), no del centro
+  var bf=VUELO.h&&VUELO.ho==="racha"&&document.querySelector("#modalRoot .bienvenida .bv-fuego,#modalRoot .bienvenida .sub b");if(bf)VUELO.hr=bf.getBoundingClientRect();
+  $("modalRoot").innerHTML="";
   var p=MODAL_ANTES,a=document.activeElement;MODAL_ANTES=null;
   if(p&&p!==document.body&&p.isConnected&&p.offsetParent!==null&&(!a||a===document.body))try{p.focus({preventScroll:true});}catch(e){}
   // Si hay un hito del bosque sin celebrar (otra ventana lo tapaba), se enseña al cerrar esa ventana.
@@ -3548,6 +3551,7 @@ function comprobarMisiones(){
 // ventana abierta ni otro vuelo en marcha; M.hechas/M.cofre (guardados) evitan repetirlo al recargar.
 // El 🧊 del cofre (h) va en la misma cola: sale justo detrás de las 🌰, hacia la pastilla de la racha (volarHielo).
 // ho = de dónde sale el 🧊 («cofre» o «racha», cada 7 días seguidos) y hd, el selector de su salida si no hay 🌰 (el aviso).
+// hr = rect fijo de salida: el 🧊 en la ventana del cofre, o el 🔥 de la bienvenida diaria si se cierra con uno de la racha (closeModal).
 // Si un congelador salvó la racha (z), la pastilla enseña «🧊 ✓» cuando no haya ventana abierta (hieloSalva).
 var VUELO={n:0,de:"",t:0,h:0,hr:null,z:0,rr:0,ho:"",hd:""},VUELO_FIN=0;
 function encolarVuelo(n,de,h,ho){VUELO.n+=n;if(n||!h)VUELO.de=de;if(h){VUELO.h+=h;VUELO.ho=ho||"cofre";if(!n)VUELO.hd=de;}if(!VUELO.t)VUELO.t=setTimeout(soltarVuelo,300);}
