@@ -1279,6 +1279,60 @@ for (const [r, h] of html) {
   }
 }
 console.log(`«Horario ampliado en época de exámenes» (provincias y localidades; cada una, entrada vigente de temporada-examenes.js con f https y fv): ${nExPag} páginas, ${nExItems} entradas · mal: ${exMal.length}${exMal.length ? "\n" + muestra(exMal, (r) => "  " + r) : ""}`);
+// ---------- Páginas perennes «época de exámenes» por ciudad (2026-11-16, docs/CRECIMIENTO.md §2) ----------
+// EX_PERENNES y MIN_EX_VER se leen de generar_paginas_seo.js. Por cada ciudad se cuentan las fichas con horario verificado
+// (Library <ficha>#biblioteca con openingHoursSpecification, que el generador solo pone con fuente h.f y fecha h.fv) cuya
+// addressRegion es la provincia y addressLocality uno de sus alias. Con MIN_EX_VER o más, /bibliotecas/examenes/<ciudad>/
+// debe existir, estar en el sitemap y llevar «Dónde estudiar en exámenes» (#donde-estudiar) con al menos MIN_EX_VER
+// bibliotecas enlazadas a fichas verificadas de esa ciudad. Y ninguna página de exámenes dice «24 h» o «24 horas» en
+// <title>, <h1> o meta description sin fuente: una tarjeta «Abierta 24 h» de temporada-examenes.js (con su «Fuente
+// oficial» https) o una biblioteca «Abierta 24 h» cuya ficha verificada abre de 00:00 a medianoche los 7 días. El índice
+// de exámenes solo puede decirlo si alguna ciudad lo tiene con fuente. Cada «Abierta 24 h» de los rankings se comprueba igual.
+const perMal = [];
+let nPerennes = 0, nPerSin = 0, nClaim24 = 0;
+const slugP = (x) => String(x || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+const ficha24h = (r) => { const l = libDe.get(r), o = l && l.openingHoursSpecification; if (!Array.isArray(o)) return false;
+  return ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].every((d) => o.some((x) => x.dayOfWeek === d && x.opens === "00:00" && /^(00:00|24:00|23:59)$/.test(x.closes))); };
+const con24Fuente = (h) => /<span class="tipo">Abierta 24 h<\/span>/.test(h) && /rel="nofollow noopener" target="_blank">Fuente oficial<\/a>/.test(h) ||
+  [...h.matchAll(/<li><a href="([^"]+)">[^<]*<\/a> <span class="tipo">[^<]*<\/span>\s*<small><b>Abierta 24 h<\/b>/g)].some((m) => ficha24h(m[1]));
+{
+  const src = fs.readFileSync(path.join(__dirname, "generar_paginas_seo.js"), "utf8");
+  let lista = null, min = null;
+  try { lista = require("vm").runInNewContext(`(${(src.match(/\nconst EX_PERENNES = (\[[\s\S]*?\n\]);/) || [])[1]})`, {}, { timeout: 1000 }); } catch (e) { /* abajo */ }
+  try { min = +(src.match(/\nconst MIN_EX_VER = (\d+);/) || [])[1]; } catch (e) { /* abajo */ }
+  if (!Array.isArray(lista) || !lista.length) perMal.push("no se puede leer EX_PERENNES de generar_paginas_seo.js");
+  if (!min) perMal.push("no se puede leer MIN_EX_VER de generar_paginas_seo.js");
+  for (const x of lista || []) {
+    const ver = new Set([...libDe].filter(([, l]) => Array.isArray(l.openingHoursSpecification) && l.address &&
+      slugP(l.address.addressRegion) === x.p && x.alias.includes(slugP(l.address.addressLocality))).map(([r]) => r));
+    const s = slugP(x.ciudad), r = [`/bibliotecas/examenes/${s}/`, `/bibliotecas/examenes/${s}-${x.p}/`].find((q) => html.has(q));
+    if (ver.size < min) { nPerSin++; if (r) perMal.push(`${r}: ${x.ciudad} tiene ${ver.size} fichas verificadas (< ${min}) y aun así tiene página`); continue; }
+    if (!r) { perMal.push(`${x.ciudad}: ${ver.size} fichas verificadas y no existe /bibliotecas/examenes/${s}/`); continue; }
+    nPerennes++;
+    if (!enSitemap.has(r)) perMal.push(`${r}: no está en el sitemap`);
+    const h = html.get(r), sec = (h.match(/<section class="ficha" id="donde-estudiar"[^>]*>([\s\S]*?)<\/section>/) || [])[1];
+    if (!sec) { perMal.push(`${r}: sin «Dónde estudiar en exámenes» (#donde-estudiar)`); continue; }
+    const enl = new Set([...sec.matchAll(/<li><a href="([^"]+)">/g)].map((m) => m[1]));
+    const fuera = [...enl].filter((e) => !ver.has(e));
+    if (fuera.length) perMal.push(`${r}: «Dónde estudiar» enlaza ${fuera.length} biblioteca(s) que no son fichas verificadas de ${x.ciudad}: ${fuera.slice(0, 3).join(", ")}`);
+    if (enl.size < Math.min(min, ver.size)) perMal.push(`${r}: «Dónde estudiar» lista ${enl.size} bibliotecas (mínimo ${min})`);
+    if (!/<p>A \d{1,2} de [a-z]+ de \d{4}, Bibliomapa tiene \d+ bibliotecas? de /.test(sec)) perMal.push(`${r}: sin la frase citable con fecha y cifra («A <fecha>, Bibliomapa tiene N bibliotecas de …»)`);
+  }
+  const exPags = [...html.keys()].filter((q) => q.startsWith("/bibliotecas/examenes/"));
+  const conFuente = new Set(exPags.filter((q) => q !== "/bibliotecas/examenes/" && con24Fuente(html.get(q))));
+  for (const q of exPags) {
+    const h = html.get(q);
+    // Cada «Abierta 24 h» de un ranking: su ficha verificada abre de 00:00 a medianoche los 7 días.
+    for (const m of h.matchAll(/<li><a href="([^"]+)">([^<]*)<\/a> <span class="tipo">[^<]*<\/span>\s*<small><b>Abierta 24 h<\/b>/g))
+      if (!ficha24h(m[1])) perMal.push(`${q}: «${decodificaTexto(m[2])}» dice «Abierta 24 h» y su ficha (${m[1]}) no abre 24 h los 7 días con horario verificado`);
+    const claim = [(h.match(/<title>([^<]*)<\/title>/) || [])[1], (h.match(/<h1[^>]*>([\s\S]*?)<\/h1>/) || [])[1], (h.match(/<meta name="description" content="([^"]*)"/) || [])[1]]
+      .some((t) => /\b24 h(oras)?\b/i.test(t || ""));
+    if (!claim) continue;
+    nClaim24++;
+    if (q === "/bibliotecas/examenes/" ? !conFuente.size : !conFuente.has(q)) perMal.push(`${q}: dice «24 horas» en título, h1 o descripción sin ninguna biblioteca 24 h con fuente en la página`);
+  }
+}
+console.log(`Exámenes perennes por ciudad (EX_PERENNES; ≥ MIN_EX_VER fichas verificadas → página con «Dónde estudiar» y frase citable) y «24 h» solo con fuente: ${nPerennes} ciudades con página, ${nPerSin} sin mínimo · páginas que dicen «24 h»: ${nClaim24} · mal: ${perMal.length}${perMal.length ? "\n" + muestra(perMal, (r) => "  " + r) : ""}`);
 // ---------- Prueba de avisar_indexnow.js contra un servidor local ----------
 // Copia avisar_indexnow.js a dos carpetas temporales («con-clave» y «sin-clave»), cada una con un generar_paginas_seo.js
 // mínimo (INDEXNOW_CLAVE ficticia o null), el .txt y un sitemap.xml de una URL. Por cada caso levanta un servidor http
@@ -1355,5 +1409,5 @@ async function probarAvisoIndexNow() {
   const t0 = Date.now();
   const [avisoMal, nCasos] = await probarAvisoIndexNow();
   console.log(`IndexNow «despliega primero» y simulación (avisar_indexnow.js --base contra servidor local, sin red real): ${nCasos - new Set(avisoMal.map((x) => x.split(" ")[0])).size} de ${nCasos} casos bien (200 con la clave → 0; 404, otro texto o servidor caído → 1; --simular y clave null → 0 sin peticiones) en ${Date.now() - t0} ms · mal: ${avisoMal.length}${avisoMal.length ? "\n" + muestra(avisoMal, (r) => "  " + r) : ""}`);
-  if (ultMigaMal.length || migaInterMal.length || exMal.length || findeMal.length || findeCercaMal.length || cssMal.length || listaMigasMal.length || planasMal.length || ariaActualMal.length || cpIdMal.length || refsIdMal.length || refsNombreMal.length || migasVisMal.length || itemMigasMal.length || avisoMal.length || vistaMal.length || analiticaMal.length || gscMal.length || indexNowMal.length || migasMal.length || mainEntityMal.length || copiaMal.length || faqMal.length || indiceMal.length || reciprocidadMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || idAppMal.length || idNombreMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
+  if (ultMigaMal.length || migaInterMal.length || exMal.length || perMal.length || findeMal.length || findeCercaMal.length || cssMal.length || listaMigasMal.length || planasMal.length || ariaActualMal.length || cpIdMal.length || refsIdMal.length || refsNombreMal.length || migasVisMal.length || itemMigasMal.length || avisoMal.length || vistaMal.length || analiticaMal.length || gscMal.length || indexNowMal.length || migasMal.length || mainEntityMal.length || copiaMal.length || faqMal.length || indiceMal.length || reciprocidadMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || idAppMal.length || idNombreMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
 })();

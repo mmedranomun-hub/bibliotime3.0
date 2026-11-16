@@ -12,7 +12,28 @@ Datos de bibliotecas: Overture Maps Foundation y colaboradores de OpenStreetMap;
 - [Todos los horarios por provincia](https://bibliomapa.es/bibliotecas/horarios/)
 - [Salas de estudio por ciudad](https://bibliomapa.es/bibliotecas/salas-de-estudio/)
 - [Bibliotecas por universidad](https://bibliomapa.es/bibliotecas/universidades/)
-- [Bibliotecas 24 horas y horario de exámenes](https://bibliomapa.es/bibliotecas/examenes/)
+- [Bibliotecas 24 horas y abiertas en época de exámenes](https://bibliomapa.es/bibliotecas/examenes/): 19 ciudades, misma dirección todos los cursos
+
+## Bibliotecas en época de exámenes por ciudad
+- [Madrid](https://bibliomapa.es/bibliotecas/examenes/madrid/): 7 horarios de exámenes con fuente oficial; 56 bibliotecas con horario verificado
+- [Valencia](https://bibliomapa.es/bibliotecas/examenes/valencia/): 5 horarios de exámenes con fuente oficial; 32 bibliotecas con horario verificado
+- [Pamplona](https://bibliomapa.es/bibliotecas/examenes/pamplona/): 4 horarios de exámenes con fuente oficial; 14 bibliotecas con horario verificado
+- [Alcalá de Henares](https://bibliomapa.es/bibliotecas/examenes/alcala-de-henares/): 2 horarios de exámenes con fuente oficial; 9 bibliotecas con horario verificado
+- [Barcelona](https://bibliomapa.es/bibliotecas/examenes/barcelona/): 1 horario de exámenes con fuente oficial; 38 bibliotecas con horario verificado
+- [Sevilla](https://bibliomapa.es/bibliotecas/examenes/sevilla/): 1 horario de exámenes con fuente oficial; 11 bibliotecas con horario verificado
+- [Guadalajara](https://bibliomapa.es/bibliotecas/examenes/guadalajara/): 1 horario de exámenes con fuente oficial; 3 bibliotecas con horario verificado
+- [Palma](https://bibliomapa.es/bibliotecas/examenes/palma/): 1 horario de exámenes con fuente oficial; 3 bibliotecas con horario verificado
+- [Sant Cugat del Vallès](https://bibliomapa.es/bibliotecas/examenes/sant-cugat-del-valles/): 1 horario de exámenes con fuente oficial; 3 bibliotecas con horario verificado
+- [Málaga](https://bibliomapa.es/bibliotecas/examenes/malaga/): sin calendario oficial del curso todavía; 10 bibliotecas con horario verificado
+- [Santiago de Compostela](https://bibliomapa.es/bibliotecas/examenes/santiago-de-compostela/): sin calendario oficial del curso todavía; 10 bibliotecas con horario verificado
+- [Zaragoza](https://bibliomapa.es/bibliotecas/examenes/zaragoza/): sin calendario oficial del curso todavía; 10 bibliotecas con horario verificado
+- [Salamanca](https://bibliomapa.es/bibliotecas/examenes/salamanca/): sin calendario oficial del curso todavía; 8 bibliotecas con horario verificado
+- [Murcia](https://bibliomapa.es/bibliotecas/examenes/murcia/): sin calendario oficial del curso todavía; 7 bibliotecas con horario verificado
+- [Bilbao](https://bibliomapa.es/bibliotecas/examenes/bilbao/): sin calendario oficial del curso todavía; 6 bibliotecas con horario verificado
+- [Oviedo](https://bibliomapa.es/bibliotecas/examenes/oviedo/): sin calendario oficial del curso todavía; 6 bibliotecas con horario verificado
+- [Alicante](https://bibliomapa.es/bibliotecas/examenes/alicante/): sin calendario oficial del curso todavía; 5 bibliotecas con horario verificado
+- [Granada](https://bibliomapa.es/bibliotecas/examenes/granada/): sin calendario oficial del curso todavía; 5 bibliotecas con horario verificado
+- [Valladolid](https://bibliomapa.es/bibliotecas/examenes/valladolid/): sin calendario oficial del curso todavía; 5 bibliotecas con horario verificado
 
 ## Guías (problemas que resuelve la app)
 - [¿Dónde estudiar hoy? Bibliotecas y salas de estudio abiertas cerca de ti](https://bibliomapa.es/estudiar/donde-estudiar-hoy/): Abre bibliomapa.es, permite tu ubicación y la tarjeta «Te recomiendo ahora» te dice qué biblioteca abierta tienes más cerca y a qué hora cierra.

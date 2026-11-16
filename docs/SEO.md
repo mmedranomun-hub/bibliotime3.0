@@ -6,6 +6,40 @@ Objetivo: que bibliomapa.es salga lo más arriba posible en búsquedas como «bi
 **Nadie puede garantizar el primer puesto en Google** (no se compra ni se fuerza; quien lo prometa miente).
 Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y que Google la encuentre. Eso es lo que hay montado.
 
+## Hecho (2026-11-16) · Páginas perennes «época de exámenes» por ciudad (sitemap 1494 → 1504 URL; exámenes 9 → 19 ciudades)
+- Para «bibliotecas abiertas en época de exámenes <ciudad> 2027» (prioridad 1 de `docs/CRECIMIENTO.md` §2; el pico es
+  enero y Google tarda semanas en posicionar). Antes `/bibliotecas/examenes/<ciudad>/` solo existía mientras la ciudad
+  tenía entradas **vigentes** en `temporada-examenes.js` (9 ciudades), así que la URL aparecía y desaparecía cada curso.
+- Ahora las 15 ciudades de §2 (`EX_PERENNES` en `scripts/generar_paginas_seo.js`, con los alias de localidad de cada una:
+  Valencia/València, Pamplona/Iruña…) tienen **siempre** su página, con la misma URL todos los cursos, si tienen
+  `MIN_EX_VER` (3) o más bibliotecas con horario verificado (`h.f` + `h.fv`). Hoy las 15 llegan (las que menos, Granada, Valladolid y
+  Alicante, con 5); las 4 ciudades con entradas que no son de la lista (Alcalá, Guadalajara, Palma, Sant Cugat) siguen igual.
+- Contenido, todo de los datos: con entradas vigentes, las tarjetas de siempre (periodo, horario, nota, fuente y fecha);
+  sin ellas, la frase fechada «A <fecha de generación>, Bibliomapa aún no tiene aperturas extraordinarias de exámenes con
+  fuente oficial en <Ciudad> para el curso 2026-27; esta página se actualiza en cuanto se publiquen» (sin decir qué webs
+  se miraron). Siempre: **«Dónde estudiar en exámenes en <Ciudad>»** (`#donde-estudiar`) con una frase citable (GEO, §4:
+  «A 16 de noviembre de 2026, Bibliomapa tiene N bibliotecas de <Ciudad> con el horario comprobado…: X abren el sábado y
+  Y el domingo, y la que cierra más tarde…»; si varias empatan en la hora, no elige una), las 5 que más horas abren y las 5
+  que cierran más tarde (esta lista solo si no repite la anterior), cada una con su franja, fuente y fecha y enlazada a su
+  ficha; el bloque «Abiertas el sábado y el domingo» de provincias y localidades (`bloqueFinde`, comprobado contra las
+  fichas); y FAQ «¿Hay alguna biblioteca abierta 24 horas en <Ciudad>?» respondida con los datos (entrada 24 h, biblioteca
+  verificada abierta 00:00–24:00 los 7 días, o «no consta» + la que cierra más tarde y a qué hora).
+- Título y h1 «Bibliotecas abiertas en época de exámenes en <Ciudad> 2027» (año = enero del curso de hoy, `ANIO_EX`);
+  «24 horas» solo si hay una entrada 24 h o una biblioteca verificada 24 h (hoy Alcalá y Valencia por entradas, y Murcia
+  por la Biblioteca Beniaján, 0:00–24:00 con fuente salasestudio.rmbm.org). Índice `/bibliotecas/examenes/` reorganizado:
+  calendario y «Con horario de exámenes publicado» (solo si hay entradas) y «Dónde estudiar en exámenes, ciudad por
+  ciudad»; funciona también con 0 entradas vigentes. Enlazadas desde provincias, localidades, salas y el hub (la misma
+  `navExamenes`), en el sitemap y en `llms.txt` (nueva sección «Bibliotecas en época de exámenes por ciudad»).
+- `dateModified`/`lastmod` de cada ciudad = la fecha más reciente entre sus entradas (`fv`) y sus horarios verificados.
+  Ojo: la frase fechada usa el día de generación, así que estas 20 páginas cambian (y mueven su `lastmod`) cada día que se
+  regenera; es lo pedido (la fecha dice cuándo se afirmó), pero si molesta, cambiar `HOY` por la `fv` más reciente.
+- Comprobador: lee `EX_PERENNES`/`MIN_EX_VER` del generador, cuenta las fichas verificadas de cada ciudad (Library con
+  `openingHoursSpecification` y su `addressRegion`/`addressLocality`) y exige la página, en el sitemap, con
+  `#donde-estudiar`, la frase citable y solo fichas verificadas de esa ciudad; falla si una página de exámenes dice «24 h» o
+  «24 horas» en título, h1 o descripción sin una tarjeta 24 h con fuente oficial o una biblioteca 24 h cuya ficha abre
+  00:00–24:00 los 7 días (y comprueba cada «Abierta 24 h» de los rankings). Probado quitando Granada y poniendo «24 horas»
+  en el título de Sevilla: 2 fallos.
+
 ## Hecho (2026-10-26)
 - Portada: título y descripción con «bibliotecas y salas de estudio abiertas en España», `canonical` a
   https://bibliomapa.es/, Open Graph, datos estructurados `WebSite` + `WebApplication`.
