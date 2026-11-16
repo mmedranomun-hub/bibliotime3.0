@@ -19,6 +19,8 @@
        fuente y fecha: periodo, horario, nota, fuente oficial y FAQ; y SIEMPRE, con la misma URL cada curso, las 15 de EX_PERENNES
        con 3 o más verificadas: «Dónde estudiar en exámenes» con sus horarios verificados; enlazadas desde provincias,
        localidades, salas y el hub)
+     bibliotecas/24-horas/ y bibliotecas/24-horas/<ciudad>/ (ciudades con alguna biblioteca abierta 24 h o de noche, cierre
+       ≥ 23:00, con fuente: horario verificado con ficha o entrada vigente de temporada-examenes.js con su periodo)
      bibliotecas/horarios/ (hub: todas las temáticas, salas y universidades por provincia; todas enlazan a él)
      404.html (noindex, fuera del sitemap: provincias, hub de horarios y «abiertas hoy»)
      sitemap.xml y robots.txt
@@ -1123,6 +1125,76 @@ function navExamenes(l) {
 }
 const exDeProv = (p) => exCiudades.filter((g) => g.p === p);
 const exDeLoc = (p, c) => exCiudades.filter((g) => g.locs.has(p + "|" + c));
+
+// ---------- «Bibliotecas 24 horas y de noche» por ciudad (datos; las páginas se escriben tras las de exámenes) ----------
+// 2026-11-16, Objetivo 4 (docs/CRECIMIENTO.md §2, «biblioteca 24 horas <ciudad>» / «sala de estudio 24 h»): el hub
+// /bibliotecas/24-horas/ y /bibliotecas/24-horas/<ciudad>/, una por ciudad con AL MENOS UNA de estas, todas con fuente:
+//   · biblioteca con horario verificado (h.f + h.fv) y ficha, abierta 24 horas (bib24h: 00:00 a medianoche los 7 días)
+//     o «de noche» (bibNocturna: algún día cierra a las 23:00 o más tarde, o sigue abierta de madrugada: franja que
+//     empieza a las 0:00 y acaba antes de las 8:00) → «todo el curso», horario habitual, fuente y fecha;
+//   · entrada VIGENTE de temporada-examenes.js (EXAMENES: f https, fv, desde y hasta ≥ hoy) abierta 24 horas (es24h) o de
+//     noche (exNocturna: `semana` con cierre ≥ 23:00, o el horario de la fuente dice «a 23:00», «hasta la 1:00»…) → con
+//     su periodo, horario, fuente y fecha.
+// Sin ninguna, la ciudad no tiene página (nada de páginas vacías). La ciudad: la localidad de la biblioteca (b.c) o la de
+// la entrada (e.ciudad), unificada con los alias de EX_PERENNES (València → Valencia). Por qué URL propia y no un ancla
+// #24-horas en las páginas de exámenes: docs/SEO.md. scripts/comprobar_paginas_seo.js repite estas reglas sobre el HTML.
+const H24_SLUG = "24-horas", H24_RUTA = `/bibliotecas/${H24_SLUG}/`, NOCHE = "23:00";
+const cierraDeNoche = (r) => r[1] >= NOCHE || r[1] === "00:00" || (r[0] === "00:00" && r[1] > "00:00" && r[1] <= "08:00");
+const bibNocturna = (b) => verificado(b) && !bib24h(b) && DIAS.some((d) => (b.h.inv[d] || []).some(cierraDeNoche));
+// Hora tope de una biblioteca de noche, en minutos desde las 0:00 de su día (la madrugada suma 24 h): 4:00 → 1680.
+const topeNoche = (b) => Math.max(...DIAS.flatMap((d) => (b.h.inv[d] || []).map((r) =>
+  (r[0] === "00:00" && r[1] > "00:00" && r[1] <= "08:00" ? 1440 + aMin(r[1]) : r[1] === "00:00" ? 1440 : aMin(r[1])))));
+const textoTope = (m) => (m === 1440 ? "medianoche" : m > 1440 ? `las ${Math.floor((m - 1440) / 60)}:${String(m % 60).padStart(2, "0")} de la madrugada`
+  : `las ${Math.floor(m / 60)}:${String(m % 60).padStart(2, "0")}`);
+const RE_NOCHE_TXT = /\b(?:a|hasta) (?:las? )?(?:23|0|00|1|2|3|4|5):\d\d\b/;
+const exNocturna = (e) => !es24h(e) && ((!!e.semana && DIAS.some((d) => (e.semana[d] || []).some((r) => r[1] >= NOCHE || r[1] === "00:00"))) || RE_NOCHE_TXT.test(e.horario || ""));
+const ciudadCanon = (p, c) => { const x = EX_PERENNES.find((o) => o.p === slug(p) && o.alias.includes(slug(c))); return x ? x.ciudad : c; };
+const h24Ciudades = []; // { k, ciudad, p, slug, ruta, locs, bibs24, bibsNoche, ex24, exNoche, has24, n, fv }
+const h24SinFicha = [];
+const grupoH24 = (p0, c) => {
+  const p = nombreProvDeSlug.get(slug(p0)) || p0, ciudad = ciudadCanon(p, c), k = slug(p) + "|" + slug(ciudad);
+  let g = h24Ciudades.find((x) => x.k === k);
+  if (!g) h24Ciudades.push((g = { k, ciudad, p, locs: new Set(), bibs24: [], bibsNoche: [], ex24: [], exNoche: [] }));
+  return g;
+};
+todas.forEach((b) => {
+  const es24 = bib24h(b);
+  if (!es24 && !bibNocturna(b)) return;
+  if (!paginaDe.has(b.i)) { h24SinFicha.push(b.n); return; } // sin ficha el comprobador no puede contrastar su horario
+  const g = grupoH24(b.p, b.c);
+  g.locs.add(b.p + "|" + b.c);
+  (es24 ? g.bibs24 : g.bibsNoche).push(b);
+});
+EXAMENES.forEach((e) => {
+  if (!/^https:\/\//.test(e.f)) return;
+  const es24 = es24h(e);
+  if (!es24 && !exNocturna(e)) return;
+  const b = bibDeEntrada(e), g = grupoH24(e.provincia, e.ciudad);
+  g.locs.add((nombreProvDeSlug.get(slug(e.provincia)) || e.provincia) + "|" + e.ciudad);
+  if (b) g.locs.add(b.p + "|" + b.c);
+  (es24 ? g.ex24 : g.exNoche).push({ e, b });
+});
+h24Ciudades.forEach((g) => {
+  const s = slug(g.ciudad), repetida = h24Ciudades.some((o) => o !== g && slug(o.ciudad) === s);
+  g.slug = repetida ? `${s}-${slug(g.p)}` : s;
+  g.ruta = `${H24_RUTA}${g.slug}/`;
+  g.bibs24.sort((a, b) => a.n.localeCompare(b.n, "es"));
+  g.bibsNoche.sort((a, b) => topeNoche(b) - topeNoche(a) || horasSemana(b) - horasSemana(a) || a.n.localeCompare(b.n, "es"));
+  const porFecha = (x, y) => x.e.desde.localeCompare(y.e.desde) || x.e.espacio.localeCompare(y.e.espacio, "es");
+  g.ex24.sort(porFecha); g.exNoche.sort(porFecha);
+  g.has24 = g.bibs24.length + g.ex24.length > 0;
+  g.n = g.bibs24.length + g.bibsNoche.length + g.ex24.length + g.exNoche.length;
+  // Fecha de la frase citable, dateModified y lastmod: la comprobación más reciente (fv), nunca la de generación.
+  g.fv = g.bibs24.concat(g.bibsNoche).map((b) => b.h.fv).concat(g.ex24.concat(g.exNoche).map((x) => x.e.fv)).sort().pop();
+});
+h24Ciudades.sort((a, b) => (b.has24 ? 1 : 0) - (a.has24 ? 1 : 0) || b.n - a.n || a.ciudad.localeCompare(b.ciudad, "es"));
+const h24DeProv = (p) => h24Ciudades.filter((g) => [...g.locs].some((k) => k.startsWith(p + "|")));
+const h24DeLoc = (p, c) => h24Ciudades.filter((g) => g.locs.has(p + "|" + c));
+// «De noche: 24 h en Murcia · Todas las ciudades» en provincias, localidades y ciudades de exámenes.
+function navNoche(l) {
+  if (!l.length) return "";
+  return `<nav class="temas" aria-label="De noche"><span>De noche:</span>${l.map((g) => `<a href="${g.ruta}">${g.has24 ? "Bibliotecas 24 h" : "Abiertas de noche"} en ${esc(g.ciudad)} <small>${g.n}</small></a>`).join("")}<a href="${H24_RUTA}">Todas las ciudades</a></nav>`;
+}
 // «Horario ampliado en época de exámenes en <lugar>» (2026-11-14, Objetivo 4): bloque visible en provincias y localidades,
 // junto a «Abiertas el sábado y el domingo», con las entradas VIGENTES de temporada-examenes.js (EXAMENES: fuente f,
 // fecha fv, desde y hasta, y hasta ≥ HOY) de ese lugar: su ciudad/provincia o la de la biblioteca con la que casa `bib`.
@@ -1742,7 +1814,7 @@ provincias.forEach((p) => {
     escribe(ruta, pagina({
       ruta, titulo: tl.titulo, descripcion: dl,
       h1: `Bibliotecas en ${esc(c)}`, intro: `${l.length} bibliotecas y salas de estudio en ${esc(c)} (${esc(p)})${k.v ? `, ${k.v} con horario verificado` : ""}. En el mapa de Bibliomapa ves en tiempo real cuáles están abiertas y cuál te pilla más cerca.`,
-      cuerpo: `${navPorHorario(p, c)}${navSalas(salasDeLoc.has(p + "|" + c) ? [salasDeLoc.get(p + "|" + c)] : [])}${navExamenes(exDeLoc(p, c))}${navUniversidades((b) => b.p === p && b.c === c)}${tablaHorariosLugar(c, l)}${bloqueFinde(c, l, temaLoc["abiertas-fin-de-semana"][p + "|" + c] ? `${ruta}abiertas-fin-de-semana/` : null) || bloqueFindeCerca(c, l)}${bloqueExamenes(c, p, c)}<section class="lista">${l.map((b) => tarjeta(b)).join("")}</section>${secVerif}${f.html}${seccionLocalidadesCercanas(p, c)}<p class="volver"><a href="/bibliotecas/${ps}/">← Todas las bibliotecas de ${esc(p)}</a></p>`,
+      cuerpo: `${navPorHorario(p, c)}${navSalas(salasDeLoc.has(p + "|" + c) ? [salasDeLoc.get(p + "|" + c)] : [])}${navExamenes(exDeLoc(p, c))}${navNoche(h24DeLoc(p, c))}${navUniversidades((b) => b.p === p && b.c === c)}${tablaHorariosLugar(c, l)}${bloqueFinde(c, l, temaLoc["abiertas-fin-de-semana"][p + "|" + c] ? `${ruta}abiertas-fin-de-semana/` : null) || bloqueFindeCerca(c, l)}${bloqueExamenes(c, p, c)}<section class="lista">${l.map((b) => tarjeta(b)).join("")}</section>${secVerif}${f.html}${seccionLocalidadesCercanas(p, c)}<p class="volver"><a href="/bibliotecas/${ps}/">← Todas las bibliotecas de ${esc(p)}</a></p>`,
       migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], [p, `/bibliotecas/${ps}/`], [c, ruta]], migasId: idMigasDe(ruta), head: k.v ? ESTILO_TABLA_HOR : "",
       ld: [ldLugar(ruta, tl.nombre, dl, { ...modVerif(l), ...superiorLugar(tp.nombre, `/bibliotecas/${ps}/`), ...conMigas(ruta), ...partesLugar(p, c, { salasL: salasDeLoc.has(p + "|" + c) ? [salasDeLoc.get(p + "|" + c)] : [], exL: exDeLoc(p, c), filtroUni: (b) => b.p === p && b.c === c }), mainEntity: { "@type": "ItemList", name: `Bibliotecas en ${c}`, numberOfItems: l.length, itemListElement: l.map((b, k) => ({ "@type": "ListItem", position: k + 1, item: itemBib(b) })) } }), f.ld],
     }));
@@ -1800,7 +1872,7 @@ provincias.forEach((p) => {
   escribe(ruta, pagina({
     ruta, titulo: tp.titulo, descripcion: dp,
     h1: `Bibliotecas en ${esc(p)}`, intro: `${lista.length} bibliotecas en ${locs.length} ${locs.length === 1 ? "localidad" : "localidades"} de ${esc(p)}${k.v ? `, ${k.v} con horario verificado` : ""}. Elige tu localidad o abre el mapa para ver cuáles están abiertas ahora mismo.`,
-    cuerpo: `${enlTemas}${navSalas(salasDeProv[p])}${navExamenes(exDeProv(p))}${navUniversidades((b) => b.p === p)}<nav class="locs">${conPagina.map((c) => `<a href="/bibliotecas/${ps}/${slug(c)}/">${esc(c)} <small>${porLoc[c].length}</small></a>`).join("")}</nav>${tablaHorariosLugar(p, lista)}${bloqueFinde(p, lista, temaProv["abiertas-fin-de-semana"][p] ? `/bibliotecas/${ps}/abiertas-fin-de-semana/` : null)}${bloqueExamenes(p, p)}${secciones}${f.html}${seccionProvinciasCercanas(p)}<p class="volver"><a href="/bibliotecas/">← Todas las provincias</a></p>`,
+    cuerpo: `${enlTemas}${navSalas(salasDeProv[p])}${navExamenes(exDeProv(p))}${navNoche(h24DeProv(p))}${navUniversidades((b) => b.p === p)}<nav class="locs">${conPagina.map((c) => `<a href="/bibliotecas/${ps}/${slug(c)}/">${esc(c)} <small>${porLoc[c].length}</small></a>`).join("")}</nav>${tablaHorariosLugar(p, lista)}${bloqueFinde(p, lista, temaProv["abiertas-fin-de-semana"][p] ? `/bibliotecas/${ps}/abiertas-fin-de-semana/` : null)}${bloqueExamenes(p, p)}${secciones}${f.html}${seccionProvinciasCercanas(p)}<p class="volver"><a href="/bibliotecas/">← Todas las provincias</a></p>`,
     migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], [p, ruta]], migasId: idMigasDe(ruta), head: k.v ? ESTILO_TABLA_HOR : "",
     ld: [ldLugar(ruta, tp.nombre, dp, { ...modVerif(lista), ...superiorLugar(NOMBRE_INDICE, "/bibliotecas/"), ...conMigas(ruta), ...partesLugar(p, null, { locs: conPagina, salasL: salasDeProv[p] || [], exL: exDeProv(p), filtroUni: (b) => b.p === p }), ...mainProv }), f.ld],
   }));
@@ -2242,6 +2314,7 @@ exCiudades.forEach((g) => {
   const finde = d.v.length ? bloqueFinde(ciudad, d.v, rutaFinde) : "";
   const mas = [rutaCiudad ? `<li><a href="${rutaCiudad}">Bibliotecas en ${esc(nombreLugar)}</a> <small>todas las del mapa, con su horario habitual si está verificado</small></li>` : "",
     g.salas ? `<li><a href="${g.salas.ruta}">Salas de estudio en ${esc(g.salas.ciudad)}</a> <small>ordenadas por horas de apertura a la semana</small></li>` : "",
+    ...h24Ciudades.filter((h) => slug(h.p) === ps && slug(h.ciudad) === slug(ciudad)).map((h) => `<li><a href="${h.ruta}">${h.has24 ? "Bibliotecas 24 horas y de noche" : "Bibliotecas abiertas de noche"} en ${esc(h.ciudad)}</a> <small>${plural(h.n, "biblioteca", "bibliotecas")} con fuente oficial: todo el curso y en exámenes</small></li>`),
     ...unis.map((u) => `<li><a href="${u.ruta}">Bibliotecas de la ${esc(u.nombre)} (${esc(u.sigla)})</a> <small>horarios verificados por campus</small></li>`),
     `<li><a href="${HUB}">Todos los horarios por provincia</a></li>`].filter(Boolean).join("");
   let intro, secEx;
@@ -2320,6 +2393,137 @@ ${fq.html}
   urls.push([ruta, "0.8", fv]);
 }
 
+// ---------- Páginas «Bibliotecas 24 horas y de noche» (hub y una por ciudad; datos en h24Ciudades, más arriba) ----------
+// Cada elemento lleva su fuente oficial y la fecha en que se comprobó; los de exámenes, además, su periodo. La frase
+// citable (intro) va fechada con la comprobación más reciente de la página (g.fv), que es también su dateModified y el
+// suelo de su lastmod: regenerar otro día no la cambia. El comprobador valida cada elemento contra la ficha o contra
+// temporada-examenes.js y falla si el título, el h1 o la descripción dicen «24 h» sin un elemento 24 h con fuente.
+const noche = (g) => g.bibsNoche.length + g.exNoche.length > 0;
+const fuenteH24 = (f, fv) => `<small>(<a href="${esc(f)}" rel="nofollow noopener" target="_blank">fuente oficial</a>, comprobado el ${esc(fechaEs(fv))})</small>`;
+const horaTope = (m) => (m === 1440 ? "medianoche" : `las ${Math.floor((m % 1440) / 60)}:${String(m % 60).padStart(2, "0")}`);
+const liBibH24 = (b, tipo) => `<li class="h-bib"><a href="${paginaDe.get(b.i)}">${esc(b.n)}</a> <span class="tipo">${esc(tipo)}</span>` +
+  `<span class="finde-h">Horario habitual (invierno)</span>${esc(horarioTexto(b.h.inv, (d) => (sinConfirmar(b, d) ? "sin confirmar" : "cerrado")))}. ${fuenteH24(b.h.f, b.h.fv)}</li>`;
+const liExH24 = (x, tipo) => {
+  const { e, b } = x, ficha = b && paginaDe.get(b.i);
+  return `<li class="h-ex">${ficha ? `<a href="${ficha}">${esc(e.espacio)}</a>` : `<b>${esc(e.espacio)}</b>`} <span class="tipo">${esc(tipo)}</span>` +
+    `<span class="finde-h">Solo en exámenes: ${periodoEs(e.desde, e.hasta)}</span>${esc(conPunto(cap(e.horario)))}${e.nota ? ` ${esc(conPunto(e.nota))}` : ""} ${fuenteH24(e.f, e.fv)}</li>`;
+};
+const rangoEx = (l) => periodoEx({ desde: l.map((x) => x.e.desde).sort()[0], hasta: l.map((x) => x.e.hasta).sort().pop() });
+// «2 abiertas 24 horas en su horario habitual», «5 abiertas 24 horas solo en exámenes, del … al …»…
+function partesH24(g, corto) {
+  const p = [];
+  if (g.bibs24.length) p.push(`${g.bibs24.length} abierta${g.bibs24.length === 1 ? "" : "s"} 24 ${corto ? "h" : "horas"}${corto ? " todo el curso" : " en su horario habitual"}`);
+  if (g.ex24.length) p.push(`${g.ex24.length} abierta${g.ex24.length === 1 ? "" : "s"} 24 ${corto ? "h" : "horas"} en exámenes${corto ? "" : `, ${rangoEx(g.ex24)}`}`);
+  const n = g.bibsNoche.length, tope = n ? textoTope(topeNoche(g.bibsNoche[0])) : "";
+  if (n) p.push(corto ? `${n} hasta ${tope}` : n === 1 ? `1 que abre hasta ${tope} en su horario habitual` : `${n} que abren de noche en su horario habitual (la que más, hasta ${tope})`);
+  if (g.exNoche.length) p.push(`${g.exNoche.length} con horario de noche en exámenes${corto ? "" : `, ${rangoEx(g.exNoche)}`}`);
+  return p;
+}
+// Partes con comas dentro («…, del 03/11/2026 al 24/01/2027»): separadas con punto y coma.
+const enumeraPartes = (l) => (l.length > 1 && l.some((x) => x.includes(",")) ? l.slice(0, -1).join("; ") + "; y " + l[l.length - 1] : enumera(l));
+const fraseH24 = (g) => `A ${fechaLarga(g.fv)}, Bibliomapa tiene en ${g.ciudad} ${plural(g.n, "biblioteca o sala de estudio", "bibliotecas o salas de estudio")} para estudiar de noche con fuente oficial: ${enumeraPartes(partesH24(g, false))}.`;
+const tituloHubH24 = (() => {
+  if (!h24Ciudades.length) return "";
+  const t = `${h24Ciudades.some((g) => g.has24) ? "Bibliotecas 24 horas y de noche" : "Bibliotecas abiertas de noche"} en España`;
+  const titulo = [t + MARCA, t].find((x) => x.length <= MAX_TIT && !titulosUsados.has(x)) || t;
+  titulosUsados.add(titulo);
+  return titulo;
+})();
+function tituloH24(g) {
+  const c = g.ciudad;
+  const cand = g.has24 ? (noche(g) ? [`Bibliotecas 24 horas y de noche en ${c}`, `Bibliotecas 24 h y de noche en ${c}`] : [`Bibliotecas 24 horas en ${c}`, `Biblioteca 24 horas en ${c}`])
+    : [`Bibliotecas abiertas de noche en ${c}`, `Bibliotecas de noche en ${c}`];
+  cand.push(`${cand[1]} (${g.p})`);
+  for (const t of cand) for (const x of [t + MARCA, t]) if (x.length <= MAX_TIT && !titulosUsados.has(x)) { titulosUsados.add(x); return x; }
+  const t = cand[cand.length - 1]; titulosUsados.add(t); return t;
+}
+function descripcionH24(g) {
+  const c = g.ciudad, que = g.has24 ? `Bibliotecas y salas de estudio 24 horas${noche(g) ? " y de noche" : ""} en ${c}` : `Bibliotecas y salas de estudio abiertas de noche en ${c}`;
+  const cand = [`${que}: ${enumera(partesH24(g, true))}. Horario, fuente oficial y fecha de comprobación.`, `${que}: ${enumera(partesH24(g, true))}, con fuente oficial.`,
+    `${que}, con horario, fuente oficial y fecha.`, `${que} (${g.p}), con fuente oficial.`];
+  const r = cand.find((x) => x.length <= MAX_DESC && !descUsadas.has(x)) || cand[cand.length - 1].slice(0, MAX_DESC);
+  descUsadas.add(r);
+  return r;
+}
+function faqH24(g) {
+  const c = g.ciudad, q = [], todas24 = g.bibs24.length + g.ex24.length;
+  const deBib = (l) => enumera(l.map((b) => `${b.n} (${horarioTexto(b.h.inv)}; comprobado el ${fechaEs(b.h.fv)})`));
+  const deEx = (l) => l.map((x) => `${x.e.espacio}, ${periodoEx(x.e)}: ${x.e.horario}`).join(". ");
+  q.push([`¿Hay alguna biblioteca abierta 24 horas en ${c}?`, todas24
+    ? `Sí. ${g.bibs24.length ? `Todo el curso, según su horario habitual verificado en su web oficial: ${deBib(g.bibs24)}. ` : ""}${g.ex24.length ? `En época de exámenes, según su fuente oficial: ${deEx(g.ex24)}.` : ""}`.trim()
+    : `No consta ninguna con fuente oficial. Las que abren más tarde son las de esta página: ${enumera(g.bibsNoche.map((b) => `${b.n} (hasta ${textoTope(topeNoche(b))})`).concat(g.exNoche.map((x) => `${x.e.espacio} (en exámenes, ${periodoEx(x.e)})`)))}. Si se publica una apertura 24 horas, saldrá aquí.`]);
+  if (noche(g)) q.push([`¿Qué bibliotecas abren de noche en ${c}?`, `${g.bibsNoche.length ? `En su horario habitual verificado, cierran a las 23:00 o más tarde algún día: ${deBib(g.bibsNoche)}. ` : ""}${g.exNoche.length ? `Solo en época de exámenes, según su fuente oficial: ${deEx(g.exNoche)}.` : ""}`.trim()]);
+  const hosts = [...new Set(g.bibs24.concat(g.bibsNoche).map((b) => hostDe(b.h.f)).concat(g.ex24.concat(g.exNoche).map((x) => hostDe(x.e.f))).map((h) => h.replace(/^www\./, "")))];
+  q.push([`¿De dónde salen estos horarios?`, `De la web oficial de cada biblioteca, universidad o ayuntamiento (${enumera(hosts)}); la comprobación más reciente es del ${fechaEs(g.fv)}. Solo publicamos aperturas 24 horas y de noche con fuente oficial y fecha: si una biblioteca de ${c} abre de noche y no lo ha publicado, no sale aquí. Festivos y cierres pueden cambiarlo: confírmalo antes de ir.`]);
+  return faqDe(q);
+}
+h24Ciudades.forEach((g) => {
+  const { ciudad, p, ruta } = g, ps = slug(p);
+  const titulo = tituloH24(g), descripcion = descripcionH24(g), fq = faqH24(g);
+  const sec24 = g.has24 ? `<section class="ficha finde" id="24-horas" aria-labelledby="t-24h"><h2 id="t-24h">Abiertas 24 horas en ${esc(ciudad)}</h2>
+<p>De 0:00 a 24:00 todos los días, según su fuente oficial${g.ex24.length ? (g.bibs24.length ? "; algunas, solo en época de exámenes" : ", solo en época de exámenes") : ""}.</p>
+<ul class="finde-lista">${g.bibs24.map((b) => liBibH24(b, "Abierta 24 h")).join("")}${g.ex24.map((x) => liExH24(x, "Abierta 24 h")).join("")}</ul></section>` : "";
+  const secNoche = noche(g) ? `<section class="ficha finde" id="de-noche" aria-labelledby="t-noche"><h2 id="t-noche">Abiertas de noche en ${esc(ciudad)}</h2>
+<p>Cierran a las 23:00 o más tarde (o siguen abiertas de madrugada) algún día de la semana.</p>
+<ul class="finde-lista">${g.bibsNoche.map((b) => liBibH24(b, `Hasta ${horaTope(topeNoche(b))}`)).join("")}${g.exNoche.map((x) => liExH24(x, "De noche en exámenes")).join("")}</ul></section>` : "";
+  // Más para estudiar: su página de exámenes, salas de estudio y la localidad (si tienen página).
+  const ex = exCiudades.find((x) => slug(x.p) === ps && slug(x.ciudad) === slug(ciudad));
+  const sl = salas.find((s2) => slug(s2.p) === ps && slug(s2.ciudad) === slug(ciudad));
+  const locs = [...new Set([...g.locs].filter((k) => porProv[k.split("|")[0]]).map((k) => { const [pp, cc] = k.split("|"); return rutaLugar(pp, cc) + "|" + (rutaLugar(pp, cc) === `/bibliotecas/${slug(pp)}/` ? pp : cc); }))];
+  const mas = [ex ? `<li><a href="${ex.ruta}">Bibliotecas en época de exámenes en ${esc(ex.ciudad)}</a> <small>horario ampliado con fuente oficial y dónde estudiar</small></li>` : "",
+    sl ? `<li><a href="${sl.ruta}">Salas de estudio en ${esc(sl.ciudad)}</a> <small>ordenadas por horas de apertura a la semana</small></li>` : "",
+    ...locs.map((x) => { const [r, n] = x.split("|"); return `<li><a href="${r}">Bibliotecas en ${esc(n)}</a> <small>todas las del mapa, con su horario habitual si está verificado</small></li>`; }),
+    `<li><a href="${HUB}">Todos los horarios por provincia</a></li>`].filter(Boolean).join("");
+  const vistas = new Set(), items = [];
+  g.bibs24.concat(g.bibsNoche).concat(g.ex24.concat(g.exNoche).map((x) => x.b || x)).forEach((x) => {
+    if (x.e) { items.push({ "@type": "Library", name: x.e.espacio, address: { "@type": "PostalAddress", addressLocality: x.e.ciudad, addressRegion: x.e.provincia, addressCountry: "ES" } }); return; }
+    if (!vistas.has(x.i)) { vistas.add(x.i); items.push(itemBib(x)); }
+  });
+  const h1 = titulo.replace(MARCA, "");
+  escribe(ruta, pagina({
+    ruta, titulo, descripcion, h1: esc(h1),
+    intro: `${esc(fraseH24(g))} Cada una lleva su horario, su fuente y la fecha en que se comprobó: confírmalo antes de ir.`,
+    cuerpo: `${sec24}
+${secNoche}
+${fq.html}
+<section class="cerca" aria-labelledby="t-mas"><h2 id="t-mas">Más para estudiar en ${esc(ciudad)}</h2><ul>${mas}</ul></section>
+<p class="volver"><a href="${H24_RUTA}">← 24 horas y de noche en otras ciudades</a> · ${enlaceHub}</p>`,
+    migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], ["24 horas y de noche", H24_RUTA], [ciudad, ruta]], migasId: idMigasDe(ruta),
+    ld: [ldLugar(ruta, h1, descripcion, { ...parteDeHub(tituloHubH24, H24_RUTA), ...conMigas(ruta), dateModified: g.fv,
+      mainEntity: { "@type": "ItemList", name: h1, numberOfItems: items.length, itemListElement: items.map((item, k) => ({ "@type": "ListItem", position: k + 1, item })) } }), fq.ld],
+  }));
+  urls.push([ruta, "0.8", g.fv]);
+});
+if (h24Ciudades.length) {
+  const ruta = H24_RUTA, titulo = tituloHubH24, h1 = titulo.replace(MARCA, ""), fv = h24Ciudades.map((g) => g.fv).sort().pop();
+  const c24 = h24Ciudades.filter((g) => g.has24), cNoche = h24Ciudades.filter((g) => !g.has24), nTot = h24Ciudades.reduce((t, g) => t + g.n, 0);
+  const dCand = [`${c24.length ? `Bibliotecas y salas de estudio 24 horas y de noche` : "Bibliotecas y salas de estudio abiertas de noche"} en ${plural(h24Ciudades.length, "ciudad", "ciudades")}: ${plural(nTot, "espacio", "espacios")} con horario, fuente oficial y fecha.`,
+    `${c24.length ? "Bibliotecas 24 horas y de noche" : "Bibliotecas de noche"} en ${plural(h24Ciudades.length, "ciudad", "ciudades")}, con fuente oficial.`];
+  const descripcion = dCand.find((x) => x.length <= MAX_DESC && !descUsadas.has(x)) || dCand[dCand.length - 1].slice(0, MAX_DESC);
+  descUsadas.add(descripcion);
+  const linea = (g) => `<li><a href="${g.ruta}">${esc(tituloCorto(g))}</a> <small>${esc(enumera(partesH24(g, true)))} · comprobado el ${esc(fechaEs(g.fv))}</small></li>`;
+  const q = [
+    ...(c24.length ? [[`¿En qué ciudades hay bibliotecas abiertas 24 horas?`, `Con fuente oficial: ${enumera(c24.map((g) => `${g.ciudad} (${enumera(partesH24(g, true).filter((x) => /24 h/.test(x)))})`))}.`]] : []),
+    [`¿Qué cuenta como biblioteca «de noche»?`, `La que cierra a las 23:00 o más tarde algún día, o sigue abierta de madrugada, según su horario habitual verificado en su web oficial o según el horario de exámenes que ha publicado (con su periodo). Hoy hay ${plural(nTot, "espacio", "espacios")} así en ${plural(h24Ciudades.length, "ciudad", "ciudades")}.`],
+    [`¿De dónde salen estos horarios?`, `De la web oficial de cada biblioteca, universidad o ayuntamiento, con la fecha en que se comprobó (la más reciente, del ${fechaEs(fv)}). No reutilizamos horarios de cursos pasados: los de exámenes desaparecen cuando acaba su periodo.`],
+  ];
+  const fq = faqDe(q);
+  escribe(ruta, pagina({
+    ruta, titulo, descripcion, h1: esc(h1),
+    intro: `A ${esc(fechaLarga(fv))}, Bibliomapa tiene ${plural(nTot, "biblioteca o sala de estudio", "bibliotecas o salas de estudio")} para estudiar de noche en ${plural(h24Ciudades.length, "ciudad", "ciudades")}${c24.length ? `, ${c24.length === 1 ? "una" : c24.length} con alguna abierta 24 horas` : ""}, todas con fuente oficial y fecha de comprobación. Solo salen las ciudades que tienen alguna.`,
+    cuerpo: `<nav class="locs" aria-label="Por ciudad">${h24Ciudades.map((g) => `<a href="${g.ruta}">${esc(g.ciudad)} <small>${g.n}</small></a>`).join("")}</nav>
+${c24.length ? `<section class="cerca" aria-labelledby="t-c24"><h2 id="t-c24">Con alguna abierta 24 horas</h2><ul>${c24.map(linea).join("")}</ul></section>` : ""}
+${cNoche.length ? `<section class="cerca" aria-labelledby="t-cnoche"><h2 id="t-cnoche">Con alguna abierta de noche</h2><ul>${cNoche.map(linea).join("")}</ul></section>` : ""}
+${fq.html}
+<p class="volver"><a href="/bibliotecas/">← Todas las provincias</a>${exCiudades.length ? ` · <a href="${EX_RUTA}">Época de exámenes</a>` : ""}${salas.length ? ` · <a href="/bibliotecas/${SALAS_SLUG}/">Salas de estudio</a>` : ""} · ${enlaceHub}</p>`,
+    migas: [["Bibliomapa", "/"], ["Bibliotecas", "/bibliotecas/"], ["24 horas y de noche", ruta]], migasId: idMigasDe(ruta),
+    ld: [ldLugar(ruta, h1, descripcion, { ...parteDeIndice(), ...conMigas(ruta), dateModified: fv,
+      hasPart: h24Ciudades.map((g) => refPagina(tituloCorto(g), DOMINIO + g.ruta)) }), fq.ld],
+  }));
+  urls.push([ruta, "0.8", fv]);
+}
+function tituloCorto(g) { return `${g.has24 ? `Bibliotecas 24 horas${noche(g) ? " y de noche" : ""}` : "Bibliotecas abiertas de noche"} en ${g.ciudad}`; }
+
 // ---------- Página hub «Bibliotecas por horario» (/bibliotecas/horarios/) ----------
 // Reúne en una sola página todas las búsquedas por horario: las temáticas de España (hoy, domingo, fin de semana, hasta
 // tarde, verano), salas de estudio y universidades, y por provincia sus temáticas, las de sus localidades, sus salas de
@@ -2346,6 +2550,7 @@ if (temasEspana.length) {
   const listaEspana = temasEspana.map(({ t, l }) => `<li><a href="/bibliotecas/${t.slug}/">Bibliotecas ${esc(t.que)} en España</a> <small>${plural(l.length, "biblioteca", "bibliotecas")} en ${plural(new Set(l.map((b) => b.p)).size, "provincia", "provincias")}</small></li>`)
     .concat(salas.length ? [`<li><a href="/bibliotecas/${SALAS_SLUG}/">Salas de estudio en España</a> <small>${plural(salas.length, "ciudad", "ciudades")}, ordenadas por horas de apertura</small></li>`] : [])
     .concat(exCiudades.length ? [`<li><a href="${EX_RUTA}">${exHay24 ? "Bibliotecas 24 horas y abiertas" : "Bibliotecas abiertas"} en época de exámenes</a> <small>${plural(exCiudades.length, "ciudad", "ciudades")}${exTodasEntradas.length ? `, ${plural(exTodasEntradas.length, "horario", "horarios")} de exámenes con fuente oficial` : ""}</small></li>`] : [])
+    .concat(h24Ciudades.length ? [`<li><a href="${H24_RUTA}">${esc(tituloHubH24.replace(MARCA, ""))}</a> <small>${plural(h24Ciudades.length, "ciudad", "ciudades")}, con fuente oficial</small></li>`] : [])
     .concat(universidades.length ? [`<li><a href="/bibliotecas/${UNIS_SLUG}/">Bibliotecas universitarias por universidad</a> <small>${plural(universidades.length, "universidad", "universidades")}</small></li>`] : []);
   // FAQ con datos verificados: dónde abren el domingo, hasta tarde y en verano (provincias), y de dónde salen los horarios.
   const provsDe = (f) => { const n = {}; verifTodas.filter(f).forEach((b) => (n[b.p] = (n[b.p] || 0) + 1));
@@ -2390,7 +2595,7 @@ const tituloIndice = `${NOMBRE_INDICE} | Bibliomapa`;
 const descIndice = `Más de ${Math.floor(todas.length / 100) * 100} bibliotecas de toda España por provincia y localidad: horarios verificados, salas de estudio y cuáles están abiertas ahora.`;
 const modIndice = verifTodas.length ? { dateModified: fechaMod(verifTodas) } : {};
 urls.find(([u]) => u === "/bibliotecas/")[2] = modIndice.dateModified;
-const cuerpoIndice = `${temasEspana.length ? `<nav class="temas" aria-label="Por horario"><span>Por horario:</span>${temasEspana.map(({ t, l }) => `<a href="/bibliotecas/${t.slug}/">${esc(t.corto)} <small>${l.length}</small></a>`).join("")}<a href="${HUB}">Por provincia</a></nav>` : ""}${salas.length || exCiudades.length ? `<nav class="temas" aria-label="Para estudiar"><span>Para estudiar:</span>${salas.length ? `<a href="/bibliotecas/${SALAS_SLUG}/">Salas de estudio <small>${salas.length} ciudades</small></a>` : ""}${exCiudades.length ? `<a href="${EX_RUTA}">Época de exámenes${exHay24 ? ": 24 h y horario ampliado" : ""} <small>${plural(exCiudades.length, "ciudad", "ciudades")}</small></a>` : ""}</nav>` : ""}${universidades.length ? `<nav class="temas" aria-label="Por universidad"><span>Por universidad:</span><a href="/bibliotecas/${UNIS_SLUG}/">Todas <small>${universidades.length}</small></a>${universidades.map((u) => `<a href="${u.ruta}" title="Bibliotecas de la ${esc(u.nombre)}">${esc(u.sigla)} <small>${u.lista.length}</small></a>`).join("")}</nav>` : ""}<nav class="locs grande">${provincias.map((p) => `<a href="/bibliotecas/${slug(p)}/">${esc(p)} <small>${porProv[p].length}</small></a>`).join("")}</nav>`;
+const cuerpoIndice = `${temasEspana.length ? `<nav class="temas" aria-label="Por horario"><span>Por horario:</span>${temasEspana.map(({ t, l }) => `<a href="/bibliotecas/${t.slug}/">${esc(t.corto)} <small>${l.length}</small></a>`).join("")}<a href="${HUB}">Por provincia</a></nav>` : ""}${salas.length || exCiudades.length || h24Ciudades.length ? `<nav class="temas" aria-label="Para estudiar"><span>Para estudiar:</span>${salas.length ? `<a href="/bibliotecas/${SALAS_SLUG}/">Salas de estudio <small>${salas.length} ciudades</small></a>` : ""}${exCiudades.length ? `<a href="${EX_RUTA}">Época de exámenes${exHay24 ? ": 24 h y horario ampliado" : ""} <small>${plural(exCiudades.length, "ciudad", "ciudades")}</small></a>` : ""}${h24Ciudades.length ? `<a href="${H24_RUTA}">${h24Ciudades.some((g) => g.has24) ? "24 horas y de noche" : "De noche"} <small>${plural(h24Ciudades.length, "ciudad", "ciudades")}</small></a>` : ""}</nav>` : ""}${universidades.length ? `<nav class="temas" aria-label="Por universidad"><span>Por universidad:</span><a href="/bibliotecas/${UNIS_SLUG}/">Todas <small>${universidades.length}</small></a>${universidades.map((u) => `<a href="${u.ruta}" title="Bibliotecas de la ${esc(u.nombre)}">${esc(u.sigla)} <small>${u.lista.length}</small></a>`).join("")}</nav>` : ""}<nav class="locs grande">${provincias.map((p) => `<a href="/bibliotecas/${slug(p)}/">${esc(p)} <small>${porProv[p].length}</small></a>`).join("")}</nav>`;
 // hasPart del índice: la otra mitad del isPartOf de los hubs y las temáticas de España (parteDelIndice), solo las que el
 // cuerpo ya enlaza, en el orden de sus enlaces, con el name (y el @id <ruta>#pagina, si su nodo lo lleva) del CollectionPage
 // destino. Las provincias no: ya están en el mainEntity ItemList. comprobar_paginas_seo.js exige la reciprocidad.
@@ -2590,11 +2795,14 @@ Datos de bibliotecas: Overture Maps Foundation y colaboradores de OpenStreetMap;
 - [Salas de estudio por ciudad](${DOMINIO}/bibliotecas/salas-de-estudio/)
 - [Bibliotecas por universidad](${DOMINIO}/bibliotecas/universidades/)
 - [${exHay24 ? "Bibliotecas 24 horas y abiertas" : "Bibliotecas abiertas"} en época de exámenes](${DOMINIO}/bibliotecas/examenes/): ${plural(exCiudades.length, "ciudad", "ciudades")}, misma dirección todos los cursos
-
+${h24Ciudades.length ? `- [${tituloHubH24.replace(MARCA, "")}](${DOMINIO}${H24_RUTA}): ${plural(h24Ciudades.length, "ciudad", "ciudades")}, solo con fuente oficial y fecha\n` : ""}
 ## Bibliotecas en época de exámenes por ciudad
 ${exCiudades.map((g) => `- [${g.ciudad}](${DOMINIO}${g.ruta}): ${g.entradas.length ? `${plural(g.entradas.length, "horario", "horarios")} de exámenes con fuente oficial; ` : "sin calendario oficial del curso todavía; "}${plural(g.ver.length, "biblioteca", "bibliotecas")} con horario verificado`).join("\n")}
 
-## Guías (problemas que resuelve la app)
+${h24Ciudades.length ? `## Bibliotecas 24 horas y de noche por ciudad
+${h24Ciudades.map((g) => `- [${tituloCorto(g)}](${DOMINIO}${g.ruta}): ${enumera(partesH24(g, true))} (comprobado el ${fechaEs(g.fv)})`).join("\n")}
+
+` : ""}## Guías (problemas que resuelve la app)
 ${GUIAS.map((g) => `- [${cifras(g.h1)}](${DOMINIO}${hub}${g.slug}/): ${cifras(g.respuesta).split(". ")[0]}.`).join("\n")}
 
 ## La app
@@ -2623,6 +2831,7 @@ console.log(`Vecinas: ${locsConPagina.filter((x) => !localidadesCercanas(x.p, x.
   console.log(`Lastmod: ${sinCambio} páginas iguales que antes (conservan su fecha) · ${urls.length - 1 - sinCambio} nuevas o cambiadas (${HOY})`); }
 console.log(`Páginas: ${urls.length - 1} (+ portada) · provincias: ${provincias.length} · bibliotecas: ${todas.length} · con página propia: ${paginaDe.size} (${conPaginaPropia.filter(verificado).length} con horario verificado)`);
 console.log(`Universidades: ${universidades.length} con página (${universidades.map((u) => `${u.sigla} ${u.lista.length}/${u.ver.length}`).join(", ")}) · sin página: ${UNIVERSIDADES.filter((u) => !u.ruta).map((u) => `${u.sigla} ${u.lista.length}/${u.lista.filter(verificado).length}`).join(", ")} · dudosas (casan con 2): ${uniDudosas.length}`);
+console.log(`24 horas y de noche (/bibliotecas/24-horas/, solo con fuente): ${h24Ciudades.length} ciudades con página (${h24Ciudades.map((g) => `${g.ciudad} ${g.n}${g.has24 ? " 24h" : ""}`).join(", ")})${h24SinFicha.length ? ` · fuera por no tener ficha: ${h24SinFicha.join(", ")}` : ""}`);
 console.log(`Exámenes: ${exCiudades.length} ciudades con página (${exCiudades.map((g) => `${g.ciudad} ${g.entradas.length}`).join(", ")}) de ${EXAMENES.length} entradas vigentes · perennes (docs/CRECIMIENTO.md §2): ${nExPerennes} de ${EX_PERENNES.length}, ${nExSinEntradas} sin entradas vigentes${exSinPagina.length ? ` · sin página (menos de ${MIN_EX_VER} verificadas): ${exSinPagina.join(", ")}` : ""} · con 24 h verificadas: ${exCiudades.filter((g) => g.v24.length).map((g) => g.ciudad).join(", ") || "ninguna"}`);
 console.log(`Fichas con horario especial en JSON-LD (specialOpeningHoursSpecification): ${nFichasEspeciales} · con horario de verano verificado: ${nFichasVerano} · con horario de exámenes: ${nFichasEx} de ${[...exDeBib.keys()].length} bibliotecas del mapa con entrada vigente`);
 console.log(`hasPart en provincias y localidades: ${nLugarHasPart} páginas · ${nHasPart} partes`);

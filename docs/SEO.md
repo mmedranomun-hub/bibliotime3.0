@@ -6,6 +6,56 @@ Objetivo: que bibliomapa.es salga lo más arriba posible en búsquedas como «bi
 **Nadie puede garantizar el primer puesto en Google** (no se compra ni se fuerza; quien lo prometa miente).
 Lo que sí se puede hacer es tener la mejor página para cada búsqueda local y que Google la encuentre. Eso es lo que hay montado.
 
+## Hecho (2026-11-16) · «Bibliotecas 24 horas y de noche» por ciudad (sitemap 1506 → 1519 URL; ciudades con página 24 h/noche 0 → 12)
+- Para «biblioteca 24 horas <ciudad>» / «sala de estudio 24 h» (prioridad 1 de `docs/CRECIMIENTO.md` §2). Hub
+  `/bibliotecas/24-horas/` y `/bibliotecas/24-horas/<ciudad>/`, solo para ciudades con **alguna** biblioteca o sala con fuente
+  (nada de páginas vacías): hoy 12 (Valencia, Alcalá de Henares, Cerdanyola del Vallès, Las Palmas de Gran Canaria y Murcia
+  con alguna 24 h; Madrid, Barcelona, Cartagena, Guadalajara, Sant Cugat del Vallès, Alcalá de Guadaíra y Santa Cruz de
+  Tenerife solo de noche), 25 elementos.
+- Qué entra (todo en `scripts/generar_paginas_seo.js`, junto a `exCiudades`):
+  - biblioteca con horario verificado (`h.f` + `h.fv`) **y ficha**, abierta 24 h (`bib24h`, la de exámenes: 00:00 a
+    medianoche los 7 días) o «de noche» (`bibNocturna`: algún día cierra a las 23:00 o más tarde, o sigue abierta de
+    madrugada, franja que empieza a las 0:00 y acaba antes de las 8:00, como el CRAI de la UPCT hasta las 4:00), con su
+    horario habitual de invierno, fuente y fecha. Sin ficha no entra (el comprobador no podría contrastarla; hoy, ninguna);
+  - entrada **vigente** de `temporada-examenes.js` 24 h (`es24h`) o de noche (`exNocturna`: `semana` con cierre ≥ 23:00, o
+    el horario de la fuente dice «a 23:00», «hasta la 1:00»…), con «Solo en exámenes: del … al …», horario, nota, fuente y
+    fecha. Al caducar desaparece; si la ciudad se queda sin nada, su página también (Valencia hoy depende solo de
+    entradas de exámenes que acaban el 10-01-2027).
+  - Ciudad = localidad de la biblioteca (`b.c`) o de la entrada (`e.ciudad`), unificada con los alias de `EX_PERENNES`.
+- Página: `#24-horas` («Abiertas 24 horas») y `#de-noche` («Abiertas de noche»), lista `finde-lista` con el tipo
+  («Abierta 24 h», «Hasta las 4:00», «De noche en exámenes»); FAQ «¿Hay alguna biblioteca abierta 24 horas en <Ciudad>?»
+  (si no, «No consta ninguna con fuente oficial» + las de noche), «¿Qué bibliotecas abren de noche…?» y de dónde salen;
+  «Más para estudiar» (exámenes de la ciudad, salas de estudio, localidad). Título ≤ 65: «Bibliotecas 24 horas [y de noche]
+  en <Ciudad>» solo con algún elemento 24 h; si no, «Bibliotecas abiertas de noche en <Ciudad>». Descripción ≤ 160 con
+  las cifras. Migas Bibliomapa › Bibliotecas › 24 horas y de noche › <Ciudad>; JSON-LD como exámenes: CollectionPage
+  `#pagina` con `isPartOf` el hub (primer enlace del «volver»), `breadcrumb` → `#migas`, `dateModified`, `mainEntity`
+  ItemList (fichas con su `@id` `<ficha>#biblioteca`; espacios sin ficha, Library con dirección y sin `@id`) y FAQPage en
+  el grafo. El hub, `isPartOf` el índice, `hasPart` las ciudades.
+- **Frase citable fechada con la verificación, no con la generación**: «A 15 de noviembre de 2026, Bibliomapa tiene en
+  <Ciudad> N bibliotecas o salas de estudio para estudiar de noche con fuente oficial: …». La fecha es la comprobación más
+  reciente de la página (`fv`/`h.fv`), que es también su `dateModified` y el suelo de su `lastmod`: regenerar otro día no
+  cambia la página ni mueve su `lastmod` (comprobado: dos generaciones seguidas, mismo sitemap).
+- Enlazadas desde: el hub (lista por ciudad), el índice `/bibliotecas/` («Para estudiar: 24 horas y de noche»), el hub de
+  horarios («En toda España»), provincias y localidades de esas ciudades (`navNoche`: «De noche: …»), «Más para estudiar»
+  de las páginas de exámenes de la misma ciudad, sitemap y `llms.txt` (sección «Bibliotecas 24 horas y de noche por ciudad»).
+- **Por qué URL propia y no un ancla `#24-horas` en `/bibliotecas/examenes/<ciudad>/`**: (1) es otra búsqueda (todo el año,
+  no de temporada) y un ancla no puede llevar su propio título «Bibliotecas 24 horas en <Ciudad>», que es lo que posiciona;
+  (2) 7 de las 12 ciudades (Las Palmas, Santa Cruz, Cartagena, Cerdanyola, Alcalá de Guadaíra…) no tienen página de
+  exámenes, y crearla solo para el ancla saltaría el mínimo de `MIN_EX_VER` verificadas; (3) la página de exámenes sigue
+  ganando «24 horas en época de exámenes <Ciudad> 2027» (título con «época de exámenes» y año, distinto) y enlaza a la nueva.
+  Riesgo: canibalización leve entre las dos en las ciudades con 24 h solo en exámenes (Valencia, Alcalá); vigilar en
+  Search Console qué URL sale para «biblioteca 24 horas valencia».
+- Comprobador (`scripts/comprobar_paginas_seo.js`, bloque «24 horas y de noche»): cada `<li class="h-bib">` enlaza a una
+  ficha con horario verificado que abre 00:00–medianoche los 7 días (`#24-horas`) o cierra a las 23:00 o más tarde / de
+  madrugada (`#de-noche`), con fuente https que es la de su ficha y «comprobado el» ≤ hoy; cada `<li class="h-ex">` es una
+  entrada de `temporada-examenes.js` (espacio, desde, hasta) con su `f` y su `fv`, vigente, y 24 h o de noche según las
+  mismas reglas; ninguna página sin elementos válidos; en el sitemap; frase fechada = comprobación más reciente =
+  `dateModified`; y «24 h»/«24 horas» en título, h1 o descripción solo con un elemento válido en `#24-horas` (el hub, si
+  alguna ciudad lo tiene). Además, el hub entra en las familias de migas e `isPartOf` (`HUBS`). Probado a romper: título de
+  Madrid con «24 horas», sección de noche de Cartagena renombrada a `#24-horas`, frase de Murcia con la fecha de hoy, fuente
+  de una entrada de Valencia cambiada y Santa Cruz vaciada (7 fallos, salida 1); y en el generador, Esade forzada a 24 h y
+  «de noche» = cierre ≥ 21:00 (464 fallos, salida 1).
+
 ## Hecho (2026-11-16) · Páginas perennes «época de exámenes» por ciudad (sitemap 1494 → 1504 URL; exámenes 9 → 19 ciudades)
 - Para «bibliotecas abiertas en época de exámenes <ciudad> 2027» (prioridad 1 de `docs/CRECIMIENTO.md` §2; el pico es
   enero y Google tarda semanas en posicionar). Antes `/bibliotecas/examenes/<ciudad>/` solo existía mientras la ciudad
