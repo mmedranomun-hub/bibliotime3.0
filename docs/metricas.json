@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-11-15 21:48",
+  "fecha": "2026-11-16 01:52",
   "pruebas": {
     "arranca: datos y vistas": true,
     "marca España (sin «Navarra» en la cabecera)": true,
@@ -95,18 +95,18 @@
     "/#bib=<i>&o=c (enlace de «🔗 Compartir») abre la ficha correcta sin errores, quita o=c de la barra y, apagada, no manda nada; el evento no lleva id": true,
     "usuario nuevo que llega por /#bib=<i>-x&o=c o #study=: ve la ficha sin la bienvenida encima, y la bienvenida sale en la siguiente visita sin enlace": true,
     "/#bib=<i>-x&o=c a 390×844 (claro y oscuro): la ficha y su × (≥ 44 px) quedan enteras bajo la cabecera fija y dentro de la pantalla; otra chincheta después, igual": true,
-    "analítica apagada por defecto (index.html y /bibliotecas/ cargan analitica.js con proveedor:null y no piden _vercel/insights ni goatcounter ni ponen cookies; respeta DNT/GPC y local)": true,
+    "analítica con Vercel (index.html y /bibliotecas/ cargan analitica.js con proveedor vercel; en local no piden _vercel/insights ni goatcounter ni ponen cookies; respeta DNT/GPC y local)": true,
     "política de privacidad coherente con analitica.js (proveedor null ⇔ «sin analítica»; el diff de docs/ANALITICA.md se aplica y se detecta encender sin él)": true,
     "fichas.json pesa como mucho 15 KB gzip (si no, pasar al formato {prov:{índice:slug}})": true
   },
   "errores_js": [],
-  "carga_ms_cpu4x": 566,
+  "carga_ms_cpu4x": 585,
   "carga_ms_cpu4x_min_max": [
-    472,
-    815
+    557,
+    640
   ],
-  "primera_pintura_ms_cpu4x": 244,
-  "todas_las_chinchetas_ms_cpu4x": 582,
+  "primera_pintura_ms_cpu4x": 236,
+  "todas_las_chinchetas_ms_cpu4x": 602,
   "markercluster": {
     "cargado": false,
     "agrupa": false,
@@ -116,12 +116,12 @@
   },
   "datos": {
     "bibliotecas": 2624,
-    "con_horario_verificado": 998,
+    "con_horario_verificado": 1000,
     "provincias_con_horario": 51,
     "provincias_total": 51
   },
   "seo": {
-    "paginas": 1484,
+    "paginas": 1496,
     "sitemap": true
   },
   "peso": {
@@ -134,13 +134,13 @@
       "kb_gzip": 93.8
     },
     "bibliotecas-espana.js": {
-      "kb": 1094.8,
-      "kb_gzip": 251.2
+      "kb": 1096.0,
+      "kb_gzip": 251.5
     },
     "fichas.json": {
-      "kb": 63.2,
-      "kb_gzip": 12.8,
-      "bytes": 64732,
+      "kb": 63.4,
+      "kb_gzip": 12.9,
+      "bytes": 64892,
       "tope_kb_gzip": 15
     }
   },
