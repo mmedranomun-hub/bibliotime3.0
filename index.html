@@ -69,6 +69,7 @@
     --bg:#dbeafe; --bg-grad:linear-gradient(160deg,#dbeafe,#ede9fe); --blanco:255,255,255;
     --glass:rgba(255,255,255,.62); --glass-fuerte:rgba(255,255,255,.85); --borde:rgba(255,255,255,.55);
     --destello:rgba(255,255,255,.55);                      /* luz que barre una barra al cumplir (blanca también en oscuro) */
+    --destello-oro:var(--destello);                        /* la del cofre en oro: igual en claro; en oscuro, blanco cálido más alto */
     --sombra:0 8px 32px rgba(2,6,23,.18);
     --barra-a:.9; --barra-b:.72;                           /* opacidad de la barra superior */
     /* Categorías de la agenda (fondo tenue + texto oscuro del mismo matiz) */
@@ -115,6 +116,7 @@
     --bg:#0b1220; --bg-grad:linear-gradient(160deg,#0b1220,#1a1440); --blanco:30,41,59;
     --glass:rgba(30,41,59,.72); --glass-fuerte:rgba(30,41,59,.94); --borde:rgba(148,163,184,.22);
     --destello:rgba(255,255,255,.35);
+    --destello-oro:rgba(255,244,214,.45);
     --sombra:0 8px 32px rgba(0,0,0,.45);
     --barra-a:.94; --barra-b:.86;
     --ev-ex-bg:rgba(251,113,133,.20); --ev-ex-tx:#fecdd3;
@@ -1116,12 +1118,14 @@
   /* abierto: el sello del día 🏵️ queda estampado en la tarjeta (solo lo logrado, en oro) */
   .cofre.abierto{position:relative;border:2px solid var(--liga-oro);background:var(--liga-oro-bg);color:var(--liga-oro-tx);padding-right:56px}
   .cofre.abierto .cofre-ic{filter:none}
-  /* recién abierto (.cofre-brilla, solo el repintado que lo abre): el barrido --destello de .mis-brilla, .6 s, una vez. Va por
+  /* recién abierto (.cofre-brilla, solo el repintado que lo abre): el barrido de .mis-brilla con --destello-oro, .6 s, una vez. Va por
      background-position (sin overflow:hidden, que recortaría el sello al estamparse) y espera en pausa mientras la ventana
      del cofre lo tapa: se ve al cerrarla. renderMisiones mantiene la clase en los repintados (el de cada 30 s) hasta el
      animationend de cofreBrilla, que la quita: una sola vez */
   .cofre.abierto.cofre-brilla::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
-    background-image:linear-gradient(90deg,transparent,var(--destello),transparent);background-repeat:no-repeat;background-size:50% 100%;background-position:-100% 0;animation:cofreBrilla .6s ease-out forwards}
+    background-image:linear-gradient(90deg,transparent,var(--destello-oro),transparent);background-repeat:no-repeat;background-size:50% 100%;background-position:-100% 0;animation:cofreBrilla .6s ease-out forwards}
+  /* si el sello 🏵️ se está estampando (.55 s), la luz espera a que caiga (.45 s, ya en el rebote): sello → luz, no a la vez */
+  .cofre.abierto.cofre-brilla:has(.sello-dia.estampa)::after{animation-delay:.45s}
   body:has(#modalRoot .modal-bg) .cofre.cofre-brilla::after{animation-play-state:paused}
   @keyframes cofreBrilla{to{background-position:200% 0}}
   @media(prefers-reduced-motion:reduce){.cofre.cofre-brilla::after{display:none;animation:none}}
