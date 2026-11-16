@@ -1,6 +1,6 @@
 # Bibliomapa
 
-> Bibliomapa (bibliomapa.es) es una app web gratuita para estudiantes y opositores de España: mapa de 2624 bibliotecas y salas de estudio de 51 provincias con las abiertas ahora, horarios (920 comprobados en la web oficial de cada biblioteca, con fecha y fuente), afluencia indicada por los usuarios, cronómetro y Pomodoro que plantan un árbol por sesión, agenda de exámenes y estudio con amigos. Se usa sin cuenta.
+> Bibliomapa (bibliomapa.es) es una app web gratuita para estudiantes y opositores de España: mapa de 2624 bibliotecas y salas de estudio de 51 provincias con las abiertas ahora, horarios (927 comprobados en la web oficial de cada biblioteca, con fecha y fuente), afluencia indicada por los usuarios, cronómetro y Pomodoro que plantan un árbol por sesión, agenda de exámenes y estudio con amigos. Se usa sin cuenta.
 
 Datos de bibliotecas: Overture Maps Foundation y colaboradores de OpenStreetMap; horarios solo de fuentes oficiales, nunca estimados. Si una biblioteca no tiene horario verificado, la página lo dice.
 
@@ -20,7 +20,7 @@ Datos de bibliotecas: Overture Maps Foundation y colaboradores de OpenStreetMap;
 - [Valencia](https://bibliomapa.es/bibliotecas/examenes/valencia/): 5 horarios de exámenes con fuente oficial; 32 bibliotecas con horario verificado
 - [Pamplona](https://bibliomapa.es/bibliotecas/examenes/pamplona/): 4 horarios de exámenes con fuente oficial; 14 bibliotecas con horario verificado
 - [Alcalá de Henares](https://bibliomapa.es/bibliotecas/examenes/alcala-de-henares/): 2 horarios de exámenes con fuente oficial; 9 bibliotecas con horario verificado
-- [Barcelona](https://bibliomapa.es/bibliotecas/examenes/barcelona/): 1 horario de exámenes con fuente oficial; 38 bibliotecas con horario verificado
+- [Barcelona](https://bibliomapa.es/bibliotecas/examenes/barcelona/): 1 horario de exámenes con fuente oficial; 42 bibliotecas con horario verificado
 - [Sevilla](https://bibliomapa.es/bibliotecas/examenes/sevilla/): 1 horario de exámenes con fuente oficial; 11 bibliotecas con horario verificado
 - [Guadalajara](https://bibliomapa.es/bibliotecas/examenes/guadalajara/): 1 horario de exámenes con fuente oficial; 3 bibliotecas con horario verificado
 - [Palma](https://bibliomapa.es/bibliotecas/examenes/palma/): 1 horario de exámenes con fuente oficial; 3 bibliotecas con horario verificado
