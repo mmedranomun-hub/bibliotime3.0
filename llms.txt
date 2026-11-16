@@ -1,6 +1,6 @@
 # Bibliomapa
 
-> Bibliomapa (bibliomapa.es) es una app web gratuita para estudiantes y opositores de España: mapa de 2624 bibliotecas y salas de estudio de 51 provincias con las abiertas ahora, horarios (918 comprobados en la web oficial de cada biblioteca, con fecha y fuente), afluencia indicada por los usuarios, cronómetro y Pomodoro que plantan un árbol por sesión, agenda de exámenes y estudio con amigos. Se usa sin cuenta.
+> Bibliomapa (bibliomapa.es) es una app web gratuita para estudiantes y opositores de España: mapa de 2624 bibliotecas y salas de estudio de 51 provincias con las abiertas ahora, horarios (927 comprobados en la web oficial de cada biblioteca, con fecha y fuente), afluencia indicada por los usuarios, cronómetro y Pomodoro que plantan un árbol por sesión, agenda de exámenes y estudio con amigos. Se usa sin cuenta.
 
 Datos de bibliotecas: Overture Maps Foundation y colaboradores de OpenStreetMap; horarios solo de fuentes oficiales, nunca estimados. Si una biblioteca no tiene horario verificado, la página lo dice.
 
@@ -12,7 +12,43 @@ Datos de bibliotecas: Overture Maps Foundation y colaboradores de OpenStreetMap;
 - [Todos los horarios por provincia](https://bibliomapa.es/bibliotecas/horarios/)
 - [Salas de estudio por ciudad](https://bibliomapa.es/bibliotecas/salas-de-estudio/)
 - [Bibliotecas por universidad](https://bibliomapa.es/bibliotecas/universidades/)
-- [Bibliotecas 24 horas y horario de exámenes](https://bibliomapa.es/bibliotecas/examenes/)
+- [Bibliotecas 24 horas y abiertas en época de exámenes](https://bibliomapa.es/bibliotecas/examenes/): 19 ciudades, misma dirección todos los cursos
+- [Bibliotecas 24 horas y de noche en España](https://bibliomapa.es/bibliotecas/24-horas/): 12 ciudades, solo con fuente oficial y fecha
+
+## Bibliotecas en época de exámenes por ciudad
+- [Madrid](https://bibliomapa.es/bibliotecas/examenes/madrid/): 7 horarios de exámenes con fuente oficial; 56 bibliotecas con horario verificado
+- [Valencia](https://bibliomapa.es/bibliotecas/examenes/valencia/): 5 horarios de exámenes con fuente oficial; 32 bibliotecas con horario verificado
+- [Pamplona](https://bibliomapa.es/bibliotecas/examenes/pamplona/): 4 horarios de exámenes con fuente oficial; 14 bibliotecas con horario verificado
+- [Alcalá de Henares](https://bibliomapa.es/bibliotecas/examenes/alcala-de-henares/): 2 horarios de exámenes con fuente oficial; 9 bibliotecas con horario verificado
+- [Barcelona](https://bibliomapa.es/bibliotecas/examenes/barcelona/): 1 horario de exámenes con fuente oficial; 42 bibliotecas con horario verificado
+- [Sevilla](https://bibliomapa.es/bibliotecas/examenes/sevilla/): 1 horario de exámenes con fuente oficial; 11 bibliotecas con horario verificado
+- [Guadalajara](https://bibliomapa.es/bibliotecas/examenes/guadalajara/): 1 horario de exámenes con fuente oficial; 3 bibliotecas con horario verificado
+- [Palma](https://bibliomapa.es/bibliotecas/examenes/palma/): 1 horario de exámenes con fuente oficial; 3 bibliotecas con horario verificado
+- [Sant Cugat del Vallès](https://bibliomapa.es/bibliotecas/examenes/sant-cugat-del-valles/): 1 horario de exámenes con fuente oficial; 3 bibliotecas con horario verificado
+- [Zaragoza](https://bibliomapa.es/bibliotecas/examenes/zaragoza/): sin calendario oficial del curso todavía; 11 bibliotecas con horario verificado
+- [Málaga](https://bibliomapa.es/bibliotecas/examenes/malaga/): sin calendario oficial del curso todavía; 10 bibliotecas con horario verificado
+- [Santiago de Compostela](https://bibliomapa.es/bibliotecas/examenes/santiago-de-compostela/): sin calendario oficial del curso todavía; 10 bibliotecas con horario verificado
+- [Salamanca](https://bibliomapa.es/bibliotecas/examenes/salamanca/): sin calendario oficial del curso todavía; 8 bibliotecas con horario verificado
+- [Murcia](https://bibliomapa.es/bibliotecas/examenes/murcia/): sin calendario oficial del curso todavía; 7 bibliotecas con horario verificado
+- [Bilbao](https://bibliomapa.es/bibliotecas/examenes/bilbao/): sin calendario oficial del curso todavía; 6 bibliotecas con horario verificado
+- [Granada](https://bibliomapa.es/bibliotecas/examenes/granada/): sin calendario oficial del curso todavía; 6 bibliotecas con horario verificado
+- [Oviedo](https://bibliomapa.es/bibliotecas/examenes/oviedo/): sin calendario oficial del curso todavía; 6 bibliotecas con horario verificado
+- [Alicante](https://bibliomapa.es/bibliotecas/examenes/alicante/): sin calendario oficial del curso todavía; 5 bibliotecas con horario verificado
+- [Valladolid](https://bibliomapa.es/bibliotecas/examenes/valladolid/): sin calendario oficial del curso todavía; 5 bibliotecas con horario verificado
+
+## Bibliotecas 24 horas y de noche por ciudad
+- [Bibliotecas 24 horas en Valencia](https://bibliomapa.es/bibliotecas/24-horas/valencia/): 5 abiertas 24 h en exámenes (comprobado el 01/11/2026)
+- [Bibliotecas 24 horas y de noche en Alcalá de Henares](https://bibliomapa.es/bibliotecas/24-horas/alcala-de-henares/): 1 abierta 24 h en exámenes, 2 hasta medianoche y 1 con horario de noche en exámenes (comprobado el 15/11/2026)
+- [Bibliotecas 24 horas en Cerdanyola del Vallès](https://bibliomapa.es/bibliotecas/24-horas/cerdanyola-del-valles/): 1 abierta 24 h todo el curso (comprobado el 15/11/2026)
+- [Bibliotecas 24 horas en Las Palmas de Gran Canaria](https://bibliomapa.es/bibliotecas/24-horas/las-palmas-de-gran-canaria/): 1 abierta 24 h todo el curso (comprobado el 15/10/2026)
+- [Bibliotecas 24 horas en Murcia](https://bibliomapa.es/bibliotecas/24-horas/murcia/): 1 abierta 24 h todo el curso (comprobado el 14/11/2026)
+- [Bibliotecas abiertas de noche en Madrid](https://bibliomapa.es/bibliotecas/24-horas/madrid/): 3 con horario de noche en exámenes (comprobado el 15/11/2026)
+- [Bibliotecas abiertas de noche en Barcelona](https://bibliomapa.es/bibliotecas/24-horas/barcelona/): 1 hasta las 23:00 y 1 con horario de noche en exámenes (comprobado el 15/11/2026)
+- [Bibliotecas abiertas de noche en Cartagena](https://bibliomapa.es/bibliotecas/24-horas/cartagena/): 2 hasta las 4:00 de la madrugada (comprobado el 15/11/2026)
+- [Bibliotecas abiertas de noche en Guadalajara](https://bibliomapa.es/bibliotecas/24-horas/guadalajara/): 1 hasta las 23:00 y 1 con horario de noche en exámenes (comprobado el 14/11/2026)
+- [Bibliotecas abiertas de noche en Sant Cugat del Vallès](https://bibliomapa.es/bibliotecas/24-horas/sant-cugat-del-valles/): 1 hasta las 23:00 y 1 con horario de noche en exámenes (comprobado el 15/11/2026)
+- [Bibliotecas abiertas de noche en Alcalá de Guadaíra](https://bibliomapa.es/bibliotecas/24-horas/alcala-de-guadaira/): 1 hasta medianoche (comprobado el 14/11/2026)
+- [Bibliotecas abiertas de noche en Santa Cruz de Tenerife](https://bibliomapa.es/bibliotecas/24-horas/santa-cruz-de-tenerife/): 1 hasta las 23:00 (comprobado el 27/10/2026)
 
 ## Guías (problemas que resuelve la app)
 - [¿Dónde estudiar hoy? Bibliotecas y salas de estudio abiertas cerca de ti](https://bibliomapa.es/estudiar/donde-estudiar-hoy/): Abre bibliomapa.es, permite tu ubicación y la tarjeta «Te recomiendo ahora» te dice qué biblioteca abierta tienes más cerca y a qué hora cierra.
