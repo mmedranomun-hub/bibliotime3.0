@@ -126,7 +126,20 @@ async function probarMapa(nav, url, bloquear) {
   // 4. GitHub (solo avance directo) e IndexNow
   try { sh("git push repo3 HEAD:main", { timeout: 180000 }); apunta("GitHub: main = lo publicado"); }
   catch (e) { apunta("GitHub: no se pudo subir main (" + String(e.stderr || e.message).split("\n")[0].slice(0, 120) + ")"); }
-  try { const r = sh("node scripts/avisar_indexnow.js", { timeout: 120000 }); apunta("IndexNow: " + (r.split("\n").filter((l) => /respuesta|URL|200|202/i.test(l)).slice(-2).join(" · ") || "avisado")); }
-  catch (e) { apunta("IndexNow: falló (" + String(e.stdout || e.message).split("\n").slice(-2).join(" ").slice(0, 150) + ")"); }
+  // IndexNow: todas las fechas de lastmod posteriores al último aviso (si un día no se publicó, no se pierden).
+  const marca = "C:/Users/pc/bibliomapa-herramientas/ultimo-indexnow.txt";
+  const ultimo = fs.existsSync(marca) ? fs.readFileSync(marca, "utf8").trim() : "2026-11-15";
+  const fechas = [...new Set([...fs.readFileSync(path.join(RAIZ, "sitemap.xml"), "utf8").matchAll(/<lastmod>(\d{4}-\d{2}-\d{2})/g)].map((m) => m[1]))]
+    .filter((f) => f > ultimo).sort();
+  let avisadoHasta = ultimo;
+  for (const f of fechas) {
+    try {
+      const r = sh(`node scripts/avisar_indexnow.js --fecha ${f}`, { timeout: 120000 });
+      apunta(`IndexNow ${f}: ` + (r.split("\n").filter((l) => /HTTP|URL/i.test(l)).slice(-1)[0] || "avisado"));
+      avisadoHasta = f;
+    } catch (e) { apunta(`IndexNow ${f}: falló (` + String(e.stdout || e.message).split("\n").slice(-2).join(" ").slice(0, 150) + ")"); break; }
+  }
+  if (!fechas.length) apunta("IndexNow: nada nuevo desde " + ultimo);
+  fs.writeFileSync(marca, avisadoHasta);
   termina(0, `bibliomapa.es al día (${ahora.slice(0, 8)})`);
 })().catch((e) => termina(1, "error inesperado: " + e.message));
