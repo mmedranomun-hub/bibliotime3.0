@@ -835,9 +835,9 @@ PRUEBAS = [
         if(af().animationPlayState!=='running')return 'no barre al cerrar la ventana';
         if(getComputedStyle(cof()).overflow!=='visible')return 'recorta el sello';
         var css=[].map.call(document.styleSheets,sh=>{try{return [].map.call(sh.cssRules,x=>x.cssText).join(' ');}catch(e){return '';}}).join(' ');
-        if(!/\\.cofre-brilla::after[^}]*var\\(--destello\\)/.test(css))return 'el brillo no usa --destello';
-        // tras barrer (.6 s), el repintado siguiente (cada 30 s con el cronómetro) y la recarga con el cofre ya abierto: oro quieto
-        await new Promise(r=>setTimeout(r,900));
+        if(!/\\.cofre-brilla::after[^}]*var\\(--destello-oro\\)/.test(css))return 'el brillo no usa --destello-oro';
+        // tras barrer (.6 s, tras los .45 s del sello que se estampa), el repintado siguiente (cada 30 s con el cronómetro) y la recarga con el cofre ya abierto: oro quieto
+        await new Promise(r=>setTimeout(r,1800));
         if(document.querySelector('.cofre-brilla'))return 'no se quita al acabar el barrido';
         renderMisiones();
         if(document.querySelector('.cofre-brilla'))return 'vuelve a brillar al repintar';
@@ -851,6 +851,32 @@ PRUEBAS = [
         return true;
       }finally{window.sinMovimiento=sm;window.encolarVuelo=ev;window.celebrar=ce;window.confeti=cf;window.showToast=st;closeModal();
         k.forEach(x=>DATA[x]=o[x]);renderMisiones();renderSemillas();}"""),
+    ("el barrido del cofre en oro se ve también en oscuro (--destello-oro: = --destello en claro, blanco cálido ~45 % en oscuro) y, si el sello 🏵️ se estampa, espera .45 s a que caiga", """
+      var h=document.documentElement,t0=h.getAttribute('data-theme');
+      var f=document.createElement('button');f.className='cofre abierto cofre-brilla';f.innerHTML='<span class="sello-dia">🏵️</span>';
+      document.body.appendChild(f);
+      var col=x=>(x.match(/rgba?\\((\\d+),\\s*(\\d+),\\s*(\\d+)(?:,\\s*([\\d.]+))?\\)/g)||[]).map(y=>y.match(/[\\d.]+/g).map(Number)).filter(v=>(v[3]===undefined?1:v[3])>0);
+      var lee=tema=>{h.setAttribute('data-theme',tema);var bg=getComputedStyle(f,'::after').backgroundImage;
+        var d=document.createElement('div');d.style.background='var(--destello)';document.body.appendChild(d);var de=col(getComputedStyle(d).backgroundColor);d.remove();
+        return {bg:bg,c:col(bg),d:de[0]};};
+      try{
+        var l=lee('light');
+        if(l.c.length!==1)return 'claro: el barrido no tiene un solo color visible: '+l.bg;
+        if(l.c[0].join()!==l.d.join())return 'claro: el barrido del cofre cambió (debe ser --destello): '+l.c[0]+' vs '+l.d;
+        var o=lee('dark');
+        if(o.c.length!==1)return 'oscuro: el barrido no tiene un solo color visible: '+o.bg;
+        var v=o.c[0];
+        if(v[0]<250||v[1]<230||v[2]<190||v[2]>=v[1])return 'oscuro: el barrido no es blanco cálido: '+o.bg;
+        if(v[3]<.4||v[3]>.5)return 'oscuro: opacidad del barrido fuera de 40-50 %: '+v[3];
+        if(!(v[3]>o.d[3]))return 'oscuro: el barrido del cofre no supera a --destello ('+o.d[3]+')';
+        if(getComputedStyle(f,'::after').animationDelay!=='0s')return 'sin sello estampándose, el barrido no debe esperar';
+        if(CSS.supports('selector(:has(a))')){
+          f.querySelector('.sello-dia').classList.add('estampa');
+          var dl=getComputedStyle(f,'::after').animationDelay;
+          if(dl!=='0.45s')return 'con el sello estampándose, el barrido no espera .45 s: '+dl;
+        }
+        return true;
+      }finally{f.remove();if(t0===null)h.removeAttribute('data-theme');else h.setAttribute('data-theme',t0);}"""),
     ("el barrido del cofre sigue pendiente si la tarjeta se repinta con la ventana abierta (p. ej. el tick de 30 s) y se ve una sola vez al cerrarla", """
       await cargarExtra();
       var k=['misiones','sellosMisiones','cofresAbiertos','semillasPremio','streakFreezes'],o={};k.forEach(x=>o[x]=DATA[x]);
@@ -869,7 +895,7 @@ PRUEBAS = [
         var fin=0,cuenta=e=>{if(e.animationName==='cofreBrilla')fin++;};$('missionsCard').addEventListener('animationend',cuenta);
         closeModal();
         if(!cof().classList.contains('cofre-brilla')||af().animationPlayState!=='running')return 'no barre al cerrar la ventana';
-        await espera(900);$('missionsCard').removeEventListener('animationend',cuenta);
+        await espera(1800);$('missionsCard').removeEventListener('animationend',cuenta); // .45 s del sello + .6 s de barrido (y margen: un repintado en la espera lo reinicia sin retraso)
         if(fin!==1)return 'el barrido no se ve una vez al cerrar: '+fin;
         if(cof().classList.contains('cofre-brilla'))return 'la clase sigue tras barrer';
         renderMisiones();

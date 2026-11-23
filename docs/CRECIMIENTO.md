@@ -19,7 +19,7 @@ fuente, se escribe «sin confirmar» y se mide con Search Console o la analític
 | «biblioteca abierta sábado/domingo <ciudad>» | temáticas de fin de semana | ✅ hecho |
 | «biblioteca <nombre> horario» | fichas `/bibliotecas/<prov>/<slug>/` | ✅ solo las verificadas (~1000) |
 | «bibliotecas abiertas en época de exámenes <ciudad> 2027» | **página perenne por ciudad, se actualiza cada temporada** (mismo URL todos los años) | ❌ PRIORIDAD 1 (enero es el pico) |
-| «biblioteca 24 horas <ciudad>» / «sala de estudio 24h» | página por ciudad con las 24 h y nocturnas (solo con fuente) | ❌ PRIORIDAD 1 |
+| «biblioteca 24 horas <ciudad>» / «sala de estudio 24h» | página por ciudad con las 24 h y nocturnas (solo con fuente) | ✅ 16-11: `/bibliotecas/24-horas/<ciudad>/` en 12 ciudades (bucle) |
 | «bibliotecas abiertas en Navidad/festivos <ciudad>» | temática de festivos (necesita festivos por comunidad, fuente BOE/boletines) | ❌ PRIORIDAD 2 (diciembre) |
 | «dónde estudiar en <ciudad>» / «sitios para estudiar <ciudad>» | guía por ciudad universitaria (15 primeras) | ❌ PRIORIDAD 2 |
 | «dónde estudiar oposiciones <ciudad>» / «biblioteca para opositores» | guía para opositores (horario largo, silencio, fines de semana) | ❌ PRIORIDAD 3 |

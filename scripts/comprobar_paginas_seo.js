@@ -462,9 +462,10 @@ for (const ruta of html.keys()) {
 // BreadcrumbList de la misma página cuyo penúltimo elemento es la url de su isPartOf y el último, la propia página.
 // Lo mismo en las salas de estudio de provincia y localidad (isPartOf su hub, /bibliotecas/salas-de-estudio/): las tres
 // familias (sala de estudio, universidad, exámenes) con el penúltimo de las migas igual a su hub.
-const nHubMigas = { hub: 0, "sala de estudio": 0, universidad: 0, exámenes: 0 };
-const familiaMigasHub = (r) => ["/bibliotecas/horarios/", "/bibliotecas/universidades/", "/bibliotecas/examenes/", "/bibliotecas/salas-de-estudio/"].includes(r) ? "hub"
+const nHubMigas = { hub: 0, "sala de estudio": 0, universidad: 0, exámenes: 0, "24 horas": 0 };
+const familiaMigasHub = (r) => ["/bibliotecas/horarios/", "/bibliotecas/universidades/", "/bibliotecas/examenes/", "/bibliotecas/salas-de-estudio/", "/bibliotecas/24-horas/"].includes(r) ? "hub"
   : /^\/bibliotecas\/universidades\/[^/]+\/$/.test(r) ? "universidad" : /^\/bibliotecas\/examenes\/[^/]+\/$/.test(r) ? "exámenes"
+  : /^\/bibliotecas\/24-horas\/[^/]+\/$/.test(r) ? "24 horas"
   : /^\/bibliotecas\/[^/]+\/(?:[^/]+\/)?salas-de-estudio\/$/.test(r) ? "sala de estudio" : null;
 for (const ruta of html.keys()) {
   const tipo = familiaMigasHub(ruta);
@@ -509,7 +510,8 @@ for (const [ruta, ids] of idsListaDe) {
 // hub (así falla tanto la página que falta en el hasPart como la parte del hasPart que no declara el hub).
 const HUBS = [["/bibliotecas/salas-de-estudio/", /^\/bibliotecas\/[^/]+\/(?:[^/]+\/)?salas-de-estudio\/$/, "sala de estudio"],
   ["/bibliotecas/universidades/", /^\/bibliotecas\/universidades\/[^/]+\/$/, "universidad"],
-  ["/bibliotecas/examenes/", /^\/bibliotecas\/examenes\/[^/]+\/$/, "exámenes"]];
+  ["/bibliotecas/examenes/", /^\/bibliotecas\/examenes\/[^/]+\/$/, "exámenes"],
+  ["/bibliotecas/24-horas/", /^\/bibliotecas\/24-horas\/[^/]+\/$/, "24 horas"]];
 const nHubIsPartOf = {};
 for (const [hub, re, tipo] of HUBS) {
   nHubIsPartOf[tipo] = 0;
@@ -1279,6 +1281,141 @@ for (const [r, h] of html) {
   }
 }
 console.log(`«Horario ampliado en época de exámenes» (provincias y localidades; cada una, entrada vigente de temporada-examenes.js con f https y fv): ${nExPag} páginas, ${nExItems} entradas · mal: ${exMal.length}${exMal.length ? "\n" + muestra(exMal, (r) => "  " + r) : ""}`);
+// ---------- Páginas perennes «época de exámenes» por ciudad (2026-11-16, docs/CRECIMIENTO.md §2) ----------
+// EX_PERENNES y MIN_EX_VER se leen de generar_paginas_seo.js. Por cada ciudad se cuentan las fichas con horario verificado
+// (Library <ficha>#biblioteca con openingHoursSpecification, que el generador solo pone con fuente h.f y fecha h.fv) cuya
+// addressRegion es la provincia y addressLocality uno de sus alias. Con MIN_EX_VER o más, /bibliotecas/examenes/<ciudad>/
+// debe existir, estar en el sitemap y llevar «Dónde estudiar en exámenes» (#donde-estudiar) con al menos MIN_EX_VER
+// bibliotecas enlazadas a fichas verificadas de esa ciudad. Y ninguna página de exámenes dice «24 h» o «24 horas» en
+// <title>, <h1> o meta description sin fuente: una tarjeta «Abierta 24 h» de temporada-examenes.js (con su «Fuente
+// oficial» https) o una biblioteca «Abierta 24 h» cuya ficha verificada abre de 00:00 a medianoche los 7 días. El índice
+// de exámenes solo puede decirlo si alguna ciudad lo tiene con fuente. Cada «Abierta 24 h» de los rankings se comprueba igual.
+const perMal = [];
+let nPerennes = 0, nPerSin = 0, nClaim24 = 0;
+const slugP = (x) => String(x || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+const ficha24h = (r) => { const l = libDe.get(r), o = l && l.openingHoursSpecification; if (!Array.isArray(o)) return false;
+  return ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].every((d) => o.some((x) => x.dayOfWeek === d && x.opens === "00:00" && /^(00:00|24:00|23:59)$/.test(x.closes))); };
+const con24Fuente = (h) => /<span class="tipo">Abierta 24 h<\/span>/.test(h) && /rel="nofollow noopener" target="_blank">Fuente oficial<\/a>/.test(h) ||
+  [...h.matchAll(/<li><a href="([^"]+)">[^<]*<\/a> <span class="tipo">[^<]*<\/span>\s*<small><b>Abierta 24 h<\/b>/g)].some((m) => ficha24h(m[1]));
+{
+  const src = fs.readFileSync(path.join(__dirname, "generar_paginas_seo.js"), "utf8");
+  let lista = null, min = null;
+  try { lista = require("vm").runInNewContext(`(${(src.match(/\nconst EX_PERENNES = (\[[\s\S]*?\n\]);/) || [])[1]})`, {}, { timeout: 1000 }); } catch (e) { /* abajo */ }
+  try { min = +(src.match(/\nconst MIN_EX_VER = (\d+);/) || [])[1]; } catch (e) { /* abajo */ }
+  if (!Array.isArray(lista) || !lista.length) perMal.push("no se puede leer EX_PERENNES de generar_paginas_seo.js");
+  if (!min) perMal.push("no se puede leer MIN_EX_VER de generar_paginas_seo.js");
+  for (const x of lista || []) {
+    const ver = new Set([...libDe].filter(([, l]) => Array.isArray(l.openingHoursSpecification) && l.address &&
+      slugP(l.address.addressRegion) === x.p && x.alias.includes(slugP(l.address.addressLocality))).map(([r]) => r));
+    const s = slugP(x.ciudad), r = [`/bibliotecas/examenes/${s}/`, `/bibliotecas/examenes/${s}-${x.p}/`].find((q) => html.has(q));
+    if (ver.size < min) { nPerSin++; if (r) perMal.push(`${r}: ${x.ciudad} tiene ${ver.size} fichas verificadas (< ${min}) y aun así tiene página`); continue; }
+    if (!r) { perMal.push(`${x.ciudad}: ${ver.size} fichas verificadas y no existe /bibliotecas/examenes/${s}/`); continue; }
+    nPerennes++;
+    if (!enSitemap.has(r)) perMal.push(`${r}: no está en el sitemap`);
+    const h = html.get(r), sec = (h.match(/<section class="ficha" id="donde-estudiar"[^>]*>([\s\S]*?)<\/section>/) || [])[1];
+    if (!sec) { perMal.push(`${r}: sin «Dónde estudiar en exámenes» (#donde-estudiar)`); continue; }
+    const enl = new Set([...sec.matchAll(/<li><a href="([^"]+)">/g)].map((m) => m[1]));
+    const fuera = [...enl].filter((e) => !ver.has(e));
+    if (fuera.length) perMal.push(`${r}: «Dónde estudiar» enlaza ${fuera.length} biblioteca(s) que no son fichas verificadas de ${x.ciudad}: ${fuera.slice(0, 3).join(", ")}`);
+    if (enl.size < Math.min(min, ver.size)) perMal.push(`${r}: «Dónde estudiar» lista ${enl.size} bibliotecas (mínimo ${min})`);
+    if (!/<p>A \d{1,2} de [a-z]+ de \d{4}, Bibliomapa tiene \d+ bibliotecas? de /.test(sec)) perMal.push(`${r}: sin la frase citable con fecha y cifra («A <fecha>, Bibliomapa tiene N bibliotecas de …»)`);
+  }
+  const exPags = [...html.keys()].filter((q) => q.startsWith("/bibliotecas/examenes/"));
+  const conFuente = new Set(exPags.filter((q) => q !== "/bibliotecas/examenes/" && con24Fuente(html.get(q))));
+  for (const q of exPags) {
+    const h = html.get(q);
+    // Cada «Abierta 24 h» de un ranking: su ficha verificada abre de 00:00 a medianoche los 7 días.
+    for (const m of h.matchAll(/<li><a href="([^"]+)">([^<]*)<\/a> <span class="tipo">[^<]*<\/span>\s*<small><b>Abierta 24 h<\/b>/g))
+      if (!ficha24h(m[1])) perMal.push(`${q}: «${decodificaTexto(m[2])}» dice «Abierta 24 h» y su ficha (${m[1]}) no abre 24 h los 7 días con horario verificado`);
+    const claim = [(h.match(/<title>([^<]*)<\/title>/) || [])[1], (h.match(/<h1[^>]*>([\s\S]*?)<\/h1>/) || [])[1], (h.match(/<meta name="description" content="([^"]*)"/) || [])[1]]
+      .some((t) => /\b24 h(oras)?\b/i.test(t || ""));
+    if (!claim) continue;
+    nClaim24++;
+    if (q === "/bibliotecas/examenes/" ? !conFuente.size : !conFuente.has(q)) perMal.push(`${q}: dice «24 horas» en título, h1 o descripción sin ninguna biblioteca 24 h con fuente en la página`);
+  }
+}
+// ---------- «Bibliotecas 24 horas y de noche» (/bibliotecas/24-horas/ y /bibliotecas/24-horas/<ciudad>/, 2026-11-16) ----------
+// Cada elemento de #24-horas y #de-noche de una ciudad:
+//  · <li class="h-bib">: enlaza a una ficha generada cuyo Library (openingHoursSpecification, que el generador solo pone con
+//    h.f y h.fv) abre de 00:00 a medianoche los 7 días (#24-horas) o algún día cierra a las 23:00 o más tarde o de madrugada
+//    (#de-noche); su «fuente oficial» es https y sale en la ficha; su «comprobado el», no posterior a hoy;
+//  · <li class="h-ex">: entrada de temporada-examenes.js (espacio, desde, hasta) con f https (= su enlace) y fv (= su
+//    «comprobado el»), vigente (hasta ≥ hoy) y 24 horas (`semana` 00:00–24:00 los 7 días o «24 horas» en el horario) en
+//    #24-horas, o de noche (`semana` con cierre ≥ 23:00, o el horario dice «a 23:00», «hasta la 1:00»…) en #de-noche.
+// Y por página: al menos un elemento válido (nada de páginas vacías), en el sitemap; la frase citable «A <fecha>, Bibliomapa
+// tiene en …» fechada con la comprobación más reciente de sus elementos (no la de hoy, que movería el lastmod a diario) y
+// esa fecha = su dateModified. «24 h» o «24 horas» en <title>, <h1> o description solo con algún elemento válido en
+// #24-horas (en el hub, si alguna ciudad lo tiene).
+const h24Mal = [];
+let nH24Pag = 0, nH24Items = 0, nH24Claim = 0;
+{
+  const DIAS_C = ["L", "M", "X", "J", "V", "S", "D"];
+  const nocheLD = (x) => x.closes >= "23:00" || /^(00:00|24:00)$/.test(x.closes) || (x.opens === "00:00" && x.closes > "00:00" && x.closes <= "08:00");
+  const fichaNoche = (r) => { const o = (libDe.get(r) || {}).openingHoursSpecification; return Array.isArray(o) && o.some(nocheLD); };
+  const exEs24 = (e) => (!!e.semana && DIAS_C.every((d) => (e.semana[d] || []).some((x) => x[0] === "00:00" && x[1] === "24:00"))) || /\b24 horas\b/i.test(e.horario || "");
+  const exEsNoche = (e) => (!!e.semana && DIAS_C.some((d) => (e.semana[d] || []).some((x) => x[1] >= "23:00" || x[1] === "00:00"))) || /\b(?:a|hasta) (?:las? )?(?:23|0|00|1|2|3|4|5):\d\d\b/.test(e.horario || "");
+  const FUENTE = String.raw`<small>\(<a href="([^"]+)" rel="nofollow noopener" target="_blank">fuente oficial<\/a>, comprobado el (\d\d)\/(\d\d)\/(\d{4})\)<\/small><\/li>`;
+  const RE_BIB = new RegExp(String.raw`<li class="h-bib"><a href="([^"]+)">([^<]*)<\/a> <span class="tipo">[^<]*<\/span><span class="finde-h">[^<]*<\/span>[^<]* ` + FUENTE, "g");
+  const RE_EX = new RegExp(String.raw`<li class="h-ex">(?:<a href="([^"]+)">([^<]*)<\/a>|<b>([^<]*)<\/b>) <span class="tipo">[^<]*<\/span><span class="finde-h">Solo en exámenes: del <time datetime="(\d{4}-\d\d-\d\d)">[^<]*<\/time> al <time datetime="(\d{4}-\d\d-\d\d)">[^<]*<\/time><\/span>[^<]* ` + FUENTE, "g");
+  const HUB24 = "/bibliotecas/24-horas/", pags = [...html.keys()].filter((r) => r.startsWith(HUB24) && r !== HUB24);
+  if (pags.length && !html.has(HUB24)) h24Mal.push(`${HUB24} no existe y hay ${pags.length} páginas de ciudad`);
+  const con24 = new Set();
+  for (const r of pags) {
+    nH24Pag++;
+    const h = html.get(r), fechas = [];
+    let validos = 0;
+    if (!/^\/bibliotecas\/24-horas\/[^/]+\/$/.test(r)) h24Mal.push(`${r}: ruta inesperada bajo ${HUB24}`);
+    if (!enSitemap.has(r)) h24Mal.push(`${r}: no está en el sitemap`);
+    for (const [tipo, id] of [["24 h", "24-horas"], ["noche", "de-noche"]]) {
+      const secs = [...h.matchAll(new RegExp(`<section class="ficha finde" id="${id}"[^>]*>([\\s\\S]*?)<\\/section>`, "g"))];
+      if (!secs.length) continue;
+      if (secs.length > 1) h24Mal.push(`${r}: más de una sección #${id}`);
+      const s = secs[0][1], lis = (s.match(/<li[ >]/g) || []).length, bibs = [...s.matchAll(RE_BIB)], exs = [...s.matchAll(RE_EX)];
+      if (!lis) h24Mal.push(`${r}: sección #${id} sin elementos`);
+      if (bibs.length + exs.length !== lis) h24Mal.push(`${r}: ${lis - bibs.length - exs.length} elemento(s) de #${id} sin el formato «nombre · tipo · horario · (fuente oficial, comprobado el …)»`);
+      for (const [, href, nom, f, dd, mm, aaaa] of bibs) {
+        nH24Items++;
+        const quien = `${r} #${id} → «${decodificaTexto(nom)}»`, fecha = `${aaaa}-${mm}-${dd}`, ficha = decodifica(href);
+        if (!libDe.has(ficha)) { h24Mal.push(`${quien}: enlaza a ${ficha}, que no es una ficha con horario verificado`); continue; }
+        if (tipo === "24 h" ? !ficha24h(ficha) : !fichaNoche(ficha)) { h24Mal.push(`${quien}: su ficha (${ficha}) no abre ${tipo === "24 h" ? "de 00:00 a medianoche los 7 días" : "hasta las 23:00 o más tarde ningún día"} según su horario verificado`); continue; }
+        if (!/^https:\/\//.test(decodifica(f))) { h24Mal.push(`${quien}: fuente sin https (${decodifica(f)})`); continue; }
+        if (!html.get(ficha).includes(`href="${f}"`)) { h24Mal.push(`${quien}: la fuente ${decodifica(f)} no es la de su ficha`); continue; }
+        if (fecha > HOY) { h24Mal.push(`${quien}: «comprobado el ${dd}/${mm}/${aaaa}» posterior a hoy`); continue; }
+        validos++; fechas.push(fecha); if (tipo === "24 h") con24.add(r);
+      }
+      for (const [, href, nomA, nomB, desde, hasta, f, dd, mm, aaaa] of exs) {
+        nH24Items++;
+        const nombre = decodificaTexto(nomA !== undefined ? nomA : nomB), quien = `${r} #${id} → «${nombre}» (${desde} a ${hasta})`;
+        const e = exDatos.find((x) => x.espacio === nombre && x.desde === desde && x.hasta === hasta);
+        if (!e) { h24Mal.push(`${quien}: no es una entrada de temporada-examenes.js`); continue; }
+        const mal0 = h24Mal.length;
+        if (!/^https:\/\//.test(e.f || "")) h24Mal.push(`${quien}: la entrada no tiene fuente https (f)`);
+        else if (decodifica(f) !== e.f) h24Mal.push(`${quien}: el enlace de fuente «${decodifica(f)}» no es su f`);
+        if (`${aaaa}-${mm}-${dd}` !== e.fv) h24Mal.push(`${quien}: «comprobado el ${dd}/${mm}/${aaaa}» ≠ fv ${e.fv || "(falta)"}`);
+        if (hasta < HOY) h24Mal.push(`${quien}: caducada (acabó el ${hasta}; hoy es ${HOY}): regenera las páginas`);
+        if (tipo === "24 h" ? !exEs24(e) : !exEsNoche(e)) h24Mal.push(`${quien}: según temporada-examenes.js no abre ${tipo === "24 h" ? "24 horas" : "de noche (cierre ≥ 23:00)"}`);
+        if (href !== undefined && !html.has(decodifica(href))) h24Mal.push(`${quien}: enlaza a ${href}, que no es una ficha generada`);
+        if (h24Mal.length === mal0) { validos++; fechas.push(e.fv); if (tipo === "24 h") con24.add(r); }
+      }
+    }
+    if (!validos) { h24Mal.push(`${r}: ninguna biblioteca 24 h o de noche con fuente (página vacía)`); continue; }
+    const fmax = fechas.sort().pop(), fm = h.match(/<p class="intro">A (\d{1,2}) de ([a-z]+) de (\d{4}), Bibliomapa tiene en /);
+    const fFrase = fm && `${fm[3]}-${String(MESES_EX.indexOf(fm[2]) + 1).padStart(2, "0")}-${fm[1].padStart(2, "0")}`;
+    if (!fm) h24Mal.push(`${r}: sin la frase citable fechada («A <fecha>, Bibliomapa tiene en …»)`);
+    else if (fFrase !== fmax) h24Mal.push(`${r}: la frase citable dice ${fFrase} y la comprobación más reciente de la página es ${fmax}`);
+    if (modPagina.get(r) !== fmax) h24Mal.push(`${r}: dateModified ${modPagina.get(r) || "(falta)"} ≠ comprobación más reciente ${fmax}`);
+  }
+  for (const r of pags.concat(html.has(HUB24) ? [HUB24] : [])) {
+    const h = html.get(r);
+    const claim = [(h.match(/<title>([^<]*)<\/title>/) || [])[1], (h.match(/<h1[^>]*>([\s\S]*?)<\/h1>/) || [])[1], (h.match(/<meta name="description" content="([^"]*)"/) || [])[1]]
+      .some((t) => /\b24 h(oras)?\b/i.test(t || ""));
+    if (!claim) continue;
+    nH24Claim++;
+    if (r === HUB24 ? !con24.size : !con24.has(r)) h24Mal.push(`${r}: dice «24 horas» en título, h1 o descripción sin ninguna biblioteca 24 h con fuente en #24-horas`);
+  }
+}
+console.log(`24 horas y de noche por ciudad (/bibliotecas/24-horas/; cada elemento, ficha verificada 24 h o con cierre ≥ 23:00, o entrada vigente de temporada-examenes.js con f y fv; frase fechada con la comprobación más reciente) y «24 h» solo con fuente: ${nH24Pag} ciudades, ${nH24Items} elementos · páginas que dicen «24 h»: ${nH24Claim} · mal: ${h24Mal.length}${h24Mal.length ? "\n" + muestra(h24Mal, (r) => "  " + r) : ""}`);
+console.log(`Exámenes perennes por ciudad (EX_PERENNES; ≥ MIN_EX_VER fichas verificadas → página con «Dónde estudiar» y frase citable) y «24 h» solo con fuente: ${nPerennes} ciudades con página, ${nPerSin} sin mínimo · páginas que dicen «24 h»: ${nClaim24} · mal: ${perMal.length}${perMal.length ? "\n" + muestra(perMal, (r) => "  " + r) : ""}`);
 // ---------- Prueba de avisar_indexnow.js contra un servidor local ----------
 // Copia avisar_indexnow.js a dos carpetas temporales («con-clave» y «sin-clave»), cada una con un generar_paginas_seo.js
 // mínimo (INDEXNOW_CLAVE ficticia o null), el .txt y un sitemap.xml de una URL. Por cada caso levanta un servidor http
@@ -1355,5 +1492,5 @@ async function probarAvisoIndexNow() {
   const t0 = Date.now();
   const [avisoMal, nCasos] = await probarAvisoIndexNow();
   console.log(`IndexNow «despliega primero» y simulación (avisar_indexnow.js --base contra servidor local, sin red real): ${nCasos - new Set(avisoMal.map((x) => x.split(" ")[0])).size} de ${nCasos} casos bien (200 con la clave → 0; 404, otro texto o servidor caído → 1; --simular y clave null → 0 sin peticiones) en ${Date.now() - t0} ms · mal: ${avisoMal.length}${avisoMal.length ? "\n" + muestra(avisoMal, (r) => "  " + r) : ""}`);
-  if (ultMigaMal.length || migaInterMal.length || exMal.length || findeMal.length || findeCercaMal.length || cssMal.length || listaMigasMal.length || planasMal.length || ariaActualMal.length || cpIdMal.length || refsIdMal.length || refsNombreMal.length || migasVisMal.length || itemMigasMal.length || avisoMal.length || vistaMal.length || analiticaMal.length || gscMal.length || indexNowMal.length || migasMal.length || mainEntityMal.length || copiaMal.length || faqMal.length || indiceMal.length || reciprocidadMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || idAppMal.length || idNombreMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
+  if (ultMigaMal.length || migaInterMal.length || exMal.length || perMal.length || h24Mal.length || findeMal.length || findeCercaMal.length || cssMal.length || listaMigasMal.length || planasMal.length || ariaActualMal.length || cpIdMal.length || refsIdMal.length || refsNombreMal.length || migasVisMal.length || itemMigasMal.length || avisoMal.length || vistaMal.length || analiticaMal.length || gscMal.length || indexNowMal.length || migasMal.length || mainEntityMal.length || copiaMal.length || faqMal.length || indiceMal.length || reciprocidadMal.length || hasPartMal.length || isPartOfMal.length || mal404.length || lastmodMal.length || rotos.length || dupT.length || dupD.length || largos.length || ldMal.length || bibConFicha.length || idMal.length || idAppMal.length || idNombreMal.length || sinLista.length || horEspMal.length || sitemapRoto.length || faltanSitemap.length) process.exit(1);
 })();

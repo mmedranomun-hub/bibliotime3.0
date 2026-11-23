@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-11-15 21:48",
+  "fecha": "2026-11-16 02:52",
   "pruebas": {
     "arranca: datos y vistas": true,
     "marca España (sin «Navarra» en la cabecera)": true,
@@ -30,6 +30,7 @@
     "al pasar a ✅ tras llenarse, la misión de minutos brilla una vez (.mis-brilla: barrido --destello de .6 s) y su contador funde a --ok-tx en .3 s; nunca al cargar ni al repintar, quieto con reducir movimiento": true,
     "el barrido de .mis-brilla es luz en claro y en oscuro (--destello blanco, nunca la pizarra de --glass-fuerte)": true,
     "al abrir el cofre, la tarjeta en oro recibe una vez el barrido --destello de .mis-brilla (.cofre-brilla, .6 s, en pausa bajo la ventana); nunca al recargar con el cofre abierto, quieta con reducir movimiento": true,
+    "el barrido del cofre en oro se ve también en oscuro (--destello-oro: = --destello en claro, blanco cálido ~45 % en oscuro) y, si el sello 🏵️ se estampa, espera .45 s a que caiga": true,
     "el barrido del cofre sigue pendiente si la tarjeta se repinta con la ventana abierta (p. ej. el tick de 30 s) y se ve una sola vez al cerrarla": true,
     "tras abrir el cofre con teclado, al cerrar la ventana el foco vuelve a la tarjeta en oro (aria-disabled, sin disabled) que dice «Sello del día conseguido: N días…»; con ratón no se mueve; la tarjeta abierta no reabre ni premia": true,
     "la ventana del cofre es un diálogo accesible: role=dialog + aria-modal + título, el foco entra en «Ver especies», Tab no sale, Escape la cierra sin premiar dos veces y el foco vuelve a la tarjeta; cualquier ventana devuelve el foco a quien la abrió": true,
@@ -95,18 +96,18 @@
     "/#bib=<i>&o=c (enlace de «🔗 Compartir») abre la ficha correcta sin errores, quita o=c de la barra y, apagada, no manda nada; el evento no lleva id": true,
     "usuario nuevo que llega por /#bib=<i>-x&o=c o #study=: ve la ficha sin la bienvenida encima, y la bienvenida sale en la siguiente visita sin enlace": true,
     "/#bib=<i>-x&o=c a 390×844 (claro y oscuro): la ficha y su × (≥ 44 px) quedan enteras bajo la cabecera fija y dentro de la pantalla; otra chincheta después, igual": true,
-    "analítica apagada por defecto (index.html y /bibliotecas/ cargan analitica.js con proveedor:null y no piden _vercel/insights ni goatcounter ni ponen cookies; respeta DNT/GPC y local)": true,
+    "analítica con Vercel (index.html y /bibliotecas/ cargan analitica.js con proveedor vercel; en local no piden _vercel/insights ni goatcounter ni ponen cookies; respeta DNT/GPC y local)": true,
     "política de privacidad coherente con analitica.js (proveedor null ⇔ «sin analítica»; el diff de docs/ANALITICA.md se aplica y se detecta encender sin él)": true,
     "fichas.json pesa como mucho 15 KB gzip (si no, pasar al formato {prov:{índice:slug}})": true
   },
   "errores_js": [],
-  "carga_ms_cpu4x": 566,
+  "carga_ms_cpu4x": 591,
   "carga_ms_cpu4x_min_max": [
-    472,
-    815
+    539,
+    718
   ],
-  "primera_pintura_ms_cpu4x": 244,
-  "todas_las_chinchetas_ms_cpu4x": 582,
+  "primera_pintura_ms_cpu4x": 272,
+  "todas_las_chinchetas_ms_cpu4x": 609,
   "markercluster": {
     "cargado": false,
     "agrupa": false,
@@ -116,31 +117,31 @@
   },
   "datos": {
     "bibliotecas": 2624,
-    "con_horario_verificado": 998,
+    "con_horario_verificado": 1007,
     "provincias_con_horario": 51,
     "provincias_total": 51
   },
   "seo": {
-    "paginas": 1484,
+    "paginas": 1516,
     "sitemap": true
   },
   "peso": {
     "index.html": {
-      "kb": 143.1,
-      "kb_gzip": 32.4
+      "kb": 143.5,
+      "kb_gzip": 32.6
     },
     "app.js": {
       "kb": 310.5,
       "kb_gzip": 93.8
     },
     "bibliotecas-espana.js": {
-      "kb": 1094.8,
-      "kb_gzip": 251.2
+      "kb": 1104.1,
+      "kb_gzip": 252.7
     },
     "fichas.json": {
-      "kb": 63.2,
-      "kb_gzip": 12.8,
-      "bytes": 64732,
+      "kb": 63.8,
+      "kb_gzip": 13.0,
+      "bytes": 65338,
       "tope_kb_gzip": 15
     }
   },
