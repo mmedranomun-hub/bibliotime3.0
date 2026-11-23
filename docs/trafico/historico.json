@@ -1,0 +1,42 @@
+[
+ {
+  "fecha": "2026-11-15",
+  "dias": 7,
+  "visitantes": 0,
+  "paginas": 0,
+  "top": []
+ },
+ {
+  "fecha": "2026-11-23",
+  "dias": 9,
+  "visitantes": 7,
+  "paginas": 36,
+  "top": [
+   {
+    "requestPath": "/",
+    "visitors": 9,
+    "pageviews": 10
+   },
+   {
+    "requestPath": "Others",
+    "visitors": 7,
+    "pageviews": 644
+   },
+   {
+    "requestPath": "/bibliotecas/barcelona/abiertas-mediodia",
+    "visitors": 2,
+    "pageviews": 2
+   },
+   {
+    "requestPath": "/bibliotecas/leon/abiertas-hoy",
+    "visitors": 2,
+    "pageviews": 2
+   },
+   {
+    "requestPath": "/bibliotecas/pontevedra/biblioteca-publica-municipal-xose-neira-vilas",
+    "visitors": 2,
+    "pageviews": 2
+   }
+  ]
+ }
+]
